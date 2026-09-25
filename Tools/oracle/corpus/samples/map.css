@@ -1,0 +1,330 @@
+/* ════════════════════════════════════════════════════════════
+   Halcyon — World map. Full-bleed canvas with absolute-positioned
+   markers, plus overlay cards in each corner. Stress-tests
+   position:absolute with percentage coords + transform-pivoted
+   centering.
+   ══════════════════════════════════════════════════════════ */
+
+:root {
+  --bg-0:        #0a081a;
+  --bg-1:        #161030;
+  --map-soil:    #2a1f3d;
+  --map-water:   #1a2540;
+  --panel:       rgba(20, 14, 38, 0.92);
+  --edge:        rgba(255, 255, 255, 0.12);
+  --edge-strong: rgba(255, 255, 255, 0.22);
+  --ink:         #f0ecff;
+  --ink-muted:   #aaa1cc;
+  --ink-dim:     #6e6691;
+  --accent:      #b388ff;
+  --gold:        #fbbf24;
+  --quest:       #f97316;
+  --done:        #22c55e;
+  --player:      #60a5fa;
+
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+}
+
+html, body { width: 100%; height: 100%; margin: 0; padding: 0; }
+
+body {
+  font-family: "Segoe UI", Inter, system-ui, sans-serif;
+  color: var(--ink);
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  overflow: hidden;
+}
+
+.atlas {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 40%, var(--map-soil) 0%, var(--bg-0) 70%);
+}
+
+/* ────────────────────────────────────────────────────────────
+   CANVAS
+   ──────────────────────────────────────────────────────────── */
+.canvas {
+  position: absolute;
+  inset: 0;
+}
+
+.canvas-grid {
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 80px),
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.04) 0 1px, transparent 1px 80px);
+  opacity: 0.5;
+}
+
+.canvas-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.65) 100%);
+  pointer-events: none;
+}
+
+/* ────────────────────────────────────────────────────────────
+   MARKERS (cities)
+   ──────────────────────────────────────────────────────────── */
+.marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.marker-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gold);
+  border: 2px solid rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+}
+
+.marker-capital .marker-dot {
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  box-shadow: 0 0 14px rgba(179, 136, 255, 0.7);
+}
+
+.marker-label {
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid var(--edge);
+  border-radius: 999px;
+}
+
+/* ────────────────────────────────────────────────────────────
+   QUEST PINS
+   ──────────────────────────────────────────────────────────── */
+.pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--quest);
+  border: 2px solid rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 12px rgba(249, 115, 22, 0.7);
+}
+
+.pin-done { background: var(--done); box-shadow: 0 0 12px rgba(34, 197, 94, 0.7); }
+
+.pin-glyph {
+  font-size: 14px;
+  font-weight: 900;
+  color: white;
+  line-height: 1;
+}
+
+/* ────────────────────────────────────────────────────────────
+   PLAYER
+   ──────────────────────────────────────────────────────────── */
+.player {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-icon {
+  position: relative;
+  z-index: 2;
+  font-size: 18px;
+  color: var(--player);
+  text-shadow: 0 0 6px rgba(96, 165, 250, 0.8);
+}
+
+.player-fov {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(96, 165, 250, 0.20) 0%, transparent 70%);
+  z-index: 1;
+}
+
+/* ────────────────────────────────────────────────────────────
+   OVERLAY CARDS
+   ──────────────────────────────────────────────────────────── */
+.hud-card {
+  position: absolute;
+  padding: 12px 16px;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-md);
+  backdrop-filter: blur(10px);
+}
+
+.hud-top { top: 24px; left: 24px; min-width: 280px; }
+.hud-legend { bottom: 96px; left: 24px; }
+
+.hud-meta {
+  margin: 0;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.hud-name {
+  margin: 2px 0 4px 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--gold);
+}
+
+.hud-sub {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+/* Legend */
+.legend-title {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.legend-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ink);
+}
+
+.swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.5);
+}
+
+.sw-city { background: var(--gold); }
+.sw-quest { background: var(--quest); }
+.sw-done { background: var(--done); }
+.sw-player { background: var(--player); }
+
+/* ────────────────────────────────────────────────────────────
+   COMPASS (top-right)
+   ──────────────────────────────────────────────────────────── */
+.compass {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+}
+
+.compass-mark {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink-muted);
+}
+
+.compass-n { top: 6px; left: 50%; transform: translateX(-50%); color: var(--accent); }
+.compass-e { right: 6px; top: 50%; transform: translateY(-50%); }
+.compass-s { bottom: 6px; left: 50%; transform: translateX(-50%); }
+.compass-w { left: 6px; top: 50%; transform: translateY(-50%); }
+
+.compass-needle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 32px;
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent) 50%, transparent 50%);
+  transform: translate(-50%, -50%) rotate(35deg);
+  transform-origin: center center;
+}
+
+/* ────────────────────────────────────────────────────────────
+   FAST-TRAVEL FOOTER
+   ──────────────────────────────────────────────────────────── */
+.travel {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  border-radius: var(--r-lg);
+  backdrop-filter: blur(12px);
+}
+
+.travel-label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.travel-options {
+  display: flex;
+  gap: 4px;
+}
+
+.travel-btn {
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--edge-strong);
+  border-radius: var(--r-sm);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.travel-btn:hover { background: rgba(179, 136, 255, 0.18); border-color: var(--accent); }
+
+.travel-btn-disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.travel-cost {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gold);
+  font-variant-numeric: tabular-nums;
+}

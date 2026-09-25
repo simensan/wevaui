@@ -1,0 +1,42 @@
+/* -webkit-line-clamp, the spelling stylesheets actually write, and the only
+   one Chrome implements. A clamp changes the block's HEIGHT, which is exactly
+   what a layout oracle can see.
+
+   The unprefixed `line-clamp` is here deliberately and must do NOTHING: the
+   captured Chrome ignores it, and the C# reference clamps on it, so this case
+   also pins which of the two the port follows. */
+
+body { margin: 0; font-family: sans-serif; font-size: 14px; }
+
+.page { width: 520px; padding: 16px; }
+
+.box {
+  width: 240px;
+  border: 1px solid #444;
+  padding: 4px;
+  margin-bottom: 10px;
+  line-height: 20px;
+}
+
+/* Unprefixed, and inert. */
+.clamp2 { line-clamp: 2; }
+.clamp1 { line-clamp: 1; }
+.clamp3 { line-clamp: 3; }
+.clamp-none { line-clamp: none; }
+
+/* Prefixed, in the -webkit-box that Chrome requires. */
+.wk {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wk1 { -webkit-line-clamp: 1; }
+.wk2 { -webkit-line-clamp: 2; }
+.wk3 { -webkit-line-clamp: 3; }
+
+/* The allowance is a maximum, not a target: two lines of text under a clamp
+   of six stay two lines tall. */
+.wk-tall { -webkit-line-clamp: 6; }
+
+/* `none` turns it back off, so a narrower rule can undo one. */
+.wk-off { -webkit-line-clamp: none; }

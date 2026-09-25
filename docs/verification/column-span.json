@@ -1,0 +1,4463 @@
+{
+  "status": "Installed in both local addons; core, sanitizer, host, Chrome, sample/export and post-install checks pass",
+  "problem": "A direct column-span:all heading was laid out as an ordinary narrow column item instead of separating balanced column sets.",
+  "baseline": ".utmp/safe-engine71/column-span-oracle/ltr-2-2.native.json",
+  "oracle": "godot-port/tools/oracle/check_column_span_chrome.cjs",
+  "chrome_output": ".utmp/safe-engine71/column-span-oracle/chrome.json",
+  "comparison": ".utmp/safe-engine71/column-span-oracle/comparison.json",
+  "chrome_cases": 18,
+  "geometry_checks": 384,
+  "geometry_passed": true,
+  "core_suites_passed": 14,
+  "core_seconds": 24.17,
+  "scope": "Direct spanning block with zero margins and unbreakable fixed-height cards, in LTR/RTL, with zero/two/three items before and after. Before/after column sets balance independently.",
+  "margin_followup": {
+    "cases": 108,
+    "geometry_checks": 2520,
+    "passed": true,
+    "baseline": ".utmp/safe-engine71/column-span-margins/baseline.json",
+    "comparison": ".utmp/safe-engine71/column-span-margins/comparison.json",
+    "fix": "Collapse margins between consecutive direct spanning headings, including negative margins.",
+    "core_suites_passed": 14,
+    "core_seconds": 24.31
+  },
+  "empty_and_dynamic_followup": {
+    "cases": 216,
+    "geometry_checks": 5040,
+    "passed": true,
+    "comparison": ".utmp/safe-engine71/column-span-empty/comparison.json",
+    "initial_failures": 4,
+    "fix": "Clamp the multicolumn content height to zero when empty spanners have negative margins.",
+    "incremental_steps": 7,
+    "incremental_scope": "Spanning, height, margins, visibility and direction changes match forced full rebuild draw output.",
+    "core_suites_passed": 14,
+    "core_seconds": 25.07
+  },
+  "remaining": "Nested spanners and paragraph fragmentation remain incomplete. Current desktop and 1080p busy-scene checks are recorded below; broader load, lifecycle and platform qualification remains open, including historical 4K frame delays.",
+  "native": {
+    "host": {
+      "binary_sha256": "2883eac86aa3a11643d7d179afa55f0dc5df447d76401ac4ce991121372464f2",
+      "tests": [
+        {
+          "name": "import",
+          "passed": true,
+          "checks": 0
+        },
+        {
+          "name": "form_baseline_tests",
+          "passed": true,
+          "checks": 2022
+        },
+        {
+          "name": "border_tests",
+          "passed": true,
+          "checks": 1086
+        },
+        {
+          "name": "item_context_tests",
+          "passed": true,
+          "checks": 1176
+        },
+        {
+          "name": "line_height_tests",
+          "passed": true,
+          "checks": 2000
+        },
+        {
+          "name": "font_inheritance_tests",
+          "passed": true,
+          "checks": 560
+        },
+        {
+          "name": "theme_font_tests",
+          "passed": true,
+          "checks": 114
+        },
+        {
+          "name": "font_size_tests",
+          "passed": true,
+          "checks": 208
+        },
+        {
+          "name": "input_integration_tests",
+          "passed": true,
+          "checks": 40
+        },
+        {
+          "name": "keyboard_integration_tests",
+          "passed": true,
+          "checks": 35
+        },
+        {
+          "name": "ime_integration_tests",
+          "passed": true,
+          "checks": 28
+        },
+        {
+          "name": "text_editing_tests",
+          "passed": true,
+          "checks": 302
+        },
+        {
+          "name": "text_autoscroll_tests",
+          "passed": true,
+          "checks": 81
+        },
+        {
+          "name": "maxlength_tests",
+          "passed": true,
+          "checks": 44
+        },
+        {
+          "name": "form_state_tests",
+          "passed": true,
+          "checks": 522
+        },
+        {
+          "name": "select_control_tests",
+          "passed": true,
+          "checks": 66
+        },
+        {
+          "name": "select_autoscroll_tests",
+          "passed": true,
+          "checks": 33
+        },
+        {
+          "name": "typeahead_tests",
+          "passed": true,
+          "checks": 48
+        },
+        {
+          "name": "test_scene",
+          "passed": true,
+          "checks": 247
+        },
+        {
+          "name": "binding_tests",
+          "passed": true,
+          "checks": 186
+        },
+        {
+          "name": "hover_tests",
+          "passed": true,
+          "checks": 10
+        },
+        {
+          "name": "gallery_hover_test",
+          "passed": true,
+          "checks": 5
+        },
+        {
+          "name": "gallery_clock_tests",
+          "passed": true,
+          "checks": 1
+        },
+        {
+          "name": "demo_smoke",
+          "passed": true,
+          "checks": 11
+        },
+        {
+          "name": "inventory_demo",
+          "passed": true,
+          "checks": 11
+        },
+        {
+          "name": "intrinsic_size_tests",
+          "passed": true,
+          "checks": 336
+        },
+        {
+          "name": "survival_smoke",
+          "passed": true,
+          "checks": 56
+        },
+        {
+          "name": "dialog_cancel_tests",
+          "passed": true,
+          "checks": 1199
+        },
+        {
+          "name": "form_validation_tests",
+          "passed": true,
+          "checks": 12907
+        },
+        {
+          "name": "timing_tests",
+          "passed": true,
+          "checks": 21
+        },
+        {
+          "name": "validity_snapshot_tests",
+          "passed": true,
+          "checks": 676
+        },
+        {
+          "name": "explicit_validity_tests",
+          "passed": true,
+          "checks": 104
+        },
+        {
+          "name": "range_selector_tests",
+          "passed": true,
+          "checks": 396
+        },
+        {
+          "name": "validity_selector_tests",
+          "passed": true,
+          "checks": 658
+        },
+        {
+          "name": "multicol_sizing_tests",
+          "passed": true,
+          "checks": 7330
+        },
+        {
+          "name": "block_margin_tests",
+          "passed": true,
+          "checks": 1009
+        },
+        {
+          "name": "input_geometry_tests",
+          "passed": true,
+          "checks": 5
+        },
+        {
+          "name": "range_direction_tests",
+          "passed": true,
+          "checks": 66
+        },
+        {
+          "name": "number_step_tests",
+          "passed": true,
+          "checks": 234
+        }
+      ],
+      "passed": true,
+      "checks": 33833
+    },
+    "candidate": {
+      "library_sha256": "2883eac86aa3a11643d7d179afa55f0dc5df447d76401ac4ce991121372464f2",
+      "test_sha256": "7aad7ffdf1443f1cc968c0365fe4f24a13939a8fb400601222a02354a06e007c",
+      "runs": [
+        {
+          "name": "import",
+          "returncode": 0,
+          "passed": true
+        },
+        {
+          "name": "binding",
+          "returncode": 0,
+          "passed": true
+        }
+      ],
+      "passed": true
+    },
+    "baseline": {
+      "library_sha256": "c64ca61bcb1bc9b1e1fb2ab2dc7c92a4b14acb3c442082285bc919de4666f84c",
+      "test_sha256": "7aad7ffdf1443f1cc968c0365fe4f24a13939a8fb400601222a02354a06e007c",
+      "runs": [
+        {
+          "name": "import",
+          "returncode": 0,
+          "passed": true
+        },
+        {
+          "name": "binding",
+          "returncode": 1,
+          "passed": false
+        }
+      ],
+      "passed": false
+    },
+    "rendered": [
+      {
+        "renderer": "gl_compatibility",
+        "passed": true,
+        "returncode": 0
+      },
+      {
+        "renderer": "mobile",
+        "passed": true,
+        "returncode": 0
+      }
+    ],
+    "baseline_log": ".utmp/safe-engine71/column-span-host-baseline/binding.log",
+    "candidate_directory": ".utmp/safe-engine71/column-span-host-candidate",
+    "baseline_failures": 1574,
+    "multicol_checks": 7330
+  },
+  "broad_layout": {
+    "report": ".utmp/safe-engine71/layout-column-span/comparison.json",
+    "fixtures": 309,
+    "agree": 285,
+    "differ": 24,
+    "crashes": 0,
+    "scope": "Frozen references include the select-default differences explained in layout200.json; no current browser-parity claim."
+  },
+  "installation": {
+    "library_sha256": "2883eac86aa3a11643d7d179afa55f0dc5df447d76401ac4ce991121372464f2",
+    "version": "0.1.0-preview.201",
+    "release_qualified": false,
+    "qualification_scope": "Development installation of direct column spanners; 216 Chrome cases, core, sanitizer, native host/rendered, sample and export checks pass. Nested spanners and paragraph fragmentation remain incomplete.",
+    "timing_profiles": "Desktop timing is from build 200; load/lifecycle observations are from build 198. These do not requalify this binary. Development install only.",
+    "targets": {
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
+    },
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed201-backup",
+    "updated_files": [
+      "ADA.md",
+      "ADA_LICENSE_APACHE.txt",
+      "ADA_LICENSE_MIT.txt",
+      "DECIMAL.md",
+      "DECIMAL_LICENSE.txt",
+      "FORM_STATE.md",
+      "GODOT_CPP_LICENSE.md",
+      "GODOT_TEXT_SHAPING.md",
+      "ICU_DATA.md",
+      "ICU_LICENSE.txt",
+      "IME.md",
+      "LICENSE.md",
+      "README.md",
+      "TEXT_EDITING.md",
+      "UNICODE_DATA.md",
+      "UNICODE_LICENSE.txt",
+      "bin/weva_godot.dll",
+      "bin/weva_godot.dll.build.json",
+      "build.json"
+    ]
+  },
+  "installed_smokes": [
+    {
+      "name": "dialog_cancel_tests",
+      "checks": 1199,
+      "passed": true
+    },
+    {
+      "name": "form_validation_tests",
+      "checks": 12907,
+      "passed": true
+    },
+    {
+      "name": "form_state_tests",
+      "checks": 522,
+      "passed": true
+    },
+    {
+      "name": "binding_tests",
+      "checks": 186,
+      "passed": true
+    },
+    {
+      "name": "timing_tests",
+      "checks": 21,
+      "passed": true
+    },
+    {
+      "name": "validity_snapshot_tests",
+      "checks": 676,
+      "passed": true
+    },
+    {
+      "name": "explicit_validity_tests",
+      "checks": 104,
+      "passed": true
+    },
+    {
+      "name": "range_selector_tests",
+      "checks": 396,
+      "passed": true
+    },
+    {
+      "name": "validity_selector_tests",
+      "checks": 658,
+      "passed": true
+    },
+    {
+      "name": "multicol_sizing_tests",
+      "checks": 7330,
+      "passed": true
+    },
+    {
+      "name": "block_margin_tests",
+      "checks": 1009,
+      "passed": true
+    },
+    {
+      "name": "input_geometry_tests",
+      "checks": 5,
+      "passed": true
+    },
+    {
+      "name": "range_direction_tests",
+      "checks": 66,
+      "passed": true
+    },
+    {
+      "name": "number_step_tests",
+      "checks": 234,
+      "passed": true
+    },
+    {
+      "name": "frontier",
+      "checks": 95,
+      "passed": true
+    }
+  ],
+  "sanitizers": {
+    "passed": true,
+    "gates": 16,
+    "seconds": 180.04,
+    "log": ".utmp/safe-engine71/column-span-sanitizers.log"
+  },
+  "sample": {
+    "passed": true,
+    "receipt": ".utmp/safe-engine71/frontier-column-span201/verification.json"
+  },
+  "exports": {
+    "passed": true,
+    "log": ".utmp/safe-engine71/column-span201-exports.log"
+  },
+  "next": "Verify current desktop timing. Nested spanning, paragraph fragmentation, earlier 4K frame delays and broader game UI requirements remain open.",
+  "desktop_performance": {
+    "report": ".utmp/safe-engine71/span201-desktop/summary.json",
+    "library_sha256": "2883eac86aa3a11643d7d179afa55f0dc5df447d76401ac4ce991121372464f2",
+    "timing_budget": {
+      "profile": "Frontier development desktop CPU targets",
+      "passed": true,
+      "errors": [],
+      "checks": [
+        {
+          "run": "gl_compatibility/1",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.005,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.011,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 2.2,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.75,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.51,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.524,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.202,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.331,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.407,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.662,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.675,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.749,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 0.392,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.355,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.328,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.348,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.107,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.232,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.006,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.455,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.268,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.688,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 1.377,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.393,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.325,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.354,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.119,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.215,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.827,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.5,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.341,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.564,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.007,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 1.757,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.481,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.273,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.328,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.125,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.209,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.0,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.462,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.298,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.69,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.007,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 0.427,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.312,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.3,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.309,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.137,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.218,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.103,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.52,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.387,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.621,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 1.378,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.359,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.314,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.298,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.125,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.214,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.008,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.431,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.29,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.505,
+          "limit_ms": 3.0,
+          "passed": true
+        }
+      ],
+      "policy": "Every measured run must meet every p95 time limit; no averaging away failures.",
+      "profile_sha256": "33f33ca9e14603ae68262b77f6d2629bbfd139a96437a38e7e1efcc870a8251a",
+      "definition": {
+        "schema": 1,
+        "name": "Frontier development desktop CPU targets",
+        "description": "Provisional engineering targets for this measured RTX 5080 development machine, manual updates, static scene, 1280x720. Adapter matching does not identify the CPU or certify other hardware. CPU API timings exclude total GPU/UI cost.",
+        "scope": {
+          "resolution": [
+            1280,
+            720
+          ],
+          "world": "static",
+          "automatic": false,
+          "adapter": "NVIDIA GeForce RTX 5080"
+        },
+        "renderers": [
+          "gl_compatibility",
+          "mobile"
+        ],
+        "minimum_runs": 3,
+        "minimum_frames": 600,
+        "minimum_warmups": 120,
+        "limits_ms": {
+          "ui_disabled": {
+            "api_cpu": 0.05
+          },
+          "idle": {
+            "api_cpu": 0.05
+          },
+          "clock_1hz": {
+            "changed_api_cpu": 3.0
+          },
+          "vitals_10hz": {
+            "changed_api_cpu": 1.0
+          },
+          "clock_update": {
+            "changed_api_cpu": 1.0
+          },
+          "vitals_update": {
+            "changed_api_cpu": 1.0
+          },
+          "redundant_signal": {
+            "changed_api_cpu": 0.3
+          },
+          "hover": {
+            "changed_api_cpu": 0.5
+          },
+          "inventory_sort": {
+            "changed_api_cpu": 2.0
+          },
+          "settings_typing": {
+            "changed_api_cpu": 1.0
+          },
+          "settings_slider": {
+            "changed_api_cpu": 1.0
+          },
+          "settings_toggle": {
+            "changed_api_cpu": 3.0
+          }
+        }
+      }
+    },
+    "functional_passed": true,
+    "focus_gaps": []
+  },
+  "broad_layout_audit": {
+    "report": ".utmp/safe-engine71/layout-column-span/comparison.json",
+    "scope": "Current core against 309 frozen Chrome fixtures; synthetic font metrics and UA overlay, not native pixel parity",
+    "dump_sha256": "729a841816ccd39d3f5ecfbc85668750d375740ad8f92e1f8e92827874a1823b",
+    "counts": {
+      "samples": {
+        "ok": 27,
+        "DIFF": 20,
+        "CRASH": 0
+      },
+      "hand": {
+        "ok": 52,
+        "DIFF": 0,
+        "CRASH": 0
+      },
+      "harvest": {
+        "ok": 206,
+        "DIFF": 4,
+        "CRASH": 0
+      }
+    },
+    "interpretation": "285 agree, 24 differ, zero crashes. Direct spanners remove four differences in cov-multicol; nested spanners, paragraph fragmentation and vertical writing remain incomplete. Frozen select UA differences are explained separately in layout200.json, not regraded."
+  },
+  "busy_scene_verification": {
+    "report": ".utmp/safe-engine71/span201-3d/summary.json",
+    "status": "complete",
+    "resolution": [
+      1920,
+      1080
+    ],
+    "world": "3d",
+    "library_sha256": "2883eac86aa3a11643d7d179afa55f0dc5df447d76401ac4ce991121372464f2",
+    "timing_budget": {
+      "profile": "Frontier development desktop automatic 3D targets",
+      "passed": true,
+      "errors": [],
+      "checks": [
+        {
+          "run": "gl_compatibility/1",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "ui_disabled",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.0,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "ui_disabled",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.531,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "idle",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.00110000000000099,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "idle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.406,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 0.059,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_1hz",
+          "metric": "changed_core_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 1.0829,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_1hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.347,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_1hz",
+          "metric": "changed_whole_frame",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 13.799,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.042,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.351200000000006,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_10hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.103,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.622,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.039,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.234100000000012,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.519,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.519,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.035,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.256699999999967,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.139,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.139,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.011,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "redundant_signal",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.000999999999976353,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "redundant_signal",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.636,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "redundant_signal",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.636,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.176,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "hover",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.176199999999994,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "hover",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.568,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "hover",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.568,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.546,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "inventory_sort",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.677799999999991,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "inventory_sort",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.609,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "inventory_sort",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.709,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.66,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_typing",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.25200000000001,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_typing",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.475,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_typing",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.001,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.328,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_slider",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.266599999999926,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_slider",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.607,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_slider",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.691,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 2.368,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_toggle",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.08109999999999,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_toggle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.263,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_toggle",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.11,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "ui_disabled",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.0,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "ui_disabled",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.711,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "idle",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.000999999999976353,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "idle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.579,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 0.066,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_1hz",
+          "metric": "changed_core_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 0.319099999999935,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_1hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 10.819,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_1hz",
+          "metric": "changed_whole_frame",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 10.779,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.054,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.399499999999989,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_10hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.022,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 10.666,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.039,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.209799999999973,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.083,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.083,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.035,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.258399999999995,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.59,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.59,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.009,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "redundant_signal",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.000900000000001455,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "redundant_signal",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.707,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "redundant_signal",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.707,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.148,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "hover",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.15319999999997,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "hover",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.672,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "hover",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.672,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.462,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "inventory_sort",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.807300000000026,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "inventory_sort",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.751,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "inventory_sort",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 12.074,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.731,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_typing",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.265000000000015,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_typing",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.568,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_typing",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.776,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.299,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_slider",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.242599999999982,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_slider",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.921,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_slider",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.832,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 2.363,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_toggle",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.15940000000001,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_toggle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.048,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_toggle",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 12.741,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "ui_disabled",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.0,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "ui_disabled",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.631,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "idle",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.00100000000000477,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "idle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.163,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 0.058,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_1hz",
+          "metric": "changed_core_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 1.49889999999999,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_1hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.171,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_1hz",
+          "metric": "changed_whole_frame",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 11.481,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.041,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.355199999999996,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_10hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.284,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.574,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.038,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.188700000000011,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.095,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.095,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.027,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.218599999999981,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.12,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.12,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.008,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "redundant_signal",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.000699999999994816,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "redundant_signal",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.316,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "redundant_signal",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.316,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.137,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "hover",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.135799999999961,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "hover",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.684,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "hover",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.684,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.43,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "inventory_sort",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.76419999999996,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "inventory_sort",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.001,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "inventory_sort",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 12.811,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.654,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_typing",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.263300000000072,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_typing",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.919,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_typing",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 12.41,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.363,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_slider",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.281099999999924,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_slider",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.35,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_slider",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.705,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 2.54,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_toggle",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.35940000000005,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_toggle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.264,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_toggle",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.303,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "ui_disabled",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.0,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "ui_disabled",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 13.577,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "idle",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.00110000000000099,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "idle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.007,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 0.061,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_1hz",
+          "metric": "changed_core_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 1.2763,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_1hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.722,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_1hz",
+          "metric": "changed_whole_frame",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 11.82,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.046,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.364099999999993,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_10hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.659,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 12.443,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.04,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.246200000000016,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.7,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.7,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.036,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.276200000000017,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.779,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.779,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.011,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "redundant_signal",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.000999999999976353,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "redundant_signal",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.082,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "redundant_signal",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 12.082,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.176,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "hover",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.173399999999958,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "hover",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.873,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "hover",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.873,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.569,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "inventory_sort",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.884100000000046,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "inventory_sort",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.566,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "inventory_sort",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 12.317,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.79,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_typing",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.314000000000078,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_typing",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.33,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_typing",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 12.235,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.348,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_slider",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.295700000000011,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_slider",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.073,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_slider",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 12.073,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 2.423,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_toggle",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.21820000000002,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_toggle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.649,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_toggle",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.503,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.002,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "ui_disabled",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.0,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "ui_disabled",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.758,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "idle",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.00120000000003984,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "idle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.532,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 0.052,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_1hz",
+          "metric": "changed_core_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 0.314600000000041,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_1hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.983,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_1hz",
+          "metric": "changed_whole_frame",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 11.089,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.047,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.359399999999937,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_10hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.091,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.041,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.033,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.207599999999957,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.34,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 12.34,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.034,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.254000000000019,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.451,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 12.451,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.011,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "redundant_signal",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.000900000000001455,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "redundant_signal",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.02,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "redundant_signal",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 12.02,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.17,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "hover",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.164400000000001,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "hover",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.152,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "hover",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 12.152,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.58,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "inventory_sort",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.941500000000019,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "inventory_sort",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.533,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "inventory_sort",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 12.686,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.83,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_typing",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.298900000000003,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_typing",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.966,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_typing",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.163,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.349,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_slider",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.292500000000018,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_slider",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.383,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_slider",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 12.649,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 2.378,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_toggle",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.18639999999999,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_toggle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 13.5,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_toggle",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 13.32,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "ui_disabled",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.0,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "ui_disabled",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 13.851,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "idle",
+          "metric": "core_cpu",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 0.0011999999999972,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "idle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.516,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 0.061,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_1hz",
+          "metric": "changed_core_cpu",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 1.1539,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_1hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.044,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_1hz",
+          "metric": "changed_whole_frame",
+          "samples": 10,
+          "minimum_samples": 10,
+          "p95_rank": 10,
+          "p95_ms": 11.439,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.052,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.418599999999998,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_10hz",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.593,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 12.995,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.041,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.243200000000002,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.109,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 12.109,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.035,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_update",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.273899999999969,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_update",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.72,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_update",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 12.72,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.009,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "redundant_signal",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.000900000000001455,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "redundant_signal",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.445,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "redundant_signal",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.445,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.136,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "hover",
+          "metric": "changed_core_cpu",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 0.147199999999998,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "hover",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.278,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "hover",
+          "metric": "changed_whole_frame",
+          "samples": 600,
+          "minimum_samples": 10,
+          "p95_rank": 570,
+          "p95_ms": 11.278,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.513,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "inventory_sort",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.803300000000036,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "inventory_sort",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.685,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "inventory_sort",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.804,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.747,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_typing",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.285600000000045,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_typing",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.69,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_typing",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.614,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.318,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_slider",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 0.264099999999985,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_slider",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 11.657,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_slider",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 11.468,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 2.562,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_toggle",
+          "metric": "changed_core_cpu",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 1.27030000000002,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_toggle",
+          "metric": "whole_frame",
+          "samples": 600,
+          "minimum_samples": 600,
+          "p95_rank": 570,
+          "p95_ms": 12.227,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_toggle",
+          "metric": "changed_whole_frame",
+          "samples": 100,
+          "minimum_samples": 10,
+          "p95_rank": 95,
+          "p95_ms": 13.937,
+          "limit_ms": 16.666666666666668,
+          "passed": true
+        }
+      ],
+      "policy": "Every measured run must meet every p95 time limit; no averaging away failures.",
+      "profile_sha256": "70033e5040c889bfca9699d4fe8b265505e2f93b0b6187474a5f562a61a6ed22",
+      "definition": {
+        "schema": 1,
+        "name": "Frontier development desktop automatic 3D targets",
+        "description": "Provisional engineering targets chosen before measurement: 60 FPS whole-scene p95 at1080p, with existing UI API limits and corresponding cumulative core limits. Automatic updates include deferred core work. Whole-frame measurements include the scene and scheduling; these limits do not isolate UI cost or certify other hardware.",
+        "scope": {
+          "resolution": [
+            1920,
+            1080
+          ],
+          "world": "3d",
+          "automatic": true,
+          "adapter": "NVIDIA GeForce RTX 5080"
+        },
+        "renderers": [
+          "gl_compatibility",
+          "mobile"
+        ],
+        "minimum_runs": 3,
+        "minimum_frames": 600,
+        "minimum_warmups": 120,
+        "limits_ms": {
+          "ui_disabled": {
+            "api_cpu": 0.05,
+            "core_cpu": 0.05,
+            "whole_frame": 16.666666666666668
+          },
+          "idle": {
+            "api_cpu": 0.05,
+            "core_cpu": 0.05,
+            "whole_frame": 16.666666666666668
+          },
+          "clock_1hz": {
+            "changed_api_cpu": 3.0,
+            "changed_core_cpu": 3.0,
+            "whole_frame": 16.666666666666668,
+            "changed_whole_frame": 16.666666666666668
+          },
+          "vitals_10hz": {
+            "changed_api_cpu": 1.0,
+            "changed_core_cpu": 1.0,
+            "whole_frame": 16.666666666666668,
+            "changed_whole_frame": 16.666666666666668
+          },
+          "clock_update": {
+            "changed_api_cpu": 1.0,
+            "changed_core_cpu": 1.0,
+            "whole_frame": 16.666666666666668,
+            "changed_whole_frame": 16.666666666666668
+          },
+          "vitals_update": {
+            "changed_api_cpu": 1.0,
+            "changed_core_cpu": 1.0,
+            "whole_frame": 16.666666666666668,
+            "changed_whole_frame": 16.666666666666668
+          },
+          "redundant_signal": {
+            "changed_api_cpu": 0.3,
+            "changed_core_cpu": 0.3,
+            "whole_frame": 16.666666666666668,
+            "changed_whole_frame": 16.666666666666668
+          },
+          "hover": {
+            "changed_api_cpu": 0.5,
+            "changed_core_cpu": 0.5,
+            "whole_frame": 16.666666666666668,
+            "changed_whole_frame": 16.666666666666668
+          },
+          "inventory_sort": {
+            "changed_api_cpu": 2.0,
+            "changed_core_cpu": 2.0,
+            "whole_frame": 16.666666666666668,
+            "changed_whole_frame": 16.666666666666668
+          },
+          "settings_typing": {
+            "changed_api_cpu": 1.0,
+            "changed_core_cpu": 1.0,
+            "whole_frame": 16.666666666666668,
+            "changed_whole_frame": 16.666666666666668
+          },
+          "settings_slider": {
+            "changed_api_cpu": 1.0,
+            "changed_core_cpu": 1.0,
+            "whole_frame": 16.666666666666668,
+            "changed_whole_frame": 16.666666666666668
+          },
+          "settings_toggle": {
+            "changed_api_cpu": 3.0,
+            "changed_core_cpu": 3.0,
+            "whole_frame": 16.666666666666668,
+            "changed_whole_frame": 16.666666666666668
+          }
+        }
+      }
+    },
+    "functional_passed": true,
+    "focus_gaps": []
+  }
+}

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'IosPlayer'">
+    <DefineConstants>$(DefineConstants);UNITY_IOS</DefineConstants>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)' == 'IosEditor'">
+    <DefineConstants>$(DefineConstants);UNITY_IOS;UNITY_EDITOR</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../../../Packages/com.wevaui/Runtime/Native/WevaNative.g.cs" Link="WevaNative.g.cs" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,63 @@
+{
+  "source": "FormControlSizingTests-00.html",
+  "metrics": "mono",
+  "browser": "Chrome/152.0.7977.83",
+  "userAgentStylesheet": "weva overlay on browser",
+  "lineHeightNormalization": "computed normal to 1.143",
+  "width": 800,
+  "height": 600,
+  "count": 3,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 99.5,
+      "display": "block",
+      "position": "static",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "div:1",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "input",
+      "id": "",
+      "cls": "i",
+      "x": 0,
+      "y": 71.5,
+      "w": 120,
+      "h": 28,
+      "display": "inline-block",
+      "position": "static",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "div:1/input:1",
+      "text": ""
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "textarea",
+      "id": "",
+      "cls": "t",
+      "x": 120,
+      "y": 0,
+      "w": 120,
+      "h": 90,
+      "display": "inline-block",
+      "position": "static",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "div:1/textarea:2",
+      "text": "hi"
+    }
+  ]
+}

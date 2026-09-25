@@ -1,0 +1,4 @@
+
+                .row { display: flex; align-items: center; gap: 12px; padding: 12px; width: 400px; }
+                .btn { padding: 8px 16px; font-size: 13px; font-weight: 700; border: 1px solid #ccc; border-radius: 6px; }
+            

@@ -1,16 +1,74 @@
-name: Godot core and package checks
+name: Core and hosts
 
 on:
   push:
-    paths: ['godot-port/**', '.github/workflows/godot-ci.yml']
+    paths: ['libweva/**', 'hosts/**', 'Tools/**', 'third_party/**', 'Packages/**', 'examples/**', 'CMakeLists.txt', 'package.json', 'package-lock.json', 'check.sh', '.github/workflows/godot-ci.yml']
   pull_request:
-    paths: ['godot-port/**', '.github/workflows/godot-ci.yml']
+    paths: ['libweva/**', 'hosts/**', 'Tools/**', 'third_party/**', 'Packages/**', 'examples/**', 'CMakeLists.txt', 'package.json', 'package-lock.json', 'check.sh', '.github/workflows/godot-ci.yml']
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Windows runners default to pwsh, which splits a single-dash `-Name=value`
+# token at the first `.` -- `-DGODOTCPP_API_VERSION=4.7` arrived as
+# `-DGODOTCPP_API_VERSION=4` plus a stray `.7`, and the Windows extension job
+# looked for `extension_api-4.json` and failed. bash on every runner.
+defaults:
+  run:
+    shell: bash
+
 jobs:
+  # Pure-Python gates. Their own job on purpose: they used to sit after ctest in
+  # `core`, where a red build skipped them, and across every run in this repo's
+  # history they never executed once. They need no compiler.
+  tooling:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Release tooling regressions
+        run: python -m unittest discover -s Tools/tests -v
+      - name: Text safety runner regressions
+        run: python -m unittest discover -s Tools/godot-text-shaping-repro -p 'test_*.py' -v
+      - name: Frontier sample gates
+        run: python -m unittest discover -s hosts/godot -p 'test_frontier_perf*.py' -v
+
+  chrome-behaviour:
+    # Editing receipts were recorded on Windows Chrome 152. OS-native number
+    # editing and older Chrome's CR handling differ; keep the reference fixed.
+    runs-on: windows-2022
+    timeout-minutes: 15
+    env:
+      PUPPETEER_CACHE_DIR: ${{ github.workspace }}/.cache/puppeteer
+      PUPPETEER_SKIP_DOWNLOAD: 'true'
+      WEVA_CHROME_VERSION: '152.0.7977.82'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install the locked driver and pinned Chrome reference
+        run: |
+          npm ci
+          npx puppeteer browsers install "chrome@$WEVA_CHROME_VERSION"
+      - name: Live Chrome behaviour checks
+        run: |
+          export WEVA_CHROME="$(node -p "require('@puppeteer/browsers').computeExecutablePath({cacheDir:process.env.PUPPETEER_CACHE_DIR,browser:'chrome',buildId:process.env.WEVA_CHROME_VERSION})")"
+          python Tools/oracle/run_chrome_checks.py --out chrome-checks
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: chrome-behaviour
+          path: chrome-checks/
+
   core:
     strategy:
       fail-fast: false
@@ -20,7 +78,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 45
     env:
-      WEVA_INCREMENTAL_CORPUS: ${{ github.workspace }}/godot-port/tools/oracle/corpus/samples
+      WEVA_INCREMENTAL_CORPUS: ${{ github.workspace }}/Tools/oracle/corpus/samples
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -35,15 +93,21 @@ jobs:
         with:
           arch: x64
       - name: Configure
-        run: cmake -S godot-port -B build-core -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_SANITIZERS=${{ matrix.sanitizers }} -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
+        run: cmake -S . -B build-core -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_SANITIZERS=${{ matrix.sanitizers }} -DCMAKE_MSVC_RUNTIME_LIBRARY=MultiThreaded
       - name: Build
         run: cmake --build build-core --parallel 4
       - name: Core, sample mutations, allocation guards and sanitizer controls
         run: ctest --test-dir build-core --output-on-failure --no-tests=error
-      - name: Release tooling regressions
-        run: python -m unittest discover -s godot-port/tools/tests -v
-      - name: Text safety runner regressions
-        run: python -m unittest discover -s godot-port/tools/godot-text-shaping-repro -p 'test_*.py' -v
+      - name: Chrome oracle (core vs tracked Chrome captures)
+        if: runner.os == 'Linux'
+        run: |
+          for c in "samples 1280 720" "hand 800 600" "harvest 800 600"; do
+            set -- $c
+            python Tools/oracle/chrome_sweep.py Tools/oracle/corpus/$1 \
+              --weva-dump build-core/Tools/weva_dump/weva_dump --width $2 --height $3 \
+              --out-dir chrome-sweep-$1 --show 2 --chrome-metrics --max-worst 1.5 \
+              --known-gaps Tools/oracle/known-gaps/chrome-sweep.txt
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -75,15 +139,15 @@ jobs:
         with:
           arch: x64
       - name: Configure extension with pinned Godot bindings
-        run: cmake -S godot-port/hosts/godot -B build-host -G Ninja -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR=${{ github.workspace }}/.deps/godot-cpp -DGODOTCPP_API_VERSION=4.7 -DGODOTCPP_PRECISION=single -DWEVA_GODOT_BIN=${{ github.workspace }}/build-host/bin
+        run: cmake -S hosts/godot -B build-host -G Ninja -DCMAKE_BUILD_TYPE=Release -DGODOT_CPP_DIR="${GITHUB_WORKSPACE//\\//}/.deps/godot-cpp" -DGODOTCPP_API_VERSION=4.7 -DGODOTCPP_PRECISION=single -DWEVA_GODOT_BIN="${GITHUB_WORKSPACE//\\//}/build-host/bin"
       - name: Build extension and metadata
         run: cmake --build build-host --target weva_godot --parallel 4
       - name: Verify Windows packaging
         if: runner.os == 'Windows'
-        run: python godot-port/hosts/godot/package_addon.py --windows-library build-host/bin/weva_godot.dll --godot-cpp-dir .deps/godot-cpp --version 0.1.0-preview.${{ github.run_number }} --output build-host/weva-windows.zip
+        run: python hosts/godot/package_addon.py --windows-library build-host/bin/weva_godot.dll --godot-cpp-dir .deps/godot-cpp --version 0.1.0-preview.${{ github.run_number }} --output build-host/weva-windows.zip
       - name: Verify Linux packaging
         if: runner.os == 'Linux'
-        run: python godot-port/hosts/godot/package_addon.py --linux-library build-host/bin/libweva_godot.so --godot-cpp-dir .deps/godot-cpp --version 0.1.0-preview.${{ github.run_number }} --output build-host/weva-linux.zip
+        run: python hosts/godot/package_addon.py --linux-library build-host/bin/libweva_godot.so --godot-cpp-dir .deps/godot-cpp --version 0.1.0-preview.${{ github.run_number }} --output build-host/weva-linux.zip
       # These are build artifacts, not release approvals. Engine text safety,
       # native input/rendering and relocated exports are separate release gates.
       - uses: actions/upload-artifact@v4
@@ -92,3 +156,112 @@ jobs:
           path: |
             build-host/bin/*.build.json
             build-host/weva-*.zip
+
+  # The Unity host's native plugin: the same core as a shared library with
+  # only the C ABI exported, loaded through the dynamic loader by a host-free
+  # test, and the generated P/Invoke layer checked for drift against the
+  # header. The Unity editor itself is not on this runner; the EditMode
+  # round-trip test runs where an editor is (see hosts/unity/README.md).
+  unity-plugin:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Windows compiler
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+      - name: Configure plugin
+        run: cmake -S hosts/unity -B build-unity -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_UNITY_BIN="${GITHUB_WORKSPACE//\\//}/build-unity/bin"
+      - name: Build plugin and load test
+        run: cmake --build build-unity --parallel 4
+      - name: Load the plugin through the dynamic loader (Windows)
+        if: runner.os == 'Windows'
+        run: build-unity/weva_core_load_test.exe build-unity/bin/weva_core.dll
+      - name: Load the plugin through the dynamic loader (Linux)
+        if: runner.os == 'Linux'
+        run: build-unity/weva_core_load_test build-unity/bin/weva_core.so
+      - name: Generated P/Invoke layer matches the headers
+        run: python hosts/unity/gen_bindings.py --header libweva/include/weva_c.h --header hosts/unity/src/weva_unity.h --out Packages/com.wevaui/Runtime/Native/WevaNative.g.cs --check
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Compile native imports for desktop, iOS player and iOS editor
+        run: |
+          dotnet run --project hosts/unity/tests/bindings -c Release -- weva_core
+          dotnet run --project hosts/unity/tests/bindings -c IosPlayer -- __Internal
+          dotnet run --project hosts/unity/tests/bindings -c IosEditor -- weva_core
+      - name: Third-party notices bundled with the plugin
+        run: python hosts/unity/bundle_notices.py --check
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unity-plugin-${{ matrix.os }}
+          path: |
+            build-unity/bin/
+
+  # The same plugin for the platforms Unity ships to: macOS (a dylib, loaded
+  # by the load test on the runner), Android arm64 (Unity's NDK line; the
+  # library is verified on a device, not here) and iOS (static archives that
+  # Xcode links into the player). Static builds also link a separate consumer
+  # against only the packaged archives; Linux runs that consumer as well.
+  unity-plugin-platforms:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            name: linux-static
+            configure: -DWEVA_UNITY_STATIC=ON
+            consumer_configure: ''
+            targets: weva_core
+            load_test: build-consumer/weva_core_static_test
+          - os: macos-14
+            name: macos
+            configure: "\"-DCMAKE_OSX_ARCHITECTURES=arm64;x86_64\""
+            targets: weva_core weva_core_load_test
+            load_test: build-unity/weva_core_load_test build-unity/bin/weva_core.dylib
+          - os: ubuntu-24.04
+            name: android-arm64
+            configure: -DCMAKE_TOOLCHAIN_FILE=${ANDROID_NDK_LATEST_HOME}/build/cmake/android.toolchain.cmake -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-24
+            targets: weva_core
+            load_test: test -s build-unity/bin/weva_core.so && file build-unity/bin/weva_core.so | grep -q 'ARM aarch64'
+          - os: macos-14
+            name: ios-arm64
+            configure: -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 -DWEVA_UNITY_STATIC=ON
+            consumer_configure: -DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=15.0 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_ALLOWED=NO
+            targets: weva_core
+            load_test: test -s build-consumer/weva_core_static_test && file build-consumer/weva_core_static_test | grep -q arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Ninja
+        if: runner.os == 'macOS'
+        run: brew install ninja
+      - name: Configure plugin (${{ matrix.name }})
+        run: cmake -S hosts/unity -B build-unity -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_UNITY_BIN="${GITHUB_WORKSPACE//\\//}/build-unity/bin" ${{ matrix.configure }}
+      - name: Build plugin
+        run: cmake --build build-unity --target ${{ matrix.targets }} --parallel 4
+      - name: Link using only the static plugin artifact directory
+        if: matrix.name == 'linux-static' || matrix.name == 'ios-arm64'
+        run: |
+          cmake -S hosts/unity/tests/static -B build-consumer -G Ninja -DCMAKE_BUILD_TYPE=Release -DWEVA_PLUGIN_DIR="${GITHUB_WORKSPACE//\\//}/build-unity/bin" ${{ matrix.consumer_configure }}
+          cmake --build build-consumer --parallel 4
+      - name: Check the result
+        run: ${{ matrix.load_test }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: unity-plugin-${{ matrix.name }}
+          path: |
+            build-unity/bin/

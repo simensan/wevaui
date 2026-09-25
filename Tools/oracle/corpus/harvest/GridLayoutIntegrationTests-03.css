@@ -1,0 +1,5 @@
+
+                .grid { display: grid; grid-template-columns: 200px 1fr; width: 1000px; height: 600px; }
+                .sidebar { background: red; }
+                .main { background: blue; }
+            

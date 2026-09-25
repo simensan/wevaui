@@ -1,0 +1,29 @@
+#if WEVA_URP
+using Weva.Rendering;
+
+namespace Weva.Native
+{
+    /// <summary>
+    /// A paint source whose output is geometry (the core's draw list): the
+    /// URP pass calls EmitNative with its command buffer and the meshes go
+    /// straight to the GPU.
+    /// </summary>
+    internal interface IUINativePaintSource : IUIPaintSource
+    {
+        /// <summary>
+        /// UIRenderGraphPass calls this with a Unity command buffer bound to
+        /// <paramref name="target"/> (the camera target); sources draw in
+        /// SortingOrder, and one with a backdrop-filter reads the target back.
+        /// </summary>
+        void EmitNative(UnityEngine.Rendering.CommandBuffer cmd, int viewportWidth, int viewportHeight, in NativeRenderTarget target);
+
+        /// <summary>
+        /// Whether the next EmitNative has a backdrop-filter draw, which
+        /// reads the target back. Asked when the pass is enqueued, so the
+        /// renderer can put the frame through an intermediate texture: the
+        /// back buffer cannot be sampled.
+        /// </summary>
+        bool NeedsBackdropCopy { get; }
+    }
+}
+#endif

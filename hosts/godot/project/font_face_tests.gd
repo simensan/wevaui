@@ -1,0 +1,180 @@
+extends Node2D
+
+# `@font-face { font-family; src: url() }` in the stylesheet loads the font and
+# registers the family, so `font-family: "Camp Mono"` selects it without any
+# register_font_family call (CSS Fonts 4 §4; the host loads, the core lists).
+# Every expectation is an equality against the same font registered natively,
+# so the checks hold whatever the fixture fonts' metrics are.
+
+var checks := 0
+var failures := 0
+const HTML := '<span id="a">Wide Words Here 0123</span><br><span id="b">Wide Words Here 0123</span>'
+const SIZES := "#a, #b { font-size: 20px; } #b { font-family: sans-serif; }"
+
+func _check(condition: bool, description: String) -> void:
+	checks += 1
+	if not condition:
+		failures += 1
+		printerr("FAIL  ", description)
+
+func make_doc(css: String, base := "", registered: Font = null) -> WevaDocument:
+	var doc := WevaDocument.new()
+	doc.size = Vector2(600, 200)
+	add_child(doc)
+	if not base.is_empty():
+		doc.base_path = base
+	if registered != null:
+		doc.register_font_family("Camp Mono", registered)
+	doc.css = css
+	doc.html = HTML
+	doc.update_document()
+	return doc
+
+func width(doc: WevaDocument, id: String) -> float:
+	return doc.query_bounds(id).size.x
+
+func _ready() -> void:
+	var mono := FontFile.new()
+	_check(mono.load_dynamic_font("res://fonts/WevaMonoMonospace.ttf") == OK, "fixture font loads natively")
+	var sans := FontFile.new()
+	_check(sans.load_dynamic_font("res://fonts/WevaMonoSans.ttf") == OK, "second fixture font loads natively")
+
+	# Reference widths: the family registered by the game itself.
+	var native := make_doc(SIZES + ' #a { font-family: "Camp Mono"; }', "", mono)
+	var mono_width := width(native, "#a")
+	var theme_width := width(native, "#b")
+	_check(mono_width != theme_width, "fixture font measures differently from the theme font")
+	var native_sans := make_doc(SIZES + ' #a { font-family: "Camp Mono"; }', "", sans)
+	var sans_width := width(native_sans, "#a")
+
+	var css := SIZES + ' @font-face { font-family: "Camp Mono"; src: url("fonts/WevaMonoMonospace.ttf") format("truetype"); } #a { font-family: "Camp Mono"; }'
+	var doc := make_doc(css)
+	_check(width(doc, "#a") == mono_width, "@font-face url() loads the font and the family selects it")
+	_check(doc.get_css_diagnostics().is_empty(), "@font-face is no longer reported as unsupported")
+
+	var relative := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(WevaMonoMonospace.ttf); } #a { font-family: "Camp Mono"; }', "res://fonts")
+	_check(width(relative, "#a") == mono_width, "src resolves against base_path like an image url()")
+
+	var replaced := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoSans.ttf); src: url(fonts/WevaMonoMonospace.ttf); } #a { font-family: "Camp Mono"; }')
+	_check(width(replaced, "#a") == mono_width, "the later valid src descriptor replaces the first")
+	var escaped := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: u\\72 l(fonts/WevaMono\\4d onospace.ttf); } #a { font-family: "Camp Mono"; }')
+	_check(width(escaped, "#a") == mono_width, "CSS escapes in the URL and function name load the intended font")
+	var replaced_local := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); src: local("Weva No Such Font 9f3"); } #a { font-family: "Camp Mono"; }')
+	_check(width(replaced_local, "#a") == theme_width, "a later local-only source removes the previous URL")
+
+	var missing := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url("fonts/missing.ttf"); } #a { font-family: "Camp Mono"; }')
+	_check(width(missing, "#a") == theme_width, "a missing source warns and falls back instead of failing")
+
+	var precedence := make_doc(css, "", sans)
+	_check(width(precedence, "#a") == sans_width, "the game's own register_font_family wins over @font-face")
+
+	var faces := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoSans.ttf); font-weight: 700; } @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); font-weight: normal; } #a { font-family: "Camp Mono"; }')
+	_check(width(faces, "#a") == mono_width, "with several faces the normal-weight one is registered")
+
+	# The same rules the Unity host is held to in NativeFontFaceWeightTests, so
+	# the two cannot drift. A weight nothing is closer to still serves the
+	# family: dropping it would leave the page in the theme font, and CSS
+	# Fonts 4 matching resolves font-weight:400 to the only face there is.
+	var lone_500 := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); font-weight: 500; } #a { font-family: "Camp Mono"; }')
+	_check(width(lone_500, "#a") == mono_width, "a lone font-weight:500 face serves the family")
+
+	var lone_300 := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); font-weight: 300; } #a { font-family: "Camp Mono"; }')
+	_check(width(lone_300, "#a") == mono_width, "a lone font-weight:300 face serves the family")
+
+	# An exact 400 wins wherever the author wrote it. Picking "the first face
+	# under 600" instead makes the regular face depend on declaration order.
+	var four_first := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); font-weight: 400; } @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoSans.ttf); font-weight: 500; } #a { font-family: "Camp Mono"; }')
+	_check(width(four_first, "#a") == mono_width, "400 declared before 500 serves the family")
+
+	var five_first := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoSans.ttf); font-weight: 500; } @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); font-weight: 400; } #a { font-family: "Camp Mono"; }')
+	_check(width(five_first, "#a") == mono_width, "400 declared after 500 still serves the family")
+
+	# A bold or italic rule is a real file for that weight or slant, used
+	# instead of synthesis (synthesis keeps the regular advances, so a
+	# different file is visible in the width). The nearest file serves what
+	# no rule covers, and one axis synthesizes on top of the other's file.
+	var weighted := SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); } @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoSans.ttf); font-weight: 700; } #a { font-family: "Camp Mono"; font-weight: 700; }'
+	var bold := make_doc(weighted)
+	_check(width(bold, "#a") == sans_width, "a bold @font-face file draws bold text instead of synthesis")
+	bold.css = weighted.replace("font-weight: 700; }", "font-weight: 400; }")
+	bold.update_document()
+	_check(width(bold, "#a") == mono_width, "regular text keeps the regular file")
+	bold.css = weighted.replace("#a { font-family: \"Camp Mono\"; font-weight: 700; }", "#a { font-family: \"Camp Mono\"; font-weight: 900; }")
+	bold.update_document()
+	_check(width(bold, "#a") == sans_width, "the nearest heavier file serves a weight no rule covers")
+	bold.css = weighted.replace("#a { font-family: \"Camp Mono\"; font-weight: 700; }", "#a { font-family: \"Camp Mono\"; font-weight: 700; font-style: italic; }")
+	bold.update_document()
+	_check(width(bold, "#a") == sans_width, "bold italic slants the bold file when no bold-italic file exists")
+	bold.css = weighted.replace("font-weight: 700; } #a", "font-style: italic; } #a").replace("#a { font-family: \"Camp Mono\"; font-weight: 700; }", "#a { font-family: \"Camp Mono\"; font-style: italic; }")
+	bold.update_document()
+	_check(width(bold, "#a") == sans_width, "an italic @font-face file draws italic text")
+	bold.css = SIZES + ' @font-face { font-family: "Camp Mono"; src: url(fonts/WevaMonoMonospace.ttf); } #a { font-family: "Camp Mono"; font-weight: 700; }'
+	bold.update_document()
+	_check(width(bold, "#a") == mono_width, "dropping the bold rule returns bold text to synthesis")
+
+	var native_bold := make_doc(SIZES + ' #a { font-family: "Camp Mono"; font-weight: 700; }', "", mono)
+	native_bold.register_font_face("Camp Mono", sans, 700, false)
+	native_bold.update_document()
+	_check(width(native_bold, "#a") == sans_width, "register_font_face supplies a bold file to a native family")
+	native_bold.register_font_face("Camp Mono", null, 700, false)
+	native_bold.update_document()
+	_check(width(native_bold, "#a") == mono_width, "and a null font removes it")
+
+	# Replacing the stylesheet without the rule releases the family.
+	doc.css = SIZES + ' #a { font-family: "Camp Mono"; }'
+	doc.update_document()
+	_check(width(doc, "#a") == theme_width, "removing @font-face on CSS replacement releases the family")
+	doc.css = css
+	doc.update_document()
+	_check(width(doc, "#a") == mono_width, "and restoring it registers the family again")
+
+	# CSS Fonts 4 §4.3: `local()` names an installed font, tried in the
+	# author's order with the url() entries; a name nobody has falls through.
+	var through := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: local("Weva No Such Font 9f3"), url(fonts/WevaMonoMonospace.ttf); } #a { font-family: "Camp Mono"; }')
+	_check(width(through, "#a") == mono_width, "a local() nobody has falls through to the url() after it")
+	var only_missing := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: local("Weva No Such Font 9f3"); } #a { font-family: "Camp Mono"; }')
+	_check(width(only_missing, "#a") == theme_width, "a local()-only rule nobody has warns and falls back")
+	var installed := OS.get_system_fonts()
+	var local_name := ""
+	var local_path := ""
+	for candidate in installed:
+		local_path = OS.get_system_font_path(candidate)
+		if not local_path.is_empty():
+			local_name = candidate
+			break
+	if local_name.is_empty():
+		print("  (no installed font resolvable through OS.get_system_font_path; local() load not measured here)")
+	else:
+		var system := FontFile.new()
+		_check(system.load_dynamic_font(local_path) == OK, "the installed font loads natively: " + local_name)
+		var reference := make_doc(SIZES + ' #a { font-family: "Camp Mono"; }', "", system)
+		var local_doc := make_doc(SIZES + ' @font-face { font-family: "Camp Mono"; src: local("' + local_name + '"); } #a { font-family: "Camp Mono"; }')
+		_check(width(local_doc, "#a") == width(reference, "#a"), "local() loads the installed font by name: " + local_name)
+
+		# ABI minor 41: a family the page names with no @font-face behind it
+		# resolves to the installed font of that name, as in a browser; the
+		# game's own registration of that name wins; the property turns it off.
+		var named := make_doc(SIZES + ' #a { font-family: "' + local_name + '", sans-serif; }')
+		_check(width(named, "#a") == width(reference, "#a"), "a family the page names resolves to the installed font: " + local_name)
+		var owned := WevaDocument.new()
+		owned.size = Vector2(600, 200)
+		add_child(owned)
+		owned.register_font_family(local_name, mono)
+		owned.css = SIZES + ' #a { font-family: "' + local_name + '"; }'
+		owned.html = HTML
+		owned.update_document()
+		_check(width(owned, "#a") == mono_width, "the game's registration of that name wins over the installed font")
+		var off := WevaDocument.new()
+		off.size = Vector2(600, 200)
+		off.use_system_families = false
+		add_child(off)
+		off.css = SIZES + ' #a { font-family: "' + local_name + '"; }'
+		off.html = HTML
+		off.update_document()
+		_check(width(off, "#a") == theme_width, "with use_system_families off the name falls through to the theme font")
+		off.use_system_families = true
+		off.update_document()
+		_check(width(off, "#a") == width(reference, "#a"), "and turning it on resolves the name")
+
+	print("godot font face: %d checks, %d failures" % [checks, failures])
+	get_tree().quit(1 if failures > 0 else 0)

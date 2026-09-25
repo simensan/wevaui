@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sweet Cascade — Level 12</title>
+<link rel="stylesheet" href="match3.css" />
+</head>
+<body>
+
+<div class="bg-aurora"></div>
+
+<header class="hud">
+  <div class="left">
+    <button class="icon-btn" title="Back to map">↩</button>
+    <div class="level">
+      <div class="label">Level</div>
+      <div class="value">12</div>
+    </div>
+  </div>
+
+  <div class="center">
+    <div class="score-pill">
+      <span class="dot dot-r"></span>
+      <span class="dot dot-y"></span>
+      <span class="dot dot-b"></span>
+      <span class="num">82,400</span>
+    </div>
+    <div class="stars">
+      <span class="star on">★</span>
+      <span class="star on">★</span>
+      <span class="star">★</span>
+    </div>
+  </div>
+
+  <div class="right">
+    <div class="moves">
+      <div class="num">17</div>
+      <div class="label">moves</div>
+    </div>
+    <button class="icon-btn" title="Pause">⏸</button>
+  </div>
+</header>
+
+<aside class="objectives">
+  <div class="objective-title">Goals</div>
+  <div class="goal">
+    <div class="goal-icon ic-r">●</div>
+    <div class="goal-bar"><div class="goal-fill" style="--pct:80%"></div></div>
+    <div class="goal-num">12<span class="of">/15</span></div>
+  </div>
+  <div class="goal">
+    <div class="goal-icon ic-y">▲</div>
+    <div class="goal-bar"><div class="goal-fill" style="--pct:60%"></div></div>
+    <div class="goal-num">9<span class="of">/15</span></div>
+  </div>
+  <div class="goal">
+    <div class="goal-icon ic-b">★</div>
+    <div class="goal-bar"><div class="goal-fill" style="--pct:30%"></div></div>
+    <div class="goal-num">3<span class="of">/10</span></div>
+  </div>
+</aside>
+
+<main class="board-wrap">
+  <div class="board">
+    <!-- 8 rows × 8 cols. Tiles are styled by data attributes. -->
+    <div class="tile r"></div><div class="tile y"></div><div class="tile b"></div><div class="tile g"></div><div class="tile p"></div><div class="tile r"></div><div class="tile y"></div><div class="tile b"></div>
+    <div class="tile y"></div><div class="tile b"></div><div class="tile r boost-stripe"></div><div class="tile g"></div><div class="tile r"></div><div class="tile y"></div><div class="tile p"></div><div class="tile r"></div>
+    <div class="tile g"></div><div class="tile r"></div><div class="tile y"></div><div class="tile b boost-bomb"></div><div class="tile g"></div><div class="tile p"></div><div class="tile r"></div><div class="tile y"></div>
+    <div class="tile p"></div><div class="tile g"></div><div class="tile b"></div><div class="tile y"></div><div class="tile r"></div><div class="tile b"></div><div class="tile y"></div><div class="tile g"></div>
+    <div class="tile b"></div><div class="tile p"></div><div class="tile g selected"></div><div class="tile r"></div><div class="tile y"></div><div class="tile g"></div><div class="tile b"></div><div class="tile p"></div>
+    <div class="tile r"></div><div class="tile y"></div><div class="tile p"></div><div class="tile boost-rainbow"></div><div class="tile b"></div><div class="tile r"></div><div class="tile g"></div><div class="tile y"></div>
+    <div class="tile y"></div><div class="tile g"></div><div class="tile b"></div><div class="tile p"></div><div class="tile r"></div><div class="tile y"></div><div class="tile p"></div><div class="tile r"></div>
+    <div class="tile b"></div><div class="tile r"></div><div class="tile y"></div><div class="tile g"></div><div class="tile b"></div><div class="tile p"></div><div class="tile r"></div><div class="tile g"></div>
+  </div>
+  <div class="combo-banner">SWEET! ×3</div>
+</main>
+
+<aside class="powerups">
+  <div class="powerup">
+    <div class="pu-icon">🔨</div>
+    <div class="pu-count">2</div>
+    <div class="pu-label">Hammer</div>
+  </div>
+  <div class="powerup">
+    <div class="pu-icon">🔄</div>
+    <div class="pu-count">1</div>
+    <div class="pu-label">Shuffle</div>
+  </div>
+  <div class="powerup disabled">
+    <div class="pu-icon">⚡</div>
+    <div class="pu-count">0</div>
+    <div class="pu-label">Lightning</div>
+  </div>
+</aside>
+
+<footer class="bottom">
+  <button class="primary">Hint</button>
+  <button class="ghost">Restart</button>
+</footer>
+
+</body>
+</html>

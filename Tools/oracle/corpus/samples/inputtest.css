@@ -1,0 +1,144 @@
+/* inputtest — focus/gamepad nav test bench. Dark UI; a bright cyan :focus
+   ring is the whole point (shows which control the gamepad/Tab landed on). */
+
+.screen {
+  position: relative;
+  width: 100%;
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 32px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  font-family: "Segoe UI", Inter, sans-serif;
+  color: #e6e8ec;
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 0%, #1b2440 0%, rgba(27,36,64,0) 60%),
+    linear-gradient(180deg, #0d1018 0%, #0a0c12 100%);
+}
+
+.bar { display: flex; flex-direction: column; gap: 4px; }
+.title { font-size: 30px; font-weight: 800; color: #fff; letter-spacing: 0.01em; }
+.hint { font-size: 14px; color: #8a90a0; }
+
+/* ── focusable controls share one ring ─────────────────────────────────── */
+.btn, .tile, .mi {
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: #1a2030;
+  color: #d8dbe2;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+}
+.btn:focus, .tile:focus, .mi:focus {
+  border-color: #36e0ff;
+  box-shadow: 0 0 0 3px rgba(54, 224, 255, 0.35), 0 0 22px rgba(54, 224, 255, 0.45);
+  background: #20304a;
+  color: #fff;
+}
+.btn:active, .tile:active, .mi:active { background: #2b4a6a; transform: translateY(1px); }
+
+/* ── toolbar ───────────────────────────────────────────────────────────── */
+.toolbar { display: flex; gap: 12px; flex-wrap: wrap; }
+.btn {
+  padding: 12px 22px;
+  border-radius: 11px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.btn.primary { background: #2962ff; border-color: #2962ff; color: #fff; }
+.btn.primary:focus { box-shadow: 0 0 0 3px rgba(54,224,255,0.5), 0 0 24px rgba(41,98,255,0.6); }
+
+/* ── tile grid ─────────────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  max-width: 760px;
+}
+.tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 26px 12px;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 700;
+}
+.t-ic {
+  width: 44px; height: 44px;
+  border-radius: 13px;
+  background: linear-gradient(135deg, #3a4b8c, #2962ff);
+}
+.t-ic.b { background: linear-gradient(135deg, #8c3a6b, #ff2992); }
+.t-ic.c { background: linear-gradient(135deg, #3a8c5a, #16c784); }
+.t-ic.d { background: linear-gradient(135deg, #8c7a3a, #ffd24a); }
+.t-ic.e { background: linear-gradient(135deg, #6b3a8c, #a855f7); }
+.t-ic.f { background: linear-gradient(135deg, #3a7a8c, #36e0ff); }
+
+/* ── footer legend ─────────────────────────────────────────────────────── */
+.foot {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: #8a90a0;
+}
+.dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  font-size: 13px;
+  font-weight: 800;
+  color: #0a0c12;
+  margin-right: 2px;
+}
+.dot.south { background: #62cf5c; }
+.dot.east { background: #ef5350; color: #fff; margin-left: 16px; }
+.kbd {
+  padding: 3px 9px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.12);
+  font-size: 12px;
+  font-weight: 700;
+  color: #c7cad1;
+  margin-left: 16px;
+}
+
+/* ── pause menu overlay ────────────────────────────────────────────────── */
+.menu {
+  display: none;
+  position: absolute;
+  left: 0; top: 0; right: 0; bottom: 0;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 8, 14, 0.72);
+}
+.menu.open { display: flex; }
+.panel {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 26px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #1a2030 0%, #141826 100%);
+  border: 1px solid rgba(255,255,255,0.10);
+  box-shadow: 0 24px 60px rgba(0,0,0,0.6);
+}
+.panel-title { margin: 0 0 6px; font-size: 22px; font-weight: 800; color: #fff; text-align: center; }
+.mi {
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: center;
+}
+.mi.danger { background: #3a1a1f; border-color: rgba(239,83,80,0.4); color: #ff8a86; }
+.mi.danger:focus { border-color: #ef5350; box-shadow: 0 0 0 3px rgba(239,83,80,0.4), 0 0 22px rgba(239,83,80,0.5); }

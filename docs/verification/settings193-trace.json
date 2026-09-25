@@ -1,0 +1,488 @@
+{
+  "settings_typing": {
+    "identity": {
+      "executable_sha256": "40d0b829cbdfc6884cccba27875bb144bdc0cedd292bdc2e914e4935fe18a689",
+      "library_sha256": "268b13335427a832c6b069d9e86231d79e1c2a86c7f93d2c349737c75e5714a9",
+      "command": [
+        "<repo>\\.utmp\\safe-engine71\\frontier-opacity193\\playable\\FrontierCamp.exe",
+        "--rendering-method",
+        "gl_compatibility",
+        "--fixed-fps",
+        "60",
+        "--position",
+        "-10000,-10000",
+        "--audio-driver",
+        "Dummy",
+        "--",
+        "--perf"
+      ],
+      "instrumented": true,
+      "functional_passed": true,
+      "scope": "Diagnostic only: per-binding stderr logging perturbs timing; no budget qualification."
+    },
+    "result": {
+      "adapter": "NVIDIA GeForce RTX 5080",
+      "auto_update": true,
+      "debug_build": false,
+      "engine": {
+        "build": "custom_build",
+        "hash": "unknown",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (custom_build)",
+        "timestamp": 0
+      },
+      "passed": true,
+      "renderer": "gl_compatibility",
+      "results": [
+        {
+          "api_cpu": {
+            "max_ms": 1.288,
+            "mean_ms": 0.108349166666666,
+            "median_ms": 0.003,
+            "p95_ms": 0.668,
+            "p99_ms": 0.935,
+            "samples": 1200
+          },
+          "audio_setting_updates": 0,
+          "binding_cpu": {
+            "max_ms": 0.0,
+            "mean_ms": 0.0,
+            "median_ms": 0.0,
+            "p95_ms": 0.0,
+            "p99_ms": 0.0,
+            "samples": 1200
+          },
+          "binding_refreshes": 0,
+          "canvas_draw_calls": 54,
+          "changed_api_cpu": {
+            "max_ms": 1.288,
+            "mean_ms": 0.6355,
+            "median_ms": 0.589,
+            "p95_ms": 0.958,
+            "p99_ms": 1.161,
+            "samples": 200
+          },
+          "changed_core_cpu": {
+            "max_ms": 0.577100000000002,
+            "mean_ms": 0.2394615,
+            "median_ms": 0.224299999999999,
+            "p95_ms": 0.311900000000009,
+            "p99_ms": 0.425899999999999,
+            "samples": 200
+          },
+          "changed_whole_frame": {
+            "max_ms": 9.033,
+            "mean_ms": 4.3547,
+            "median_ms": 4.055,
+            "p95_ms": 6.753,
+            "p99_ms": 7.783,
+            "samples": 200
+          },
+          "core_cpu": {
+            "max_ms": 0.577100000000002,
+            "mean_ms": 0.0426354166666658,
+            "median_ms": 0.00300000000000011,
+            "p95_ms": 0.247700000000002,
+            "p99_ms": 0.310899999999997,
+            "samples": 1200
+          },
+          "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+          "core_update_count": {
+            "max": 3.0,
+            "mean": 1.175,
+            "median": 1.0,
+            "p95": 2.0,
+            "p99": 2.0,
+            "samples": 1200
+          },
+          "elements": 116,
+          "frames": 1200,
+          "godot_static_memory_change_bytes": null,
+          "scene_draw_calls": 1142,
+          "scene_primitives": 114626,
+          "slow_frames": [
+            {
+              "api_cpu_ms": 0.588,
+              "changed": true,
+              "core_cpu_ms": 0.209099999999999,
+              "core_updates": 2.0,
+              "frame": 144,
+              "viewport_render_cpu_ms": 1.12100005149841,
+              "viewport_render_gpu_ms": 2.65400004386902,
+              "whole_frame_ms": 9.033
+            },
+            {
+              "api_cpu_ms": 0.003,
+              "changed": false,
+              "core_cpu_ms": 0.00310000000000343,
+              "core_updates": 1.0,
+              "frame": 689,
+              "viewport_render_cpu_ms": 1.34399998188019,
+              "viewport_render_gpu_ms": 0.435999989509583,
+              "whole_frame_ms": 8.459
+            },
+            {
+              "api_cpu_ms": 0.003,
+              "changed": false,
+              "core_cpu_ms": 0.00289999999999679,
+              "core_updates": 1.0,
+              "frame": 155,
+              "viewport_render_cpu_ms": 0.917999982833862,
+              "viewport_render_gpu_ms": 0.439000010490417,
+              "whole_frame_ms": 8.05
+            },
+            {
+              "api_cpu_ms": 0.74,
+              "changed": true,
+              "core_cpu_ms": 0.320800000000006,
+              "core_updates": 3.0,
+              "frame": 720,
+              "viewport_render_cpu_ms": 0.975000023841858,
+              "viewport_render_gpu_ms": 0.435999989509583,
+              "whole_frame_ms": 7.852
+            },
+            {
+              "api_cpu_ms": 0.944,
+              "changed": true,
+              "core_cpu_ms": 0.268900000000002,
+              "core_updates": 2.0,
+              "frame": 300,
+              "viewport_render_cpu_ms": 0.907000005245209,
+              "viewport_render_gpu_ms": 0.435999989509583,
+              "whole_frame_ms": 7.783
+            },
+            {
+              "api_cpu_ms": 0.002,
+              "changed": false,
+              "core_cpu_ms": 0.00280000000000058,
+              "core_updates": 1.0,
+              "frame": 353,
+              "viewport_render_cpu_ms": 0.953999996185303,
+              "viewport_render_gpu_ms": 0.437999993562698,
+              "whole_frame_ms": 7.783
+            },
+            {
+              "api_cpu_ms": 0.003,
+              "changed": false,
+              "core_cpu_ms": 0.00320000000000675,
+              "core_updates": 1.0,
+              "frame": 1315,
+              "viewport_render_cpu_ms": 1.2610000371933,
+              "viewport_render_gpu_ms": 0.435999989509583,
+              "whole_frame_ms": 7.632
+            },
+            {
+              "api_cpu_ms": 0.003,
+              "changed": false,
+              "core_cpu_ms": 0.00310000000000343,
+              "core_updates": 1.0,
+              "frame": 1129,
+              "viewport_render_cpu_ms": 0.939000010490417,
+              "viewport_render_gpu_ms": 0.435000002384186,
+              "whole_frame_ms": 7.575
+            }
+          ],
+          "texture_memory_bytes": 74310911,
+          "viewport_render_cpu": {
+            "max_ms": 2.20600008964539,
+            "mean_ms": 1.07003083457549,
+            "median_ms": 0.990000009536743,
+            "p95_ms": 1.43299996852875,
+            "p99_ms": 1.807000041008,
+            "samples": 1200
+          },
+          "viewport_render_gpu": {
+            "max_ms": 4.55800008773804,
+            "mean_ms": 0.507354997371634,
+            "median_ms": 0.435999989509583,
+            "p95_ms": 0.680999994277954,
+            "p99_ms": 2.67199993133545,
+            "samples": 1200
+          },
+          "warmups": 120,
+          "weva_draw_commands": 205,
+          "weva_triangles": 4658,
+          "whole_frame": {
+            "max_ms": 9.033,
+            "mean_ms": 3.24309083333333,
+            "median_ms": 3.016,
+            "p95_ms": 5.756,
+            "p99_ms": 7.052,
+            "samples": 1200
+          },
+          "workload": "settings_typing"
+        }
+      ],
+      "simulated_dt": 0.0166666666666667,
+      "viewport": [
+        3840,
+        2160
+      ],
+      "world": "3d",
+      "world_instances": 480
+    },
+    "binding_log_entries_including_setup": 224,
+    "binding_core_median_ms_including_setup": 0.1395,
+    "binding_models_median_ms_including_setup": 0.021249999999999998,
+    "core_stage_analysis": {
+      "selection": "Trace index >=256 and total update >0.05ms; excludes startup but not an exact workload/frame join.",
+      "samples": 195,
+      "stage_total_ms": {
+        "cascade": 10.4746,
+        "animate": 0.2666,
+        "boxes_including_incremental_reflow": 8.8901,
+        "full_layout": 0.042,
+        "paint": 23.522,
+        "total": 43.8801
+      },
+      "interpretation": "Aggregated instrumented update time, not per-click p95 or isolated frame cost."
+    }
+  },
+  "settings_toggle": {
+    "identity": {
+      "executable_sha256": "40d0b829cbdfc6884cccba27875bb144bdc0cedd292bdc2e914e4935fe18a689",
+      "library_sha256": "268b13335427a832c6b069d9e86231d79e1c2a86c7f93d2c349737c75e5714a9",
+      "command": [
+        "<repo>\\.utmp\\safe-engine71\\frontier-opacity193\\playable\\FrontierCamp.exe",
+        "--rendering-method",
+        "gl_compatibility",
+        "--fixed-fps",
+        "60",
+        "--position",
+        "-10000,-10000",
+        "--audio-driver",
+        "Dummy",
+        "--",
+        "--perf"
+      ],
+      "instrumented": true,
+      "functional_passed": true,
+      "scope": "Diagnostic only: per-binding stderr logging perturbs timing; no budget qualification."
+    },
+    "result": {
+      "adapter": "NVIDIA GeForce RTX 5080",
+      "auto_update": true,
+      "debug_build": false,
+      "engine": {
+        "build": "custom_build",
+        "hash": "unknown",
+        "hex": 263938,
+        "major": 4,
+        "minor": 7,
+        "patch": 2,
+        "status": "stable",
+        "string": "4.7.2-stable (custom_build)",
+        "timestamp": 0
+      },
+      "passed": true,
+      "renderer": "gl_compatibility",
+      "results": [
+        {
+          "api_cpu": {
+            "max_ms": 3.197,
+            "mean_ms": 0.247279166666663,
+            "median_ms": 0.003,
+            "p95_ms": 1.887,
+            "p99_ms": 2.384,
+            "samples": 1200
+          },
+          "audio_setting_updates": 0,
+          "binding_cpu": {
+            "max_ms": 0.0,
+            "mean_ms": 0.0,
+            "median_ms": 0.0,
+            "p95_ms": 0.0,
+            "p99_ms": 0.0,
+            "samples": 1200
+          },
+          "binding_refreshes": 0,
+          "canvas_draw_calls": 42,
+          "changed_api_cpu": {
+            "max_ms": 3.197,
+            "mean_ms": 1.469175,
+            "median_ms": 1.629,
+            "p95_ms": 2.494,
+            "p99_ms": 2.906,
+            "samples": 200
+          },
+          "changed_core_cpu": {
+            "max_ms": 1.60990000000001,
+            "mean_ms": 0.9522105,
+            "median_ms": 0.902100000000019,
+            "p95_ms": 1.2842,
+            "p99_ms": 1.44729999999998,
+            "samples": 200
+          },
+          "changed_whole_frame": {
+            "max_ms": 9.398,
+            "mean_ms": 5.085655,
+            "median_ms": 4.889,
+            "p95_ms": 7.327,
+            "p99_ms": 8.414,
+            "samples": 200
+          },
+          "core_cpu": {
+            "max_ms": 1.60990000000001,
+            "mean_ms": 0.161078083333334,
+            "median_ms": 0.00280000000000769,
+            "p95_ms": 0.957700000000003,
+            "p99_ms": 1.27959999999999,
+            "samples": 1200
+          },
+          "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+          "core_update_count": {
+            "max": 4.0,
+            "mean": 1.5,
+            "median": 1.0,
+            "p95": 4.0,
+            "p99": 4.0,
+            "samples": 1200
+          },
+          "elements": 116,
+          "frames": 1200,
+          "godot_static_memory_change_bytes": null,
+          "scene_draw_calls": 1142,
+          "scene_primitives": 114626,
+          "slow_frames": [
+            {
+              "api_cpu_ms": 1.327,
+              "changed": true,
+              "core_cpu_ms": 1.40430000000001,
+              "core_updates": 4.0,
+              "frame": 834,
+              "viewport_render_cpu_ms": 1.42200005054474,
+              "viewport_render_gpu_ms": 0.435000002384186,
+              "whole_frame_ms": 9.398
+            },
+            {
+              "api_cpu_ms": 0.003,
+              "changed": false,
+              "core_cpu_ms": 0.00329999999999586,
+              "core_updates": 1.0,
+              "frame": 903,
+              "viewport_render_cpu_ms": 1.05200004577637,
+              "viewport_render_gpu_ms": 0.375,
+              "whole_frame_ms": 8.926
+            },
+            {
+              "api_cpu_ms": 2.134,
+              "changed": true,
+              "core_cpu_ms": 1.00220000000002,
+              "core_updates": 4.0,
+              "frame": 624,
+              "viewport_render_cpu_ms": 1.00499999523163,
+              "viewport_render_gpu_ms": 0.375999987125397,
+              "whole_frame_ms": 8.539
+            },
+            {
+              "api_cpu_ms": 0.028,
+              "changed": false,
+              "core_cpu_ms": 0.0023000000000053,
+              "core_updates": 1.0,
+              "frame": 476,
+              "viewport_render_cpu_ms": 0.913999974727631,
+              "viewport_render_gpu_ms": 0.597000002861023,
+              "whole_frame_ms": 8.529
+            },
+            {
+              "api_cpu_ms": 2.381,
+              "changed": true,
+              "core_cpu_ms": 1.15589999999997,
+              "core_updates": 4.0,
+              "frame": 1188,
+              "viewport_render_cpu_ms": 0.887000024318695,
+              "viewport_render_gpu_ms": 0.375,
+              "whole_frame_ms": 8.414
+            },
+            {
+              "api_cpu_ms": 0.003,
+              "changed": false,
+              "core_cpu_ms": 0.00199999999999534,
+              "core_updates": 1.0,
+              "frame": 548,
+              "viewport_render_cpu_ms": 0.90200001001358,
+              "viewport_render_gpu_ms": 0.43299999833107,
+              "whole_frame_ms": 8.219
+            },
+            {
+              "api_cpu_ms": 0.003,
+              "changed": false,
+              "core_cpu_ms": 0.00289999999999679,
+              "core_updates": 1.0,
+              "frame": 123,
+              "viewport_render_cpu_ms": 1.20799994468689,
+              "viewport_render_gpu_ms": 0.375,
+              "whole_frame_ms": 8.108
+            },
+            {
+              "api_cpu_ms": 0.004,
+              "changed": false,
+              "core_cpu_ms": 0.00249999999999773,
+              "core_updates": 1.0,
+              "frame": 899,
+              "viewport_render_cpu_ms": 0.961000025272369,
+              "viewport_render_gpu_ms": 0.377999991178513,
+              "whole_frame_ms": 7.863
+            }
+          ],
+          "texture_memory_bytes": 74310911,
+          "viewport_render_cpu": {
+            "max_ms": 2.32100009918213,
+            "mean_ms": 1.02972333456079,
+            "median_ms": 0.958000004291534,
+            "p95_ms": 1.38699996471405,
+            "p99_ms": 1.74100005626678,
+            "samples": 1200
+          },
+          "viewport_render_gpu": {
+            "max_ms": 4.67500019073486,
+            "mean_ms": 0.481050830433766,
+            "median_ms": 0.433999985456467,
+            "p95_ms": 0.71399998664856,
+            "p99_ms": 2.85899996757507,
+            "samples": 1200
+          },
+          "warmups": 120,
+          "weva_draw_commands": 170,
+          "weva_triangles": 3148,
+          "whole_frame": {
+            "max_ms": 9.398,
+            "mean_ms": 3.29489583333334,
+            "median_ms": 3.027,
+            "p95_ms": 6.009,
+            "p99_ms": 7.716,
+            "samples": 1200
+          },
+          "workload": "settings_toggle"
+        }
+      ],
+      "simulated_dt": 0.0166666666666667,
+      "viewport": [
+        3840,
+        2160
+      ],
+      "world": "3d",
+      "world_instances": 480
+    },
+    "binding_log_entries_including_setup": 3,
+    "binding_core_median_ms_including_setup": 0.1599,
+    "binding_models_median_ms_including_setup": 0.0266,
+    "core_stage_analysis": {
+      "selection": "Trace index >=256 and total update >0.05ms; excludes startup but not an exact workload/frame join.",
+      "samples": 482,
+      "stage_total_ms": {
+        "cascade": 51.1573,
+        "animate": 0.8485,
+        "boxes_including_incremental_reflow": 76.6902,
+        "full_layout": 0.086,
+        "paint": 50.4166,
+        "total": 180.9635
+      },
+      "interpretation": "Aggregated instrumented update time, not per-click p95 or isolated frame cost."
+    }
+  }
+}

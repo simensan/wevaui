@@ -1,8 +1,11 @@
 # Weva v1 Roadmap — the seven workstreams
 
 Status legend: 🔵 design · 🟡 in progress · 🟢 landed · ⚪ blocked/queued
-Each workstream lands in test-covered increments (headless TestVerifyAll +
-in-Unity suites); Chrome is the reference for any observable behaviour.
+> **Historical (2026-09-13).** These workstreams were the C# engine's; the
+> engine is now `libweva/` (C++), and its status lives in
+> `docs/PRODUCT_READINESS.md`. Kept for the decisions it records.
+
+Chrome is the reference for any observable behaviour.
 
 ## W1. Deterministic text — kill font-drift 🟡
 **Why:** the last big source of Chrome divergence; masks real bugs (the

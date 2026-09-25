@@ -1,0 +1,188 @@
+{
+  "change": "Opt-in thread-local 4096-update elapsed stage buffer; records emitted on teardown instead of during frames.",
+  "installed": false,
+  "binary_sha256": "66a282d85b008e985b13f96683df79db645ca11e995cb5a272aa90cb92bec6ac",
+  "source_sha256": "7f0ac4d7217b1de12ffc7256034af99660e20f66cbdf7019b61637e4a62bff30",
+  "invocation": {
+    "command": [
+      "<repo>\\.utmp\\safe-engine71\\trace178-export\\FrontierCamp.exe",
+      "--audio-driver",
+      "Dummy",
+      "--log-file",
+      "<repo>\\.utmp\\safe-engine71\\hover178-buffered\\engine.log",
+      "--rendering-method",
+      "mobile",
+      "--fixed-fps",
+      "60",
+      "--position",
+      "-10000,-10000",
+      "--",
+      "--perf"
+    ],
+    "environment": {
+      "WEVA_STAGE_TRACE": "1",
+      "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\hover178-buffered",
+      "WEVA_FRONTIER_FRAMES": "4800",
+      "WEVA_FRONTIER_WARMUPS": "120",
+      "WEVA_FRONTIER_CASES": "hover",
+      "WEVA_FRONTIER_AUTO": "0",
+      "WEVA_FRONTIER_REVERSE": "0",
+      "WEVA_FRONTIER_CAPTURE": "0",
+      "WEVA_FRONTIER_RESOLUTION": "1280x720",
+      "WEVA_FRONTIER_WORLD": "static"
+    }
+  },
+  "analysis": {
+    "metrics": {
+      "cascade": {
+        "median": 0.0363,
+        "p95": 0.0688,
+        "max": 0.3873
+      },
+      "animate": {
+        "median": 0.0002,
+        "p95": 0.0004,
+        "max": 0.034
+      },
+      "boxes": {
+        "median": 0.0001,
+        "p95": 0.0002,
+        "max": 0.0261
+      },
+      "layout": {
+        "median": 0.0001,
+        "p95": 0.0001,
+        "max": 0.0004
+      },
+      "paint": {
+        "median": 0.0496,
+        "p95": 0.0933,
+        "max": 0.3412
+      },
+      "total": {
+        "median": 0.0885,
+        "p95": 0.1661,
+        "max": 0.441
+      }
+    },
+    "slowest": [
+      {
+        "sequence": 2308,
+        "cascade": 0.3873,
+        "animate": 0.0002,
+        "boxes": 0.0002,
+        "layout": 0.0,
+        "paint": 0.0515,
+        "total": 0.441,
+        "tail": 0.0018000000000000238
+      },
+      {
+        "sequence": 1176,
+        "cascade": 0.3646,
+        "animate": 0.0003,
+        "boxes": 0.0001,
+        "layout": 0.0001,
+        "paint": 0.0457,
+        "total": 0.4123,
+        "tail": 0.0015000000000000013
+      },
+      {
+        "sequence": 3718,
+        "cascade": 0.0494,
+        "animate": 0.0004,
+        "boxes": 0.0001,
+        "layout": 0.0001,
+        "paint": 0.3412,
+        "total": 0.3934,
+        "tail": 0.0022000000000000353
+      },
+      {
+        "sequence": 3348,
+        "cascade": 0.3385,
+        "animate": 0.0003,
+        "boxes": 0.0001,
+        "layout": 0.0001,
+        "paint": 0.0524,
+        "total": 0.3928,
+        "tail": 0.0013999999999999568
+      },
+      {
+        "sequence": 1109,
+        "cascade": 0.0719,
+        "animate": 0.0003,
+        "boxes": 0.0001,
+        "layout": 0.0001,
+        "paint": 0.3174,
+        "total": 0.3918,
+        "tail": 0.0019999999999999463
+      },
+      {
+        "sequence": 1163,
+        "cascade": 0.2956,
+        "animate": 0.0003,
+        "boxes": 0.0002,
+        "layout": 0.0001,
+        "paint": 0.0913,
+        "total": 0.3893,
+        "tail": 0.0018000000000000238
+      },
+      {
+        "sequence": 971,
+        "cascade": 0.2846,
+        "animate": 0.0003,
+        "boxes": 0.0002,
+        "layout": 0.0,
+        "paint": 0.0889,
+        "total": 0.3758,
+        "tail": 0.0018000000000000238
+      },
+      {
+        "sequence": 2693,
+        "cascade": 0.2213,
+        "animate": 0.0003,
+        "boxes": 0.0002,
+        "layout": 0.0001,
+        "paint": 0.1502,
+        "total": 0.3741,
+        "tail": 0.0020000000000000018
+      },
+      {
+        "sequence": 2078,
+        "cascade": 0.0338,
+        "animate": 0.0003,
+        "boxes": 0.0001,
+        "layout": 0.0001,
+        "paint": 0.3354,
+        "total": 0.3713,
+        "tail": 0.0016000000000000458
+      },
+      {
+        "sequence": 2994,
+        "cascade": 0.0338,
+        "animate": 0.0002,
+        "boxes": 0.0001,
+        "layout": 0.0001,
+        "paint": 0.3246,
+        "total": 0.3604,
+        "tail": 0.0015999999999999903
+      }
+    ],
+    "record_count": 4096,
+    "first_sequence": 827,
+    "last_sequence": 4922
+  },
+  "total_logged_updates": 4923,
+  "buffer_records": 4096,
+  "emission_after_performance_complete": true,
+  "functional_passed": true,
+  "core_ctest": {
+    "passed": 14,
+    "failed": 0,
+    "seconds": 23.89
+  },
+  "limitations": [
+    "Instrumented run, not replacement for original desktop timing failure.",
+    "Elapsed stage intervals include scheduler pauses; no exclusive CPU attribution yet.",
+    "Only one Vulkan diagnostic run, and no native release installation."
+  ]
+}

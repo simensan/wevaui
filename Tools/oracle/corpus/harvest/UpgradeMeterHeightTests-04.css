@@ -1,0 +1,4 @@
+
+                .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 600px; }
+                .slot { aspect-ratio: 1; background: #1c2435; }
+            

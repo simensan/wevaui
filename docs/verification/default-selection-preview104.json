@@ -1,0 +1,1285 @@
+{
+  "candidate": "Windows preview104 installed",
+  "browser_comparison": {
+    "browser": "Chrome/152.0.7977.77",
+    "rows": [
+      {
+        "tag": "input",
+        "dirty": false,
+        "focused": false,
+        "action": "reset",
+        "value": "abcdef",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "input",
+        "dirty": false,
+        "focused": false,
+        "action": "default",
+        "value": "new default",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "input",
+        "dirty": false,
+        "focused": false,
+        "action": "same-default",
+        "value": "abcdef",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "input",
+        "dirty": false,
+        "focused": false,
+        "action": "attribute",
+        "value": "new attribute",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "input",
+        "dirty": false,
+        "focused": true,
+        "action": "reset",
+        "value": "abcdef",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "input",
+        "dirty": false,
+        "focused": true,
+        "action": "default",
+        "value": "new default",
+        "selection": [
+          0,
+          0,
+          "forward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "input",
+        "dirty": false,
+        "focused": true,
+        "action": "same-default",
+        "value": "abcdef",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "input",
+        "dirty": false,
+        "focused": true,
+        "action": "attribute",
+        "value": "new attribute",
+        "selection": [
+          0,
+          0,
+          "forward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "input",
+        "dirty": true,
+        "focused": false,
+        "action": "reset",
+        "value": "abcdef",
+        "selection": [
+          6,
+          6,
+          "forward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "input",
+        "dirty": true,
+        "focused": false,
+        "action": "default",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "input",
+        "dirty": true,
+        "focused": false,
+        "action": "same-default",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "input",
+        "dirty": true,
+        "focused": false,
+        "action": "attribute",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "input",
+        "dirty": true,
+        "focused": true,
+        "action": "reset",
+        "value": "abcdef",
+        "selection": [
+          6,
+          6,
+          "forward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "input",
+        "dirty": true,
+        "focused": true,
+        "action": "default",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "input",
+        "dirty": true,
+        "focused": true,
+        "action": "same-default",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "input",
+        "dirty": true,
+        "focused": true,
+        "action": "attribute",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "textarea",
+        "dirty": false,
+        "focused": false,
+        "action": "reset",
+        "value": "abcdef",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "textarea",
+        "dirty": false,
+        "focused": false,
+        "action": "default",
+        "value": "new default",
+        "selection": [
+          0,
+          0,
+          "forward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "textarea",
+        "dirty": false,
+        "focused": false,
+        "action": "same-default",
+        "value": "abcdef",
+        "selection": [
+          0,
+          0,
+          "forward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "textarea",
+        "dirty": false,
+        "focused": false,
+        "action": "attribute",
+        "value": "abcdef",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "textarea",
+        "dirty": false,
+        "focused": true,
+        "action": "reset",
+        "value": "abcdef",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "textarea",
+        "dirty": false,
+        "focused": true,
+        "action": "default",
+        "value": "new default",
+        "selection": [
+          0,
+          0,
+          "forward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "textarea",
+        "dirty": false,
+        "focused": true,
+        "action": "same-default",
+        "value": "abcdef",
+        "selection": [
+          0,
+          0,
+          "forward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "textarea",
+        "dirty": false,
+        "focused": true,
+        "action": "attribute",
+        "value": "abcdef",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "textarea",
+        "dirty": true,
+        "focused": false,
+        "action": "reset",
+        "value": "abcdef",
+        "selection": [
+          6,
+          6,
+          "forward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "textarea",
+        "dirty": true,
+        "focused": false,
+        "action": "default",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "textarea",
+        "dirty": true,
+        "focused": false,
+        "action": "same-default",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "textarea",
+        "dirty": true,
+        "focused": false,
+        "action": "attribute",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "b"
+      },
+      {
+        "tag": "textarea",
+        "dirty": true,
+        "focused": true,
+        "action": "reset",
+        "value": "abcdef",
+        "selection": [
+          6,
+          6,
+          "forward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "textarea",
+        "dirty": true,
+        "focused": true,
+        "action": "default",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "textarea",
+        "dirty": true,
+        "focused": true,
+        "action": "same-default",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "a"
+      },
+      {
+        "tag": "textarea",
+        "dirty": true,
+        "focused": true,
+        "action": "attribute",
+        "value": "edited",
+        "selection": [
+          1,
+          4,
+          "backward"
+        ],
+        "active": "a"
+      }
+    ]
+  },
+  "comparison_scope": "32 ASCII selection/value/focus cases for text input and textarea defaults/resets; not full browser form parity.",
+  "native_build_metadata": {
+    "schema": 1,
+    "library_sha256": "0bf8888c46bb27dbafad86f680048ebb52eb08ba2e4f45b3036c73dc963ecaf9",
+    "source": {
+      "revision": "ba5fc1a124e47f8dbf8973ff59fdbfc63e5cf7ce",
+      "dirty": true,
+      "sha256": "5e8a49854ddab068ca8dc72008152325b042baaa386d0589296dd13353c462ee"
+    },
+    "godot_cpp": {
+      "revision": null,
+      "dirty": null,
+      "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+    },
+    "configuration": "Release",
+    "compiler": {
+      "id": "MSVC",
+      "version": "19.44.35222.0"
+    },
+    "cmake_version": "4.3.2",
+    "godot_api": "4.7",
+    "precision": "single",
+    "custom_api": null,
+    "sanitizers": false
+  },
+  "native_checks": {
+    "binary_sha256": "0bf8888c46bb27dbafad86f680048ebb52eb08ba2e4f45b3036c73dc963ecaf9",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 91
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 362
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 165
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      }
+    ],
+    "passed": true,
+    "checks": 9024
+  },
+  "installation": {
+    "library_sha256": "0bf8888c46bb27dbafad86f680048ebb52eb08ba2e4f45b3036c73dc963ecaf9",
+    "version": "0.1.0-preview.104",
+    "targets": {
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
+    },
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed104-backup"
+  },
+  "timing_budget": {
+    "profile": "Frontier development desktop CPU targets",
+    "passed": true,
+    "errors": [],
+    "checks": [
+      {
+        "run": "gl_compatibility/1",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.005,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.013,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.886,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.755,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.545,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.586,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.268,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.366,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.08,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.435,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.384,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/1",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.404,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.003,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.008,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.443,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.411,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.427,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.451,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.195,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.3,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.812,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.516,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.381,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/2",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.666,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.003,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.006,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.423,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.463,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.425,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.458,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.19,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.298,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.773,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.352,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.41,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "gl_compatibility/3",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.481,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.003,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.006,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.459,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.552,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.414,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.445,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.196,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.297,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.146,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.539,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.537,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/1",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.833,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.004,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.008,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.438,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.491,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.404,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.432,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.196,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.28,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.177,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.541,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.511,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/2",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.758,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "ui_disabled",
+        "metric": "api_cpu",
+        "p95_ms": 0.003,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "idle",
+        "metric": "api_cpu",
+        "p95_ms": 0.006,
+        "limit_ms": 0.05,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "clock_1hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.62,
+        "limit_ms": 3.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "vitals_10hz",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.523,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "clock_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.398,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "vitals_update",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.435,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "redundant_signal",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.192,
+        "limit_ms": 0.3,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "hover",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.242,
+        "limit_ms": 0.5,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "inventory_sort",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.19,
+        "limit_ms": 2.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "settings_typing",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.585,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "settings_slider",
+        "metric": "changed_api_cpu",
+        "p95_ms": 0.579,
+        "limit_ms": 1.0,
+        "passed": true
+      },
+      {
+        "run": "mobile/3",
+        "workload": "settings_toggle",
+        "metric": "changed_api_cpu",
+        "p95_ms": 1.711,
+        "limit_ms": 3.0,
+        "passed": true
+      }
+    ],
+    "policy": "Every measured run must meet every CPU p95 limit; no averaging away failures.",
+    "profile_sha256": "33f33ca9e14603ae68262b77f6d2629bbfd139a96437a38e7e1efcc870a8251a",
+    "definition": {
+      "schema": 1,
+      "name": "Frontier development desktop CPU targets",
+      "description": "Provisional engineering targets for this measured RTX 5080 development machine, manual updates, static scene, 1280x720. Adapter matching does not identify the CPU or certify other hardware. CPU API timings exclude total GPU/UI cost.",
+      "scope": {
+        "resolution": [
+          1280,
+          720
+        ],
+        "world": "static",
+        "automatic": false,
+        "adapter": "NVIDIA GeForce RTX 5080"
+      },
+      "renderers": [
+        "gl_compatibility",
+        "mobile"
+      ],
+      "minimum_runs": 3,
+      "minimum_frames": 600,
+      "minimum_warmups": 120,
+      "limits_ms": {
+        "ui_disabled": {
+          "api_cpu": 0.05
+        },
+        "idle": {
+          "api_cpu": 0.05
+        },
+        "clock_1hz": {
+          "changed_api_cpu": 3.0
+        },
+        "vitals_10hz": {
+          "changed_api_cpu": 1.0
+        },
+        "clock_update": {
+          "changed_api_cpu": 1.0
+        },
+        "vitals_update": {
+          "changed_api_cpu": 1.0
+        },
+        "redundant_signal": {
+          "changed_api_cpu": 0.3
+        },
+        "hover": {
+          "changed_api_cpu": 0.5
+        },
+        "inventory_sort": {
+          "changed_api_cpu": 2.0
+        },
+        "settings_typing": {
+          "changed_api_cpu": 1.0
+        },
+        "settings_slider": {
+          "changed_api_cpu": 1.0
+        },
+        "settings_toggle": {
+          "changed_api_cpu": 3.0
+        }
+      }
+    }
+  },
+  "timing_scope": {
+    "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+    "executable_sha256": "1949b8a4f76d8a5b0810360017cd511fb20e8698927b3093b25e9a659c64d0d1",
+    "library_sha256": "0bf8888c46bb27dbafad86f680048ebb52eb08ba2e4f45b3036c73dc963ecaf9",
+    "source_sha256": {
+      "boot.gd": "282ee9d8b20d65eaaaf0ece4077004f89b05ead6cab3043edaf899dc443176a0",
+      "boot.tscn": "988ee0d988b80505dbe57fa63f711b69ec5d954661ee184c1d0dc738d4e69dd1",
+      "project.godot": "fa8fe59de99a279bd0209857292ef58fbc609d38968c6b0041b818781afa1b92",
+      "main.tscn": "6edfc680b3b4a24afb40f27e0e841c0b575b1b38c326e1b3c07b2ef768e97bef",
+      "game.gd": "d3a70197907c52358ca4b30eeb098a14159b4dd39fe71900aa461be4f363e96b",
+      "camp_state.gd": "c6a673b819b08563ff6c68c05646c95cec705e084199ebb3381b28319ed34daa",
+      "tests/performance.gd": "3bcedfee076af2420a2adfac6028128d19e4de1e29490462fec8b051d93d1ae6",
+      "tests/load_world.gd": "02e913f61120f526ea6fccb4a0186b32be92f444bd41759ca5e75f11a49cdcdc",
+      "ui/camp.html": "95ecfc6de5958bc9f69a147069be54a2311d6ec46a77893f35410673f9fb5c20",
+      "ui/camp.css": "240119a4baa0a2db651dc644f83c054ab87f7853446ac2ae2719f0a136f8a517",
+      "addons/weva/weva_view.gd": "1c04abf8dff900e424f55870d14dccdc6f71c730a20507437679eced306ca93c"
+    },
+    "automatic": false,
+    "world": "static",
+    "resolution": [
+      1280,
+      720
+    ],
+    "frames": 600,
+    "warmups": 120
+  },
+  "evidence_sha256": {
+    "default-selection-budget\\summary.json": "e33a3e2cdb0cac8c5d3d7a334caa7abb350aa095d017539a2851c12375b13844",
+    "selection-lifecycle32-chrome.json": "73dc00ffb41fc431d24fdef351e87788a57271d46fca31e8b71363531362676e",
+    "default-selection-before.log": "8df85ed00964a6d9c0f8527337c2fced380878515d561b5f8ffc792109ec5c08",
+    "default-selection-after-tests.log": "40194579d6fcd200f3cf9af3bccf7aff2fbaf4e8ac715af0a0b4d0e838dc1de2",
+    "default-selection-asan-tests.log": "4d50f87794add438e9a67937a1f05fd0912ddbd8324f33f3753314e5a8900fb4",
+    "default-selection-exports.log": "558c59c4bc1cc8dd09dab482e487c307f1aa17bd18a869d249815f0595c81673",
+    "installed104-form-state.log": "19aeb9d21105656f4c85a1d8d3f18f441f71417e19c4a5e93353da5e5ed2d29a",
+    "installed104-binding-tests.log": "4fbb1c07810d3194fa2458ef44b8212c3066a25dc50faddd25e0867b413ad1e7"
+  },
+  "limitations": [
+    "The broader 546-case Chrome comparison is historical preview100 evidence; broad layout audit is preview98.",
+    "Timing profile applies to the measured development desktop, not other hardware or automatic/3D workloads.",
+    "Type transitions, other default-child mutations, IME restoration and full selection conformance remain open."
+  ]
+}

@@ -1,0 +1,138 @@
+<!-- Combat HUD probe — exercises a different CSS surface than the
+     advanced-dashboard: clip-path polygons for hex ability slots,
+     @keyframes pulse animations, mask-image gradient fades on health
+     bars, mix-blend-mode overlays, text-stroke combat numbers,
+     conic-gradient cooldown sweeps, transform-based minimap radar.
+
+     Each section annotates the CSS module § it stresses so the audit
+     can identify divergences module-by-module against Chrome. -->
+<link rel="stylesheet" href="combat-hud.css">
+
+<div class="arena">
+
+  <!-- ── Floating damage / heal numbers (positioned absolutely) ─────
+       Stresses: -webkit-text-stroke, text-shadow stacking, transform-
+                 origin, opacity animation, @keyframes float-up. -->
+  <div class="dmg dmg-crit" style="--x: 38%; --y: 40%;">
+    <span class="dmg-value">2,847</span>
+    <span class="dmg-flag">CRIT</span>
+  </div>
+  <div class="dmg dmg-heal" style="--x: 22%; --y: 58%;">
+    <span class="dmg-value">+412</span>
+  </div>
+  <div class="dmg dmg-miss" style="--x: 62%; --y: 35%;">
+    <span class="dmg-value">MISS</span>
+  </div>
+
+  <!-- ── Target frame (top centre) ──────────────────────────────────
+       Stresses: position:absolute with inset, mask-image gradient,
+                 box-shadow stacking, status effects with filter. -->
+  <section class="target-frame" aria-label="Current target">
+    <div class="target-name">Aurelian Drake <small>Lv 42</small></div>
+    <div class="target-meter target-hp">
+      <div class="target-meter-fill" style="--pct: 32"></div>
+      <span class="target-meter-label">5,840 / 18,200</span>
+    </div>
+    <ul class="status-effects">
+      <li class="se se-burn" title="Burning">🔥<span class="se-stack">3</span></li>
+      <li class="se se-slow" title="Slow">❄</li>
+      <li class="se se-stun" title="Stunned">⚡</li>
+    </ul>
+  </section>
+
+  <!-- ── Hero portrait + bars (bottom-left) ────────────────────────
+       Stresses: mask-image fade, mix-blend-mode overlay,
+                 multi-track gradient, @keyframes pulse. -->
+  <section class="hero-frame" aria-label="Player vitals">
+    <div class="hero-portrait">
+      <div class="hero-portrait-img"></div>
+      <span class="hero-level">42</span>
+    </div>
+    <div class="hero-bars">
+      <div class="bar bar-hp low-hp">
+        <div class="bar-fill" style="--pct: 18"></div>
+        <span class="bar-label">HP 1,440 / 8,000</span>
+      </div>
+      <div class="bar bar-mp">
+        <div class="bar-fill" style="--pct: 64"></div>
+        <span class="bar-label">MP 320 / 500</span>
+      </div>
+      <div class="bar bar-xp">
+        <div class="bar-fill" style="--pct: 87"></div>
+        <span class="bar-label">XP 87%</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Ability bar (bottom-centre) — 6 hex slots ─────────────────
+       Stresses: clip-path: polygon for hex shape, conic-gradient for
+                 cooldown sweep, counter() / counters() for hotkey,
+                 :nth-child slot tinting, @keyframes ready-pulse. -->
+  <ol class="ability-bar">
+    <li class="ability ready" style="--icon: '⚔'; --hotkey: 'Q';">
+      <div class="ability-icon"></div>
+      <span class="ability-key">Q</span>
+    </li>
+    <li class="ability cooldown" style="--icon: '✦'; --hotkey: 'W'; --cd: 65;">
+      <div class="ability-icon"></div>
+      <div class="ability-sweep"></div>
+      <span class="ability-key">W</span>
+      <span class="ability-cd-text">4.2s</span>
+    </li>
+    <li class="ability ready" style="--icon: '✸'; --hotkey: 'E';">
+      <div class="ability-icon"></div>
+      <span class="ability-key">E</span>
+    </li>
+    <li class="ability cooldown" style="--icon: '☄'; --hotkey: 'R'; --cd: 30;">
+      <div class="ability-icon"></div>
+      <div class="ability-sweep"></div>
+      <span class="ability-key">R</span>
+      <span class="ability-cd-text">9.8s</span>
+    </li>
+    <li class="ability disabled" style="--icon: '⛔'; --hotkey: 'F';">
+      <div class="ability-icon"></div>
+      <span class="ability-key">F</span>
+    </li>
+    <li class="ability ultimate ready" style="--icon: '⭐'; --hotkey: 'X';">
+      <div class="ability-icon"></div>
+      <span class="ability-key">X</span>
+    </li>
+  </ol>
+
+  <!-- ── Minimap (bottom-right) ────────────────────────────────────
+       Stresses: border-radius:50% clip, transform:rotate animation,
+                 conic-gradient for radar sweep, position:absolute
+                 dots, mix-blend-mode. -->
+  <aside class="minimap" aria-label="Map">
+    <div class="minimap-bg"></div>
+    <div class="minimap-sweep"></div>
+    <span class="minimap-dot dot-enemy" style="--x: 70%; --y: 30%;"></span>
+    <span class="minimap-dot dot-enemy" style="--x: 35%; --y: 55%;"></span>
+    <span class="minimap-dot dot-ally" style="--x: 55%; --y: 75%;"></span>
+    <span class="minimap-dot dot-objective" style="--x: 80%; --y: 80%;"></span>
+    <span class="minimap-player"></span>
+    <span class="minimap-coord">42° N — 17° E</span>
+  </aside>
+
+  <!-- ── Buff tray (top-left) ──────────────────────────────────────
+       Stresses: counter() ordinals, conic-gradient ring as buff timer,
+                 filter:drop-shadow glow, @container query. -->
+  <section class="buff-tray" aria-label="Active buffs">
+    <h2>Buffs</h2>
+    <ul class="buffs">
+      <li class="buff" style="--pct: 80; --tint: gold;">
+        <span class="buff-icon">⚔</span>
+        <span class="buff-time">12s</span>
+      </li>
+      <li class="buff" style="--pct: 55; --tint: dodgerblue;">
+        <span class="buff-icon">⛨</span>
+        <span class="buff-time">8s</span>
+      </li>
+      <li class="buff" style="--pct: 30; --tint: limegreen;">
+        <span class="buff-icon">✚</span>
+        <span class="buff-time">4s</span>
+      </li>
+    </ul>
+  </section>
+
+</div>

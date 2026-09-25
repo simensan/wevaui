@@ -1,6 +1,13 @@
 # Weva — CSS Feature Support Matrix
 
-This document lists every CSS feature the engine recognises and the v1 simplifications / known unsupported sub-features. It is the canonical reference for what authors can rely on, and what to avoid.
+> **Written against the C# engine, deleted 2026-09-13.** The engine is the C++
+> core; what it supports is gated by the Chrome captures in `Tools/oracle`
+> and summarised for authors in `Documentation~/supported-css.md`. Kept as the
+> record of the feature set the core ported; the file references below are
+> historical.
+
+This historical ledger describes the retired C# engine. Use the current
+[CSS reference](Documentation~/supported-css.md) for authoring.
 
 Three support levels:
 
@@ -118,7 +125,7 @@ All eight flex properties implemented:
 
 ## 7. Grid (`display: grid`)
 
-All sixteen grid properties implemented. Subgrid is supported via `display: subgrid`.
+All sixteen grid properties implemented. Subgrid is supported in the spec form, `grid-template-columns: subgrid` / `grid-template-rows: subgrid` on a grid item that is itself `display: grid` (CSS Grid L2); `grid-auto-rows/columns: subgrid` is an extension.
 
 - `grid-template-columns` / `grid-template-rows` with length, %, `fr`, `min-content`, `max-content`, `fit-content()`, `repeat()` including `auto-fit` and `auto-fill`.
 - `grid-template-areas` with ASCII art.

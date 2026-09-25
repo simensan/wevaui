@@ -3,7 +3,7 @@
 //
 // Open via  Window ▸ Weva ▸ Sample Cycler  (or Ctrl/Cmd+Alt+U).
 // Works in both edit mode and play mode — setting DocumentAsset triggers
-// the document's own Rebuild (AutoRebuildOnChange), and we nudge the Game
+// the document's own Reload, and we nudge the Game
 // view to repaint so the swap is visible immediately.
 using System.Collections.Generic;
 using System.IO;
@@ -160,13 +160,11 @@ public sealed class SampleCyclerWindow : EditorWindow {
         // so clearing any explicit StylesheetAssets avoids a stale sheet from
         // a previous sample overriding the new one.
         target.StylesheetAssets = new TextAsset[0];
-        target.DocumentAsset = asset; // setter triggers Rebuild when enabled
+        target.DocumentAsset = asset; // the setter reloads
         currentIndex = index;
 
         if (!Application.isPlaying) {
-            // Edit mode: the setter already rebuilt if AutoRebuildOnChange;
-            // call Rebuild defensively and force the Game view to repaint.
-            target.Rebuild();
+            // Edit mode: force the Game view to repaint.
         }
         EditorUtility.SetDirty(target);
         RepaintGameViews();

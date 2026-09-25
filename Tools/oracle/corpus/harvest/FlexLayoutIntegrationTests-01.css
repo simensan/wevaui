@@ -1,0 +1,9 @@
+
+                .list { display: flex; flex-direction: column; gap: 4px; width: 326px; }
+                .card { display: flex; align-items: center; gap: 12px; padding: 10px; }
+                .thumb { width: 40px; height: 40px; flex-shrink: 0; }
+                .body { display: flex; flex-direction: column; gap: 2px; flex: 1; }
+                .name { height: 18px; }
+                .sub { height: 16px; }
+                .status { width: 20px; height: 20px; flex-shrink: 0; }
+            

@@ -1,0 +1,5 @@
+# Scripted Chrome checks allowed to fail, with the cause. Same rules as
+# chrome-sweep.txt: `<script>: <reason>`, and run_chrome_checks.py reports an
+# entry the moment it stops being needed.
+
+check_ime_chrome.cjs: Chrome-version change, not a core bug. 40/40 on Chrome 148 (puppeteer's bundled build, which recorded test_c_abi_ime.cpp's expectations); on Chrome 152 headless the CDP Input.imeSetComposition sequence emits no `change` after the composition commits on blur (actual [] vs expected [['change', null]]). Decide which Chrome the core should match, then update test_c_abi_ime.cpp and this script together.

@@ -8,8 +8,7 @@ CSS surface.
 
 ## Fonts
 
-- `font-family`, `font-size`, `font-weight`, `font-style`, `font-variant`
-  (small-caps).
+- `font-family`, `font-size`, `font-weight`, `font-style`.
 - `letter-spacing`, `word-spacing`.
 - `@font-face` registers families (see [Supported CSS](supported-css.md#at-rules)).
 
@@ -19,9 +18,9 @@ Inter's metrics diverge slightly from Chrome's Arial — intentional, accepted.
 
 ## Line box & spacing
 
-- `line-height` — number, length, percentage, and `normal`. `normal` resolves
-  taller than Chrome (≈1.21× vs. ≈1.143×) because of the default-face metrics;
-  this is accepted divergence.
+- `line-height` — number, length, percentage, and `normal`. Normal line height
+  depends on the selected face's host-provided metrics; compare the same font
+  when checking a page against Chrome.
 - `text-indent` — bare length/percentage honored; `hanging` / `each-line`
   modifiers parse but are inert.
 - `tab-size`.
@@ -53,7 +52,7 @@ are a v1 simplification).
 
 ## White-space, wrapping & overflow
 
-- `white-space`: `normal`, `nowrap`, `pre`, `pre-wrap`.
+- `white-space`: `normal`, `nowrap`, `pre`, `pre-wrap`, `pre-line`, `break-spaces`.
 - `text-wrap: nowrap | wrap`. The `balance | pretty | stable` values parse but
   are inert.
 - Long-word breaking: `word-break: break-all`, `overflow-wrap: break-word`,
@@ -62,29 +61,28 @@ are a v1 simplification).
 - Manual `hyphens` (soft-hyphen breaks) work; dictionary `hyphens: auto` is v2.
 - `text-overflow: ellipsis` truncates single-line clipping containers
   (`overflow: hidden|scroll|clip|auto` + `white-space: nowrap`). Multi-line
-  `line-clamp` ellipsis is v2.
-- `text-justify: auto` and `inter-word` (the Latin default) are honored;
-  `inter-character` (CJK) is inert.
+  `-webkit-line-clamp` works with `display: -webkit-box` or
+  `-webkit-inline-box`; unprefixed `line-clamp` is not implemented.
+- `text-justify`: `auto`, `inter-word`, `inter-character`, and `none`.
 
 ## Inline formatting
 
 A real inline formatting context lays out mixed-style runs
 (`<span>`/`<strong>`/`<a>`/`<code>`) within a line, with correct baselines for
-inline-block atoms. LTR only — no bidi reordering, no vertical writing-mode
-glyph flow (both are v1 non-goals).
-
-**Single-fragment decoration (v1 simplification):** an inline element whose text
-wraps across multiple lines paints its border/background on the **first line's
-bbox only** — decoration is not split across line fragments.
+inline-block atoms. Mixed-direction lines are reordered with ICU's bidi
+algorithm (`direction`, `unicode-bidi`); glyph shaping is the host's, and the
+Unity host applies OpenType shaping to byte-backed faces, including Arabic and
+the supported Indic scripts. Unity Font assets retain a more limited path; see
+[Text & Fonts](text-and-fonts.md). Vertical-rl/lr flows rotate glyph geometry;
+full mixed upright/sideways orientation is not implemented.
 
 ## Font weight & synthesis
 
-`font-weight` is honored: when the resolved face lacks the requested weight,
-the SDF text path synthesizes **faux-bold** by shifting the coverage threshold
-(weight 700 ≈ +1.5px stroke at 24px, scaling with font size; capped near
-weight 900). An already-bold face asked for its own weight is not
-double-bolded. Faux-**italic** (shear) and small-caps synthesis are not done —
-`font-synthesis-style`/`-small-caps` cascade but don't yet take effect.
+Supply real bold and italic faces through the component or `@font-face`.
+The Unity backend chooses among registered variants and otherwise falls back
+to an available face; it does not use the retired SDF faux-bold path. Small-caps
+synthesis is not implemented. See [Text & Fonts](text-and-fonts.md) for face
+registration and weight/style matching.
 
 ## Registered-but-not-shaped
 

@@ -1,0 +1,154 @@
+{
+  "date": "2026-09-15",
+  "objective": "Resolve the verification failures in review-three-days-20260915.md",
+  "code_revision": "c635df2b2e99478c81d718ec6ba3ae28e05a2c88",
+  "fix_commits": [
+    "11c6d2fc",
+    "c635df2b"
+  ],
+  "status": "passed with the qualified runtime and browser configuration",
+  "full_gate": {
+    "command": [
+      "bash",
+      "check.sh",
+      "--release"
+    ],
+    "exit_code": 0,
+    "skipped_gates": 0,
+    "display_wrapper": [
+      "xvfb-run",
+      "-a",
+      "-s",
+      "-screen 0 1920x1080x24"
+    ],
+    "evidence": ".utmp/review-fixes-20260915/full-gate-isolated",
+    "log_sha256": "11fa4d08d59e2bd93aa7fa4762473851aca76417f81f88ed7d3bdda57b5452cd",
+    "configuration": ".utmp/review-fixes-20260915/full-gate-isolated/configuration.json"
+  },
+  "qualified_godot": {
+    "source_commit": "ed1daf0bf001b61586d9930840f2f1394092c079",
+    "archive_sha256": "e607e9985e1c201bc9cdc1aec8a120f0c3f53b9603f1f828e2b748534a2471ef",
+    "patches": [
+      {
+        "path": "Tools/godot-text-shaping-repro/godot-script-iterator.patch",
+        "sha256": "3e9e7f336d12deb5e768efa932b6c73cd60dee029a28cdaaeb8ab3ad93ac6ee6"
+      },
+      {
+        "path": "Tools/godot-text-shaping-repro/godot-editor-help-shutdown.patch",
+        "sha256": "7985a406e91ed1c23e42092f57337c79b095133bd09949f979d7ef26983013da"
+      }
+    ],
+    "modified_source_files": [
+      "editor/doc/editor_help.cpp",
+      "modules/text_server_adv/script_iterator.cpp"
+    ],
+    "build_arguments": [
+      "platform=linuxbsd",
+      "arch=x86_64",
+      "optimize=speed",
+      "debug_symbols=no",
+      "use_lto=no",
+      "module_mono_enabled=no"
+    ],
+    "binaries": [
+      {
+        "target": "editor",
+        "version": "4.7.2.stable.custom_build",
+        "sha256": "bcd747666d6f151da5ab27e24dd96e046711797c856b976dac26f637e2b2b4e3"
+      },
+      {
+        "target": "template_debug",
+        "version": "4.7.2.stable.custom_build",
+        "sha256": "2119b5d9b1a301b85daf2fb569df18a3f22a8b574a14aba67d64a160d8efffee"
+      },
+      {
+        "target": "template_release",
+        "version": "4.7.2.stable.custom_build",
+        "sha256": "0039a3017ee18fdd94d6ef0da32c7f2947bc874c34d0871606f5d18126fe998c"
+      }
+    ],
+    "normal_3d_and_rendering_features": true,
+    "stock_installation_replaced": false,
+    "build_evidence": ".utmp/review-fixes-20260915/godot-qualified-build.json",
+    "warning_note": "The initial full Godot builds record a GDScript -Wdangling-pointer warning; the editor-only shutdown rebuild has none. These are separate from the zero-warning Weva builds."
+  },
+  "verification": {
+    "gcc_suites": 14,
+    "sanitizer_suites": 16,
+    "chrome_layout_captures": 334,
+    "chrome_layout_ceiling_px": 1.5,
+    "excused_layout_captures": 0,
+    "windows_chrome": {
+      "version": "152.0.7977.82",
+      "scripts": 67,
+      "passed": 66,
+      "unexpected_failures": 0,
+      "existing_known_ime_failure": 1,
+      "numeric_editing_cases": 580
+    },
+    "unicode_editor_cases": 6,
+    "unicode_debug_export_cases": 6,
+    "unicode_release_export_cases": 6,
+    "embedded_icu_checked": true,
+    "font_adapter_checks": 19833,
+    "backend_samples": 47,
+    "interactive_states": 12,
+    "structural_gate_failures": 0,
+    "interactive_over_tolerance_pct": 0,
+    "addon_exports": [
+      "debug",
+      "release",
+      "release-embedded"
+    ],
+    "addon_export_pixel_sha256": "023e624e02b551405ef72b43db05293bda5efafa2a6ff03f6588fb1c067d65aa",
+    "tooling": {
+      "linux_passed": 54,
+      "windows_passed": 45,
+      "windows_linux_only_skips": 9,
+      "text_safety_runner": 9,
+      "frontier_runner": 32
+    },
+    "import_shutdown": {
+      "target_imports_passed": 12,
+      "reference_seed_passed": 1,
+      "before_foreign_cache_aborts": 4,
+      "final_version_preflight_smoke_passed": true
+    },
+    "native_control_render": {
+      "path": ".utmp/review-fixes-20260915/native-unicode-render/capture.png",
+      "sha256": "a07056d99e0d8cd360977950ca5efb9aa5b74adf6a023b5d0642b4347483f714",
+      "inspected": true,
+      "result": "65 alternating emoji runs render intact in native Label controls. Default-font coverage is not qualified; Devanagari fallback boxes remain visible."
+    }
+  },
+  "resolved_requirements": [
+    {
+      "item": "Godot native-control Unicode safety",
+      "resolution": "Use the qualified Linux editor with the script-iterator patch; all six isolated cases pass."
+    },
+    {
+      "item": "Godot exported Unicode safety",
+      "resolution": "Use both matching patched templates; all twelve relocated export cases pass with embedded ICU data. The editor shutdown patch also removes stale-help-cache import aborts."
+    },
+    {
+      "item": "Chrome numeric editing reference",
+      "resolution": "Run the same pinned Windows Chrome reference as CI through the new WSL bridge. All retained assertions run unchanged; process failures propagate."
+    }
+  ],
+  "conditions": [
+    "Stock Godot still fails five of six Unicode cases; the qualified editor and both templates must be selected together.",
+    "Linux Chrome still handles decimal commas differently; the qualified gate explicitly executes the Windows reference.",
+    "Render checks run on a private Xvfb display. The preceding shared-desktop run lost pressed/hover appearance in one capture (1.06% color difference); the unchanged private-display run passes all twelve states at 0.00%. Desktop focus interference is the inferred cause; render thresholds and input behavior were not changed.",
+    "No new conformance waiver was added. Consumer projects, other player platforms and physical input remain separate product-readiness follow-ups."
+  ],
+  "key_evidence": [
+    ".utmp/review-fixes-20260915/full-gate-isolated/temporary/tmp.8LpDhJCuKN/results/result.json",
+    ".utmp/review-fixes-20260915/full-gate-isolated/temporary/tmp.nFHLmfopMm/results/result.json",
+    ".utmp/review-fixes-20260915/import-shutdown-control/result.json",
+    ".utmp/review-fixes-20260915/import-shutdown-after/result.json",
+    ".utmp/review-fixes-20260915/import-shutdown-final/result.json",
+    ".utmp/review-fixes-20260915/godot-stock-control/result.json"
+  ],
+  "historical_failed_gate": "review-full-gate-20260915.json",
+  "preceding_qualified_run_failure": ".utmp/review-fixes-20260915/full-gate/check.log"
+}

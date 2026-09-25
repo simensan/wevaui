@@ -1,0 +1,115 @@
+{
+  "source": ".utmp/safe-engine71/stack208-ui-disabled",
+  "invocation": {
+    "child": [
+      "<repo>\\.utmp\\safe-engine71\\frontier-animation-composition208\\playable\\FrontierCamp.exe",
+      "--audio-driver",
+      "Dummy",
+      "--log-file",
+      "<repo>\\.utmp\\safe-engine71\\stack208-ui-disabled\\engine.log",
+      "--rendering-method",
+      "gl_compatibility",
+      "--fixed-fps",
+      "60",
+      "--position",
+      "-10000,-10000",
+      "--",
+      "--perf"
+    ],
+    "environment": {
+      "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\stack208-ui-disabled",
+      "WEVA_FRONTIER_FRAMES": "18000",
+      "WEVA_FRONTIER_WARMUPS": "120",
+      "WEVA_FRONTIER_AUTO": "1",
+      "WEVA_FRONTIER_REVERSE": "0",
+      "WEVA_FRONTIER_CAPTURE": "0",
+      "WEVA_FRONTIER_RESOLUTION": "1920x1080",
+      "WEVA_FRONTIER_WORLD": "3d",
+      "WEVA_FRONTIER_BACKGROUND": "0",
+      "WEVA_FRONTIER_FRAME_PHASES": "1",
+      "WEVA_FRONTIER_CASES": "ui_disabled"
+    },
+    "sampling_seconds": 30,
+    "library_sha256": "bd3f0f8c9334f57c70370e5e8fe98ba96ee33baf6bcc8e7c3fd2c418f6e24cbe",
+    "scope": "Process-local stack sampling pauses the main thread and perturbs timing. Not a timing qualification."
+  },
+  "sample_count": 1922,
+  "swap_buffer_samples": 652,
+  "swap_buffer_wait_samples": 453,
+  "top_stacks": [
+    {
+      "samples": 450,
+      "stack": "ntdll!NtWaitForSingleObject+0x14 <- KERNELBASE!WaitForSingleObjectEx+0xaf <- nvoglv64!DrvPresentBuffers+0x32a8a <- nvoglv64!DrvPresentBuffers+0x16a4a <- nvoglv64!DrvPresentBuffers+0x349fb <- nvoglv64!DrvPresentBuffers+0x13b105 <- nvoglv64!DrvPresentBuffers+0x148ac9 <- nvoglv64!DrvPresentBuffers+0x1615c9 <- nvoglv64!DrvValidateVersion+0x6ee6 <- nvoglv64!DrvPresentBuffers+0x122a81 <- nvoglv64!DrvPresentBuffers+0xfe7e2 <- nvoglv64!DrvPresentBuffers+0xfdea9 <- nvoglv64!DllMain+0x5d19 <- nvoglv64!DllMain+0x5e98 <- nvoglv64!DllMain+0x5c6e <- nvoglv64!DllMain+0x55df <- nvoglv64!DrvSwapLayerBuffers+0x286 <- OPENGL32!wglSwapBuffers+0x1fe <- gdi32full!SwapBuffers+0x57 <- FrontierCamp!NoHotPatch+0x236bc73 <- FrontierCamp!NoHotPatch+0x2178857 <- FrontierCamp!NoHotPatch+0x2187327 <- FrontierCamp!NoHotPatch+0x6bfcf <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    },
+    {
+      "samples": 58,
+      "stack": "ntdll!RtlReleaseSRWLockExclusive+0x1e <- nvoglv64!DrvPresentBuffers+0x1c8d80 <- nvoglv64+0x7cbd7c <- FrontierCamp!NoHotPatch+0x10c6072 <- FrontierCamp!NoHotPatch+0x10c6bf5 <- FrontierCamp!NoHotPatch+0x10d677a <- FrontierCamp!NoHotPatch+0x2617251 <- FrontierCamp!NoHotPatch+0x262b516 <- FrontierCamp!NoHotPatch+0x2367a5d <- FrontierCamp!NoHotPatch+0x2367f44 <- FrontierCamp!NoHotPatch+0x236bb48 <- FrontierCamp!NoHotPatch+0x2178857 <- FrontierCamp!NoHotPatch+0x2187327 <- FrontierCamp!NoHotPatch+0x6bfcf <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    },
+    {
+      "samples": 55,
+      "stack": "ntdll!RtlTryAcquireSRWLockExclusive+0x3f <- nvoglv64+0x4700ea <- nvoglv64+0x4dbf67 <- nvoglv64!DrvPresentBuffers+0x1c857a <- nvoglv64+0x7cbd7c <- FrontierCamp!NoHotPatch+0x10c6072 <- FrontierCamp!NoHotPatch+0x10c6bf5 <- FrontierCamp!NoHotPatch+0x10d677a <- FrontierCamp!NoHotPatch+0x2617251 <- FrontierCamp!NoHotPatch+0x262b516 <- FrontierCamp!NoHotPatch+0x2367a5d <- FrontierCamp!NoHotPatch+0x2367f44 <- FrontierCamp!NoHotPatch+0x236bb48 <- FrontierCamp!NoHotPatch+0x2178857 <- FrontierCamp!NoHotPatch+0x2187327 <- FrontierCamp!NoHotPatch+0x6bfcf <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    },
+    {
+      "samples": 32,
+      "stack": "ntdll!RtlReleaseSRWLockExclusive+0x1e <- nvoglv64!DrvPresentBuffers+0x1c8d80 <- nvoglv64+0x7cbd7c <- FrontierCamp!NoHotPatch+0x10dcfd5 <- FrontierCamp!NoHotPatch+0x2617251 <- FrontierCamp!NoHotPatch+0x262b516 <- FrontierCamp!NoHotPatch+0x2367a5d <- FrontierCamp!NoHotPatch+0x2367f44 <- FrontierCamp!NoHotPatch+0x236bb48 <- FrontierCamp!NoHotPatch+0x2178857 <- FrontierCamp!NoHotPatch+0x2187327 <- FrontierCamp!NoHotPatch+0x6bfcf <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    },
+    {
+      "samples": 31,
+      "stack": "ntdll!RtlReleaseSRWLockExclusive+0x1e <- nvoglv64!DrvPresentBuffers+0x1c8d80 <- nvoglv64+0x7cbd7c <- FrontierCamp!NoHotPatch+0x10e84dd <- FrontierCamp!NoHotPatch+0x2617251 <- FrontierCamp!NoHotPatch+0x262b516 <- FrontierCamp!NoHotPatch+0x2367a5d <- FrontierCamp!NoHotPatch+0x2367f44 <- FrontierCamp!NoHotPatch+0x236bb48 <- FrontierCamp!NoHotPatch+0x2178857 <- FrontierCamp!NoHotPatch+0x2187327 <- FrontierCamp!NoHotPatch+0x6bfcf <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    },
+    {
+      "samples": 28,
+      "stack": "ntdll!RtlTryAcquireSRWLockExclusive+0x3f <- nvoglv64+0x4700ea <- nvoglv64+0x4dbf67 <- nvoglv64!DrvPresentBuffers+0x1c857a <- nvoglv64+0x7cbd7c <- FrontierCamp!NoHotPatch+0x10dcfd5 <- FrontierCamp!NoHotPatch+0x2617251 <- FrontierCamp!NoHotPatch+0x262b516 <- FrontierCamp!NoHotPatch+0x2367a5d <- FrontierCamp!NoHotPatch+0x2367f44 <- FrontierCamp!NoHotPatch+0x236bb48 <- FrontierCamp!NoHotPatch+0x2178857 <- FrontierCamp!NoHotPatch+0x2187327 <- FrontierCamp!NoHotPatch+0x6bfcf <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    },
+    {
+      "samples": 24,
+      "stack": "win32u!NtDxgkSubmitPresentToHwQueue+0x14 <- d3d11!D3DPerformance_GetStatus+0x132a1 <- d3d11!D3DPerformance_SetMarker+0xa201 <- nvwgf2umx!NVAPI_DirectMethods+0xd0991 <- nvwgf2umx!NVAPI_DirectMethods+0xd14e3 <- nvwgf2umx!NVENCODEAPI_Thunk+0x2a27ac <- nvwgf2umx!NVENCODEAPI_Thunk+0xd420 <- nvwgf2umx!NVENCODEAPI_Thunk+0x6f02a <- d3d11!D3D11CoreRegisterLayers+0x1295e <- d3d11!D3D11CoreRegisterLayers+0x1195d <- dxgi!PIXBeginCapture+0x3c4d <- dxgi!PIXBeginCapture+0x471c <- dxgi!CompatString+0xbaf7 <- dxgi!CompatString+0x11adc <- dxgi!CompatString+0x1127a <- nvoglv64!DrvPresentBuffers+0x3d48 <- nvoglv64!DrvPresentBuffers+0x32aa7 <- nvoglv64!DrvPresentBuffers+0x16a4a <- nvoglv64!DrvPresentBuffers+0x349fb <- nvoglv64!DrvPresentBuffers+0x13b105 <- nvoglv64!DrvPresentBuffers+0x148ac9 <- nvoglv64!DrvPresentBuffers+0x1615c9 <- nvoglv64!DrvValidateVersion+0x6ee6 <- nvoglv64!DrvPresentBuffers+0x122a81 <- nvoglv64!DrvPresentBuffers+0xfe7e2 <- nvoglv64!DrvPresentBuffers+0xfdea9 <- nvoglv64!DllMain+0x5d19 <- nvoglv64!DllMain+0x5e98 <- nvoglv64!DllMain+0x5c6e <- nvoglv64!DllMain+0x55df <- nvoglv64!DrvSwapLayerBuffers+0x286"
+    },
+    {
+      "samples": 21,
+      "stack": "win32u!NtUserEnumDisplayMonitors+0x14 <- FrontierCamp!NoHotPatch+0x3d6a1 <- FrontierCamp!NoHotPatch+0x124d9c9 <- FrontierCamp!NoHotPatch+0x1242b82 <- FrontierCamp!NoHotPatch+0x3461ce <- FrontierCamp!NoHotPatch+0x275c8db <- FrontierCamp!NoHotPatch+0x11f6342 <- FrontierCamp!NoHotPatch+0x11fb6cb <- FrontierCamp!NoHotPatch+0x6bc48 <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    },
+    {
+      "samples": 19,
+      "stack": "win32u!NtUserGetCursorPos+0x14 <- FrontierCamp!NoHotPatch+0x3d65d <- FrontierCamp!NoHotPatch+0x124d9c9 <- FrontierCamp!NoHotPatch+0x1242b82 <- FrontierCamp!NoHotPatch+0x3461ce <- FrontierCamp!NoHotPatch+0x275c8db <- FrontierCamp!NoHotPatch+0x11f6342 <- FrontierCamp!NoHotPatch+0x11fb6cb <- FrontierCamp!NoHotPatch+0x6bc48 <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    },
+    {
+      "samples": 18,
+      "stack": "win32u!NtUserTransformRect+0x14 <- USER32!GetWindowRect+0x128 <- nvwgf2umx!NVDEV_Thunk+0x7c3b9 <- nvwgf2umx!NVENCODEAPI_Thunk+0xe7a9 <- nvwgf2umx!NVENCODEAPI_Thunk+0xc266 <- nvwgf2umx!NVENCODEAPI_Thunk+0x6f02a <- d3d11!D3D11CoreRegisterLayers+0x1295e <- d3d11!D3D11CoreRegisterLayers+0x1195d <- dxgi!PIXBeginCapture+0x3c4d <- dxgi!PIXBeginCapture+0x471c <- dxgi!CompatString+0xbaf7 <- dxgi!CompatString+0x11adc <- dxgi!CompatString+0x1127a <- nvoglv64!DrvPresentBuffers+0x3d48 <- nvoglv64!DrvPresentBuffers+0x32aa7 <- nvoglv64!DrvPresentBuffers+0x16a4a <- nvoglv64!DrvPresentBuffers+0x349fb <- nvoglv64!DrvPresentBuffers+0x13b105 <- nvoglv64!DrvPresentBuffers+0x148ac9 <- nvoglv64!DrvPresentBuffers+0x1615c9 <- nvoglv64!DrvValidateVersion+0x6ee6 <- nvoglv64!DrvPresentBuffers+0x122a81 <- nvoglv64!DrvPresentBuffers+0xfe7e2 <- nvoglv64!DrvPresentBuffers+0xfdea9 <- nvoglv64!DllMain+0x5d19 <- nvoglv64!DllMain+0x5e98 <- nvoglv64!DllMain+0x5c6e <- nvoglv64!DllMain+0x55df <- nvoglv64!DrvSwapLayerBuffers+0x286 <- OPENGL32!wglSwapBuffers+0x1fe <- gdi32full!SwapBuffers+0x57"
+    },
+    {
+      "samples": 16,
+      "stack": "win32u!NtUserWindowFromDC+0x14 <- OPENGL32!wglGetPixelFormat+0x38 <- gdi32full!GetPixelFormat+0x5f <- OPENGL32!wglSwapBuffers+0x125 <- gdi32full!SwapBuffers+0x57 <- FrontierCamp!NoHotPatch+0x236bc73 <- FrontierCamp!NoHotPatch+0x2178857 <- FrontierCamp!NoHotPatch+0x2187327 <- FrontierCamp!NoHotPatch+0x6bfcf <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    },
+    {
+      "samples": 16,
+      "stack": "win32u!NtGdiDdDDISubmitCommandToHwQueue+0x14 <- nvoglv64!DrvPresentBuffers+0x2c4ca <- nvoglv64!DrvPresentBuffers+0x1a2d1 <- nvoglv64!DrvPresentBuffers+0x1410ad <- nvoglv64!DrvPresentBuffers+0x143be8 <- nvoglv64!DrvPresentBuffers+0x145fb4 <- nvoglv64!DrvPresentBuffers+0x142c65 <- nvoglv64!DrvPresentBuffers+0x144bc3 <- nvoglv64!DrvPresentBuffers+0x1615d6 <- nvoglv64!DrvValidateVersion+0x6ee6 <- nvoglv64!DrvPresentBuffers+0x122a81 <- nvoglv64!DrvPresentBuffers+0xd494a <- nvoglv64!DrvPresentBuffers+0x1bbe18 <- nvoglv64!DrvPresentBuffers+0xf4db1 <- nvoglv64!DrvPresentBuffers+0xffb5a <- nvoglv64+0x767fd0 <- FrontierCamp!NoHotPatch+0x1096815 <- FrontierCamp!NoHotPatch+0x25f0d1a <- FrontierCamp!NoHotPatch+0x26056d7 <- FrontierCamp!NoHotPatch+0x2369cb7 <- FrontierCamp!NoHotPatch+0x236bb48 <- FrontierCamp!NoHotPatch+0x2178857 <- FrontierCamp!NoHotPatch+0x2187327 <- FrontierCamp!NoHotPatch+0x6bfcf <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    },
+    {
+      "samples": 13,
+      "stack": "win32u!NtUserWindowFromDC+0x14 <- OPENGL32!wglSwapBuffers+0x97 <- gdi32full!SwapBuffers+0x57 <- FrontierCamp!NoHotPatch+0x236bc73 <- FrontierCamp!NoHotPatch+0x2178857 <- FrontierCamp!NoHotPatch+0x2187327 <- FrontierCamp!NoHotPatch+0x6bfcf <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    },
+    {
+      "samples": 11,
+      "stack": "win32u!NtGdiDdDDISubmitCommandToHwQueue+0x14 <- d3d11!CreateDirect3D11DeviceFromDXGIDevice+0x1d085 <- d3d11!CreateDirect3D11DeviceFromDXGIDevice+0x1d161 <- nvwgf2umx!NVAPI_DirectMethods+0xd73b5 <- nvwgf2umx+0xe6948 <- nvwgf2umx+0xe83ef <- nvwgf2umx!NVENCODEAPI_Thunk+0x1616da <- nvwgf2umx!OpenAdapter10+0x24c <- d3d11!D3D11CoreRegisterLayers+0x105b2 <- d3d11!D3D11CoreRegisterLayers+0x10331 <- d3d11!D3D11CoreRegisterLayers+0x102af <- nvoglv64!DrvPresentBuffers+0x3c76 <- nvoglv64!DrvPresentBuffers+0x32aa7 <- nvoglv64!DrvPresentBuffers+0x16a4a <- nvoglv64!DrvPresentBuffers+0x349fb <- nvoglv64!DrvPresentBuffers+0x13b105 <- nvoglv64!DrvPresentBuffers+0x148ac9 <- nvoglv64!DrvPresentBuffers+0x1615c9 <- nvoglv64!DrvValidateVersion+0x6ee6 <- nvoglv64!DrvPresentBuffers+0x122a81 <- nvoglv64!DrvPresentBuffers+0xfe7e2 <- nvoglv64!DrvPresentBuffers+0xfdea9 <- nvoglv64!DllMain+0x5d19 <- nvoglv64!DllMain+0x5e98 <- nvoglv64!DllMain+0x5c6e <- nvoglv64!DllMain+0x55df <- nvoglv64!DrvSwapLayerBuffers+0x286 <- OPENGL32!wglSwapBuffers+0x1fe <- gdi32full!SwapBuffers+0x57 <- FrontierCamp!NoHotPatch+0x236bc73 <- FrontierCamp!NoHotPatch+0x2178857"
+    },
+    {
+      "samples": 11,
+      "stack": "win32u!NtGdiDdDDIEscape+0x14 <- nvoglv64!DrvPresentBuffers+0x27a2e <- nvoglv64!DrvPresentBuffers+0x27dd9 <- nvoglv64!DllMain+0xb6c6 <- nvoglv64!DllMain+0x9b84 <- nvoglv64!DrvPresentBuffers+0x162ff <- nvoglv64!DllMain+0x5d30 <- nvoglv64!DllMain+0x5e98 <- nvoglv64!DllMain+0x5c6e <- nvoglv64!DllMain+0x55df <- nvoglv64!DrvSwapLayerBuffers+0x286 <- OPENGL32!wglSwapBuffers+0x1fe <- gdi32full!SwapBuffers+0x57 <- FrontierCamp!NoHotPatch+0x236bc73 <- FrontierCamp!NoHotPatch+0x2178857 <- FrontierCamp!NoHotPatch+0x2187327 <- FrontierCamp!NoHotPatch+0x6bfcf <- FrontierCamp!NoHotPatch+0x13c55 <- FrontierCamp!NoHotPatch+0x58370 <- FrontierCamp!NoHotPatch+0x5842e <- FrontierCamp!NoHotPatch+0x2f30466 <- KERNEL32!BaseThreadInitThunk+0x17 <- ntdll!RtlUserThreadStart+0x2c"
+    }
+  ],
+  "functional_passed": true,
+  "ui_core_updates": {
+    "max": 0.0,
+    "mean": 0.0,
+    "median": 0.0,
+    "p95": 0.0,
+    "p99": 0.0,
+    "samples": 18000
+  },
+  "window_focused_samples": 18000,
+  "frames": 18000,
+  "scope": "Process-local sampling of the main thread briefly suspends it. Counts locate observed stacks, not unbiased CPU time, wait duration or a timing acceptance result. NVIDIA export names are nearest available symbols; their offsets do not identify internal private functions.",
+  "finding": "Observed NtWaitForSingleObject through NVIDIA OpenGL driver, wglSwapBuffers and GDI SwapBuffers in a UI-disabled run. This locates a presentation wait; the driver/OS condition responsible for intermittent duration remains unresolved.",
+  "system_trace": "WPR CPU start denied with error 0xc5585011; status confirmed not recording."
+}

@@ -1,0 +1,63 @@
+{
+  "source": "AbsolutePseudoCounterTests-00.html",
+  "metrics": "mono",
+  "browser": "Chrome/152.0.7977.83",
+  "userAgentStylesheet": "weva overlay on browser",
+  "lineHeightNormalization": "computed normal to 1.143",
+  "width": 800,
+  "height": 600,
+  "count": 3,
+  "elements": [
+    {
+      "i": 0,
+      "depth": 0,
+      "tag": "div",
+      "id": "",
+      "cls": "list",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 84.56,
+      "display": "block",
+      "position": "relative",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "div:1",
+      "text": ""
+    },
+    {
+      "i": 1,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "item",
+      "x": 0,
+      "y": 0,
+      "w": 800,
+      "h": 42.28,
+      "display": "block",
+      "position": "relative",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "div:1/div:1",
+      "text": "a"
+    },
+    {
+      "i": 2,
+      "depth": 1,
+      "tag": "div",
+      "id": "",
+      "cls": "item",
+      "x": 0,
+      "y": 42.28,
+      "w": 800,
+      "h": 42.28,
+      "display": "block",
+      "position": "relative",
+      "fontSize": "16px",
+      "lineHeight": "18.288px",
+      "path": "div:1/div:2",
+      "text": "b"
+    }
+  ]
+}

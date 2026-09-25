@@ -1,0 +1,3369 @@
+{
+  "schema": 1,
+  "version": "0.1.0-preview.125",
+  "abi_minor": 19,
+  "metadata": {
+    "schema": 1,
+    "library_sha256": "277f2e3e291fc404c19f6da968b7c4d155b26b10d0af9b8e8656f7a2b76b4662",
+    "source": {
+      "revision": "ba5fc1a124e47f8dbf8973ff59fdbfc63e5cf7ce",
+      "dirty": true,
+      "sha256": "47b6f7821d78b6015c0a730122e40dfae6029302189b08209ba2d165654807b7"
+    },
+    "godot_cpp": {
+      "revision": null,
+      "dirty": null,
+      "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+    },
+    "configuration": "Release",
+    "compiler": {
+      "id": "MSVC",
+      "version": "19.44.35222.0"
+    },
+    "cmake_version": "4.3.2",
+    "godot_api": "4.7",
+    "precision": "single",
+    "custom_api": null,
+    "sanitizers": false
+  },
+  "chrome": {
+    "browser": "Chrome/152.0.7977.83",
+    "rows": [
+      {
+        "attrs": {
+          "type": "number",
+          "value": "",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "",
+          "step": "any"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "1",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "1",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "1",
+          "step": "any"
+        },
+        "value": "1",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "1",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "1",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "1",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "1",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "1",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "1",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "2",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "2",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "2",
+          "step": "any"
+        },
+        "value": "2",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "2",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "2",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "2",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "2",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "2",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "5",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "5",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "5",
+          "step": "any"
+        },
+        "value": "5",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "5",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "5",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "5",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "5",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "5",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "5",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "8",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "8",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "8",
+          "step": "any"
+        },
+        "value": "8",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "8",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "8",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "8",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "8",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "8",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "8",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "9",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "9",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "9",
+          "step": "any"
+        },
+        "value": "9",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "9",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "9",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "9",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "9",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "9",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "9",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "bad",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "bad",
+          "step": "any"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "bad",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "bad",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "number",
+          "value": "bad",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "8",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "",
+          "step": "any"
+        },
+        "value": "50",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "50",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "8",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "8",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "1",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "2",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "1",
+          "step": "any"
+        },
+        "value": "1",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "1",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "1",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "1",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "2",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "1",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "2",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "5",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "5",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "5",
+          "step": "any"
+        },
+        "value": "5",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "5",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "5",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "5",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "5",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "5",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "5",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "9",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "8",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "9",
+          "step": "any"
+        },
+        "value": "9",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "9",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "9",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "9",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "8",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "range",
+          "value": "9",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "8",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "",
+          "step": "any"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08",
+          "disabled": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08",
+          "readonly": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-01",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08"
+        },
+        "value": "2026-01-01",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-01",
+          "step": "any"
+        },
+        "value": "2026-01-01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-01",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-01-01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-01",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08",
+          "disabled": ""
+        },
+        "value": "2026-01-01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-01",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08",
+          "readonly": ""
+        },
+        "value": "2026-01-01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-05",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08"
+        },
+        "value": "2026-01-05",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-05",
+          "step": "any"
+        },
+        "value": "2026-01-05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-05",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-01-05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-05",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08",
+          "disabled": ""
+        },
+        "value": "2026-01-05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-05",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08",
+          "readonly": ""
+        },
+        "value": "2026-01-05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-09",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08"
+        },
+        "value": "2026-01-09",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-09",
+          "step": "any"
+        },
+        "value": "2026-01-09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-09",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-01-09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-09",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08",
+          "disabled": ""
+        },
+        "value": "2026-01-09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "date",
+          "value": "2026-01-09",
+          "step": "any",
+          "min": "2026-01-02",
+          "max": "2026-01-08",
+          "readonly": ""
+        },
+        "value": "2026-01-09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "",
+          "step": "any"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00",
+          "disabled": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00",
+          "readonly": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "07:00",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00"
+        },
+        "value": "07:00",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "07:00",
+          "step": "any"
+        },
+        "value": "07:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "07:00",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "07:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "07:00",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00",
+          "disabled": ""
+        },
+        "value": "07:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "07:00",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00",
+          "readonly": ""
+        },
+        "value": "07:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "12:00",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00"
+        },
+        "value": "12:00",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "12:00",
+          "step": "any"
+        },
+        "value": "12:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "12:00",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "12:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "12:00",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00",
+          "disabled": ""
+        },
+        "value": "12:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "12:00",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00",
+          "readonly": ""
+        },
+        "value": "12:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "18:00",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00"
+        },
+        "value": "18:00",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "18:00",
+          "step": "any"
+        },
+        "value": "18:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "18:00",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "18:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "18:00",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00",
+          "disabled": ""
+        },
+        "value": "18:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "18:00",
+          "step": "any",
+          "min": "08:00",
+          "max": "17:00",
+          "readonly": ""
+        },
+        "value": "18:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "",
+          "step": "any"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00",
+          "disabled": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00",
+          "readonly": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "01:00",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00"
+        },
+        "value": "01:00",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "01:00",
+          "step": "any"
+        },
+        "value": "01:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "01:00",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "01:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "01:00",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00",
+          "disabled": ""
+        },
+        "value": "01:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "01:00",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00",
+          "readonly": ""
+        },
+        "value": "01:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "12:00",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00"
+        },
+        "value": "12:00",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "12:00",
+          "step": "any"
+        },
+        "value": "12:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "12:00",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "12:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "12:00",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00",
+          "disabled": ""
+        },
+        "value": "12:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "12:00",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00",
+          "readonly": ""
+        },
+        "value": "12:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "23:00",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00"
+        },
+        "value": "23:00",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "23:00",
+          "step": "any"
+        },
+        "value": "23:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "23:00",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "23:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "23:00",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00",
+          "disabled": ""
+        },
+        "value": "23:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "time",
+          "value": "23:00",
+          "step": "any",
+          "min": "22:00",
+          "max": "06:00",
+          "readonly": ""
+        },
+        "value": "23:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "",
+          "step": "any"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08",
+          "disabled": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08",
+          "readonly": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-01",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08"
+        },
+        "value": "2026-01",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-01",
+          "step": "any"
+        },
+        "value": "2026-01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-01",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-01",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08",
+          "disabled": ""
+        },
+        "value": "2026-01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-01",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08",
+          "readonly": ""
+        },
+        "value": "2026-01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-05",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08"
+        },
+        "value": "2026-05",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-05",
+          "step": "any"
+        },
+        "value": "2026-05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-05",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-05",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08",
+          "disabled": ""
+        },
+        "value": "2026-05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-05",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08",
+          "readonly": ""
+        },
+        "value": "2026-05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-09",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08"
+        },
+        "value": "2026-09",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-09",
+          "step": "any"
+        },
+        "value": "2026-09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-09",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-09",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08",
+          "disabled": ""
+        },
+        "value": "2026-09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "month",
+          "value": "2026-09",
+          "step": "any",
+          "min": "2026-02",
+          "max": "2026-08",
+          "readonly": ""
+        },
+        "value": "2026-09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "",
+          "step": "any"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08",
+          "disabled": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08",
+          "readonly": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W01",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08"
+        },
+        "value": "2026-W01",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W01",
+          "step": "any"
+        },
+        "value": "2026-W01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W01",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-W01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W01",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08",
+          "disabled": ""
+        },
+        "value": "2026-W01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W01",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08",
+          "readonly": ""
+        },
+        "value": "2026-W01",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W05",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08"
+        },
+        "value": "2026-W05",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W05",
+          "step": "any"
+        },
+        "value": "2026-W05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W05",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-W05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W05",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08",
+          "disabled": ""
+        },
+        "value": "2026-W05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W05",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08",
+          "readonly": ""
+        },
+        "value": "2026-W05",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W09",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08"
+        },
+        "value": "2026-W09",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W09",
+          "step": "any"
+        },
+        "value": "2026-W09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W09",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-W09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W09",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08",
+          "disabled": ""
+        },
+        "value": "2026-W09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "week",
+          "value": "2026-W09",
+          "step": "any",
+          "min": "2026-W02",
+          "max": "2026-W08",
+          "readonly": ""
+        },
+        "value": "2026-W09",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "",
+          "step": "any"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00",
+          "disabled": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00",
+          "readonly": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-01T00:00",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00"
+        },
+        "value": "2026-01-01T00:00",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-01T00:00",
+          "step": "any"
+        },
+        "value": "2026-01-01T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-01T00:00",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-01-01T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-01T00:00",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00",
+          "disabled": ""
+        },
+        "value": "2026-01-01T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-01T00:00",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00",
+          "readonly": ""
+        },
+        "value": "2026-01-01T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-05T00:00",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00"
+        },
+        "value": "2026-01-05T00:00",
+        "in_range": true,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-05T00:00",
+          "step": "any"
+        },
+        "value": "2026-01-05T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-05T00:00",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-01-05T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-05T00:00",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00",
+          "disabled": ""
+        },
+        "value": "2026-01-05T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-05T00:00",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00",
+          "readonly": ""
+        },
+        "value": "2026-01-05T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-09T00:00",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00"
+        },
+        "value": "2026-01-09T00:00",
+        "in_range": false,
+        "out_of_range": true
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-09T00:00",
+          "step": "any"
+        },
+        "value": "2026-01-09T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-09T00:00",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "2026-01-09T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-09T00:00",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00",
+          "disabled": ""
+        },
+        "value": "2026-01-09T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "datetime-local",
+          "value": "2026-01-09T00:00",
+          "step": "any",
+          "min": "2026-01-02T00:00",
+          "max": "2026-01-08T00:00",
+          "readonly": ""
+        },
+        "value": "2026-01-09T00:00",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "",
+          "step": "any"
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "1",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "1",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "1",
+          "step": "any"
+        },
+        "value": "1",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "1",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "1",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "1",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "1",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "1",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "1",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "5",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "5",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "5",
+          "step": "any"
+        },
+        "value": "5",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "5",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "5",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "5",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "5",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "5",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "5",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "9",
+          "step": "any",
+          "min": "2",
+          "max": "8"
+        },
+        "value": "9",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "9",
+          "step": "any"
+        },
+        "value": "9",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "9",
+          "step": "any",
+          "min": "bad",
+          "max": "bad"
+        },
+        "value": "9",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "9",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "disabled": ""
+        },
+        "value": "9",
+        "in_range": false,
+        "out_of_range": false
+      },
+      {
+        "attrs": {
+          "type": "text",
+          "value": "9",
+          "step": "any",
+          "min": "2",
+          "max": "8",
+          "readonly": ""
+        },
+        "value": "9",
+        "in_range": false,
+        "out_of_range": false
+      }
+    ]
+  },
+  "reproduction": {
+    "before_failures": 59,
+    "note": "Initial195-case matrix used sequential attribute mutations; final core matrix uses equivalent parsed HTML for selector assertions."
+  },
+  "core": {
+    "windows_suites": 10,
+    "passed": true,
+    "live_and_cached_style_regressions": true,
+    "sanitizer_suites": 12,
+    "sanitizer_passed": true,
+    "sanitizer_scope": "Same implementation and195 cases plus live styles; final cache-specific assertions added afterward passed the Windows core suite."
+  },
+  "host": {
+    "binary_sha256": "277f2e3e291fc404c19f6da968b7c4d155b26b10d0af9b8e8656f7a2b76b4662",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 506
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 165
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 554
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 16
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      },
+      {
+        "name": "explicit_validity_tests",
+        "passed": true,
+        "checks": 104
+      },
+      {
+        "name": "range_selector_tests",
+        "passed": true,
+        "checks": 396
+      }
+    ],
+    "passed": true,
+    "checks": 23844
+  },
+  "rendered": [
+    {
+      "renderer": "gl_compatibility",
+      "passed": true
+    },
+    {
+      "renderer": "mobile",
+      "passed": true
+    }
+  ],
+  "sample": {
+    "passed": true,
+    "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+    "addon_sha256": "002e854c3433c8c18fff4886791b4907dabc5bceef48a84b3e529e3237abcd83",
+    "templates": {
+      "debug": {
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+        "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
+      },
+      "release": {
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+        "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
+      }
+    },
+    "library_sha256": "277f2e3e291fc404c19f6da968b7c4d155b26b10d0af9b8e8656f7a2b76b4662",
+    "runs": [
+      {
+        "name": "import",
+        "checks": null,
+        "passed": true
+      },
+      {
+        "name": "headless",
+        "checks": 92,
+        "passed": true
+      },
+      {
+        "name": "gl_compatibility",
+        "checks": 98,
+        "passed": true
+      },
+      {
+        "name": "mobile",
+        "checks": 98,
+        "passed": true
+      },
+      {
+        "name": "export",
+        "checks": null,
+        "passed": true
+      },
+      {
+        "name": "export-headless",
+        "checks": 92,
+        "passed": true
+      },
+      {
+        "name": "export-render",
+        "checks": 98,
+        "passed": true
+      }
+    ],
+    "export_pixels_match_project": true
+  },
+  "exports": {
+    "debug": true,
+    "release": true,
+    "release_embedded": true,
+    "relocation_and_pixel_checks": true
+  },
+  "ordinary_performance": {
+    "passed": true,
+    "functional_passed": true,
+    "timing_passed": true,
+    "library_sha256": "277f2e3e291fc404c19f6da968b7c4d155b26b10d0af9b8e8656f7a2b76b4662",
+    "frames": 600,
+    "warmups": 120,
+    "automatic": false,
+    "resolution": [
+      1280,
+      720
+    ],
+    "world": "static",
+    "timing_budget": {
+      "profile": "Frontier development desktop CPU targets",
+      "passed": true,
+      "errors": [],
+      "checks": [
+        {
+          "run": "gl_compatibility/1",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.002,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.21,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.311,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.25,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.371,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.172,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.241,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.086,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.511,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.448,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.885,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.002,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.252,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.246,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.262,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.28,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.136,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.217,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.838,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.417,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.343,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.724,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.002,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.132,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.285,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.246,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.268,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.136,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.22,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.793,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.384,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.331,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.334,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.339,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.38,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.332,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.341,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.153,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.19,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.874,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.533,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.521,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.832,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.007,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.372,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.578,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.278,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.302,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.172,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.225,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.049,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.448,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.47,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.549,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 2.188,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.332,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.309,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.247,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.146,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.202,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.971,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.533,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.437,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.7,
+          "limit_ms": 3.0,
+          "passed": true
+        }
+      ],
+      "policy": "Every measured run must meet every CPU p95 limit; no averaging away failures.",
+      "profile_sha256": "33f33ca9e14603ae68262b77f6d2629bbfd139a96437a38e7e1efcc870a8251a",
+      "definition": {
+        "schema": 1,
+        "name": "Frontier development desktop CPU targets",
+        "description": "Provisional engineering targets for this measured RTX 5080 development machine, manual updates, static scene, 1280x720. Adapter matching does not identify the CPU or certify other hardware. CPU API timings exclude total GPU/UI cost.",
+        "scope": {
+          "resolution": [
+            1280,
+            720
+          ],
+          "world": "static",
+          "automatic": false,
+          "adapter": "NVIDIA GeForce RTX 5080"
+        },
+        "renderers": [
+          "gl_compatibility",
+          "mobile"
+        ],
+        "minimum_runs": 3,
+        "minimum_frames": 600,
+        "minimum_warmups": 120,
+        "limits_ms": {
+          "ui_disabled": {
+            "api_cpu": 0.05
+          },
+          "idle": {
+            "api_cpu": 0.05
+          },
+          "clock_1hz": {
+            "changed_api_cpu": 3.0
+          },
+          "vitals_10hz": {
+            "changed_api_cpu": 1.0
+          },
+          "clock_update": {
+            "changed_api_cpu": 1.0
+          },
+          "vitals_update": {
+            "changed_api_cpu": 1.0
+          },
+          "redundant_signal": {
+            "changed_api_cpu": 0.3
+          },
+          "hover": {
+            "changed_api_cpu": 0.5
+          },
+          "inventory_sort": {
+            "changed_api_cpu": 2.0
+          },
+          "settings_typing": {
+            "changed_api_cpu": 1.0
+          },
+          "settings_slider": {
+            "changed_api_cpu": 1.0
+          },
+          "settings_toggle": {
+            "changed_api_cpu": 3.0
+          }
+        }
+      }
+    }
+  },
+  "installed": {
+    "library_sha256": "277f2e3e291fc404c19f6da968b7c4d155b26b10d0af9b8e8656f7a2b76b4662",
+    "version": "0.1.0-preview.125",
+    "targets": {
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
+    },
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed125-backup",
+    "updated_files": [
+      "ADA.md",
+      "ADA_LICENSE_APACHE.txt",
+      "ADA_LICENSE_MIT.txt",
+      "DECIMAL.md",
+      "DECIMAL_LICENSE.txt",
+      "FORM_STATE.md",
+      "GODOT_CPP_LICENSE.md",
+      "GODOT_TEXT_SHAPING.md",
+      "ICU_DATA.md",
+      "ICU_LICENSE.txt",
+      "IME.md",
+      "LICENSE.md",
+      "README.md",
+      "TEXT_EDITING.md",
+      "UNICODE_DATA.md",
+      "UNICODE_LICENSE.txt",
+      "bin/weva_godot.dll",
+      "bin/weva_godot.dll.build.json",
+      "build.json"
+    ]
+  },
+  "installed_smokes": [
+    {
+      "name": "dialog_cancel_tests",
+      "checks": 554,
+      "passed": true
+    },
+    {
+      "name": "form_validation_tests",
+      "checks": 12907,
+      "passed": true
+    },
+    {
+      "name": "form_state_tests",
+      "checks": 506,
+      "passed": true
+    },
+    {
+      "name": "binding_tests",
+      "checks": 165,
+      "passed": true
+    },
+    {
+      "name": "timing_tests",
+      "checks": 16,
+      "passed": true
+    },
+    {
+      "name": "validity_snapshot_tests",
+      "checks": 676,
+      "passed": true
+    },
+    {
+      "name": "explicit_validity_tests",
+      "checks": 104,
+      "passed": true
+    },
+    {
+      "name": "range_selector_tests",
+      "checks": 396,
+      "passed": true
+    },
+    {
+      "name": "frontier",
+      "checks": 92,
+      "passed": true
+    }
+  ],
+  "scope": [
+    "Number, range and temporal range selectors;195 Chrome states.",
+    "Live field/parent styles, nested selectors and cache restoration.",
+    "Desktop budget uses manual updates and static720p RTX5080 scene; excludes total UI/GPU cost and does not benchmark range-selector-heavy forms.",
+    "Full validity selectors, Unicode-v patterns, physical input and broader release qualification remain open."
+  ]
+}

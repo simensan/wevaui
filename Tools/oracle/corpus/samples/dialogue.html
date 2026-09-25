@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Halcyon — Dialogue</title>
+<link rel="stylesheet" href="dialogue.css" />
+</head>
+<body>
+
+<main class="scene">
+  <!-- ───── SCENE BACKGROUND (top half) ───── -->
+  <div class="backdrop">
+    <div class="vignette"></div>
+  </div>
+
+  <!-- ───── NPC PORTRAIT (left) ───── -->
+  <aside class="speaker">
+    <div class="portrait">
+      <div class="portrait-glyph">⚜</div>
+    </div>
+    <div class="speaker-meta">
+      <span class="speaker-name">Captain Ren</span>
+      <span class="speaker-title">Watch of the Brass Gate</span>
+    </div>
+  </aside>
+
+  <!-- ───── DIALOGUE BOX ───── -->
+  <section class="dialogue">
+    <header class="dialogue-head">
+      <span class="dialogue-tag">Quest · Whispers in the Vault</span>
+      <span class="dialogue-progress">Step 3 / 7</span>
+    </header>
+
+    <div class="dialogue-body">
+      <p class="line">"You're the one they sent down from the keep? Good. We've had three watchmen vanish into the lower archive in the last fortnight, and the seneschal would rather pretend nothing's wrong than face the obvious."</p>
+      <p class="line">"Take this lantern. The flame's bound to a soulglass — if it dims, you'll know <em>they</em> are close. Whatever you find, bring it to me first. Not the seneschal, not the priors. <strong>Me</strong>."</p>
+    </div>
+
+    <ul class="choices">
+      <li class="choice choice-primary">
+        <span class="choice-key">1</span>
+        <span class="choice-text">"I'll head down at first light."</span>
+      </li>
+      <li class="choice">
+        <span class="choice-key">2</span>
+        <span class="choice-text">"Tell me about the missing watchmen first."</span>
+      </li>
+      <li class="choice choice-warning">
+        <span class="choice-key">3</span>
+        <span class="choice-text">"Why shouldn't I tell the seneschal?"</span>
+        <span class="choice-tag">Suspicious</span>
+      </li>
+      <li class="choice choice-exit">
+        <span class="choice-key">4</span>
+        <span class="choice-text">"Not interested." [Leave]</span>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ───── HOTKEY HINT BAR ───── -->
+  <footer class="hotbar">
+    <span class="hk"><kbd>1-4</kbd>Select</span>
+    <span class="hk"><kbd>Esc</kbd>Leave</span>
+    <span class="hk"><kbd>J</kbd>Journal</span>
+    <span class="hk hk-right"><kbd>Tab</kbd>Inventory</span>
+  </footer>
+</main>
+
+</body>
+</html>

@@ -1,15 +1,13 @@
 using UnityEngine;
 using Weva;
 using Weva.Binding;
-using Weva.Dom;
 
 // Drives menu.html. Attach to the same GameObject as a WevaDocument; we wire
-// ourselves in OnEnable via WevaDocument.SetController. The {{ CoinCount }} text
-// node refreshes every frame the binding system observes a Version bump on the
-// field; OnStart() bumps it.
+// ourselves in OnEnable via WevaDocument.SetController. The {{ CoinCount }}
+// text node follows the field: a controller without IBindingVersion is read
+// once a frame, so mutating the field is enough.
 public class PhaseOneDemoController : MonoBehaviour {
     [UIBind] public int CoinCount;
-    [UIElement("start-button")] public Element StartButton;
 
     WevaDocument doc;
 
@@ -21,7 +19,5 @@ public class PhaseOneDemoController : MonoBehaviour {
     public void OnStart() {
         Debug.Log("Weva demo: Start clicked. Coins=" + CoinCount);
         CoinCount++;
-        // The binding layer reads CoinCount on the next pipeline tick; no
-        // explicit MarkDirty needed for a [UIBind] field.
     }
 }

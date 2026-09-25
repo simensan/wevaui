@@ -1,0 +1,53 @@
+/* Background images and replaced <img> sizing.
+
+   The rows are flex on purpose: a flex item is measured through a different
+   door than an inline-block, and an <img> laid out at zero height in one of
+   them while being right in the other. */
+
+body { margin: 0; font-family: sans-serif; font-size: 13px; }
+
+.page { width: 900px; padding: 14px; }
+.row { display: flex; gap: 12px; margin-bottom: 12px; align-items: flex-start; }
+
+.bg {
+  width: 120px;
+  height: 90px;
+  border: 1px solid #999;
+  background-image: url(assets/cov-image/efb5d520a89b7489-cov-image-corners.png);
+  background-repeat: no-repeat;
+}
+.fill    { background-size: 100% 100%; }
+.cover   { background-size: cover; background-position: 50% 50%; }
+.contain { background-size: contain; background-position: 50% 50%; }
+.tiled   { background-repeat: repeat; background-size: 20px 20px; }
+/* A tile smaller than the box, placed by percentage: the case that pins
+   (area - tile) rather than area. */
+.placed  { background-size: 40px 30px; background-position: 75% 25%; }
+
+img { border: 1px solid #999; }
+
+/* An intrinsic size, then one axis stated with the other from the ratio. */
+.w    { width: 90px; }
+.wide { width: 160px; }
+.tall { height: 48px; }
+
+.box { width: 120px; height: 90px; }
+.fit-fill    { object-fit: fill; }
+.fit-contain { object-fit: contain; }
+.fit-cover   { object-fit: cover; }
+.fit-none    { object-fit: none; }
+
+/* Padding insets the picture; it does not scale it.
+
+   The image is `display: block` here on purpose. As an INLINE image it sits on
+   the line's baseline and the strut's descender leaves a gap below it -- the
+   familiar few pixels under an <img> in a div -- and this engine puts it flush
+   instead. That divergence is recorded in known-gaps/README.md; pinning it
+   here would make this case fail for a reason that has nothing to do with
+   images. */
+.pad { padding: 8px; border: 1px solid #999; }
+.pad img { display: block; }
+
+/* A src that resolves to nothing, and none at all: both must keep the box at
+   zero rather than inventing a size. */
+.missing, .nosrc { }

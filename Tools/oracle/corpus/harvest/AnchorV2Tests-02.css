@@ -1,0 +1,5 @@
+
+                .btn { width: 80px; height: 50px; anchor-name: --btn; }
+                .tip { position: absolute; position-anchor: --btn;
+                       width: 60px; height: anchor-size(--btn height); }
+            

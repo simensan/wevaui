@@ -1,0 +1,7 @@
+
+                .outer { counter-reset: c; }
+                .b1    { contain: style; }
+                .b2    { contain: style; }
+                .inner { counter-increment: c; }
+                .after-b1::before { content: counter(c); }
+            

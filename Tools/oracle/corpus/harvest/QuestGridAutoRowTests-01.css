@@ -1,0 +1,35 @@
+
+            .quest {
+                display: grid;
+                grid-template-columns: 56px 1fr 140px;
+                gap: 16px;
+                padding: 16px 20px;
+            }
+            .quest-marker { width: 56px; height: 56px; }
+            .quest-body { display: flex; flex-direction: column; gap: 6px; }
+            .quest-head { font-size: 14px; line-height: 21px; height: 21px; }
+            .quest-desc { font-size: 14px; line-height: 20px; height: 20px; }
+            .quest-objectives {
+                list-style: none;
+                margin: 8px 0 0 0;
+                padding: 0;
+                display: flex;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .obj { position: relative; padding-left: 22px; font-size: 12px; line-height: 16px; height: 16px; }
+            .obj::before {
+                content: "o";
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+            .quest-progress {
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin-top: 4px;
+                height: 15px;
+            }
+            .quest-side { display: flex; flex-direction: column; }
+        

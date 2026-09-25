@@ -1,0 +1,11 @@
+
+                body { margin: 0; }
+                .filler { height: 30px; }
+                .anchor { width: 100px; height: 50px; anchor-name: --tip; }
+                .tip {
+                    position: absolute;
+                    position-anchor: --tip;
+                    top: anchor(top);
+                    width: 80px; height: 20px;
+                }
+            

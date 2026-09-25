@@ -1,0 +1,4 @@
+
+                .grid { display: flex; flex-wrap: wrap; width: 210px; }
+                .cell { width: 60px; height: 40px; margin: 5px; }
+            

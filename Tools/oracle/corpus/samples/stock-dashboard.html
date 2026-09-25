@@ -1,0 +1,174 @@
+<!--
+  stock-dashboard — a mock trading-desk dashboard. Dark TradingView-style
+  theme: a top bar with portfolio summary, a featured candlestick chart panel
+  (CSS-drawn candles = absolutely-positioned wick+body divs, NO clip-path so it
+  dodges the polygon Y-flip bug), a watchlist with CSS bar-sparklines and
+  red/green change pills, and a row of index cards. Exercises: flex topbar,
+  2-column grid board, absolute positioning with CSS-var-driven percentages,
+  linear-gradient panels, border-radius, flex-end sparkline bars, tabular
+  numerals via the system SDF face.
+-->
+<link rel="stylesheet" href="stock-dashboard.css" />
+<main class="app">
+
+  <!-- ── Top bar ─────────────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <div class="brand"><span class="logo"></span>Wevā&nbsp;Markets</div>
+    <nav class="nav">
+      <span class="tab active">Markets</span>
+      <span class="tab">Portfolio</span>
+      <span class="tab">Screener</span>
+      <span class="tab">News</span>
+    </nav>
+    <div class="spacer"></div>
+    <div class="portfolio">
+      <div class="pf-label">Net Liquidity</div>
+      <div class="pf-row"><span class="pf-val">$48,219.50</span><span class="pill up">▲ 2.41%</span></div>
+    </div>
+    <div class="bell"><span class="dot"></span></div>
+    <div class="avatar">SK</div>
+  </header>
+
+  <!-- ── Board: chart + watchlist ────────────────────────────────────────── -->
+  <section class="board">
+
+    <!-- Featured candlestick chart -->
+    <div class="panel chart-panel">
+      <div class="sym-head">
+        <div class="sym-id">
+          <div class="sym-mark">AAPL</div>
+          <div class="sym-meta">
+            <span class="sym-name">Apple Inc.</span>
+            <span class="sym-exch">NASDAQ · Equity · USD</span>
+          </div>
+        </div>
+        <div class="sym-price">
+          <div class="price">$189.21</div>
+          <div class="chg up">+$2.61&nbsp;&nbsp;(1.40%)</div>
+        </div>
+        <div class="tf">
+          <span class="tf-btn">1H</span>
+          <span class="tf-btn active">1D</span>
+          <span class="tf-btn">1W</span>
+          <span class="tf-btn">1M</span>
+          <span class="tf-btn">1Y</span>
+        </div>
+      </div>
+
+      <div class="chart">
+        <!-- horizontal gridlines -->
+        <span class="gl" style="bottom:20%"></span>
+        <span class="gl" style="bottom:40%"></span>
+        <span class="gl" style="bottom:60%"></span>
+        <span class="gl" style="bottom:80%"></span>
+
+        <!-- candles: --x left, wick (--lo bottom / --range height), body (--oc bottom / --bh height) -->
+        <div class="candle up"   style="--x:5%"><span class="wick" style="--lo:30%;--range:12%"></span><span class="body" style="--oc:33%;--bh:7%"></span></div>
+        <div class="candle down" style="--x:11%"><span class="wick" style="--lo:34%;--range:12%"></span><span class="body" style="--oc:37%;--bh:3%"></span></div>
+        <div class="candle up"   style="--x:17%"><span class="wick" style="--lo:35%;--range:15%"></span><span class="body" style="--oc:37%;--bh:11%"></span></div>
+        <div class="candle down" style="--x:23%"><span class="wick" style="--lo:44%;--range:10%"></span><span class="body" style="--oc:46%;--bh:2%"></span></div>
+        <div class="candle up"   style="--x:29%"><span class="wick" style="--lo:42%;--range:16%"></span><span class="body" style="--oc:46%;--bh:10%"></span></div>
+        <div class="candle down" style="--x:35%"><span class="wick" style="--lo:50%;--range:10%"></span><span class="body" style="--oc:52%;--bh:4%"></span></div>
+        <div class="candle up"   style="--x:41%"><span class="wick" style="--lo:48%;--range:15%"></span><span class="body" style="--oc:52%;--bh:9%"></span></div>
+        <div class="candle down" style="--x:47%"><span class="wick" style="--lo:55%;--range:11%"></span><span class="body" style="--oc:58%;--bh:3%"></span></div>
+        <div class="candle up"   style="--x:53%"><span class="wick" style="--lo:54%;--range:14%"></span><span class="body" style="--oc:58%;--bh:8%"></span></div>
+        <div class="candle down" style="--x:59%"><span class="wick" style="--lo:60%;--range:10%"></span><span class="body" style="--oc:63%;--bh:3%"></span></div>
+        <div class="candle up"   style="--x:65%"><span class="wick" style="--lo:58%;--range:14%"></span><span class="body" style="--oc:63%;--bh:8%"></span></div>
+        <div class="candle down" style="--x:71%"><span class="wick" style="--lo:64%;--range:10%"></span><span class="body" style="--oc:68%;--bh:3%"></span></div>
+        <div class="candle up"   style="--x:77%"><span class="wick" style="--lo:62%;--range:11%"></span><span class="body" style="--oc:68%;--bh:4%"></span></div>
+        <div class="candle up"   style="--x:83%"><span class="wick" style="--lo:66%;--range:12%"></span><span class="body" style="--oc:72%;--bh:4%"></span></div>
+        <div class="candle down" style="--x:89%"><span class="wick" style="--lo:70%;--range:10%"></span><span class="body" style="--oc:73%;--bh:3%"></span></div>
+        <div class="candle up"   style="--x:95%"><span class="wick" style="--lo:68%;--range:14%"></span><span class="body" style="--oc:73%;--bh:7%"></span></div>
+
+        <!-- last-price marker -->
+        <div class="last" style="bottom:80%"><span class="last-tag">189.21</span></div>
+      </div>
+
+      <div class="chart-foot">
+        <div class="ohlc"><span class="k">O</span>186.60 <span class="k">H</span>190.05 <span class="k">L</span>185.92 <span class="k">C</span><b class="up">189.21</b></div>
+        <div class="vol"><span class="k">Vol</span> 54.2M</div>
+      </div>
+    </div>
+
+    <!-- Watchlist -->
+    <div class="panel watch">
+      <div class="panel-head">Watchlist <span class="count">8</span></div>
+      <ul class="rows">
+
+        <li class="row">
+          <div class="r-sym"><div class="r-mark">NVDA</div><div class="r-name">NVIDIA Corp</div></div>
+          <div class="spark up"><i style="--h:30%"></i><i style="--h:42%"></i><i style="--h:38%"></i><i style="--h:55%"></i><i style="--h:48%"></i><i style="--h:66%"></i><i style="--h:60%"></i><i style="--h:80%"></i><i style="--h:72%"></i><i style="--h:95%"></i></div>
+          <div class="r-px"><div class="r-price">$721.33</div><div class="pill up">+3.21%</div></div>
+        </li>
+
+        <li class="row">
+          <div class="r-sym"><div class="r-mark">TSLA</div><div class="r-name">Tesla Inc</div></div>
+          <div class="spark down"><i style="--h:90%"></i><i style="--h:78%"></i><i style="--h:84%"></i><i style="--h:60%"></i><i style="--h:66%"></i><i style="--h:50%"></i><i style="--h:58%"></i><i style="--h:40%"></i><i style="--h:46%"></i><i style="--h:34%"></i></div>
+          <div class="r-px"><div class="r-price">$202.64</div><div class="pill down">−1.87%</div></div>
+        </li>
+
+        <li class="row">
+          <div class="r-sym"><div class="r-mark">MSFT</div><div class="r-name">Microsoft</div></div>
+          <div class="spark up"><i style="--h:44%"></i><i style="--h:40%"></i><i style="--h:52%"></i><i style="--h:48%"></i><i style="--h:60%"></i><i style="--h:56%"></i><i style="--h:68%"></i><i style="--h:64%"></i><i style="--h:76%"></i><i style="--h:82%"></i></div>
+          <div class="r-px"><div class="r-price">$415.02</div><div class="pill up">+0.94%</div></div>
+        </li>
+
+        <li class="row">
+          <div class="r-sym"><div class="r-mark">AMZN</div><div class="r-name">Amazon</div></div>
+          <div class="spark up"><i style="--h:36%"></i><i style="--h:48%"></i><i style="--h:42%"></i><i style="--h:58%"></i><i style="--h:52%"></i><i style="--h:50%"></i><i style="--h:64%"></i><i style="--h:70%"></i><i style="--h:66%"></i><i style="--h:78%"></i></div>
+          <div class="r-px"><div class="r-price">$178.15</div><div class="pill up">+1.12%</div></div>
+        </li>
+
+        <li class="row">
+          <div class="r-sym"><div class="r-mark">META</div><div class="r-name">Meta Platforms</div></div>
+          <div class="spark down"><i style="--h:72%"></i><i style="--h:80%"></i><i style="--h:68%"></i><i style="--h:74%"></i><i style="--h:60%"></i><i style="--h:64%"></i><i style="--h:52%"></i><i style="--h:56%"></i><i style="--h:48%"></i><i style="--h:44%"></i></div>
+          <div class="r-px"><div class="r-price">$486.79</div><div class="pill down">−0.63%</div></div>
+        </li>
+
+        <li class="row">
+          <div class="r-sym"><div class="r-mark">GOOGL</div><div class="r-name">Alphabet</div></div>
+          <div class="spark up"><i style="--h:40%"></i><i style="--h:46%"></i><i style="--h:44%"></i><i style="--h:54%"></i><i style="--h:50%"></i><i style="--h:62%"></i><i style="--h:58%"></i><i style="--h:60%"></i><i style="--h:70%"></i><i style="--h:74%"></i></div>
+          <div class="r-px"><div class="r-price">$152.41</div><div class="pill up">+0.58%</div></div>
+        </li>
+
+        <li class="row">
+          <div class="r-sym"><div class="r-mark">AMD</div><div class="r-name">Adv Micro Dev</div></div>
+          <div class="spark up"><i style="--h:28%"></i><i style="--h:40%"></i><i style="--h:36%"></i><i style="--h:50%"></i><i style="--h:62%"></i><i style="--h:54%"></i><i style="--h:70%"></i><i style="--h:66%"></i><i style="--h:84%"></i><i style="--h:90%"></i></div>
+          <div class="r-px"><div class="r-price">$167.88</div><div class="pill up">+2.45%</div></div>
+        </li>
+
+        <li class="row">
+          <div class="r-sym"><div class="r-mark">INTC</div><div class="r-name">Intel Corp</div></div>
+          <div class="spark down"><i style="--h:84%"></i><i style="--h:76%"></i><i style="--h:80%"></i><i style="--h:64%"></i><i style="--h:70%"></i><i style="--h:56%"></i><i style="--h:60%"></i><i style="--h:46%"></i><i style="--h:52%"></i><i style="--h:38%"></i></div>
+          <div class="r-px"><div class="r-price">$30.41</div><div class="pill down">−2.04%</div></div>
+        </li>
+
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── Index strip ─────────────────────────────────────────────────────── -->
+  <section class="indices">
+    <div class="idx">
+      <div class="idx-top"><span class="idx-name">S&amp;P 500</span><span class="pill up">+0.82%</span></div>
+      <div class="idx-val">5,187.67</div>
+      <div class="spark up sm"><i style="--h:40%"></i><i style="--h:46%"></i><i style="--h:42%"></i><i style="--h:54%"></i><i style="--h:60%"></i><i style="--h:56%"></i><i style="--h:68%"></i><i style="--h:74%"></i></div>
+    </div>
+    <div class="idx">
+      <div class="idx-top"><span class="idx-name">Nasdaq 100</span><span class="pill up">+1.14%</span></div>
+      <div class="idx-val">18,302.91</div>
+      <div class="spark up sm"><i style="--h:34%"></i><i style="--h:48%"></i><i style="--h:44%"></i><i style="--h:58%"></i><i style="--h:52%"></i><i style="--h:70%"></i><i style="--h:66%"></i><i style="--h:82%"></i></div>
+    </div>
+    <div class="idx">
+      <div class="idx-top"><span class="idx-name">Dow Jones</span><span class="pill down">−0.21%</span></div>
+      <div class="idx-val">38,654.42</div>
+      <div class="spark down sm"><i style="--h:70%"></i><i style="--h:64%"></i><i style="--h:68%"></i><i style="--h:56%"></i><i style="--h:60%"></i><i style="--h:50%"></i><i style="--h:54%"></i><i style="--h:46%"></i></div>
+    </div>
+    <div class="idx">
+      <div class="idx-top"><span class="idx-name">VIX</span><span class="pill down">−4.30%</span></div>
+      <div class="idx-val">13.18</div>
+      <div class="spark down sm"><i style="--h:88%"></i><i style="--h:80%"></i><i style="--h:84%"></i><i style="--h:66%"></i><i style="--h:58%"></i><i style="--h:50%"></i><i style="--h:42%"></i><i style="--h:34%"></i></div>
+    </div>
+  </section>
+
+</main>

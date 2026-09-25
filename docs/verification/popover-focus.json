@@ -1,0 +1,1690 @@
+{
+  "status": "Installed in both local addons; development preview",
+  "baseline": {
+    "library_sha256": "460f4278e2716d01416879b80360adf2096732047abfae93b096825f4ba4d801",
+    "runs": [
+      {
+        "name": "import",
+        "returncode": 0,
+        "errors": false
+      },
+      {
+        "name": "focus",
+        "returncode": 1,
+        "errors": false
+      }
+    ],
+    "chrome": {
+      "browser": "Chrome/152.0.7977.83",
+      "rows": [
+        {
+          "kind": "auto",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "outside"
+        },
+        {
+          "kind": "auto",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "other"
+        },
+        {
+          "kind": "auto",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "auto",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "auto",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "auto",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "auto",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "auto",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "hint",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "outside"
+        },
+        {
+          "kind": "hint",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "other"
+        },
+        {
+          "kind": "hint",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "hint",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "hint",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "hint",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "hint",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "hint",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "manual",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "outside"
+        },
+        {
+          "kind": "manual",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "other"
+        },
+        {
+          "kind": "manual",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "field"
+        },
+        {
+          "kind": "manual",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "manual",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "field"
+        },
+        {
+          "kind": "manual",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "manual",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "field"
+        },
+        {
+          "kind": "manual",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        }
+      ]
+    },
+    "native": {
+      "checks": 48,
+      "failures": 21,
+      "rows": [
+        {
+          "autofocus": false,
+          "expected_hidden": "outside",
+          "expected_shown": "outside",
+          "hidden": "outside",
+          "kind": "auto",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "outside",
+          "hidden": "other",
+          "kind": "auto",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "auto",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "auto",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "auto",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "auto",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "auto",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "auto",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "outside",
+          "expected_shown": "outside",
+          "hidden": "outside",
+          "kind": "hint",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "outside",
+          "hidden": "other",
+          "kind": "hint",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "hint",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "hint",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "hint",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "hint",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "hint",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "hint",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "outside",
+          "expected_shown": "outside",
+          "hidden": "outside",
+          "kind": "manual",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "outside",
+          "hidden": "other",
+          "kind": "manual",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "field",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "manual",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "manual",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "field",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "manual",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "manual",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "field",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "manual",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "manual",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "dialog"
+        }
+      ]
+    },
+    "passed": false
+  },
+  "candidate_immediate": {
+    "library_sha256": "cf74ff2ca424e194e9ae00eae6962e760a129660f30e1cacc29be267da041065",
+    "runs": [
+      {
+        "name": "import",
+        "returncode": 0,
+        "errors": false
+      },
+      {
+        "name": "focus",
+        "returncode": 1,
+        "errors": false
+      }
+    ],
+    "chrome": {
+      "browser": "Chrome/152.0.7977.83",
+      "rows": [
+        {
+          "kind": "auto",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "outside"
+        },
+        {
+          "kind": "auto",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "other"
+        },
+        {
+          "kind": "auto",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "auto",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "auto",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "auto",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "auto",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "auto",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "hint",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "outside"
+        },
+        {
+          "kind": "hint",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "other"
+        },
+        {
+          "kind": "hint",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "hint",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "hint",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "hint",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "hint",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "outside"
+        },
+        {
+          "kind": "hint",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "manual",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "outside"
+        },
+        {
+          "kind": "manual",
+          "tag": "div",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef ></div>",
+          "shown": "outside",
+          "hidden": "other"
+        },
+        {
+          "kind": "manual",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "field"
+        },
+        {
+          "kind": "manual",
+          "tag": "div",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef autofocus></div>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "manual",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "field"
+        },
+        {
+          "kind": "manual",
+          "tag": "dialog",
+          "autofocus": false,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef ></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        },
+        {
+          "kind": "manual",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": false,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "field"
+        },
+        {
+          "kind": "manual",
+          "tag": "dialog",
+          "autofocus": true,
+          "moveOutside": true,
+          "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef autofocus></dialog>",
+          "shown": "field",
+          "hidden": "other"
+        }
+      ]
+    },
+    "native": {
+      "checks": 48,
+      "failures": 3,
+      "rows": [
+        {
+          "autofocus": false,
+          "expected_hidden": "outside",
+          "expected_shown": "outside",
+          "hidden": "outside",
+          "kind": "auto",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "outside",
+          "hidden": "other",
+          "kind": "auto",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "auto",
+          "moveOutside": false,
+          "shown": "field",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "auto",
+          "moveOutside": true,
+          "shown": "field",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "auto",
+          "moveOutside": false,
+          "shown": "field",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "auto",
+          "moveOutside": true,
+          "shown": "field",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "auto",
+          "moveOutside": false,
+          "shown": "field",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "auto",
+          "moveOutside": true,
+          "shown": "field",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "outside",
+          "expected_shown": "outside",
+          "hidden": "outside",
+          "kind": "hint",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "outside",
+          "hidden": "other",
+          "kind": "hint",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "hint",
+          "moveOutside": false,
+          "shown": "field",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "hint",
+          "moveOutside": true,
+          "shown": "field",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "hint",
+          "moveOutside": false,
+          "shown": "field",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "hint",
+          "moveOutside": true,
+          "shown": "field",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "outside",
+          "expected_shown": "field",
+          "hidden": "outside",
+          "kind": "hint",
+          "moveOutside": false,
+          "shown": "field",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "hint",
+          "moveOutside": true,
+          "shown": "field",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "outside",
+          "expected_shown": "outside",
+          "hidden": "outside",
+          "kind": "manual",
+          "moveOutside": false,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "outside",
+          "hidden": "other",
+          "kind": "manual",
+          "moveOutside": true,
+          "shown": "outside",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "field",
+          "expected_shown": "field",
+          "hidden": "",
+          "kind": "manual",
+          "moveOutside": false,
+          "shown": "field",
+          "tag": "div"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "manual",
+          "moveOutside": true,
+          "shown": "field",
+          "tag": "div"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "field",
+          "expected_shown": "field",
+          "hidden": "",
+          "kind": "manual",
+          "moveOutside": false,
+          "shown": "field",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": false,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "manual",
+          "moveOutside": true,
+          "shown": "field",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "field",
+          "expected_shown": "field",
+          "hidden": "",
+          "kind": "manual",
+          "moveOutside": false,
+          "shown": "field",
+          "tag": "dialog"
+        },
+        {
+          "autofocus": true,
+          "expected_hidden": "other",
+          "expected_shown": "field",
+          "hidden": "other",
+          "kind": "manual",
+          "moveOutside": true,
+          "shown": "field",
+          "tag": "dialog"
+        }
+      ]
+    },
+    "passed": false
+  },
+  "chrome_settled": {
+    "browser": "Chrome/152.0.7977.83",
+    "rows": [
+      {
+        "kind": "auto",
+        "tag": "div",
+        "autofocus": false,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef ></div>",
+        "shown": "outside",
+        "hidden": "outside",
+        "hiddenAfterLayout": "outside",
+        "hiddenAfterFrame": "outside"
+      },
+      {
+        "kind": "auto",
+        "tag": "div",
+        "autofocus": false,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef ></div>",
+        "shown": "outside",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      },
+      {
+        "kind": "auto",
+        "tag": "div",
+        "autofocus": true,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef autofocus></div>",
+        "shown": "field",
+        "hidden": "outside",
+        "hiddenAfterLayout": "outside",
+        "hiddenAfterFrame": "outside"
+      },
+      {
+        "kind": "auto",
+        "tag": "div",
+        "autofocus": true,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=auto><input id=field value=abcdef autofocus></div>",
+        "shown": "field",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      },
+      {
+        "kind": "auto",
+        "tag": "dialog",
+        "autofocus": false,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef ></dialog>",
+        "shown": "field",
+        "hidden": "outside",
+        "hiddenAfterLayout": "outside",
+        "hiddenAfterFrame": "outside"
+      },
+      {
+        "kind": "auto",
+        "tag": "dialog",
+        "autofocus": false,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef ></dialog>",
+        "shown": "field",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      },
+      {
+        "kind": "auto",
+        "tag": "dialog",
+        "autofocus": true,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef autofocus></dialog>",
+        "shown": "field",
+        "hidden": "outside",
+        "hiddenAfterLayout": "outside",
+        "hiddenAfterFrame": "outside"
+      },
+      {
+        "kind": "auto",
+        "tag": "dialog",
+        "autofocus": true,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=auto><input id=field value=abcdef autofocus></dialog>",
+        "shown": "field",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      },
+      {
+        "kind": "hint",
+        "tag": "div",
+        "autofocus": false,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef ></div>",
+        "shown": "outside",
+        "hidden": "outside",
+        "hiddenAfterLayout": "outside",
+        "hiddenAfterFrame": "outside"
+      },
+      {
+        "kind": "hint",
+        "tag": "div",
+        "autofocus": false,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef ></div>",
+        "shown": "outside",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      },
+      {
+        "kind": "hint",
+        "tag": "div",
+        "autofocus": true,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef autofocus></div>",
+        "shown": "field",
+        "hidden": "outside",
+        "hiddenAfterLayout": "outside",
+        "hiddenAfterFrame": "outside"
+      },
+      {
+        "kind": "hint",
+        "tag": "div",
+        "autofocus": true,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=hint><input id=field value=abcdef autofocus></div>",
+        "shown": "field",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      },
+      {
+        "kind": "hint",
+        "tag": "dialog",
+        "autofocus": false,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef ></dialog>",
+        "shown": "field",
+        "hidden": "outside",
+        "hiddenAfterLayout": "outside",
+        "hiddenAfterFrame": "outside"
+      },
+      {
+        "kind": "hint",
+        "tag": "dialog",
+        "autofocus": false,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef ></dialog>",
+        "shown": "field",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      },
+      {
+        "kind": "hint",
+        "tag": "dialog",
+        "autofocus": true,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef autofocus></dialog>",
+        "shown": "field",
+        "hidden": "outside",
+        "hiddenAfterLayout": "outside",
+        "hiddenAfterFrame": "outside"
+      },
+      {
+        "kind": "hint",
+        "tag": "dialog",
+        "autofocus": true,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=hint><input id=field value=abcdef autofocus></dialog>",
+        "shown": "field",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      },
+      {
+        "kind": "manual",
+        "tag": "div",
+        "autofocus": false,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef ></div>",
+        "shown": "outside",
+        "hidden": "outside",
+        "hiddenAfterLayout": "outside",
+        "hiddenAfterFrame": "outside"
+      },
+      {
+        "kind": "manual",
+        "tag": "div",
+        "autofocus": false,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef ></div>",
+        "shown": "outside",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      },
+      {
+        "kind": "manual",
+        "tag": "div",
+        "autofocus": true,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef autofocus></div>",
+        "shown": "field",
+        "hidden": "field",
+        "hiddenAfterLayout": "field",
+        "hiddenAfterFrame": ""
+      },
+      {
+        "kind": "manual",
+        "tag": "div",
+        "autofocus": true,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><div id=p popover=manual><input id=field value=abcdef autofocus></div>",
+        "shown": "field",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      },
+      {
+        "kind": "manual",
+        "tag": "dialog",
+        "autofocus": false,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef ></dialog>",
+        "shown": "field",
+        "hidden": "field",
+        "hiddenAfterLayout": "field",
+        "hiddenAfterFrame": ""
+      },
+      {
+        "kind": "manual",
+        "tag": "dialog",
+        "autofocus": false,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef ></dialog>",
+        "shown": "field",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      },
+      {
+        "kind": "manual",
+        "tag": "dialog",
+        "autofocus": true,
+        "moveOutside": false,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef autofocus></dialog>",
+        "shown": "field",
+        "hidden": "field",
+        "hiddenAfterLayout": "field",
+        "hiddenAfterFrame": ""
+      },
+      {
+        "kind": "manual",
+        "tag": "dialog",
+        "autofocus": true,
+        "moveOutside": true,
+        "html": "<button id=outside>Open</button><button id=other>Other</button><dialog id=p popover=manual><input id=field value=abcdef autofocus></dialog>",
+        "shown": "field",
+        "hidden": "other",
+        "hiddenAfterLayout": "other",
+        "hiddenAfterFrame": "other"
+      }
+    ]
+  },
+  "native_suite": {
+    "library_sha256": "cf74ff2ca424e194e9ae00eae6962e760a129660f30e1cacc29be267da041065",
+    "test_sha256": "9a6102446b0bdaaea00c50d550e76e6eef3380657b15af277d2a57bc91c4eabd",
+    "runs": [
+      {
+        "name": "import",
+        "returncode": 0,
+        "passed": true
+      },
+      {
+        "name": "binding",
+        "returncode": 0,
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "checks": 1171,
+  "core": {
+    "passed": true,
+    "suites": 14,
+    "seconds": 26.03
+  },
+  "timing_difference": "Manual popovers retain focused hidden fields immediately in Chrome, then clear after rendering. Godot clears in the call. Immediate differences remain, while all 48 opening/settled comparisons pass.",
+  "remaining": [
+    "Current-binary runtime qualification",
+    "Immediate browser task timing remains different",
+    "Broader game UI requirements remain"
+  ],
+  "transition_baseline": {
+    "library_sha256": "cf74ff2ca424e194e9ae00eae6962e760a129660f30e1cacc29be267da041065",
+    "test_sha256": "50f19083037fe7591c8f53cc223acdca949e54cfbdbc04a4abc5705a88b66a1b",
+    "runs": [
+      {
+        "name": "import",
+        "returncode": 0,
+        "passed": true
+      },
+      {
+        "name": "binding",
+        "returncode": 1,
+        "passed": false
+      }
+    ],
+    "passed": false
+  },
+  "transition_candidate": {
+    "library_sha256": "d18a073aa0e29db5b22dae26f848792b9600337bc7f450ebc799809a1ecfb442",
+    "test_sha256": "50f19083037fe7591c8f53cc223acdca949e54cfbdbc04a4abc5705a88b66a1b",
+    "runs": [
+      {
+        "name": "import",
+        "returncode": 0,
+        "passed": true
+      },
+      {
+        "name": "binding",
+        "returncode": 0,
+        "passed": true
+      }
+    ],
+    "passed": true
+  },
+  "transition_cases": {
+    "scenarios": 36,
+    "steps": 144,
+    "baseline_failures": 15,
+    "candidate_failures": 0
+  },
+  "current_core": {
+    "passed": true,
+    "suites": 14,
+    "seconds": 28.42,
+    "lifetime": "Remove saved target, remove popup, reload document"
+  },
+  "native_host": {
+    "binary_sha256": "d18a073aa0e29db5b22dae26f848792b9600337bc7f450ebc799809a1ecfb442",
+    "tests": [
+      {
+        "name": "import",
+        "passed": true,
+        "checks": 0
+      },
+      {
+        "name": "form_baseline_tests",
+        "passed": true,
+        "checks": 2022
+      },
+      {
+        "name": "border_tests",
+        "passed": true,
+        "checks": 1086
+      },
+      {
+        "name": "item_context_tests",
+        "passed": true,
+        "checks": 1176
+      },
+      {
+        "name": "line_height_tests",
+        "passed": true,
+        "checks": 2000
+      },
+      {
+        "name": "font_inheritance_tests",
+        "passed": true,
+        "checks": 560
+      },
+      {
+        "name": "theme_font_tests",
+        "passed": true,
+        "checks": 114
+      },
+      {
+        "name": "font_size_tests",
+        "passed": true,
+        "checks": 208
+      },
+      {
+        "name": "input_integration_tests",
+        "passed": true,
+        "checks": 40
+      },
+      {
+        "name": "keyboard_integration_tests",
+        "passed": true,
+        "checks": 35
+      },
+      {
+        "name": "ime_integration_tests",
+        "passed": true,
+        "checks": 28
+      },
+      {
+        "name": "text_editing_tests",
+        "passed": true,
+        "checks": 302
+      },
+      {
+        "name": "text_autoscroll_tests",
+        "passed": true,
+        "checks": 81
+      },
+      {
+        "name": "maxlength_tests",
+        "passed": true,
+        "checks": 44
+      },
+      {
+        "name": "form_state_tests",
+        "passed": true,
+        "checks": 506
+      },
+      {
+        "name": "select_control_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "select_autoscroll_tests",
+        "passed": true,
+        "checks": 33
+      },
+      {
+        "name": "typeahead_tests",
+        "passed": true,
+        "checks": 48
+      },
+      {
+        "name": "test_scene",
+        "passed": true,
+        "checks": 247
+      },
+      {
+        "name": "binding_tests",
+        "passed": true,
+        "checks": 186
+      },
+      {
+        "name": "hover_tests",
+        "passed": true,
+        "checks": 10
+      },
+      {
+        "name": "gallery_hover_test",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "gallery_clock_tests",
+        "passed": true,
+        "checks": 1
+      },
+      {
+        "name": "demo_smoke",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "inventory_demo",
+        "passed": true,
+        "checks": 11
+      },
+      {
+        "name": "intrinsic_size_tests",
+        "passed": true,
+        "checks": 336
+      },
+      {
+        "name": "survival_smoke",
+        "passed": true,
+        "checks": 56
+      },
+      {
+        "name": "dialog_cancel_tests",
+        "passed": true,
+        "checks": 1171
+      },
+      {
+        "name": "form_validation_tests",
+        "passed": true,
+        "checks": 12907
+      },
+      {
+        "name": "timing_tests",
+        "passed": true,
+        "checks": 21
+      },
+      {
+        "name": "validity_snapshot_tests",
+        "passed": true,
+        "checks": 676
+      },
+      {
+        "name": "explicit_validity_tests",
+        "passed": true,
+        "checks": 104
+      },
+      {
+        "name": "range_selector_tests",
+        "passed": true,
+        "checks": 396
+      },
+      {
+        "name": "validity_selector_tests",
+        "passed": true,
+        "checks": 658
+      },
+      {
+        "name": "multicol_sizing_tests",
+        "passed": true,
+        "checks": 2289
+      },
+      {
+        "name": "block_margin_tests",
+        "passed": true,
+        "checks": 1009
+      },
+      {
+        "name": "input_geometry_tests",
+        "passed": true,
+        "checks": 5
+      },
+      {
+        "name": "range_direction_tests",
+        "passed": true,
+        "checks": 66
+      },
+      {
+        "name": "number_step_tests",
+        "passed": true,
+        "checks": 234
+      }
+    ],
+    "passed": true,
+    "checks": 28748
+  },
+  "package": ".utmp/safe-engine71/weva-popover-focus-preview197.zip",
+  "sample": {
+    "passed": true,
+    "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+    "addon_sha256": "c16a5c84cd9f575be0da5dec53104695de3dcaa4234832f3ee6f2bd7493e383a",
+    "templates": {
+      "debug": {
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+        "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
+      },
+      "release": {
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+        "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
+      }
+    },
+    "library_sha256": "d18a073aa0e29db5b22dae26f848792b9600337bc7f450ebc799809a1ecfb442",
+    "runs": [
+      {
+        "name": "import",
+        "checks": null,
+        "passed": true
+      },
+      {
+        "name": "headless",
+        "checks": 95,
+        "passed": true
+      },
+      {
+        "name": "gl_compatibility",
+        "checks": 101,
+        "passed": true
+      },
+      {
+        "name": "mobile",
+        "checks": 101,
+        "passed": true
+      },
+      {
+        "name": "export",
+        "checks": null,
+        "passed": true
+      },
+      {
+        "name": "export-headless",
+        "checks": 95,
+        "passed": true
+      },
+      {
+        "name": "export-render",
+        "checks": 101,
+        "passed": true
+      }
+    ],
+    "export_pixels_match_project": true
+  },
+  "exports": {
+    "passed": true,
+    "log": ".utmp/safe-engine71/popover-focus197-exports.log"
+  },
+  "sanitizers": {
+    "passed": true,
+    "suites": 16,
+    "seconds": 175.71,
+    "log": ".utmp/safe-engine71/popover-focus-sanitizers.log"
+  },
+  "installation": {
+    "library_sha256": "d18a073aa0e29db5b22dae26f848792b9600337bc7f450ebc799809a1ecfb442",
+    "version": "0.1.0-preview.197",
+    "release_qualified": false,
+    "qualification_scope": "Development installation of popover autofocus and focus restoration; core, sanitizer, native, sample and export checks pass.",
+    "timing_profiles": "Timing profiles are historical from build 196; lifecycle results are from build 195. Neither requalifies this binary. Development install only.",
+    "targets": {
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
+    },
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed197-backup",
+    "updated_files": [
+      "ADA.md",
+      "ADA_LICENSE_APACHE.txt",
+      "ADA_LICENSE_MIT.txt",
+      "DECIMAL.md",
+      "DECIMAL_LICENSE.txt",
+      "FORM_STATE.md",
+      "GODOT_CPP_LICENSE.md",
+      "GODOT_TEXT_SHAPING.md",
+      "ICU_DATA.md",
+      "ICU_LICENSE.txt",
+      "IME.md",
+      "LICENSE.md",
+      "README.md",
+      "TEXT_EDITING.md",
+      "UNICODE_DATA.md",
+      "UNICODE_LICENSE.txt",
+      "bin/weva_godot.dll",
+      "bin/weva_godot.dll.build.json",
+      "build.json"
+    ]
+  },
+  "post_install": [
+    {
+      "name": "dialog_cancel_tests",
+      "checks": 1171,
+      "passed": true
+    },
+    {
+      "name": "form_validation_tests",
+      "checks": 12907,
+      "passed": true
+    },
+    {
+      "name": "form_state_tests",
+      "checks": 506,
+      "passed": true
+    },
+    {
+      "name": "binding_tests",
+      "checks": 186,
+      "passed": true
+    },
+    {
+      "name": "timing_tests",
+      "checks": 21,
+      "passed": true
+    },
+    {
+      "name": "validity_snapshot_tests",
+      "checks": 676,
+      "passed": true
+    },
+    {
+      "name": "explicit_validity_tests",
+      "checks": 104,
+      "passed": true
+    },
+    {
+      "name": "range_selector_tests",
+      "checks": 396,
+      "passed": true
+    },
+    {
+      "name": "validity_selector_tests",
+      "checks": 658,
+      "passed": true
+    },
+    {
+      "name": "multicol_sizing_tests",
+      "checks": 2289,
+      "passed": true
+    },
+    {
+      "name": "block_margin_tests",
+      "checks": 1009,
+      "passed": true
+    },
+    {
+      "name": "input_geometry_tests",
+      "checks": 5,
+      "passed": true
+    },
+    {
+      "name": "range_direction_tests",
+      "checks": 66,
+      "passed": true
+    },
+    {
+      "name": "number_step_tests",
+      "checks": 234,
+      "passed": true
+    },
+    {
+      "name": "frontier",
+      "checks": 95,
+      "passed": true
+    }
+  ]
+}

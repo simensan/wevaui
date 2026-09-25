@@ -1,0 +1,5 @@
+
+.row { display:flex; align-items:center; position:relative; width:800px; height:60px; }
+.grow { flex:1; }
+.abs { position:absolute; top:0; right:0; width:100px; height:100%; }
+.fixed-size { width:80px; }

@@ -27,11 +27,6 @@
             "name": "com.unity.inputsystem",
             "expression": "1.7.0",
             "define": "WEVA_INPUTSYSTEM"
-        },
-        {
-            "name": "com.unity.ugui",
-            "expression": "2.0.0",
-            "define": "WEVA_TMP"
         }
     ],
     "noEngineReferences": false

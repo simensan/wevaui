@@ -1,0 +1,4 @@
+
+                .grid { display: grid; grid-template-columns: auto auto;
+                        gap: 10px; justify-content: start; }
+                .cell { min-width: 200px; display: flex; }

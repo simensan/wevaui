@@ -1,0 +1,5 @@
+
+                .outer { display: flex; flex-direction: row; gap: 8px; padding: 8px; background: black; width: 400px }
+                .col { display: flex; flex-direction: column; gap: 4px; padding: 4px; background: gray }
+                .col span { font-size: 14px; line-height: 1 }
+            

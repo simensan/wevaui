@@ -1,82 +1,55 @@
-# Animations & Transitions
+# Animations and transitions
 
 [← Back to index](index.md)
 
-Weva supports CSS transitions and keyframe animations. Transitions fire when a
-cascade-resolved property changes; animations run from `@keyframes`. Color
-interpolation uses OKLab; gradient stops lerp in linear-RGB.
+CSS transitions animate changed styles; `@keyframes` animations run on the
+document's animation clock. The current core supports a limited interpolation
+surface, so check the value types below before relying on smooth motion.
 
 ## Transitions
 
 ```css
-.btn { background: #4f46e5; transition: background 0.2s ease, transform 0.15s; }
-.btn:hover { background: #6366f1; transform: scale(1.03); }
+.button { opacity: 0.7; transition: opacity 0.2s ease; }
+.button:hover { opacity: 1; }
 ```
 
-Supported: `transition`, `transition-property`, `transition-duration`,
-`transition-timing-function`, `transition-delay`. A style change to a
-transitioned property (e.g. a `:hover` flip) auto-starts the tween — no
-controller code.
+Use `transition-property`, `transition-duration`, `transition-delay` and
+`transition-timing-function`, or the `transition` shorthand. A state/style
+change starts the transition without controller code.
 
-## Keyframe animations
+## Keyframes
 
 ```css
 @keyframes pulse {
   from { opacity: 0.4; }
-  50%  { opacity: 1; }
-  to   { opacity: 0.4; }
+  50% { opacity: 1; }
+  to { opacity: 0.4; }
 }
 .ping { animation: pulse 1s ease-in-out infinite; }
 ```
 
-Supported: `@keyframes`, the `animation` shorthand, and the `animation-*`
-longhands (`animation-name`, `-duration`, `-timing-function`, `-delay`,
-`-iteration-count`, `-direction`, `-fill-mode`, `-play-state`).
-`KeyframesResolver` composes the active keyframe value into the cascade each
-frame.
+The `animation` shorthand and name, duration, delay, timing-function,
+iteration-count, direction, fill-mode and play-state longhands are supported.
+Additive/accumulating animation composition is not implemented.
 
-## Easing functions
+## Easing and interpolation limits
 
-`linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`, `cubic-bezier(...)`,
-`steps(...)`, and the `linear(...)` multi-point function.
+Easings: `linear`, `ease`, `ease-in`, `ease-out`, `ease-in-out`,
+`cubic-bezier(...)`, `steps(...)`, `step-start` and `step-end`.
+The multi-point `linear(...)` function is not implemented, including in longhands.
 
-**Shorthand caveat:** the `animation:` / `transition:` shorthand parsers do not
-recognize `linear(...)` and silently drop it. Bare `linear` works in the
-shorthand; use the `animation-timing-function` / `transition-timing-function`
-**longhand** for `linear(...)`.
-
-## What interpolates smoothly
-
-Interpolation is type-aware. These kinds tween smoothly:
-
-| Kind | Examples |
+| Values | Current interpolation |
 |---|---|
-| Length / Percentage | `width`, `padding`, `top`, `font-size`, `%` values |
-| Number / Integer | `opacity`, `flex-grow`; `z-index` rounds to integer |
-| Color | `color`, `background-color`, `border-color` (OKLab lerp) |
-| Transform | `transform` shorthand (per-function; matrix-decompose on mismatch) |
-| Translate / Rotate / Scale | the individual transform longhands |
-| Filter | `filter` function lists |
-| Gradient | gradient `background-image` — per-stop when type/angle/stop-count match |
-| BackgroundPosition / BackgroundSize | per-layer, per-axis when numeric |
-| BoxShadow / TextShadow | per-shadow per-component when lists match |
-| ClipPath | same-shape basic shapes lerp per component |
+| Numbers and percentages | Numeric interpolation |
+| Lengths and angles | Smooth when both endpoints use the same supported unit; mixed units switch discretely |
+| Colors | Premultiplied sRGB interpolation, not OKLab |
+| Matching comma/space lists | Each item follows these rules; unsupported items switch discretely |
+| Function values such as `transform`, gradients, filters and `clip-path` | Discrete; no transform matrix decomposition or per-stop gradient interpolation |
 
-Mismatched shapes (different gradient type, mismatched stop/shadow/point
-counts, keyword vs. numeric) fall back to **discrete** (`t < 0.5 ? from : to`).
-Everything else is `Discrete` by default.
+Unsupported or mismatched values switch at the midpoint. Start with opacity,
+same-unit dimensions and colors when you need smooth transitions. A property
+accepting CSS values does not imply that those values interpolate smoothly.
 
-**Practical note (from the Authoring Guide):** in practice, treat
-`box-shadow` / `text-shadow` / `clip-path` / `background-position` /
-`background-size` as discrete-snapping for smooth-tween purposes, and prefer
-`opacity` / `transform` / `color` when you need guaranteed-smooth motion.
-`animation-composition: add | accumulate` registers but composes as `replace`.
-
-## Transition/animation DOM events
-
-`transitionstart`, `transitionend`, `animationstart`, etc. are **not**
-dispatched. Read animation state directly from C# instead of subscribing.
-
----
-
-Next: [Text & Fonts](text-and-fonts.md)
+Browser animation/transition lifecycle events are not dispatched, and the
+supported Unity API does not expose browser-style animation state queries.
+Use your controller's own state and timing for gameplay actions.

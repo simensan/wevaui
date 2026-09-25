@@ -1,0 +1,6 @@
+
+                .col { display: flex; flex-direction: column; gap: 16px; width: 400px; height: 400px; }
+                .header { display: flex; align-items: center; gap: 12px; padding: 12px; }
+                .body { flex: 1; }
+                .btn { padding: 8px 16px; font-size: 13px; border: none; border-radius: 6px; }
+            

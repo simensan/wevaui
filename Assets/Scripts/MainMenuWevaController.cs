@@ -2,11 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Weva;
 using Weva.Binding;
-using Weva.Dom;
-using Weva.Events;
 
 namespace GameMenu.UI.WevaMenu {
-    // Attach to the same GameObject as a Weva WevaDocument; assign main-menu.html
+    // Attach to the same GameObject as a WevaDocument; assign main-menu.html
     // + main-menu.css TextAssets in the inspector. Mock data lives here so the
     // screen renders standalone; swap in the live MainMenuController feed later.
     public sealed class MainMenuWevaController : MonoBehaviour, IBindingVersion {
@@ -46,8 +44,6 @@ namespace GameMenu.UI.WevaMenu {
         [UIBind] public bool IsTabUpgrades   => currentTab == Tab.Upgrades;
 
         [UIBind] public bool ShowNameModal { get; private set; }
-
-        [UIElement("name-input")] public Element NameInput;
 
         enum Tab { Play, Mastery, Challenges, Upgrades }
         Tab currentTab = Tab.Play;
@@ -156,11 +152,11 @@ namespace GameMenu.UI.WevaMenu {
 
         // --- Event handlers --------------------------------------------------
 
-        public void OnStageClicked(PointerEvent e) {
-            var card = e.CurrentTarget;
-            if (card == null) return;
-            if (!int.TryParse(card.GetAttribute("data-stage-index"), out int idx)) return;
-            if (Stages[idx].IsLocked) return;
+        // on-click handlers receive the element's id; the row index is the
+        // data-each row the element sits in.
+        public void OnStageClicked(string id) {
+            if (!TryReadRow(id, out int idx)) return;
+            if (idx < 0 || idx >= Stages.Count || Stages[idx].IsLocked) return;
             SelectStage(idx);
         }
 
@@ -176,8 +172,8 @@ namespace GameMenu.UI.WevaMenu {
 
         public void OnOpenHeroPicker() => Debug.Log("[MainMenu] Open hero picker");
 
-        public void OnClaimChallenge(PointerEvent e) {
-            if (!TryReadIndex(e?.CurrentTarget, "data-challenge-index", out int idx)) return;
+        public void OnClaimChallenge(string id) {
+            if (!TryReadRow(id, out int idx)) return;
             if (Challenges == null || idx < 0 || idx >= Challenges.Count) return;
 
             var challenge = Challenges[idx];
@@ -189,8 +185,8 @@ namespace GameMenu.UI.WevaMenu {
             Debug.Log($"[MainMenu] Claim challenge: {challenge.Name}");
         }
 
-        public void OnBuyUpgrade(PointerEvent e) {
-            if (!TryReadIndex(e?.CurrentTarget, "data-upgrade-index", out int idx)) return;
+        public void OnBuyUpgrade(string id) {
+            if (!TryReadRow(id, out int idx)) return;
             if (Upgrades == null || idx < 0 || idx >= Upgrades.Count) return;
 
             var upgrade = Upgrades[idx];
@@ -205,19 +201,23 @@ namespace GameMenu.UI.WevaMenu {
         }
 
         public void OnEditName() {
-            if (NameInput != null) NameInput.SetAttribute("value", PlayerName ?? "");
+            WevaElement input = NameInput();
+            if (input.IsValid) input.Value = PlayerName ?? "";
             ShowNameModal = true;
             BumpBindings();
         }
 
         public void OnConfirmName() {
-            if (NameInput != null) {
-                var v = NameInput.GetAttribute("value");
+            WevaElement input = NameInput();
+            if (input.IsValid) {
+                var v = input.Value;
                 if (!string.IsNullOrWhiteSpace(v)) PlayerName = v.Trim();
             }
             ShowNameModal = false;
             BumpBindings();
         }
+
+        WevaElement NameInput() => doc != null ? doc.Query("#name-input") : WevaElement.None;
 
         public void OnCancelName() { ShowNameModal = false; BumpBindings(); }
 
@@ -229,9 +229,10 @@ namespace GameMenu.UI.WevaMenu {
 #endif
         }
 
-        static bool TryReadIndex(Element element, string attribute, out int index) {
+        bool TryReadRow(string id, out int index) {
             index = -1;
-            return element != null && int.TryParse(element.GetAttribute(attribute), out index);
+            if (doc == null || string.IsNullOrEmpty(id)) return false;
+            return doc.Query("#" + id).TryGetRow(out index, out _);
         }
 
         int CountUnlockedMasteryNodes() {

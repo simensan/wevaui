@@ -1,0 +1,24 @@
+<link rel="stylesheet" href="cov-border-image.css" />
+<!-- Nine-slice frames: one sprite per panel, corners crisp, edges and middle
+     filling whatever size the content needs. It is how a game's art reaches
+     its UI, and 9slice-demo is three screens of it -- drawn as nothing at all
+     until border-image existed. The oracle sees layout only, so what this
+     case guards is the BACKEND gate: both rasterisers must slice it alike. -->
+<div class="page">
+  <div class="row">
+    <div class="f stretch">stretch</div>
+    <div class="f repeat">repeat</div>
+    <div class="f round">round</div>
+    <div class="f space">space</div>
+  </div>
+  <div class="row">
+    <div class="f stretch wide">wide</div>
+    <div class="f stretch tall">tall</div>
+  </div>
+  <div class="row">
+    <div class="f stretch filled">fill</div>
+    <div class="f stretch slice4">slice 4</div>
+    <div class="f stretch thick">width 3</div>
+    <div class="f stretch sliced-sides">sides</div>
+  </div>
+</div>

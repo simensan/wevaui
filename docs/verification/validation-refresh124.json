@@ -1,0 +1,1588 @@
+{
+  "schema": 1,
+  "version": "0.1.0-preview.124",
+  "abi_minor": 19,
+  "installed": {
+    "library_sha256": "403deac831598b11021626ac2eef9f482ae4db0132c900eb7cdc65820f553c61",
+    "version": "0.1.0-preview.124",
+    "targets": {
+      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
+      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
+    },
+    "backup": "<repo>\\.utmp\\safe-engine71\\installed124-backup",
+    "updated_files": [
+      "ADA.md",
+      "ADA_LICENSE_APACHE.txt",
+      "ADA_LICENSE_MIT.txt",
+      "DECIMAL.md",
+      "DECIMAL_LICENSE.txt",
+      "FORM_STATE.md",
+      "GODOT_CPP_LICENSE.md",
+      "GODOT_TEXT_SHAPING.md",
+      "ICU_DATA.md",
+      "ICU_LICENSE.txt",
+      "IME.md",
+      "LICENSE.md",
+      "README.md",
+      "TEXT_EDITING.md",
+      "UNICODE_DATA.md",
+      "UNICODE_LICENSE.txt",
+      "bin/weva_godot.dll",
+      "bin/weva_godot.dll.build.json",
+      "build.json"
+    ]
+  },
+  "installed_smokes": [
+    {
+      "name": "dialog_cancel_tests",
+      "checks": 554,
+      "passed": true
+    },
+    {
+      "name": "form_validation_tests",
+      "checks": 12907,
+      "passed": true
+    },
+    {
+      "name": "form_state_tests",
+      "checks": 506,
+      "passed": true
+    },
+    {
+      "name": "binding_tests",
+      "checks": 165,
+      "passed": true
+    },
+    {
+      "name": "timing_tests",
+      "checks": 16,
+      "passed": true
+    },
+    {
+      "name": "validity_snapshot_tests",
+      "checks": 676,
+      "passed": true
+    },
+    {
+      "name": "explicit_validity_tests",
+      "checks": 104,
+      "passed": true
+    },
+    {
+      "name": "frontier",
+      "checks": 92,
+      "passed": true
+    }
+  ],
+  "source_sha256": "b47adebd5b466550a9b948ae5091e8df01b283e21bbc27a5ebaf96f6a1e87a87",
+  "fixes": [
+    "Invalid notifications alone no longer dirty the host.",
+    "Consumed interaction version preserves callback focus round trips.",
+    "Reporting hands native keyboard focus to the HTML UI."
+  ],
+  "regressions_before": {
+    "redundant_refresh": {
+      "checks": 97,
+      "failures": 1
+    },
+    "native_focus": {
+      "checks": 101,
+      "failures": 1
+    },
+    "focus_roundtrip": {
+      "checks": 104,
+      "failures": 2
+    }
+  },
+  "qualification": {
+    "windows_core_suites": 10,
+    "linux_sanitizer_gates": 12,
+    "host": {
+      "binary_sha256": "403deac831598b11021626ac2eef9f482ae4db0132c900eb7cdc65820f553c61",
+      "tests": [
+        {
+          "name": "import",
+          "passed": true,
+          "checks": 0
+        },
+        {
+          "name": "form_baseline_tests",
+          "passed": true,
+          "checks": 2022
+        },
+        {
+          "name": "border_tests",
+          "passed": true,
+          "checks": 1086
+        },
+        {
+          "name": "item_context_tests",
+          "passed": true,
+          "checks": 1176
+        },
+        {
+          "name": "line_height_tests",
+          "passed": true,
+          "checks": 2000
+        },
+        {
+          "name": "font_inheritance_tests",
+          "passed": true,
+          "checks": 560
+        },
+        {
+          "name": "theme_font_tests",
+          "passed": true,
+          "checks": 114
+        },
+        {
+          "name": "font_size_tests",
+          "passed": true,
+          "checks": 208
+        },
+        {
+          "name": "input_integration_tests",
+          "passed": true,
+          "checks": 40
+        },
+        {
+          "name": "keyboard_integration_tests",
+          "passed": true,
+          "checks": 35
+        },
+        {
+          "name": "ime_integration_tests",
+          "passed": true,
+          "checks": 28
+        },
+        {
+          "name": "text_editing_tests",
+          "passed": true,
+          "checks": 302
+        },
+        {
+          "name": "text_autoscroll_tests",
+          "passed": true,
+          "checks": 81
+        },
+        {
+          "name": "maxlength_tests",
+          "passed": true,
+          "checks": 44
+        },
+        {
+          "name": "form_state_tests",
+          "passed": true,
+          "checks": 506
+        },
+        {
+          "name": "select_control_tests",
+          "passed": true,
+          "checks": 66
+        },
+        {
+          "name": "select_autoscroll_tests",
+          "passed": true,
+          "checks": 33
+        },
+        {
+          "name": "typeahead_tests",
+          "passed": true,
+          "checks": 48
+        },
+        {
+          "name": "test_scene",
+          "passed": true,
+          "checks": 247
+        },
+        {
+          "name": "binding_tests",
+          "passed": true,
+          "checks": 165
+        },
+        {
+          "name": "hover_tests",
+          "passed": true,
+          "checks": 10
+        },
+        {
+          "name": "gallery_hover_test",
+          "passed": true,
+          "checks": 5
+        },
+        {
+          "name": "gallery_clock_tests",
+          "passed": true,
+          "checks": 1
+        },
+        {
+          "name": "demo_smoke",
+          "passed": true,
+          "checks": 11
+        },
+        {
+          "name": "inventory_demo",
+          "passed": true,
+          "checks": 11
+        },
+        {
+          "name": "intrinsic_size_tests",
+          "passed": true,
+          "checks": 336
+        },
+        {
+          "name": "survival_smoke",
+          "passed": true,
+          "checks": 56
+        },
+        {
+          "name": "dialog_cancel_tests",
+          "passed": true,
+          "checks": 554
+        },
+        {
+          "name": "form_validation_tests",
+          "passed": true,
+          "checks": 12907
+        },
+        {
+          "name": "timing_tests",
+          "passed": true,
+          "checks": 16
+        },
+        {
+          "name": "validity_snapshot_tests",
+          "passed": true,
+          "checks": 676
+        },
+        {
+          "name": "explicit_validity_tests",
+          "passed": true,
+          "checks": 104
+        }
+      ],
+      "passed": true,
+      "checks": 23448
+    },
+    "rendered": [
+      {
+        "renderer": "gl_compatibility",
+        "passed": true
+      },
+      {
+        "renderer": "mobile",
+        "passed": true
+      }
+    ],
+    "sample": {
+      "passed": true,
+      "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+      "addon_sha256": "a538c78bc6976959bb9dbc389aacb5afa783f487cfdeb6b01bc9df14889a9f3b",
+      "templates": {
+        "debug": {
+          "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+          "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
+        },
+        "release": {
+          "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+          "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
+        }
+      },
+      "library_sha256": "403deac831598b11021626ac2eef9f482ae4db0132c900eb7cdc65820f553c61",
+      "runs": [
+        {
+          "name": "import",
+          "checks": null,
+          "passed": true
+        },
+        {
+          "name": "headless",
+          "checks": 92,
+          "passed": true
+        },
+        {
+          "name": "gl_compatibility",
+          "checks": 98,
+          "passed": true
+        },
+        {
+          "name": "mobile",
+          "checks": 98,
+          "passed": true
+        },
+        {
+          "name": "export",
+          "checks": null,
+          "passed": true
+        },
+        {
+          "name": "export-headless",
+          "checks": 92,
+          "passed": true
+        },
+        {
+          "name": "export-render",
+          "checks": 98,
+          "passed": true
+        }
+      ],
+      "export_pixels_match_project": true
+    },
+    "exports": [
+      "debug",
+      "release",
+      "release-embedded"
+    ]
+  },
+  "validation_diagnostic": {
+    "metadata": {
+      "schema": 1,
+      "library_sha256": "403deac831598b11021626ac2eef9f482ae4db0132c900eb7cdc65820f553c61",
+      "source": {
+        "revision": "ba5fc1a124e47f8dbf8973ff59fdbfc63e5cf7ce",
+        "dirty": true,
+        "sha256": "b47adebd5b466550a9b948ae5091e8df01b283e21bbc27a5ebaf96f6a1e87a87"
+      },
+      "godot_cpp": {
+        "revision": null,
+        "dirty": null,
+        "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+      },
+      "configuration": "Release",
+      "compiler": {
+        "id": "MSVC",
+        "version": "19.44.35222.0"
+      },
+      "cmake_version": "4.3.2",
+      "godot_api": "4.7",
+      "precision": "single",
+      "custom_api": null,
+      "sanitizers": false
+    },
+    "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+    "fixture_sha256": "d7305f7f4a707499c30efbd2d8c93d0d9dd86383efdb7b42e2627cce955d9202",
+    "passed": true,
+    "timing_gate": false,
+    "runs": [
+      {
+        "repeat": 0,
+        "renderer": "gl_compatibility",
+        "result": {
+          "failures": [],
+          "native_input": true,
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.254,
+                "mean": 0.0136041666666666,
+                "p50": 0.009,
+                "p95": 0.018
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.004,
+                "mean": 0.000491666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.314,
+                "mean": 0.0273458333333333,
+                "p50": 0.018,
+                "p95": 0.035
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000416666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.329,
+                "mean": 0.0443625,
+                "p50": 0.033,
+                "p95": 0.065
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000416666666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 1.339,
+                "mean": 0.527054166666667,
+                "p50": 0.486,
+                "p95": 0.801
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.044,
+                "mean": 0.0091875,
+                "p50": 0.01,
+                "p95": 0.011
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.11,
+                "mean": 0.0373458333333333,
+                "p50": 0.033,
+                "p95": 0.064
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000475,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.265,
+                "mean": 0.00614166666666666,
+                "p50": 0.005,
+                "p95": 0.009
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.024,
+                "mean": 0.0006375,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.023,
+                "mean": 0.0103583333333333,
+                "p50": 0.009,
+                "p95": 0.017
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000504166666666667,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.152,
+                "mean": 0.0592208333333333,
+                "p50": 0.05,
+                "p95": 0.1
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.003,
+                "mean": 0.000429166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.421,
+                "mean": 0.105783333333333,
+                "p50": 0.09,
+                "p95": 0.178
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000445833333333334,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 1.61,
+                "mean": 0.973504166666668,
+                "p50": 0.926,
+                "p95": 1.26
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.049,
+                "mean": 0.00847083333333334,
+                "p50": 0.009,
+                "p95": 0.01
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.386,
+                "mean": 0.107070833333333,
+                "p50": 0.091,
+                "p95": 0.18
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.0004125,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.35,
+                "mean": 0.0105875,
+                "p50": 0.008,
+                "p95": 0.016
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.0003875,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            }
+          ],
+          "samples": 240,
+          "scope": "Paused document, validation call including invalid handlers, followed by explicit host update; excludes setup, frame drawing and GPU.",
+          "warmups": 60
+        }
+      },
+      {
+        "repeat": 0,
+        "renderer": "mobile",
+        "result": {
+          "failures": [],
+          "native_input": true,
+          "passed": true,
+          "rows": [
+            {
+              "api_ms": {
+                "max": 0.046,
+                "mean": 0.00747083333333333,
+                "p50": 0.006,
+                "p95": 0.012
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.0004125,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.052,
+                "mean": 0.016575,
+                "p50": 0.015,
+                "p95": 0.027
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.00045,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.065,
+                "mean": 0.0277916666666666,
+                "p50": 0.025,
+                "p95": 0.04
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000404166666666667,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.866,
+                "mean": 0.389891666666666,
+                "p50": 0.354,
+                "p95": 0.586
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 12,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.033,
+                "mean": 0.00678333333333334,
+                "p50": 0.005,
+                "p95": 0.01
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.056,
+                "mean": 0.0410666666666667,
+                "p50": 0.042,
+                "p95": 0.046
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000570833333333334,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.01,
+                "mean": 0.00427083333333334,
+                "p50": 0.004,
+                "p95": 0.005
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 12,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.000475,
+                "p50": 0.0,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.024,
+                "mean": 0.00984166666666667,
+                "p50": 0.01,
+                "p95": 0.012
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "snapshot",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000558333333333334,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.112,
+                "mean": 0.0626625000000001,
+                "p50": 0.067,
+                "p95": 0.089
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_valid",
+              "settle_update_ms": {
+                "max": 0.002,
+                "mean": 0.000566666666666667,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.272,
+                "mean": 0.117829166666667,
+                "p50": 0.124,
+                "p95": 0.137
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_invalid",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.00055,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 1.499,
+                "mean": 0.916254166666667,
+                "p50": 0.897,
+                "p95": 1.143
+              },
+              "core_update_count": {
+                "max": 2.0,
+                "mean": 2.0,
+                "p50": 2.0,
+                "p95": 2.0
+              },
+              "fields": 48,
+              "scenario": "report_invalid",
+              "settle_update_ms": {
+                "max": 0.029,
+                "mean": 0.00701666666666667,
+                "p50": 0.006,
+                "p95": 0.01
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.271,
+                "mean": 0.1227125,
+                "p50": 0.126,
+                "p95": 0.14
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "report_canceled",
+              "settle_update_ms": {
+                "max": 0.003,
+                "mean": 0.000566666666666667,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            },
+            {
+              "api_ms": {
+                "max": 0.023,
+                "mean": 0.0106375,
+                "p50": 0.011,
+                "p95": 0.012
+              },
+              "core_update_count": {
+                "max": 1.0,
+                "mean": 1.0,
+                "p50": 1.0,
+                "p95": 1.0
+              },
+              "fields": 48,
+              "scenario": "check_disabled",
+              "settle_update_ms": {
+                "max": 0.001,
+                "mean": 0.00055,
+                "p50": 0.001,
+                "p95": 0.001
+              }
+            }
+          ],
+          "samples": 240,
+          "scope": "Paused document, validation call including invalid handlers, followed by explicit host update; excludes setup, frame drawing and GPU.",
+          "warmups": 60
+        }
+      }
+    ]
+  },
+  "ordinary_performance": {
+    "passed": true,
+    "functional_passed": true,
+    "timing_passed": true,
+    "library_sha256": "403deac831598b11021626ac2eef9f482ae4db0132c900eb7cdc65820f553c61",
+    "frames": 600,
+    "warmups": 120,
+    "automatic": false,
+    "resolution": [
+      1280,
+      720
+    ],
+    "world": "static",
+    "timing_budget": {
+      "profile": "Frontier development desktop CPU targets",
+      "passed": true,
+      "errors": [],
+      "checks": [
+        {
+          "run": "gl_compatibility/1",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.004,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.009,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.949,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.565,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.423,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.446,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.195,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.287,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.059,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.541,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.484,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/1",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.463,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.009,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.684,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.502,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.47,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.53,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.233,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.316,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.185,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.543,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.434,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/2",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.773,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.007,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.73,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.598,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.489,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.511,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.245,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.332,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.221,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.639,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.604,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "gl_compatibility/3",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.962,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.004,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.785,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.353,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.323,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.417,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.154,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.199,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.99,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.443,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.412,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/1",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.651,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.434,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.457,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.31,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.338,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.173,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.237,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.022,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.457,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.739,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/2",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.423,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "ui_disabled",
+          "metric": "api_cpu",
+          "p95_ms": 0.003,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "idle",
+          "metric": "api_cpu",
+          "p95_ms": 0.006,
+          "limit_ms": 0.05,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_1hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 2.166,
+          "limit_ms": 3.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_10hz",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.538,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "clock_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.406,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "vitals_update",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.446,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "redundant_signal",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.204,
+          "limit_ms": 0.3,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "hover",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.248,
+          "limit_ms": 0.5,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "inventory_sort",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.042,
+          "limit_ms": 2.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_typing",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.608,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_slider",
+          "metric": "changed_api_cpu",
+          "p95_ms": 0.609,
+          "limit_ms": 1.0,
+          "passed": true
+        },
+        {
+          "run": "mobile/3",
+          "workload": "settings_toggle",
+          "metric": "changed_api_cpu",
+          "p95_ms": 1.738,
+          "limit_ms": 3.0,
+          "passed": true
+        }
+      ],
+      "policy": "Every measured run must meet every CPU p95 limit; no averaging away failures.",
+      "profile_sha256": "33f33ca9e14603ae68262b77f6d2629bbfd139a96437a38e7e1efcc870a8251a",
+      "definition": {
+        "schema": 1,
+        "name": "Frontier development desktop CPU targets",
+        "description": "Provisional engineering targets for this measured RTX 5080 development machine, manual updates, static scene, 1280x720. Adapter matching does not identify the CPU or certify other hardware. CPU API timings exclude total GPU/UI cost.",
+        "scope": {
+          "resolution": [
+            1280,
+            720
+          ],
+          "world": "static",
+          "automatic": false,
+          "adapter": "NVIDIA GeForce RTX 5080"
+        },
+        "renderers": [
+          "gl_compatibility",
+          "mobile"
+        ],
+        "minimum_runs": 3,
+        "minimum_frames": 600,
+        "minimum_warmups": 120,
+        "limits_ms": {
+          "ui_disabled": {
+            "api_cpu": 0.05
+          },
+          "idle": {
+            "api_cpu": 0.05
+          },
+          "clock_1hz": {
+            "changed_api_cpu": 3.0
+          },
+          "vitals_10hz": {
+            "changed_api_cpu": 1.0
+          },
+          "clock_update": {
+            "changed_api_cpu": 1.0
+          },
+          "vitals_update": {
+            "changed_api_cpu": 1.0
+          },
+          "redundant_signal": {
+            "changed_api_cpu": 0.3
+          },
+          "hover": {
+            "changed_api_cpu": 0.5
+          },
+          "inventory_sort": {
+            "changed_api_cpu": 2.0
+          },
+          "settings_typing": {
+            "changed_api_cpu": 1.0
+          },
+          "settings_slider": {
+            "changed_api_cpu": 1.0
+          },
+          "settings_toggle": {
+            "changed_api_cpu": 3.0
+          }
+        }
+      }
+    }
+  },
+  "limitations": [
+    "Static manual-update 720p RTX 5080 desktop API timings exclude total UI/GPU cost.",
+    "Native IME activation and earlier intermittent 6.64 ms report p95 are not resolved.",
+    "Pattern validation, recursive invalid-handler calls and full Chrome parity remain incomplete."
+  ]
+}

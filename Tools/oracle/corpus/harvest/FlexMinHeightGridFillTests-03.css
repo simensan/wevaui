@@ -1,0 +1,4 @@
+
+                .col  { min-height: 500px; width: 300px; display: flex; flex-direction: column; }
+                .head { height: 60px; }
+                .body { flex: 1 1 auto; }

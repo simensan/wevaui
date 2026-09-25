@@ -1,8 +1,8 @@
 {
   "name": "com.wevaui",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "displayName": "Weva",
-  "description": "HTML/CSS-compatible UI layer for Unity. Standard HTML elements, real CSS cascade, flexbox + grid + inline layout, no Unity-specific renames.",
+  "description": "HTML/CSS UI for Unity: standard HTML and CSS, laid out and painted by the Weva core (C++, checked against Chrome), drawn through URP. Windows x64 plugin.",
   "unity": "6000.3",
   "license": "MIT",
   "keywords": [
@@ -17,9 +17,7 @@
   },
   "dependencies": {
     "com.unity.render-pipelines.universal": "17.0.0",
-    "com.unity.inputsystem": "1.7.0",
-    "com.unity.ugui": "2.0.0",
-    "com.unity.burst": "1.8.0"
+    "com.unity.inputsystem": "1.7.0"
   },
   "samples": [
     {

@@ -1,0 +1,28 @@
+<!--
+  story-bubble — an in-game RPG dialogue plate in the style of a beveled-octagon
+  speech box (cut corners, silver bevel border, dark translucent fill, lavender
+  name tag, warm cream script text, bounce chevron). Scene is just a gradient.
+
+  Shape technique: two stacked clip-path octagons — a silver-gradient .frame and
+  a slightly-inset dark .inner. The exposed rim of the frame IS the metal border.
+  A drop-shadow filter on the frame casts a shadow that follows the octagon.
+-->
+<link rel="stylesheet" href="story-bubble.css" />
+<main class="stage">
+  <!-- ambient ellipsis bubble, upper-left, like an off-screen speaker -->
+  <div class="thought">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  </div>
+
+  <section class="dialogue">
+    <div class="frame"></div>
+    <div class="inner"></div>
+
+    <div class="nametag">Galandra</div>
+
+    <div class="content">
+      <p class="line">Those waterfalls remind me of my beloved&nbsp;Yeldrim.</p>
+      <span class="chevron" aria-hidden="true"></span>
+    </div>
+  </section>
+</main>

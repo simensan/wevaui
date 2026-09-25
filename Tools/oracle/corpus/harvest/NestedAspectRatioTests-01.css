@@ -1,0 +1,11 @@
+
+                .stretchy {
+                    display: grid;
+                    grid-template-columns: repeat(4, 1fr);
+                    grid-template-rows: 1fr 1fr;
+                    gap: 8px;
+                    width: 500px;
+                    height: 400px;
+                }
+                .cell { aspect-ratio: 1 / 1; }
+            

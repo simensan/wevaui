@@ -2,7 +2,15 @@
 
 A new UI layer for Unity that is *more* faithful to HTML and CSS than UI Toolkit (UI Elements / UXML / USS). The goal is that AI models — and humans who already know the web platform — can produce working Unity UI by writing standard HTML and CSS, with as little Unity-specific knowledge as possible.
 
-This is a planning document. Nothing is built yet.
+This is the original planning document from before implementation.
+
+> **Locked 2026-09-13.** The engine described below was built in C#, ported
+> to a C++ core (`libweva/`), and the C# engine was deleted the same day
+> (Phase 4.3). The C++ core is the single source of truth; every conformance
+> check is against Chrome; the C# in the package is the Unity host layer.
+> This document is the design history the core implements — read
+> `docs/ARCHITECTURE.md` for the core as built. Plan and gates:
+> the maintainers' internal plan (not in this repository), Phase 4.
 
 ---
 

@@ -1,0 +1,50 @@
+
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+                background: #0a0e16;
+                color: #f3f4f6;
+                font-family: sans-serif;
+                font-size: 14px;
+                padding: 32px;
+            }
+            h1 { font-size: 22px; color: #fbbf24; margin-bottom: 12px; }
+            h2 { font-size: 16px; margin: 24px 0 12px; }
+            p { color: #b4becd; line-height: 1.5; margin-bottom: 12px; }
+            code { font-family: monospace; color: #fbbf24; }
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+            }
+            .demo { padding: 16px; background: #11151f; }
+            .label { color: #b4becd; font-size: 12px; margin-bottom: 12px; }
+            /* Slices are source-image pixels. Border widths set their drawn size. */
+            .frame {
+                border: 16px solid transparent;
+                border-image-source: url(assets/9slice-demo/19dd881d5c38d58e-PanelFrame.png);
+                border-image-slice: 16 fill;
+                border-image-repeat: stretch;
+                color: #142333;
+                font-weight: 700;
+            }
+            .panel {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 96px;
+            }
+            .tall { height: 152px; }
+            .outline { border-image-slice: 16; color: #f3f4f6; }
+            .row { display: flex; align-items: center; gap: 20px; }
+            button.frame {
+                font: inherit;
+                font-weight: 700;
+                background: transparent;
+                padding: 8px 24px;
+                cursor: pointer;
+            }
+            button.frame:hover { color: #006a96; }
+            button.frame:focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
+            .source { display: block; width: 192px; height: 64px; }
+            .setup { margin-top: 24px; max-width: 1050px; }
+        

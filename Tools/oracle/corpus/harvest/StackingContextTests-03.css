@@ -1,0 +1,5 @@
+
+                #back { position: relative; z-index: -1; height: 10px; }
+                #mid { position: relative; z-index: 0; height: 10px; }
+                #front { position: relative; z-index: 5; height: 10px; }
+            

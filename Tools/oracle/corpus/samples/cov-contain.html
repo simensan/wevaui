@@ -1,0 +1,36 @@
+<link rel="stylesheet" href="cov-contain.css" />
+<!-- Containment. `contain: size` and content-visibility change the box a
+     subtree produces, so they are layout, not a hint — and nothing in the
+     corpus writes either. -->
+<div class="page">
+  <section class="ref">
+    <div class="panel">A panel with three children and no containment, which
+    is the height everything below is measured against.</div>
+  </section>
+
+  <section class="sized">
+    <div class="panel contain-size">The same content under `contain: size`,
+    which must size as though it had no contents at all.</div>
+  </section>
+
+  <section class="sized-with">
+    <div class="panel contain-size intrinsic">And with contain-intrinsic-size
+    supplying the placeholder the containment removed.</div>
+  </section>
+
+  <section class="sized-wh">
+    <div class="panel contain-size intrinsic-wh">Separate width and height
+    placeholders, which is the spelling a stylesheet usually reaches for.</div>
+  </section>
+
+  <section class="layout-only">
+    <div class="panel contain-layout">`contain: layout` isolates the
+    formatting context but leaves the size alone, so this must match the
+    reference panel'.</div>
+  </section>
+
+  <section class="hidden">
+    <div class="panel cv-hidden">Skipped by content-visibility, with an
+    intrinsic size standing in for what was not laid out.</div>
+  </section>
+</div>

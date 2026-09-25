@@ -1,0 +1,269 @@
+/* Companion to audit-validation.html — 2026-07 audit fix validation.
+   NOTE: section 10's parser-recovery check depends on the DELIBERATELY BROKEN
+   rule marked PH3 below. Do not "fix" it. */
+
+* { box-sizing: border-box; }
+
+.page {
+  /* The engine's UA sheet is game-UI-defaulted: html/body are
+     height:100% + overflow:hidden (no page scroll). A tall page must be
+     its own scroll container — wheel/drag scrolling then engages. */
+  height: 100%;
+  overflow-y: auto;
+  padding: 20px 28px;
+  font-size: 14px;
+  background-color: #0f1420;
+  color: #e6e9f2;
+}
+
+h1 { font-size: 22px; margin-bottom: 12px; }
+h2 { font-size: 15px; margin-bottom: 6px; color: #9db2ff; }
+
+.check {
+  margin-bottom: 18px;
+  padding: 12px 14px;
+  background-color: #171e2e;
+  border-radius: 8px;
+}
+
+.how { color: #aab3c5; margin-bottom: 6px; }
+.how li { margin-bottom: 2px; }
+.pass { color: #7c8698; font-size: 12px; margin-top: 6px; }
+.footer { color: #9db2ff; margin-top: 10px; }
+.row { display: flex; gap: 10px; margin-top: 6px; }
+
+/* ── 1: hover in non-subject / sibling / pseudo-element position (CX1/CX5) ── */
+.hp-parent {
+  padding: 8px 10px;
+  background-color: #232c42;
+  border-radius: 6px;
+  margin-bottom: 6px;
+}
+.hp-child { color: #e6e9f2; }
+.hp-parent:hover .hp-child { color: #ff4d4d; }
+
+.sib-a, .sib-b {
+  padding: 8px 10px;
+  background-color: #232c42;
+  border-radius: 6px;
+}
+.sib-a:hover + .sib-b { color: #4da3ff; background-color: #1b2f4d; }
+
+.tip {
+  margin-top: 6px;
+  padding: 8px 10px;
+  background-color: #232c42;
+  border-radius: 6px;
+  position: relative;
+}
+.tip:hover::after {
+  content: "tooltip via ::after — CX5 works";
+  position: absolute;
+  right: 10px;
+  top: -14px;
+  padding: 3px 8px;
+  background-color: #ffd34d;
+  color: #1a1a1a;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+/* ── 2: position-dependent selectors (CX2) ── */
+.zebra { margin: 6px 0; }
+.zebra li {
+  padding: 5px 10px;
+  background-color: #1c2438;
+}
+.zebra li:nth-child(odd) { background-color: #2a3654; }
+.pp p { padding: 4px 10px; }
+.pp p + p { color: #4da3ff; }
+
+/* ── 3: :has() (CX3) ── */
+.has-card {
+  padding: 10px 12px;
+  border-width: 2px;
+  border-style: solid;
+  border-color: #2a3654;
+  border-radius: 6px;
+}
+.has-card:has(input:checked) {
+  border-color: #22c55e;
+  background-color: #12291c;
+}
+.has-card label { margin-right: 10px; }
+
+/* ── 4: @media resize (CX4) ── */
+.mq-banner {
+  padding: 10px 12px;
+  border-radius: 6px;
+  background-color: #4f46e5;
+  color: #ffffff;
+}
+@media (max-width: 900px) {
+  .mq-banner { background-color: #ea8a2c; }
+  .mq-banner::after { content: " — NARROW MODE (< 900px)"; font-weight: 700; }
+}
+
+/* ── 5: warm flips vs abs-pos flex (LY2) ── */
+.warm-wrap { position: relative; height: 120px; }
+.bar {
+  height: 12px;
+  background-color: #1c2438;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.fill {
+  height: 100%;
+  background-color: #4da3ff;
+  animation: fillcycle 2s linear infinite alternate;
+}
+@keyframes fillcycle {
+  from { width: 15%; }
+  to   { width: 90%; }
+}
+.play-action {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+}
+.play-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 220px;
+  height: 64px;
+  border-radius: 8px;
+  background-color: #4f46e5;
+  color: #ffffff;
+  border-width: 0;
+  border-style: none;
+}
+.play-label { font-size: 22px; font-weight: 900; letter-spacing: 3px; }
+.play-sub { font-size: 10px; }
+
+/* ── 6: scroll-graft integrity (LY3-LY6) ── */
+.graft-row { display: flex; gap: 12px; }
+.graft-anim {
+  width: 180px;
+  background-color: #232c42;
+  border-radius: 6px;
+  padding: 8px;
+  animation: growcycle 1.6s linear infinite alternate;
+}
+@keyframes growcycle {
+  from { height: 90px; }
+  to   { height: 150px; }
+}
+.graft-scroll {
+  position: relative;
+  width: 300px;
+  height: 130px;
+  overflow-y: auto;
+  background-color: #1c2438;
+  border-radius: 6px;
+}
+.graft-scroll div { padding: 5px 10px; }
+.g-abs {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 46px;
+  background-color: #ffd34d;
+  color: #1a1a1a;
+  border-radius: 4px;
+  font-size: 11px;
+}
+.g-rel { position: relative; top: 10px; color: #4da3ff; }
+.g-fill { color: #7c8698; }
+
+/* ── 7-9: inputs ── */
+.in-basic, .in-bold, .in-pass, .in-max, .in-sel {
+  width: 340px;
+  height: 28px;
+  padding: 4px 6px;
+  background-color: #101624;
+  color: #e6e9f2;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #3a4666;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  caret-color: #ffd34d;
+}
+.in-bold { font-weight: 700; width: 220px; }
+.in-max { width: 180px; }
+.ta {
+  width: 340px;
+  padding: 4px 6px;
+  background-color: #101624;
+  color: #e6e9f2;
+  border-width: 1px;
+  border-style: solid;
+  border-color: #3a4666;
+  border-radius: 4px;
+}
+
+/* ── 10: ::selection + parser recovery ── */
+.in-sel::selection { background-color: #b45309; }
+/* PH3: DELIBERATELY BROKEN — unterminated string. Lenient recovery must drop
+   only this rule + the stray tail, and everything after must still apply. */
+.ph3-broken { content: "oops
+; color: blue; }
+.ph3-after {
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background-color: #16a34a;
+  color: #ffffff;
+}
+
+/* ── 11: glass / shared backdrop (RD1) ── */
+.glass-strip {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 8px;
+  background-image: linear-gradient(120deg, #4f46e5, #ea1f68, #ffd34d);
+}
+/* High-frequency detail BEHIND the panels so the blur is visible: crisp
+   bars at rest-blur(4px) look slightly soft; at hover-blur(22px) they wash
+   out completely. (A blurred smooth gradient alone is nearly identical at
+   any radius — the same property that hid the Y-flip bug for months.)
+   Painted before the glass children (document order), so it's inside the
+   shared capture and A/B keep the shared path. */
+.detail-bars {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 26px;
+}
+.detail-bars div {
+  width: 8px;
+  height: 104px;
+  background-color: rgba(255, 255, 255, 0.9);
+}
+.glass {
+  width: 240px;
+  height: 84px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  color: #ffffff;
+  background-color: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(4px);
+  transition: backdrop-filter 0.3s;
+}
+.glass:hover { backdrop-filter: blur(22px); }
+/* E: rest state in the factor-2 downsample regime (radius > 5px) — the
+   orientation-ledger F1 term. Needs > 3×8 = 24px clearance from B or the
+   halo-inflated eligibility rule demotes it off the shared path. */
+.g8 { backdrop-filter: blur(8px); margin-left: 40px; }
+.g8:hover { backdrop-filter: blur(22px); }
+/* Bisect row: D overlaps C, which makes D ineligible for the shared
+   whole-screen blur (ComputeBackdropShareability requires disjoint
+   rects) — D therefore exercises the per-panel capture path. */
+.strip2 { margin-top: 10px; }
+.overlap { margin-left: -60px; }

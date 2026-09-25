@@ -1,0 +1,44 @@
+html, body { margin: 0; background: #12151c; color: #e6edf3;
+             font-family: sans-serif; font-size: 14px }
+.panel { margin: 20px; padding: 18px; width: 380px;
+         background: #171b23; border: 1px solid #262c36; border-radius: 12px }
+.row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px }
+.label { width: 80px; color: #8b949e }
+
+input[type=text] { width: 200px; padding: 6px 8px; background: #0d1117; color: #e6edf3;
+                   border: 1px solid #30363d; border-radius: 6px }
+input[type=text]:focus { border-color: #388bfd }
+
+textarea { display: block; width: 340px; height: 74px; padding: 6px 8px;
+           background: #0d1117; color: #e6edf3; border: 1px solid #30363d;
+           border-radius: 6px; font-size: 13px; line-height: 18px }
+
+select { width: 160px; height: 30px; padding: 4px 8px; background: #21262d;
+         color: #e6edf3; border: 1px solid #30363d; border-radius: 6px }
+
+.list { height: 92px; overflow-y: auto; margin-bottom: 14px; padding: 4px 8px;
+        background: #0d1117; border: 1px solid #21262d; border-radius: 6px }
+.entry { padding: 4px 0; color: #8b949e; font-size: 12px;
+         border-bottom: 1px solid #161b22 }
+
+/* Hover, for the interactive gate. Three shapes, because they exercise
+   different machinery: the element itself, a DESCENDANT of a hovered ancestor
+   (which needs the hover chain, not just the hit element), and a SIBLING of
+   one (which needs the sibling combinator to be re-evaluated). A backend that
+   drew the plain frame correctly could still get any of these wrong. */
+.entry:hover { background: #1b2230; color: #e6edf3 }
+.panel:hover .label { color: #c9d1d9 }
+#name:hover + .label { color: #58a6ff }
+
+/* The states the interactive gate now asks both backends to draw. */
+button { padding: 6px 14px; border: 1px solid #30363d; border-radius: 6px;
+         background: #21262d; color: #e6edf3; font-size: 13px }
+button:active { background: #161b22; border-color: #8b949e }
+
+dialog { padding: 16px; border: 1px solid #30363d; border-radius: 8px;
+         background: #171b23; color: #e6edf3 }
+dialog p { margin: 0 }
+::backdrop { background: rgba(0, 0, 0, 0.55) }
+
+[popover] { top: 120px; left: 60px; padding: 6px 10px; border: 1px solid #30363d;
+            border-radius: 6px; background: #21262d; color: #e6edf3; font-size: 12px }

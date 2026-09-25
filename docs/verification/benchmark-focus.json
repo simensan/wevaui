@@ -1,0 +1,2304 @@
+{
+  "scope": "Functional harness smoke only; both modes observed focus for every measured frame. No-focus flag does not prove focus was removed. Not physical IME acceptance.",
+  "runs": {
+    "binding-focus-smoke": {
+      "passed": true,
+      "functional_passed": true,
+      "timing_passed": null,
+      "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+      "executable_sha256": "18fa5b9a3bfd8b5360a418ed6f7bf6376afd4d2f19c8bf4a1242439b39c7678c",
+      "release_template": {
+        "selection": "explicit",
+        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+        "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
+      },
+      "library_sha256": "1495f736aee56a3f8168257c08c28526c311d392a0cd598b66830fb1aa8effaf",
+      "frames": 120,
+      "warmups": 60,
+      "run_timeout_seconds": 180,
+      "background_input_isolation": false,
+      "automatic": false,
+      "resolution": [
+        1280,
+        720
+      ],
+      "world": "static",
+      "source_sha256": {
+        "boot.gd": "282ee9d8b20d65eaaaf0ece4077004f89b05ead6cab3043edaf899dc443176a0",
+        "boot.tscn": "988ee0d988b80505dbe57fa63f711b69ec5d954661ee184c1d0dc738d4e69dd1",
+        "project.godot": "fa8fe59de99a279bd0209857292ef58fbc609d38968c6b0041b818781afa1b92",
+        "main.tscn": "6edfc680b3b4a24afb40f27e0e841c0b575b1b38c326e1b3c07b2ef768e97bef",
+        "game.gd": "306b0d30baf52505537460b3fa79e58756f8e62cc9fe768a13ae5b94b3945e3b",
+        "camp_state.gd": "c6a673b819b08563ff6c68c05646c95cec705e084199ebb3381b28319ed34daa",
+        "tests/performance.gd": "3aeafc69991299cd352fd2a58df6202df80d33094fd7d5d81d14a98e87f8ad68",
+        "tests/load_world.gd": "02e913f61120f526ea6fccb4a0186b32be92f444bd41759ca5e75f11a49cdcdc",
+        "ui/camp.html": "95ecfc6de5958bc9f69a147069be54a2311d6ec46a77893f35410673f9fb5c20",
+        "ui/camp.css": "e9d1c82e7dbeb565e2bba565ec0d472d367c6ba14bcf3810980f0eb92d1b1436",
+        "addons/weva/weva_view.gd": "1c04abf8dff900e424f55870d14dccdc6f71c730a20507437679eced306ca93c"
+      },
+      "runs": [
+        {
+          "renderer": "gl_compatibility",
+          "index": 1,
+          "result": {
+            "adapter": "NVIDIA GeForce RTX 5080",
+            "auto_update": false,
+            "debug_build": false,
+            "engine": {
+              "build": "custom_build",
+              "hash": "unknown",
+              "hex": 263938,
+              "major": 4,
+              "minor": 7,
+              "patch": 2,
+              "status": "stable",
+              "string": "4.7.2-stable (custom_build)",
+              "timestamp": 0
+            },
+            "passed": true,
+            "renderer": "gl_compatibility",
+            "results": [
+              {
+                "api_cpu": {
+                  "max_ms": 0.97,
+                  "mean_ms": 0.109675,
+                  "median_ms": 0.012,
+                  "p95_ms": 0.637,
+                  "p99_ms": 0.709,
+                  "samples": 120
+                },
+                "audio_setting_updates": 0,
+                "binding_cpu": {
+                  "max_ms": 0.0,
+                  "mean_ms": 0.0,
+                  "median_ms": 0.0,
+                  "p95_ms": 0.0,
+                  "p99_ms": 0.0,
+                  "samples": 120
+                },
+                "binding_refreshes": 0,
+                "canvas_draw_calls": 56,
+                "changed_api_cpu": {
+                  "max_ms": 0.97,
+                  "mean_ms": 0.59455,
+                  "median_ms": 0.586,
+                  "p95_ms": 0.709,
+                  "p99_ms": 0.97,
+                  "samples": 20
+                },
+                "changed_core_cpu": {
+                  "max_ms": 0.510199999999998,
+                  "mean_ms": 0.258465,
+                  "median_ms": 0.2637,
+                  "p95_ms": 0.383400000000009,
+                  "p99_ms": 0.510199999999998,
+                  "samples": 20
+                },
+                "changed_whole_frame": {
+                  "max_ms": 13.837,
+                  "mean_ms": 7.19925,
+                  "median_ms": 4.086,
+                  "p95_ms": 12.338,
+                  "p99_ms": 13.837,
+                  "samples": 20
+                },
+                "core_cpu": {
+                  "max_ms": 0.510199999999998,
+                  "mean_ms": 0.0443908333333301,
+                  "median_ms": 0.00159999999999627,
+                  "p95_ms": 0.2941,
+                  "p99_ms": 0.383400000000009,
+                  "samples": 120
+                },
+                "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+                "core_update_count": {
+                  "max": 3.0,
+                  "mean": 1.175,
+                  "median": 1.0,
+                  "p95": 2.0,
+                  "p99": 2.0,
+                  "samples": 120
+                },
+                "elements": 116,
+                "frames": 120,
+                "godot_static_memory_change_bytes": null,
+                "scene_draw_calls": 0,
+                "scene_primitives": 0,
+                "slow_frames": [
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00149999999999295,
+                    "core_updates": 1.0,
+                    "frame": 164,
+                    "viewport_render_cpu_ms": 0.188999995589256,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 14.69
+                  },
+                  {
+                    "api_cpu_ms": 0.481,
+                    "changed": true,
+                    "core_cpu_ms": 0.189300000000003,
+                    "core_updates": 2.0,
+                    "frame": 174,
+                    "viewport_render_cpu_ms": 0.305000007152557,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 13.837
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00140000000000384,
+                    "core_updates": 1.0,
+                    "frame": 152,
+                    "viewport_render_cpu_ms": 0.180000007152557,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 13.472
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00149999999999295,
+                    "core_updates": 1.0,
+                    "frame": 166,
+                    "viewport_render_cpu_ms": 0.18299999833107,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 12.699
+                  },
+                  {
+                    "api_cpu_ms": 0.709,
+                    "changed": true,
+                    "core_cpu_ms": 0.180499999999995,
+                    "core_updates": 2.0,
+                    "frame": 138,
+                    "viewport_render_cpu_ms": 0.211999997496605,
+                    "viewport_render_gpu_ms": 0.0439999997615814,
+                    "whole_frame_ms": 12.338
+                  },
+                  {
+                    "api_cpu_ms": 0.581,
+                    "changed": true,
+                    "core_cpu_ms": 0.304000000000002,
+                    "core_updates": 2.0,
+                    "frame": 102,
+                    "viewport_render_cpu_ms": 0.184000000357628,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 12.129
+                  },
+                  {
+                    "api_cpu_ms": 0.023,
+                    "changed": false,
+                    "core_cpu_ms": 0.00279999999999347,
+                    "core_updates": 1.0,
+                    "frame": 135,
+                    "viewport_render_cpu_ms": 0.308999985456467,
+                    "viewport_render_gpu_ms": 0.0419999994337559,
+                    "whole_frame_ms": 11.972
+                  },
+                  {
+                    "api_cpu_ms": 0.533,
+                    "changed": true,
+                    "core_cpu_ms": 0.281000000000006,
+                    "core_updates": 2.0,
+                    "frame": 84,
+                    "viewport_render_cpu_ms": 0.25,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 11.959
+                  }
+                ],
+                "texture_memory_bytes": 15153759,
+                "viewport_render_cpu": {
+                  "max_ms": 0.432000011205673,
+                  "mean_ms": 0.211908334121108,
+                  "median_ms": 0.189999997615814,
+                  "p95_ms": 0.316000014543533,
+                  "p99_ms": 0.41499999165535,
+                  "samples": 120
+                },
+                "viewport_render_gpu": {
+                  "max_ms": 0.310000002384186,
+                  "mean_ms": 0.0461583345197141,
+                  "median_ms": 0.0430000014603138,
+                  "p95_ms": 0.0450000017881393,
+                  "p99_ms": 0.11599999666214,
+                  "samples": 120
+                },
+                "warmups": 60,
+                "weva_draw_commands": 205,
+                "weva_triangles": 4624,
+                "whole_frame": {
+                  "max_ms": 14.69,
+                  "mean_ms": 5.04141666666667,
+                  "median_ms": 2.749,
+                  "p95_ms": 11.972,
+                  "p99_ms": 13.837,
+                  "samples": 120
+                },
+                "window_focused_samples": 120,
+                "workload": "settings_typing"
+              },
+              {
+                "api_cpu": {
+                  "max_ms": 2.607,
+                  "mean_ms": 0.338341666666667,
+                  "median_ms": 0.012,
+                  "p95_ms": 2.123,
+                  "p99_ms": 2.531,
+                  "samples": 120
+                },
+                "audio_setting_updates": 0,
+                "binding_cpu": {
+                  "max_ms": 0.0,
+                  "mean_ms": 0.0,
+                  "median_ms": 0.0,
+                  "p95_ms": 0.0,
+                  "p99_ms": 0.0,
+                  "samples": 120
+                },
+                "binding_refreshes": 0,
+                "canvas_draw_calls": 44,
+                "changed_api_cpu": {
+                  "max_ms": 2.607,
+                  "mean_ms": 1.9801,
+                  "median_ms": 1.968,
+                  "p95_ms": 2.531,
+                  "p99_ms": 2.607,
+                  "samples": 20
+                },
+                "changed_core_cpu": {
+                  "max_ms": 1.0463,
+                  "mean_ms": 0.784925,
+                  "median_ms": 0.771999999999991,
+                  "p95_ms": 0.880799999999994,
+                  "p99_ms": 1.0463,
+                  "samples": 20
+                },
+                "changed_whole_frame": {
+                  "max_ms": 15.722,
+                  "mean_ms": 8.9887,
+                  "median_ms": 10.782,
+                  "p95_ms": 13.974,
+                  "p99_ms": 15.722,
+                  "samples": 20
+                },
+                "core_cpu": {
+                  "max_ms": 1.0463,
+                  "mean_ms": 0.131788333333331,
+                  "median_ms": 0.00149999999999295,
+                  "p95_ms": 0.791900000000012,
+                  "p99_ms": 0.880799999999994,
+                  "samples": 120
+                },
+                "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+                "core_update_count": {
+                  "max": 4.0,
+                  "mean": 1.41666666666667,
+                  "median": 1.0,
+                  "p95": 4.0,
+                  "p99": 4.0,
+                  "samples": 120
+                },
+                "elements": 116,
+                "frames": 120,
+                "godot_static_memory_change_bytes": null,
+                "scene_draw_calls": 0,
+                "scene_primitives": 0,
+                "slow_frames": [
+                  {
+                    "api_cpu_ms": 2.251,
+                    "changed": true,
+                    "core_cpu_ms": 0.880799999999994,
+                    "core_updates": 4.0,
+                    "frame": 60,
+                    "viewport_render_cpu_ms": 0.174999997019768,
+                    "viewport_render_gpu_ms": 0.034000001847744,
+                    "whole_frame_ms": 15.722
+                  },
+                  {
+                    "api_cpu_ms": 1.968,
+                    "changed": true,
+                    "core_cpu_ms": 0.771999999999991,
+                    "core_updates": 4.0,
+                    "frame": 72,
+                    "viewport_render_cpu_ms": 0.174999997019768,
+                    "viewport_render_gpu_ms": 0.0320000015199184,
+                    "whole_frame_ms": 13.974
+                  },
+                  {
+                    "api_cpu_ms": 2.204,
+                    "changed": true,
+                    "core_cpu_ms": 0.811799999999991,
+                    "core_updates": 4.0,
+                    "frame": 120,
+                    "viewport_render_cpu_ms": 0.164000004529953,
+                    "viewport_render_gpu_ms": 0.0350000001490116,
+                    "whole_frame_ms": 13.96
+                  },
+                  {
+                    "api_cpu_ms": 1.919,
+                    "changed": true,
+                    "core_cpu_ms": 0.779700000000005,
+                    "core_updates": 4.0,
+                    "frame": 156,
+                    "viewport_render_cpu_ms": 0.164000004529953,
+                    "viewport_render_gpu_ms": 0.034000001847744,
+                    "whole_frame_ms": 13.811
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000699999999994816,
+                    "core_updates": 1.0,
+                    "frame": 129,
+                    "viewport_render_cpu_ms": 0.188999995589256,
+                    "viewport_render_gpu_ms": 0.0419999994337559,
+                    "whole_frame_ms": 13.413
+                  },
+                  {
+                    "api_cpu_ms": 2.106,
+                    "changed": true,
+                    "core_cpu_ms": 0.767399999999995,
+                    "core_updates": 4.0,
+                    "frame": 84,
+                    "viewport_render_cpu_ms": 0.164000004529953,
+                    "viewport_render_gpu_ms": 0.0350000001490116,
+                    "whole_frame_ms": 12.576
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00140000000000384,
+                    "core_updates": 1.0,
+                    "frame": 109,
+                    "viewport_render_cpu_ms": 0.158000007271767,
+                    "viewport_render_gpu_ms": 0.0350000001490116,
+                    "whole_frame_ms": 11.787
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00149999999999295,
+                    "core_updates": 1.0,
+                    "frame": 100,
+                    "viewport_render_cpu_ms": 0.159999996423721,
+                    "viewport_render_gpu_ms": 0.034000001847744,
+                    "whole_frame_ms": 11.751
+                  }
+                ],
+                "texture_memory_bytes": 15153759,
+                "viewport_render_cpu": {
+                  "max_ms": 0.458999991416931,
+                  "mean_ms": 0.198933333406846,
+                  "median_ms": 0.184000000357628,
+                  "p95_ms": 0.330000013113022,
+                  "p99_ms": 0.446000009775162,
+                  "samples": 120
+                },
+                "viewport_render_gpu": {
+                  "max_ms": 2.4539999961853,
+                  "mean_ms": 0.0791750005135934,
+                  "median_ms": 0.0399999991059303,
+                  "p95_ms": 0.046000000089407,
+                  "p99_ms": 2.1949999332428,
+                  "samples": 120
+                },
+                "warmups": 60,
+                "weva_draw_commands": 170,
+                "weva_triangles": 3148,
+                "whole_frame": {
+                  "max_ms": 15.722,
+                  "mean_ms": 5.29951666666667,
+                  "median_ms": 2.785,
+                  "p95_ms": 11.787,
+                  "p99_ms": 13.974,
+                  "samples": 120
+                },
+                "window_focused_samples": 120,
+                "workload": "settings_toggle"
+              }
+            ],
+            "simulated_dt": 0.0166666666666667,
+            "viewport": [
+              1280,
+              720
+            ],
+            "world": "static",
+            "world_instances": 0
+          }
+        },
+        {
+          "renderer": "mobile",
+          "index": 1,
+          "result": {
+            "adapter": "NVIDIA GeForce RTX 5080",
+            "auto_update": false,
+            "debug_build": false,
+            "engine": {
+              "build": "custom_build",
+              "hash": "unknown",
+              "hex": 263938,
+              "major": 4,
+              "minor": 7,
+              "patch": 2,
+              "status": "stable",
+              "string": "4.7.2-stable (custom_build)",
+              "timestamp": 0
+            },
+            "passed": true,
+            "renderer": "mobile",
+            "results": [
+              {
+                "api_cpu": {
+                  "max_ms": 0.828,
+                  "mean_ms": 0.0956749999999999,
+                  "median_ms": 0.012,
+                  "p95_ms": 0.605,
+                  "p99_ms": 0.736,
+                  "samples": 120
+                },
+                "audio_setting_updates": 0,
+                "binding_cpu": {
+                  "max_ms": 0.0,
+                  "mean_ms": 0.0,
+                  "median_ms": 0.0,
+                  "p95_ms": 0.0,
+                  "p99_ms": 0.0,
+                  "samples": 120
+                },
+                "binding_refreshes": 0,
+                "canvas_draw_calls": 56,
+                "changed_api_cpu": {
+                  "max_ms": 0.828,
+                  "mean_ms": 0.51715,
+                  "median_ms": 0.516,
+                  "p95_ms": 0.736,
+                  "p99_ms": 0.828,
+                  "samples": 20
+                },
+                "changed_core_cpu": {
+                  "max_ms": 0.403000000000006,
+                  "mean_ms": 0.236234999999999,
+                  "median_ms": 0.265999999999998,
+                  "p95_ms": 0.349600000000002,
+                  "p99_ms": 0.403000000000006,
+                  "samples": 20
+                },
+                "changed_whole_frame": {
+                  "max_ms": 14.04,
+                  "mean_ms": 5.3044,
+                  "median_ms": 3.621,
+                  "p95_ms": 13.059,
+                  "p99_ms": 14.04,
+                  "samples": 20
+                },
+                "core_cpu": {
+                  "max_ms": 0.403000000000006,
+                  "mean_ms": 0.040564166666665,
+                  "median_ms": 0.00149999999999295,
+                  "p95_ms": 0.296999999999997,
+                  "p99_ms": 0.349600000000002,
+                  "samples": 120
+                },
+                "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+                "core_update_count": {
+                  "max": 3.0,
+                  "mean": 1.175,
+                  "median": 1.0,
+                  "p95": 2.0,
+                  "p99": 2.0,
+                  "samples": 120
+                },
+                "elements": 116,
+                "frames": 120,
+                "godot_static_memory_change_bytes": null,
+                "scene_draw_calls": 0,
+                "scene_primitives": 0,
+                "slow_frames": [
+                  {
+                    "api_cpu_ms": 0.649,
+                    "changed": true,
+                    "core_cpu_ms": 0.3339,
+                    "core_updates": 2.0,
+                    "frame": 72,
+                    "viewport_render_cpu_ms": 0.0199999995529652,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 14.04
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00149999999999295,
+                    "core_updates": 1.0,
+                    "frame": 152,
+                    "viewport_render_cpu_ms": 0.0309999994933605,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 13.924
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00160000000000338,
+                    "core_updates": 1.0,
+                    "frame": 81,
+                    "viewport_render_cpu_ms": 0.0230000000447035,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 13.894
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00140000000000384,
+                    "core_updates": 1.0,
+                    "frame": 142,
+                    "viewport_render_cpu_ms": 0.025000000372529,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 13.884
+                  },
+                  {
+                    "api_cpu_ms": 0.006,
+                    "changed": false,
+                    "core_cpu_ms": 0.000700000000001921,
+                    "core_updates": 1.0,
+                    "frame": 88,
+                    "viewport_render_cpu_ms": 0.017000000923872,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 13.768
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00150000000000006,
+                    "core_updates": 1.0,
+                    "frame": 68,
+                    "viewport_render_cpu_ms": 0.0299999993294477,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 13.326
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00150000000000006,
+                    "core_updates": 1.0,
+                    "frame": 67,
+                    "viewport_render_cpu_ms": 0.028999999165535,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 13.235
+                  },
+                  {
+                    "api_cpu_ms": 0.011,
+                    "changed": false,
+                    "core_cpu_ms": 0.00140000000000384,
+                    "core_updates": 1.0,
+                    "frame": 167,
+                    "viewport_render_cpu_ms": 0.025000000372529,
+                    "viewport_render_gpu_ms": 0.025000000372529,
+                    "whole_frame_ms": 13.115
+                  }
+                ],
+                "texture_memory_bytes": 12288000,
+                "viewport_render_cpu": {
+                  "max_ms": 0.0480000004172325,
+                  "mean_ms": 0.0267583335594585,
+                  "median_ms": 0.0260000005364418,
+                  "p95_ms": 0.0320000015199184,
+                  "p99_ms": 0.0469999983906746,
+                  "samples": 120
+                },
+                "viewport_render_gpu": {
+                  "max_ms": 0.172999992966652,
+                  "mean_ms": 0.0247500000676761,
+                  "median_ms": 0.0260000005364418,
+                  "p95_ms": 0.0260000005364418,
+                  "p99_ms": 0.0270000007003546,
+                  "samples": 120
+                },
+                "warmups": 60,
+                "weva_draw_commands": 205,
+                "weva_triangles": 4624,
+                "whole_frame": {
+                  "max_ms": 14.04,
+                  "mean_ms": 4.61485,
+                  "median_ms": 2.543,
+                  "p95_ms": 13.235,
+                  "p99_ms": 13.924,
+                  "samples": 120
+                },
+                "window_focused_samples": 120,
+                "workload": "settings_typing"
+              },
+              {
+                "api_cpu": {
+                  "max_ms": 3.845,
+                  "mean_ms": 0.373766666666667,
+                  "median_ms": 0.012,
+                  "p95_ms": 2.217,
+                  "p99_ms": 2.825,
+                  "samples": 120
+                },
+                "audio_setting_updates": 0,
+                "binding_cpu": {
+                  "max_ms": 0.0,
+                  "mean_ms": 0.0,
+                  "median_ms": 0.0,
+                  "p95_ms": 0.0,
+                  "p99_ms": 0.0,
+                  "samples": 120
+                },
+                "binding_refreshes": 0,
+                "canvas_draw_calls": 44,
+                "changed_api_cpu": {
+                  "max_ms": 3.845,
+                  "mean_ms": 2.1896,
+                  "median_ms": 2.056,
+                  "p95_ms": 2.825,
+                  "p99_ms": 3.845,
+                  "samples": 20
+                },
+                "changed_core_cpu": {
+                  "max_ms": 1.25569999999999,
+                  "mean_ms": 0.8637,
+                  "median_ms": 0.825699999999998,
+                  "p95_ms": 1.15949999999999,
+                  "p99_ms": 1.25569999999999,
+                  "samples": 20
+                },
+                "changed_whole_frame": {
+                  "max_ms": 12.955,
+                  "mean_ms": 8.7369,
+                  "median_ms": 12.248,
+                  "p95_ms": 12.908,
+                  "p99_ms": 12.955,
+                  "samples": 20
+                },
+                "core_cpu": {
+                  "max_ms": 1.25569999999999,
+                  "mean_ms": 0.145007499999998,
+                  "median_ms": 0.00149999999999295,
+                  "p95_ms": 0.892800000000008,
+                  "p99_ms": 1.15949999999999,
+                  "samples": 120
+                },
+                "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+                "core_update_count": {
+                  "max": 4.0,
+                  "mean": 1.41666666666667,
+                  "median": 1.0,
+                  "p95": 4.0,
+                  "p99": 4.0,
+                  "samples": 120
+                },
+                "elements": 116,
+                "frames": 120,
+                "godot_static_memory_change_bytes": null,
+                "scene_draw_calls": 0,
+                "scene_primitives": 0,
+                "slow_frames": [
+                  {
+                    "api_cpu_ms": 0.013,
+                    "changed": false,
+                    "core_cpu_ms": 0.00159999999999627,
+                    "core_updates": 1.0,
+                    "frame": 65,
+                    "viewport_render_cpu_ms": 0.0370000004768372,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 13.009
+                  },
+                  {
+                    "api_cpu_ms": 2.825,
+                    "changed": true,
+                    "core_cpu_ms": 1.15949999999999,
+                    "core_updates": 4.0,
+                    "frame": 84,
+                    "viewport_render_cpu_ms": 0.0270000007003546,
+                    "viewport_render_gpu_ms": 0.0219999998807907,
+                    "whole_frame_ms": 12.955
+                  },
+                  {
+                    "api_cpu_ms": 1.989,
+                    "changed": true,
+                    "core_cpu_ms": 0.781599999999997,
+                    "core_updates": 3.0,
+                    "frame": 114,
+                    "viewport_render_cpu_ms": 0.096000000834465,
+                    "viewport_render_gpu_ms": 0.025000000372529,
+                    "whole_frame_ms": 12.908
+                  },
+                  {
+                    "api_cpu_ms": 2.126,
+                    "changed": true,
+                    "core_cpu_ms": 0.818200000000004,
+                    "core_updates": 3.0,
+                    "frame": 78,
+                    "viewport_render_cpu_ms": 0.0299999993294477,
+                    "viewport_render_gpu_ms": 0.025000000372529,
+                    "whole_frame_ms": 12.904
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000799999999998136,
+                    "core_updates": 1.0,
+                    "frame": 70,
+                    "viewport_render_cpu_ms": 0.0270000007003546,
+                    "viewport_render_gpu_ms": 0.0219999998807907,
+                    "whole_frame_ms": 12.869
+                  },
+                  {
+                    "api_cpu_ms": 2.388,
+                    "changed": true,
+                    "core_cpu_ms": 0.892800000000008,
+                    "core_updates": 4.0,
+                    "frame": 120,
+                    "viewport_render_cpu_ms": 0.0270000007003546,
+                    "viewport_render_gpu_ms": 0.0209999997168779,
+                    "whole_frame_ms": 12.867
+                  },
+                  {
+                    "api_cpu_ms": 2.217,
+                    "changed": true,
+                    "core_cpu_ms": 0.882500000000007,
+                    "core_updates": 4.0,
+                    "frame": 132,
+                    "viewport_render_cpu_ms": 0.0240000002086163,
+                    "viewport_render_gpu_ms": 0.0209999997168779,
+                    "whole_frame_ms": 12.816
+                  },
+                  {
+                    "api_cpu_ms": 0.013,
+                    "changed": false,
+                    "core_cpu_ms": 0.00159999999999627,
+                    "core_updates": 1.0,
+                    "frame": 149,
+                    "viewport_render_cpu_ms": 0.0520000010728836,
+                    "viewport_render_gpu_ms": 0.025000000372529,
+                    "whole_frame_ms": 12.81
+                  }
+                ],
+                "texture_memory_bytes": 12288000,
+                "viewport_render_cpu": {
+                  "max_ms": 0.096000000834465,
+                  "mean_ms": 0.031083333476757,
+                  "median_ms": 0.0280000008642673,
+                  "p95_ms": 0.0509999990463257,
+                  "p99_ms": 0.0759999975562096,
+                  "samples": 120
+                },
+                "viewport_render_gpu": {
+                  "max_ms": 0.0410000011324883,
+                  "mean_ms": 0.0245666668439905,
+                  "median_ms": 0.025000000372529,
+                  "p95_ms": 0.0329999998211861,
+                  "p99_ms": 0.0410000011324883,
+                  "samples": 120
+                },
+                "warmups": 60,
+                "weva_draw_commands": 170,
+                "weva_triangles": 3148,
+                "whole_frame": {
+                  "max_ms": 13.009,
+                  "mean_ms": 8.47466666666666,
+                  "median_ms": 10.859,
+                  "p95_ms": 12.816,
+                  "p99_ms": 12.955,
+                  "samples": 120
+                },
+                "window_focused_samples": 120,
+                "workload": "settings_toggle"
+              }
+            ],
+            "simulated_dt": 0.0166666666666667,
+            "viewport": [
+              1280,
+              720
+            ],
+            "world": "static",
+            "world_instances": 0
+          }
+        }
+      ],
+      "medians": {
+        "gl_compatibility": {
+          "settings_typing": {
+            "api_cpu": {
+              "max_ms": 0.97,
+              "mean_ms": 0.109675,
+              "median_ms": 0.012,
+              "p95_ms": 0.637,
+              "p99_ms": 0.709,
+              "samples": 120
+            },
+            "changed_api_cpu": {
+              "max_ms": 0.97,
+              "mean_ms": 0.59455,
+              "median_ms": 0.586,
+              "p95_ms": 0.709,
+              "p99_ms": 0.97,
+              "samples": 20
+            },
+            "whole_frame": {
+              "max_ms": 14.69,
+              "mean_ms": 5.04141666666667,
+              "median_ms": 2.749,
+              "p95_ms": 11.972,
+              "p99_ms": 13.837,
+              "samples": 120
+            },
+            "changed_whole_frame": {
+              "max_ms": 13.837,
+              "mean_ms": 7.19925,
+              "median_ms": 4.086,
+              "p95_ms": 12.338,
+              "p99_ms": 13.837,
+              "samples": 20
+            },
+            "binding_cpu": {
+              "max_ms": 0.0,
+              "mean_ms": 0.0,
+              "median_ms": 0.0,
+              "p95_ms": 0.0,
+              "p99_ms": 0.0,
+              "samples": 120
+            },
+            "core_cpu": {
+              "max_ms": 0.510199999999998,
+              "mean_ms": 0.0443908333333301,
+              "median_ms": 0.00159999999999627,
+              "p95_ms": 0.2941,
+              "p99_ms": 0.383400000000009,
+              "samples": 120
+            },
+            "changed_core_cpu": {
+              "max_ms": 0.510199999999998,
+              "mean_ms": 0.258465,
+              "median_ms": 0.2637,
+              "p95_ms": 0.383400000000009,
+              "p99_ms": 0.510199999999998,
+              "samples": 20
+            },
+            "core_update_count": {
+              "max": 3.0,
+              "mean": 1.175,
+              "median": 1.0,
+              "p95": 2.0,
+              "p99": 2.0,
+              "samples": 120
+            },
+            "viewport_render_cpu": {
+              "max_ms": 0.432000011205673,
+              "mean_ms": 0.211908334121108,
+              "median_ms": 0.189999997615814,
+              "p95_ms": 0.316000014543533,
+              "p99_ms": 0.41499999165535,
+              "samples": 120
+            },
+            "viewport_render_gpu": {
+              "max_ms": 0.310000002384186,
+              "mean_ms": 0.0461583345197141,
+              "median_ms": 0.0430000014603138,
+              "p95_ms": 0.0450000017881393,
+              "p99_ms": 0.11599999666214,
+              "samples": 120
+            }
+          },
+          "settings_toggle": {
+            "api_cpu": {
+              "max_ms": 2.607,
+              "mean_ms": 0.338341666666667,
+              "median_ms": 0.012,
+              "p95_ms": 2.123,
+              "p99_ms": 2.531,
+              "samples": 120
+            },
+            "changed_api_cpu": {
+              "max_ms": 2.607,
+              "mean_ms": 1.9801,
+              "median_ms": 1.968,
+              "p95_ms": 2.531,
+              "p99_ms": 2.607,
+              "samples": 20
+            },
+            "whole_frame": {
+              "max_ms": 15.722,
+              "mean_ms": 5.29951666666667,
+              "median_ms": 2.785,
+              "p95_ms": 11.787,
+              "p99_ms": 13.974,
+              "samples": 120
+            },
+            "changed_whole_frame": {
+              "max_ms": 15.722,
+              "mean_ms": 8.9887,
+              "median_ms": 10.782,
+              "p95_ms": 13.974,
+              "p99_ms": 15.722,
+              "samples": 20
+            },
+            "binding_cpu": {
+              "max_ms": 0.0,
+              "mean_ms": 0.0,
+              "median_ms": 0.0,
+              "p95_ms": 0.0,
+              "p99_ms": 0.0,
+              "samples": 120
+            },
+            "core_cpu": {
+              "max_ms": 1.0463,
+              "mean_ms": 0.131788333333331,
+              "median_ms": 0.00149999999999295,
+              "p95_ms": 0.791900000000012,
+              "p99_ms": 0.880799999999994,
+              "samples": 120
+            },
+            "changed_core_cpu": {
+              "max_ms": 1.0463,
+              "mean_ms": 0.784925,
+              "median_ms": 0.771999999999991,
+              "p95_ms": 0.880799999999994,
+              "p99_ms": 1.0463,
+              "samples": 20
+            },
+            "core_update_count": {
+              "max": 4.0,
+              "mean": 1.41666666666667,
+              "median": 1.0,
+              "p95": 4.0,
+              "p99": 4.0,
+              "samples": 120
+            },
+            "viewport_render_cpu": {
+              "max_ms": 0.458999991416931,
+              "mean_ms": 0.198933333406846,
+              "median_ms": 0.184000000357628,
+              "p95_ms": 0.330000013113022,
+              "p99_ms": 0.446000009775162,
+              "samples": 120
+            },
+            "viewport_render_gpu": {
+              "max_ms": 2.4539999961853,
+              "mean_ms": 0.0791750005135934,
+              "median_ms": 0.0399999991059303,
+              "p95_ms": 0.046000000089407,
+              "p99_ms": 2.1949999332428,
+              "samples": 120
+            }
+          }
+        },
+        "mobile": {
+          "settings_typing": {
+            "api_cpu": {
+              "max_ms": 0.828,
+              "mean_ms": 0.0956749999999999,
+              "median_ms": 0.012,
+              "p95_ms": 0.605,
+              "p99_ms": 0.736,
+              "samples": 120
+            },
+            "changed_api_cpu": {
+              "max_ms": 0.828,
+              "mean_ms": 0.51715,
+              "median_ms": 0.516,
+              "p95_ms": 0.736,
+              "p99_ms": 0.828,
+              "samples": 20
+            },
+            "whole_frame": {
+              "max_ms": 14.04,
+              "mean_ms": 4.61485,
+              "median_ms": 2.543,
+              "p95_ms": 13.235,
+              "p99_ms": 13.924,
+              "samples": 120
+            },
+            "changed_whole_frame": {
+              "max_ms": 14.04,
+              "mean_ms": 5.3044,
+              "median_ms": 3.621,
+              "p95_ms": 13.059,
+              "p99_ms": 14.04,
+              "samples": 20
+            },
+            "binding_cpu": {
+              "max_ms": 0.0,
+              "mean_ms": 0.0,
+              "median_ms": 0.0,
+              "p95_ms": 0.0,
+              "p99_ms": 0.0,
+              "samples": 120
+            },
+            "core_cpu": {
+              "max_ms": 0.403000000000006,
+              "mean_ms": 0.040564166666665,
+              "median_ms": 0.00149999999999295,
+              "p95_ms": 0.296999999999997,
+              "p99_ms": 0.349600000000002,
+              "samples": 120
+            },
+            "changed_core_cpu": {
+              "max_ms": 0.403000000000006,
+              "mean_ms": 0.236234999999999,
+              "median_ms": 0.265999999999998,
+              "p95_ms": 0.349600000000002,
+              "p99_ms": 0.403000000000006,
+              "samples": 20
+            },
+            "core_update_count": {
+              "max": 3.0,
+              "mean": 1.175,
+              "median": 1.0,
+              "p95": 2.0,
+              "p99": 2.0,
+              "samples": 120
+            },
+            "viewport_render_cpu": {
+              "max_ms": 0.0480000004172325,
+              "mean_ms": 0.0267583335594585,
+              "median_ms": 0.0260000005364418,
+              "p95_ms": 0.0320000015199184,
+              "p99_ms": 0.0469999983906746,
+              "samples": 120
+            },
+            "viewport_render_gpu": {
+              "max_ms": 0.172999992966652,
+              "mean_ms": 0.0247500000676761,
+              "median_ms": 0.0260000005364418,
+              "p95_ms": 0.0260000005364418,
+              "p99_ms": 0.0270000007003546,
+              "samples": 120
+            }
+          },
+          "settings_toggle": {
+            "api_cpu": {
+              "max_ms": 3.845,
+              "mean_ms": 0.373766666666667,
+              "median_ms": 0.012,
+              "p95_ms": 2.217,
+              "p99_ms": 2.825,
+              "samples": 120
+            },
+            "changed_api_cpu": {
+              "max_ms": 3.845,
+              "mean_ms": 2.1896,
+              "median_ms": 2.056,
+              "p95_ms": 2.825,
+              "p99_ms": 3.845,
+              "samples": 20
+            },
+            "whole_frame": {
+              "max_ms": 13.009,
+              "mean_ms": 8.47466666666666,
+              "median_ms": 10.859,
+              "p95_ms": 12.816,
+              "p99_ms": 12.955,
+              "samples": 120
+            },
+            "changed_whole_frame": {
+              "max_ms": 12.955,
+              "mean_ms": 8.7369,
+              "median_ms": 12.248,
+              "p95_ms": 12.908,
+              "p99_ms": 12.955,
+              "samples": 20
+            },
+            "binding_cpu": {
+              "max_ms": 0.0,
+              "mean_ms": 0.0,
+              "median_ms": 0.0,
+              "p95_ms": 0.0,
+              "p99_ms": 0.0,
+              "samples": 120
+            },
+            "core_cpu": {
+              "max_ms": 1.25569999999999,
+              "mean_ms": 0.145007499999998,
+              "median_ms": 0.00149999999999295,
+              "p95_ms": 0.892800000000008,
+              "p99_ms": 1.15949999999999,
+              "samples": 120
+            },
+            "changed_core_cpu": {
+              "max_ms": 1.25569999999999,
+              "mean_ms": 0.8637,
+              "median_ms": 0.825699999999998,
+              "p95_ms": 1.15949999999999,
+              "p99_ms": 1.25569999999999,
+              "samples": 20
+            },
+            "core_update_count": {
+              "max": 4.0,
+              "mean": 1.41666666666667,
+              "median": 1.0,
+              "p95": 4.0,
+              "p99": 4.0,
+              "samples": 120
+            },
+            "viewport_render_cpu": {
+              "max_ms": 0.096000000834465,
+              "mean_ms": 0.031083333476757,
+              "median_ms": 0.0280000008642673,
+              "p95_ms": 0.0509999990463257,
+              "p99_ms": 0.0759999975562096,
+              "samples": 120
+            },
+            "viewport_render_gpu": {
+              "max_ms": 0.0410000011324883,
+              "mean_ms": 0.0245666668439905,
+              "median_ms": 0.025000000372529,
+              "p95_ms": 0.0329999998211861,
+              "p99_ms": 0.0410000011324883,
+              "samples": 120
+            }
+          }
+        }
+      }
+    },
+    "binding-background-smoke": {
+      "passed": true,
+      "functional_passed": true,
+      "timing_passed": null,
+      "engine_sha256": "b8e4ed696118ab1f7b924167796272b2bbc7e1e9ee4a7cb706a72d901e1eaaed",
+      "executable_sha256": "18fa5b9a3bfd8b5360a418ed6f7bf6376afd4d2f19c8bf4a1242439b39c7678c",
+      "release_template": {
+        "selection": "existing_executable",
+        "sha256": null
+      },
+      "library_sha256": "1495f736aee56a3f8168257c08c28526c311d392a0cd598b66830fb1aa8effaf",
+      "frames": 120,
+      "warmups": 60,
+      "run_timeout_seconds": 180,
+      "background_input_isolation": true,
+      "automatic": false,
+      "resolution": [
+        1280,
+        720
+      ],
+      "world": "static",
+      "source_sha256": {
+        "boot.gd": "282ee9d8b20d65eaaaf0ece4077004f89b05ead6cab3043edaf899dc443176a0",
+        "boot.tscn": "988ee0d988b80505dbe57fa63f711b69ec5d954661ee184c1d0dc738d4e69dd1",
+        "project.godot": "fa8fe59de99a279bd0209857292ef58fbc609d38968c6b0041b818781afa1b92",
+        "main.tscn": "6edfc680b3b4a24afb40f27e0e841c0b575b1b38c326e1b3c07b2ef768e97bef",
+        "game.gd": "306b0d30baf52505537460b3fa79e58756f8e62cc9fe768a13ae5b94b3945e3b",
+        "camp_state.gd": "c6a673b819b08563ff6c68c05646c95cec705e084199ebb3381b28319ed34daa",
+        "tests/performance.gd": "3aeafc69991299cd352fd2a58df6202df80d33094fd7d5d81d14a98e87f8ad68",
+        "tests/load_world.gd": "02e913f61120f526ea6fccb4a0186b32be92f444bd41759ca5e75f11a49cdcdc",
+        "ui/camp.html": "95ecfc6de5958bc9f69a147069be54a2311d6ec46a77893f35410673f9fb5c20",
+        "ui/camp.css": "e9d1c82e7dbeb565e2bba565ec0d472d367c6ba14bcf3810980f0eb92d1b1436",
+        "addons/weva/weva_view.gd": "1c04abf8dff900e424f55870d14dccdc6f71c730a20507437679eced306ca93c"
+      },
+      "runs": [
+        {
+          "renderer": "gl_compatibility",
+          "index": 1,
+          "result": {
+            "adapter": "NVIDIA GeForce RTX 5080",
+            "auto_update": false,
+            "debug_build": false,
+            "engine": {
+              "build": "custom_build",
+              "hash": "unknown",
+              "hex": 263938,
+              "major": 4,
+              "minor": 7,
+              "patch": 2,
+              "status": "stable",
+              "string": "4.7.2-stable (custom_build)",
+              "timestamp": 0
+            },
+            "passed": true,
+            "renderer": "gl_compatibility",
+            "results": [
+              {
+                "api_cpu": {
+                  "max_ms": 1.047,
+                  "mean_ms": 0.124416666666667,
+                  "median_ms": 0.012,
+                  "p95_ms": 0.783,
+                  "p99_ms": 0.94,
+                  "samples": 120
+                },
+                "audio_setting_updates": 0,
+                "binding_cpu": {
+                  "max_ms": 0.0,
+                  "mean_ms": 0.0,
+                  "median_ms": 0.0,
+                  "p95_ms": 0.0,
+                  "p99_ms": 0.0,
+                  "samples": 120
+                },
+                "binding_refreshes": 0,
+                "canvas_draw_calls": 56,
+                "changed_api_cpu": {
+                  "max_ms": 1.047,
+                  "mean_ms": 0.6823,
+                  "median_ms": 0.69,
+                  "p95_ms": 0.94,
+                  "p99_ms": 1.047,
+                  "samples": 20
+                },
+                "changed_core_cpu": {
+                  "max_ms": 0.5625,
+                  "mean_ms": 0.30113,
+                  "median_ms": 0.336199999999998,
+                  "p95_ms": 0.471400000000003,
+                  "p99_ms": 0.5625,
+                  "samples": 20
+                },
+                "changed_whole_frame": {
+                  "max_ms": 11.248,
+                  "mean_ms": 5.19335,
+                  "median_ms": 4.107,
+                  "p95_ms": 10.974,
+                  "p99_ms": 11.248,
+                  "samples": 20
+                },
+                "core_cpu": {
+                  "max_ms": 0.5625,
+                  "mean_ms": 0.0515708333333335,
+                  "median_ms": 0.00160000000000338,
+                  "p95_ms": 0.346699999999998,
+                  "p99_ms": 0.471400000000003,
+                  "samples": 120
+                },
+                "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+                "core_update_count": {
+                  "max": 3.0,
+                  "mean": 1.175,
+                  "median": 1.0,
+                  "p95": 2.0,
+                  "p99": 2.0,
+                  "samples": 120
+                },
+                "elements": 116,
+                "frames": 120,
+                "godot_static_memory_change_bytes": null,
+                "scene_draw_calls": 0,
+                "scene_primitives": 0,
+                "slow_frames": [
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00150000000000006,
+                    "core_updates": 1.0,
+                    "frame": 155,
+                    "viewport_render_cpu_ms": 0.210999995470047,
+                    "viewport_render_gpu_ms": 0.0450000017881393,
+                    "whole_frame_ms": 11.979
+                  },
+                  {
+                    "api_cpu_ms": 0.011,
+                    "changed": false,
+                    "core_cpu_ms": 0.00150000000000006,
+                    "core_updates": 1.0,
+                    "frame": 173,
+                    "viewport_render_cpu_ms": 0.188999995589256,
+                    "viewport_render_gpu_ms": 0.046000000089407,
+                    "whole_frame_ms": 11.64
+                  },
+                  {
+                    "api_cpu_ms": 0.731,
+                    "changed": true,
+                    "core_cpu_ms": 0.375,
+                    "core_updates": 2.0,
+                    "frame": 78,
+                    "viewport_render_cpu_ms": 0.188999995589256,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 11.248
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00150000000000006,
+                    "core_updates": 1.0,
+                    "frame": 106,
+                    "viewport_render_cpu_ms": 0.179000005125999,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 11.182
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00150000000000006,
+                    "core_updates": 1.0,
+                    "frame": 166,
+                    "viewport_render_cpu_ms": 0.18299999833107,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 11.099
+                  },
+                  {
+                    "api_cpu_ms": 0.525,
+                    "changed": true,
+                    "core_cpu_ms": 0.192099999999996,
+                    "core_updates": 2.0,
+                    "frame": 144,
+                    "viewport_render_cpu_ms": 0.294999986886978,
+                    "viewport_render_gpu_ms": 0.046000000089407,
+                    "whole_frame_ms": 10.974
+                  },
+                  {
+                    "api_cpu_ms": 0.727,
+                    "changed": true,
+                    "core_cpu_ms": 0.3748,
+                    "core_updates": 2.0,
+                    "frame": 66,
+                    "viewport_render_cpu_ms": 0.190999999642372,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 10.767
+                  },
+                  {
+                    "api_cpu_ms": 0.013,
+                    "changed": false,
+                    "core_cpu_ms": 0.00189999999999912,
+                    "core_updates": 1.0,
+                    "frame": 115,
+                    "viewport_render_cpu_ms": 0.204999998211861,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 10.708
+                  }
+                ],
+                "texture_memory_bytes": 15153759,
+                "viewport_render_cpu": {
+                  "max_ms": 0.404000014066696,
+                  "mean_ms": 0.222483333448569,
+                  "median_ms": 0.199000000953674,
+                  "p95_ms": 0.333000004291534,
+                  "p99_ms": 0.397000014781952,
+                  "samples": 120
+                },
+                "viewport_render_gpu": {
+                  "max_ms": 0.465000003576279,
+                  "mean_ms": 0.0567000011913478,
+                  "median_ms": 0.0430000014603138,
+                  "p95_ms": 0.0540000014007092,
+                  "p99_ms": 0.446999996900558,
+                  "samples": 120
+                },
+                "warmups": 60,
+                "weva_draw_commands": 205,
+                "weva_triangles": 4624,
+                "whole_frame": {
+                  "max_ms": 11.979,
+                  "mean_ms": 4.37585,
+                  "median_ms": 2.713,
+                  "p95_ms": 10.767,
+                  "p99_ms": 11.64,
+                  "samples": 120
+                },
+                "window_focused_samples": 120,
+                "workload": "settings_typing"
+              },
+              {
+                "api_cpu": {
+                  "max_ms": 3.865,
+                  "mean_ms": 0.401333333333333,
+                  "median_ms": 0.013,
+                  "p95_ms": 2.403,
+                  "p99_ms": 3.48,
+                  "samples": 120
+                },
+                "audio_setting_updates": 0,
+                "binding_cpu": {
+                  "max_ms": 0.0,
+                  "mean_ms": 0.0,
+                  "median_ms": 0.0,
+                  "p95_ms": 0.0,
+                  "p99_ms": 0.0,
+                  "samples": 120
+                },
+                "binding_refreshes": 0,
+                "canvas_draw_calls": 44,
+                "changed_api_cpu": {
+                  "max_ms": 3.865,
+                  "mean_ms": 2.35405,
+                  "median_ms": 2.238,
+                  "p95_ms": 3.48,
+                  "p99_ms": 3.865,
+                  "samples": 20
+                },
+                "changed_core_cpu": {
+                  "max_ms": 1.2582,
+                  "mean_ms": 0.897665000000001,
+                  "median_ms": 0.873999999999995,
+                  "p95_ms": 1.1117,
+                  "p99_ms": 1.2582,
+                  "samples": 20
+                },
+                "changed_whole_frame": {
+                  "max_ms": 10.884,
+                  "mean_ms": 6.0927,
+                  "median_ms": 5.152,
+                  "p95_ms": 9.787,
+                  "p99_ms": 10.884,
+                  "samples": 20
+                },
+                "core_cpu": {
+                  "max_ms": 1.2582,
+                  "mean_ms": 0.150752499999999,
+                  "median_ms": 0.00159999999999627,
+                  "p95_ms": 0.882499999999993,
+                  "p99_ms": 1.1117,
+                  "samples": 120
+                },
+                "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+                "core_update_count": {
+                  "max": 4.0,
+                  "mean": 1.41666666666667,
+                  "median": 1.0,
+                  "p95": 4.0,
+                  "p99": 4.0,
+                  "samples": 120
+                },
+                "elements": 116,
+                "frames": 120,
+                "godot_static_memory_change_bytes": null,
+                "scene_draw_calls": 0,
+                "scene_primitives": 0,
+                "slow_frames": [
+                  {
+                    "api_cpu_ms": 0.013,
+                    "changed": false,
+                    "core_cpu_ms": 0.00190000000000623,
+                    "core_updates": 1.0,
+                    "frame": 88,
+                    "viewport_render_cpu_ms": 0.167999997735023,
+                    "viewport_render_gpu_ms": 0.034000001847744,
+                    "whole_frame_ms": 11.267
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000699999999994816,
+                    "core_updates": 1.0,
+                    "frame": 119,
+                    "viewport_render_cpu_ms": 0.184000000357628,
+                    "viewport_render_gpu_ms": 0.0359999984502792,
+                    "whole_frame_ms": 11.218
+                  },
+                  {
+                    "api_cpu_ms": 0.013,
+                    "changed": false,
+                    "core_cpu_ms": 0.00159999999999627,
+                    "core_updates": 1.0,
+                    "frame": 75,
+                    "viewport_render_cpu_ms": 0.159999996423721,
+                    "viewport_render_gpu_ms": 0.034000001847744,
+                    "whole_frame_ms": 11.165
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000600000000005707,
+                    "core_updates": 1.0,
+                    "frame": 116,
+                    "viewport_render_cpu_ms": 0.180999994277954,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 11.134
+                  },
+                  {
+                    "api_cpu_ms": 1.913,
+                    "changed": true,
+                    "core_cpu_ms": 0.813200000000009,
+                    "core_updates": 3.0,
+                    "frame": 78,
+                    "viewport_render_cpu_ms": 0.187000006437302,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 10.884
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.00100000000000477,
+                    "core_updates": 1.0,
+                    "frame": 166,
+                    "viewport_render_cpu_ms": 0.184000000357628,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 10.807
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000699999999994816,
+                    "core_updates": 1.0,
+                    "frame": 91,
+                    "viewport_render_cpu_ms": 0.202000007033348,
+                    "viewport_render_gpu_ms": 0.0430000014603138,
+                    "whole_frame_ms": 10.765
+                  },
+                  {
+                    "api_cpu_ms": 0.024,
+                    "changed": false,
+                    "core_cpu_ms": 0.00289999999999679,
+                    "core_updates": 1.0,
+                    "frame": 100,
+                    "viewport_render_cpu_ms": 0.175999999046326,
+                    "viewport_render_gpu_ms": 0.034000001847744,
+                    "whole_frame_ms": 10.724
+                  }
+                ],
+                "texture_memory_bytes": 15153759,
+                "viewport_render_cpu": {
+                  "max_ms": 0.407000005245209,
+                  "mean_ms": 0.195641667023301,
+                  "median_ms": 0.187000006437302,
+                  "p95_ms": 0.261999994516373,
+                  "p99_ms": 0.35699999332428,
+                  "samples": 120
+                },
+                "viewport_render_gpu": {
+                  "max_ms": 0.300999999046326,
+                  "mean_ms": 0.0452083343019088,
+                  "median_ms": 0.0410000011324883,
+                  "p95_ms": 0.046000000089407,
+                  "p99_ms": 0.29899999499321,
+                  "samples": 120
+                },
+                "warmups": 60,
+                "weva_draw_commands": 170,
+                "weva_triangles": 3148,
+                "whole_frame": {
+                  "max_ms": 11.267,
+                  "mean_ms": 4.645175,
+                  "median_ms": 2.635,
+                  "p95_ms": 10.765,
+                  "p99_ms": 11.218,
+                  "samples": 120
+                },
+                "window_focused_samples": 120,
+                "workload": "settings_toggle"
+              }
+            ],
+            "simulated_dt": 0.0166666666666667,
+            "viewport": [
+              1280,
+              720
+            ],
+            "world": "static",
+            "world_instances": 0
+          }
+        },
+        {
+          "renderer": "mobile",
+          "index": 1,
+          "result": {
+            "adapter": "NVIDIA GeForce RTX 5080",
+            "auto_update": false,
+            "debug_build": false,
+            "engine": {
+              "build": "custom_build",
+              "hash": "unknown",
+              "hex": 263938,
+              "major": 4,
+              "minor": 7,
+              "patch": 2,
+              "status": "stable",
+              "string": "4.7.2-stable (custom_build)",
+              "timestamp": 0
+            },
+            "passed": true,
+            "renderer": "mobile",
+            "results": [
+              {
+                "api_cpu": {
+                  "max_ms": 0.66,
+                  "mean_ms": 0.0812833333333332,
+                  "median_ms": 0.012,
+                  "p95_ms": 0.484,
+                  "p99_ms": 0.56,
+                  "samples": 120
+                },
+                "audio_setting_updates": 0,
+                "binding_cpu": {
+                  "max_ms": 0.0,
+                  "mean_ms": 0.0,
+                  "median_ms": 0.0,
+                  "p95_ms": 0.0,
+                  "p99_ms": 0.0,
+                  "samples": 120
+                },
+                "binding_refreshes": 0,
+                "canvas_draw_calls": 56,
+                "changed_api_cpu": {
+                  "max_ms": 0.66,
+                  "mean_ms": 0.4118,
+                  "median_ms": 0.463,
+                  "p95_ms": 0.56,
+                  "p99_ms": 0.66,
+                  "samples": 20
+                },
+                "changed_core_cpu": {
+                  "max_ms": 0.317299999999996,
+                  "mean_ms": 0.194650000000001,
+                  "median_ms": 0.260199999999998,
+                  "p95_ms": 0.292000000000002,
+                  "p99_ms": 0.317299999999996,
+                  "samples": 20
+                },
+                "changed_whole_frame": {
+                  "max_ms": 13.257,
+                  "mean_ms": 4.8298,
+                  "median_ms": 2.928,
+                  "p95_ms": 12.756,
+                  "p99_ms": 13.257,
+                  "samples": 20
+                },
+                "core_cpu": {
+                  "max_ms": 0.317299999999996,
+                  "mean_ms": 0.0335808333333328,
+                  "median_ms": 0.00150000000000006,
+                  "p95_ms": 0.268500000000003,
+                  "p99_ms": 0.292000000000002,
+                  "samples": 120
+                },
+                "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+                "core_update_count": {
+                  "max": 3.0,
+                  "mean": 1.175,
+                  "median": 1.0,
+                  "p95": 2.0,
+                  "p99": 2.0,
+                  "samples": 120
+                },
+                "elements": 116,
+                "frames": 120,
+                "godot_static_memory_change_bytes": null,
+                "scene_draw_calls": 0,
+                "scene_primitives": 0,
+                "slow_frames": [
+                  {
+                    "api_cpu_ms": 0.66,
+                    "changed": true,
+                    "core_cpu_ms": 0.317299999999996,
+                    "core_updates": 2.0,
+                    "frame": 60,
+                    "viewport_render_cpu_ms": 0.0780000016093254,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 13.257
+                  },
+                  {
+                    "api_cpu_ms": 0.487,
+                    "changed": true,
+                    "core_cpu_ms": 0.268500000000003,
+                    "core_updates": 2.0,
+                    "frame": 90,
+                    "viewport_render_cpu_ms": 0.025000000372529,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 12.756
+                  },
+                  {
+                    "api_cpu_ms": 0.479,
+                    "changed": true,
+                    "core_cpu_ms": 0.262900000000002,
+                    "core_updates": 2.0,
+                    "frame": 96,
+                    "viewport_render_cpu_ms": 0.0299999993294477,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 12.46
+                  },
+                  {
+                    "api_cpu_ms": 0.011,
+                    "changed": false,
+                    "core_cpu_ms": 0.00139999999999674,
+                    "core_updates": 1.0,
+                    "frame": 87,
+                    "viewport_render_cpu_ms": 0.0480000004172325,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 12.402
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000900000000001455,
+                    "core_updates": 1.0,
+                    "frame": 93,
+                    "viewport_render_cpu_ms": 0.0379999987781048,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 12.331
+                  },
+                  {
+                    "api_cpu_ms": 0.012,
+                    "changed": false,
+                    "core_cpu_ms": 0.00150000000000006,
+                    "core_updates": 1.0,
+                    "frame": 63,
+                    "viewport_render_cpu_ms": 0.0260000005364418,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 11.967
+                  },
+                  {
+                    "api_cpu_ms": 0.011,
+                    "changed": false,
+                    "core_cpu_ms": 0.00139999999999674,
+                    "core_updates": 1.0,
+                    "frame": 74,
+                    "viewport_render_cpu_ms": 0.0280000008642673,
+                    "viewport_render_gpu_ms": 0.0260000005364418,
+                    "whole_frame_ms": 11.924
+                  },
+                  {
+                    "api_cpu_ms": 0.011,
+                    "changed": false,
+                    "core_cpu_ms": 0.00150000000000006,
+                    "core_updates": 1.0,
+                    "frame": 99,
+                    "viewport_render_cpu_ms": 0.028999999165535,
+                    "viewport_render_gpu_ms": 0.025000000372529,
+                    "whole_frame_ms": 11.401
+                  }
+                ],
+                "texture_memory_bytes": 12288000,
+                "viewport_render_cpu": {
+                  "max_ms": 0.268999993801117,
+                  "mean_ms": 0.0290666667899738,
+                  "median_ms": 0.0260000005364418,
+                  "p95_ms": 0.0359999984502792,
+                  "p99_ms": 0.0799999982118607,
+                  "samples": 120
+                },
+                "viewport_render_gpu": {
+                  "max_ms": 0.0260000005364418,
+                  "mean_ms": 0.0221166665665805,
+                  "median_ms": 0.025000000372529,
+                  "p95_ms": 0.0260000005364418,
+                  "p99_ms": 0.0260000005364418,
+                  "samples": 120
+                },
+                "warmups": 60,
+                "weva_draw_commands": 205,
+                "weva_triangles": 4624,
+                "whole_frame": {
+                  "max_ms": 13.257,
+                  "mean_ms": 3.15773333333333,
+                  "median_ms": 2.027,
+                  "p95_ms": 11.924,
+                  "p99_ms": 12.756,
+                  "samples": 120
+                },
+                "window_focused_samples": 120,
+                "workload": "settings_typing"
+              },
+              {
+                "api_cpu": {
+                  "max_ms": 2.627,
+                  "mean_ms": 0.321708333333333,
+                  "median_ms": 0.012,
+                  "p95_ms": 1.961,
+                  "p99_ms": 2.516,
+                  "samples": 120
+                },
+                "audio_setting_updates": 0,
+                "binding_cpu": {
+                  "max_ms": 0.0,
+                  "mean_ms": 0.0,
+                  "median_ms": 0.0,
+                  "p95_ms": 0.0,
+                  "p99_ms": 0.0,
+                  "samples": 120
+                },
+                "binding_refreshes": 0,
+                "canvas_draw_calls": 44,
+                "changed_api_cpu": {
+                  "max_ms": 2.627,
+                  "mean_ms": 1.8807,
+                  "median_ms": 1.868,
+                  "p95_ms": 2.516,
+                  "p99_ms": 2.627,
+                  "samples": 20
+                },
+                "changed_core_cpu": {
+                  "max_ms": 0.911500000000004,
+                  "mean_ms": 0.75198,
+                  "median_ms": 0.768500000000003,
+                  "p95_ms": 0.908000000000001,
+                  "p99_ms": 0.911500000000004,
+                  "samples": 20
+                },
+                "changed_whole_frame": {
+                  "max_ms": 14.384,
+                  "mean_ms": 6.73115,
+                  "median_ms": 4.533,
+                  "p95_ms": 14.304,
+                  "p99_ms": 14.384,
+                  "samples": 20
+                },
+                "core_cpu": {
+                  "max_ms": 0.911500000000004,
+                  "mean_ms": 0.126344166666664,
+                  "median_ms": 0.00149999999999295,
+                  "p95_ms": 0.797499999999999,
+                  "p99_ms": 0.908000000000001,
+                  "samples": 120
+                },
+                "core_timing_scope": "Cumulative core updates between process-frame boundaries; excludes bindings, host texture uploads, draw submission and GPU",
+                "core_update_count": {
+                  "max": 4.0,
+                  "mean": 1.41666666666667,
+                  "median": 1.0,
+                  "p95": 4.0,
+                  "p99": 4.0,
+                  "samples": 120
+                },
+                "elements": 116,
+                "frames": 120,
+                "godot_static_memory_change_bytes": null,
+                "scene_draw_calls": 0,
+                "scene_primitives": 0,
+                "slow_frames": [
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000699999999994816,
+                    "core_updates": 1.0,
+                    "frame": 105,
+                    "viewport_render_cpu_ms": 0.025000000372529,
+                    "viewport_render_gpu_ms": 0.0219999998807907,
+                    "whole_frame_ms": 14.531
+                  },
+                  {
+                    "api_cpu_ms": 1.868,
+                    "changed": true,
+                    "core_cpu_ms": 0.706000000000003,
+                    "core_updates": 4.0,
+                    "frame": 168,
+                    "viewport_render_cpu_ms": 0.025000000372529,
+                    "viewport_render_gpu_ms": 0.0209999997168779,
+                    "whole_frame_ms": 14.384
+                  },
+                  {
+                    "api_cpu_ms": 2.152,
+                    "changed": true,
+                    "core_cpu_ms": 0.803700000000006,
+                    "core_updates": 3.0,
+                    "frame": 66,
+                    "viewport_render_cpu_ms": 0.025000000372529,
+                    "viewport_render_gpu_ms": 0.025000000372529,
+                    "whole_frame_ms": 14.304
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000699999999994816,
+                    "core_updates": 1.0,
+                    "frame": 178,
+                    "viewport_render_cpu_ms": 0.025000000372529,
+                    "viewport_render_gpu_ms": 0.0209999997168779,
+                    "whole_frame_ms": 14.163
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000699999999994816,
+                    "core_updates": 1.0,
+                    "frame": 82,
+                    "viewport_render_cpu_ms": 0.0240000002086163,
+                    "viewport_render_gpu_ms": 0.0209999997168779,
+                    "whole_frame_ms": 14.159
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000699999999994816,
+                    "core_updates": 1.0,
+                    "frame": 94,
+                    "viewport_render_cpu_ms": 0.025000000372529,
+                    "viewport_render_gpu_ms": 0.0219999998807907,
+                    "whole_frame_ms": 14.035
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000699999999994816,
+                    "core_updates": 1.0,
+                    "frame": 154,
+                    "viewport_render_cpu_ms": 0.0270000007003546,
+                    "viewport_render_gpu_ms": 0.0209999997168779,
+                    "whole_frame_ms": 13.897
+                  },
+                  {
+                    "api_cpu_ms": 0.007,
+                    "changed": false,
+                    "core_cpu_ms": 0.000600000000005707,
+                    "core_updates": 1.0,
+                    "frame": 142,
+                    "viewport_render_cpu_ms": 0.0240000002086163,
+                    "viewport_render_gpu_ms": 0.0209999997168779,
+                    "whole_frame_ms": 13.839
+                  }
+                ],
+                "texture_memory_bytes": 12288000,
+                "viewport_render_cpu": {
+                  "max_ms": 0.0769999995827675,
+                  "mean_ms": 0.0278083337005228,
+                  "median_ms": 0.0260000005364418,
+                  "p95_ms": 0.0350000001490116,
+                  "p99_ms": 0.0480000004172325,
+                  "samples": 120
+                },
+                "viewport_render_gpu": {
+                  "max_ms": 0.0260000005364418,
+                  "mean_ms": 0.0223500000856196,
+                  "median_ms": 0.0219999998807907,
+                  "p95_ms": 0.0260000005364418,
+                  "p99_ms": 0.0260000005364418,
+                  "samples": 120
+                },
+                "warmups": 60,
+                "weva_draw_commands": 170,
+                "weva_triangles": 3148,
+                "whole_frame": {
+                  "max_ms": 14.531,
+                  "mean_ms": 5.959075,
+                  "median_ms": 4.231,
+                  "p95_ms": 13.897,
+                  "p99_ms": 14.384,
+                  "samples": 120
+                },
+                "window_focused_samples": 120,
+                "workload": "settings_toggle"
+              }
+            ],
+            "simulated_dt": 0.0166666666666667,
+            "viewport": [
+              1280,
+              720
+            ],
+            "world": "static",
+            "world_instances": 0
+          }
+        }
+      ],
+      "medians": {
+        "gl_compatibility": {
+          "settings_typing": {
+            "api_cpu": {
+              "max_ms": 1.047,
+              "mean_ms": 0.124416666666667,
+              "median_ms": 0.012,
+              "p95_ms": 0.783,
+              "p99_ms": 0.94,
+              "samples": 120
+            },
+            "changed_api_cpu": {
+              "max_ms": 1.047,
+              "mean_ms": 0.6823,
+              "median_ms": 0.69,
+              "p95_ms": 0.94,
+              "p99_ms": 1.047,
+              "samples": 20
+            },
+            "whole_frame": {
+              "max_ms": 11.979,
+              "mean_ms": 4.37585,
+              "median_ms": 2.713,
+              "p95_ms": 10.767,
+              "p99_ms": 11.64,
+              "samples": 120
+            },
+            "changed_whole_frame": {
+              "max_ms": 11.248,
+              "mean_ms": 5.19335,
+              "median_ms": 4.107,
+              "p95_ms": 10.974,
+              "p99_ms": 11.248,
+              "samples": 20
+            },
+            "binding_cpu": {
+              "max_ms": 0.0,
+              "mean_ms": 0.0,
+              "median_ms": 0.0,
+              "p95_ms": 0.0,
+              "p99_ms": 0.0,
+              "samples": 120
+            },
+            "core_cpu": {
+              "max_ms": 0.5625,
+              "mean_ms": 0.0515708333333335,
+              "median_ms": 0.00160000000000338,
+              "p95_ms": 0.346699999999998,
+              "p99_ms": 0.471400000000003,
+              "samples": 120
+            },
+            "changed_core_cpu": {
+              "max_ms": 0.5625,
+              "mean_ms": 0.30113,
+              "median_ms": 0.336199999999998,
+              "p95_ms": 0.471400000000003,
+              "p99_ms": 0.5625,
+              "samples": 20
+            },
+            "core_update_count": {
+              "max": 3.0,
+              "mean": 1.175,
+              "median": 1.0,
+              "p95": 2.0,
+              "p99": 2.0,
+              "samples": 120
+            },
+            "viewport_render_cpu": {
+              "max_ms": 0.404000014066696,
+              "mean_ms": 0.222483333448569,
+              "median_ms": 0.199000000953674,
+              "p95_ms": 0.333000004291534,
+              "p99_ms": 0.397000014781952,
+              "samples": 120
+            },
+            "viewport_render_gpu": {
+              "max_ms": 0.465000003576279,
+              "mean_ms": 0.0567000011913478,
+              "median_ms": 0.0430000014603138,
+              "p95_ms": 0.0540000014007092,
+              "p99_ms": 0.446999996900558,
+              "samples": 120
+            }
+          },
+          "settings_toggle": {
+            "api_cpu": {
+              "max_ms": 3.865,
+              "mean_ms": 0.401333333333333,
+              "median_ms": 0.013,
+              "p95_ms": 2.403,
+              "p99_ms": 3.48,
+              "samples": 120
+            },
+            "changed_api_cpu": {
+              "max_ms": 3.865,
+              "mean_ms": 2.35405,
+              "median_ms": 2.238,
+              "p95_ms": 3.48,
+              "p99_ms": 3.865,
+              "samples": 20
+            },
+            "whole_frame": {
+              "max_ms": 11.267,
+              "mean_ms": 4.645175,
+              "median_ms": 2.635,
+              "p95_ms": 10.765,
+              "p99_ms": 11.218,
+              "samples": 120
+            },
+            "changed_whole_frame": {
+              "max_ms": 10.884,
+              "mean_ms": 6.0927,
+              "median_ms": 5.152,
+              "p95_ms": 9.787,
+              "p99_ms": 10.884,
+              "samples": 20
+            },
+            "binding_cpu": {
+              "max_ms": 0.0,
+              "mean_ms": 0.0,
+              "median_ms": 0.0,
+              "p95_ms": 0.0,
+              "p99_ms": 0.0,
+              "samples": 120
+            },
+            "core_cpu": {
+              "max_ms": 1.2582,
+              "mean_ms": 0.150752499999999,
+              "median_ms": 0.00159999999999627,
+              "p95_ms": 0.882499999999993,
+              "p99_ms": 1.1117,
+              "samples": 120
+            },
+            "changed_core_cpu": {
+              "max_ms": 1.2582,
+              "mean_ms": 0.897665000000001,
+              "median_ms": 0.873999999999995,
+              "p95_ms": 1.1117,
+              "p99_ms": 1.2582,
+              "samples": 20
+            },
+            "core_update_count": {
+              "max": 4.0,
+              "mean": 1.41666666666667,
+              "median": 1.0,
+              "p95": 4.0,
+              "p99": 4.0,
+              "samples": 120
+            },
+            "viewport_render_cpu": {
+              "max_ms": 0.407000005245209,
+              "mean_ms": 0.195641667023301,
+              "median_ms": 0.187000006437302,
+              "p95_ms": 0.261999994516373,
+              "p99_ms": 0.35699999332428,
+              "samples": 120
+            },
+            "viewport_render_gpu": {
+              "max_ms": 0.300999999046326,
+              "mean_ms": 0.0452083343019088,
+              "median_ms": 0.0410000011324883,
+              "p95_ms": 0.046000000089407,
+              "p99_ms": 0.29899999499321,
+              "samples": 120
+            }
+          }
+        },
+        "mobile": {
+          "settings_typing": {
+            "api_cpu": {
+              "max_ms": 0.66,
+              "mean_ms": 0.0812833333333332,
+              "median_ms": 0.012,
+              "p95_ms": 0.484,
+              "p99_ms": 0.56,
+              "samples": 120
+            },
+            "changed_api_cpu": {
+              "max_ms": 0.66,
+              "mean_ms": 0.4118,
+              "median_ms": 0.463,
+              "p95_ms": 0.56,
+              "p99_ms": 0.66,
+              "samples": 20
+            },
+            "whole_frame": {
+              "max_ms": 13.257,
+              "mean_ms": 3.15773333333333,
+              "median_ms": 2.027,
+              "p95_ms": 11.924,
+              "p99_ms": 12.756,
+              "samples": 120
+            },
+            "changed_whole_frame": {
+              "max_ms": 13.257,
+              "mean_ms": 4.8298,
+              "median_ms": 2.928,
+              "p95_ms": 12.756,
+              "p99_ms": 13.257,
+              "samples": 20
+            },
+            "binding_cpu": {
+              "max_ms": 0.0,
+              "mean_ms": 0.0,
+              "median_ms": 0.0,
+              "p95_ms": 0.0,
+              "p99_ms": 0.0,
+              "samples": 120
+            },
+            "core_cpu": {
+              "max_ms": 0.317299999999996,
+              "mean_ms": 0.0335808333333328,
+              "median_ms": 0.00150000000000006,
+              "p95_ms": 0.268500000000003,
+              "p99_ms": 0.292000000000002,
+              "samples": 120
+            },
+            "changed_core_cpu": {
+              "max_ms": 0.317299999999996,
+              "mean_ms": 0.194650000000001,
+              "median_ms": 0.260199999999998,
+              "p95_ms": 0.292000000000002,
+              "p99_ms": 0.317299999999996,
+              "samples": 20
+            },
+            "core_update_count": {
+              "max": 3.0,
+              "mean": 1.175,
+              "median": 1.0,
+              "p95": 2.0,
+              "p99": 2.0,
+              "samples": 120
+            },
+            "viewport_render_cpu": {
+              "max_ms": 0.268999993801117,
+              "mean_ms": 0.0290666667899738,
+              "median_ms": 0.0260000005364418,
+              "p95_ms": 0.0359999984502792,
+              "p99_ms": 0.0799999982118607,
+              "samples": 120
+            },
+            "viewport_render_gpu": {
+              "max_ms": 0.0260000005364418,
+              "mean_ms": 0.0221166665665805,
+              "median_ms": 0.025000000372529,
+              "p95_ms": 0.0260000005364418,
+              "p99_ms": 0.0260000005364418,
+              "samples": 120
+            }
+          },
+          "settings_toggle": {
+            "api_cpu": {
+              "max_ms": 2.627,
+              "mean_ms": 0.321708333333333,
+              "median_ms": 0.012,
+              "p95_ms": 1.961,
+              "p99_ms": 2.516,
+              "samples": 120
+            },
+            "changed_api_cpu": {
+              "max_ms": 2.627,
+              "mean_ms": 1.8807,
+              "median_ms": 1.868,
+              "p95_ms": 2.516,
+              "p99_ms": 2.627,
+              "samples": 20
+            },
+            "whole_frame": {
+              "max_ms": 14.531,
+              "mean_ms": 5.959075,
+              "median_ms": 4.231,
+              "p95_ms": 13.897,
+              "p99_ms": 14.384,
+              "samples": 120
+            },
+            "changed_whole_frame": {
+              "max_ms": 14.384,
+              "mean_ms": 6.73115,
+              "median_ms": 4.533,
+              "p95_ms": 14.304,
+              "p99_ms": 14.384,
+              "samples": 20
+            },
+            "binding_cpu": {
+              "max_ms": 0.0,
+              "mean_ms": 0.0,
+              "median_ms": 0.0,
+              "p95_ms": 0.0,
+              "p99_ms": 0.0,
+              "samples": 120
+            },
+            "core_cpu": {
+              "max_ms": 0.911500000000004,
+              "mean_ms": 0.126344166666664,
+              "median_ms": 0.00149999999999295,
+              "p95_ms": 0.797499999999999,
+              "p99_ms": 0.908000000000001,
+              "samples": 120
+            },
+            "changed_core_cpu": {
+              "max_ms": 0.911500000000004,
+              "mean_ms": 0.75198,
+              "median_ms": 0.768500000000003,
+              "p95_ms": 0.908000000000001,
+              "p99_ms": 0.911500000000004,
+              "samples": 20
+            },
+            "core_update_count": {
+              "max": 4.0,
+              "mean": 1.41666666666667,
+              "median": 1.0,
+              "p95": 4.0,
+              "p99": 4.0,
+              "samples": 120
+            },
+            "viewport_render_cpu": {
+              "max_ms": 0.0769999995827675,
+              "mean_ms": 0.0278083337005228,
+              "median_ms": 0.0260000005364418,
+              "p95_ms": 0.0350000001490116,
+              "p99_ms": 0.0480000004172325,
+              "samples": 120
+            },
+            "viewport_render_gpu": {
+              "max_ms": 0.0260000005364418,
+              "mean_ms": 0.0223500000856196,
+              "median_ms": 0.0219999998807907,
+              "p95_ms": 0.0260000005364418,
+              "p99_ms": 0.0260000005364418,
+              "samples": 120
+            }
+          }
+        }
+      }
+    }
+  }
+}

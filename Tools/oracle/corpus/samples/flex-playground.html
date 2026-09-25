@@ -1,0 +1,204 @@
+<!--
+  flex-playground — a deliberately dense flexbox stress sample.
+  Exercises: row/column (+reverse), all justify-content + align-items values,
+  align-self overrides, flex grow/shrink/basis ratios, flex shorthand,
+  wrap + align-content, row/column gap, auto-margin pushing, order,
+  baseline alignment across font sizes, deeply nested flex, min/max clamping,
+  aspect-ratio flex items, and percentage basis. The whole shell is flex too.
+-->
+<link rel="stylesheet" href="flex-playground.css" />
+
+<div class="app">
+
+  <!-- App shell topbar: brand | nav (auto-margin centered) | actions -->
+  <header class="topbar">
+    <div class="brand"><span class="logo"></span> Flexarium</div>
+    <nav class="topnav">
+      <span class="tn active">Overview</span>
+      <span class="tn">Layouts</span>
+      <span class="tn">Nesting</span>
+      <span class="tn">Stress</span>
+    </nav>
+    <div class="tools">
+      <button class="btn ghost">Docs</button>
+      <button class="btn primary">Run</button>
+      <span class="me">FX</span>
+    </div>
+  </header>
+
+  <!-- Body: fixed-basis sidebar + growing main, wraps under width pressure -->
+  <div class="body">
+
+    <aside class="side">
+      <div class="side-h">Sections</div>
+      <ul class="side-list">
+        <li class="si active"><span class="dot a"></span> Justify <span class="badge">6</span></li>
+        <li class="si"><span class="dot b"></span> Align <span class="badge">5</span></li>
+        <li class="si"><span class="dot c"></span> Grow / Shrink <span class="badge">4</span></li>
+        <li class="si"><span class="dot d"></span> Wrap <span class="badge">3</span></li>
+        <li class="si"><span class="dot e"></span> Nested <span class="badge">∞</span></li>
+      </ul>
+      <!-- auto-margin pushes this block to the bottom of the column -->
+      <div class="side-foot">
+        <div class="meter"><span class="fill" style="width:72%"></span></div>
+        <div class="side-cap">72% coverage</div>
+      </div>
+    </aside>
+
+    <main class="main">
+
+      <!-- ── justify-content row of mini-demos (outer wraps) ───────────── -->
+      <section class="grid">
+
+        <div class="card">
+          <div class="card-h">justify: space-between</div>
+          <div class="demo jc-between"><i>1</i><i>2</i><i>3</i></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">justify: space-around</div>
+          <div class="demo jc-around"><i>1</i><i>2</i><i>3</i></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">justify: space-evenly</div>
+          <div class="demo jc-evenly"><i>1</i><i>2</i><i>3</i></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">justify: center</div>
+          <div class="demo jc-center"><i>1</i><i>2</i></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">justify: flex-end</div>
+          <div class="demo jc-end"><i>1</i><i>2</i></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">row-reverse</div>
+          <div class="demo row-rev"><i>1</i><i>2</i><i>3</i></div>
+        </div>
+
+        <!-- ── align-items column variants ───────────────────────────── -->
+        <div class="card">
+          <div class="card-h">align-items: stretch</div>
+          <div class="demo ai-stretch tall"><i>a</i><i>b</i><i>c</i></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">align-items: center</div>
+          <div class="demo ai-center tall"><i class="s">a</i><i class="m">b</i><i class="l">c</i></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">align-items: flex-end</div>
+          <div class="demo ai-end tall"><i class="s">a</i><i class="m">b</i><i class="l">c</i></div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">align-self overrides</div>
+          <div class="demo ai-start tall">
+            <i class="m">s</i><i class="m self-c">c</i><i class="m self-e">e</i><i class="m self-stretch">x</i>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-h">baseline align</div>
+          <div class="demo ai-baseline">
+            <i class="t-sm">Aa</i><i class="t-lg">Bb</i><i class="t-md">Cc</i><i class="t-xl">Dd</i>
+          </div>
+        </div>
+
+        <!-- ── grow / shrink / basis ─────────────────────────────────── -->
+        <div class="card wide">
+          <div class="card-h">flex-grow 1 : 2 : 1</div>
+          <div class="demo grow-121"><i class="g1">1</i><i class="g2">2</i><i class="g1">1</i></div>
+        </div>
+
+        <div class="card wide">
+          <div class="card-h">basis 200/120/auto + shrink</div>
+          <div class="demo basis-mix"><i class="b200">200</i><i class="b120">120</i><i class="bauto">auto grows</i></div>
+        </div>
+
+        <div class="card wide">
+          <div class="card-h">auto-margin push (1 2 | 3)</div>
+          <div class="demo automargin"><i>1</i><i>2</i><i class="push">3</i></div>
+        </div>
+
+        <div class="card wide">
+          <div class="card-h">order: 3 1 2 → visual 1 2 3</div>
+          <div class="demo order-demo"><i class="o3">A</i><i class="o1">B</i><i class="o2">C</i></div>
+        </div>
+
+        <!-- ── wrap + align-content ──────────────────────────────────── -->
+        <div class="card tall2">
+          <div class="card-h">wrap + align-content: between</div>
+          <div class="demo wrap-ac">
+            <i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i>10</i><i>11</i><i>12</i>
+          </div>
+        </div>
+
+        <div class="card tall2">
+          <div class="card-h">wrap-reverse</div>
+          <div class="demo wrap-rev">
+            <i>1</i><i>2</i><i>3</i><i>4</i><i>5</i><i>6</i><i>7</i><i>8</i><i>9</i><i>10</i>
+          </div>
+        </div>
+
+        <!-- ── nested flex: row → column → row ───────────────────────── -->
+        <div class="card huge">
+          <div class="card-h">deeply nested flex (row ▸ column ▸ row)</div>
+          <div class="nest-root">
+            <div class="nest-rail">
+              <span class="chip">aspect 1:1</span>
+              <span class="chip alt">grow</span>
+            </div>
+            <div class="nest-col">
+              <div class="nest-bar">
+                <span class="nb-title">Composite header</span>
+                <span class="nb-spacer"></span>
+                <span class="pill up">live</span>
+              </div>
+              <div class="nest-mid">
+                <div class="np left">
+                  <div class="np-h">column flex, justify between</div>
+                  <div class="np-row"><span>Top</span><span class="mono">01</span></div>
+                  <div class="np-grow"></div>
+                  <div class="np-row"><span>Bottom</span><span class="mono">99</span></div>
+                </div>
+                <div class="np right">
+                  <div class="np-h">row flex, wrap chips</div>
+                  <div class="chiprow">
+                    <span class="tag">flex</span><span class="tag">grow</span><span class="tag">shrink</span>
+                    <span class="tag">basis</span><span class="tag">gap</span><span class="tag">order</span>
+                    <span class="tag">wrap</span><span class="tag">align</span>
+                  </div>
+                  <div class="np-foot">
+                    <span class="sq" style="--ar:1"></span>
+                    <span class="sq" style="--ar:1"></span>
+                    <span class="sq grow2" style="--ar:1"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── min/max clamping under shrink ─────────────────────────── -->
+        <div class="card wide">
+          <div class="card-h">min-width floor vs max-width cap</div>
+          <div class="demo clamp"><i class="cmin">min 90</i><i class="cmax">max 70</i><i class="cfree">free shrink</i></div>
+        </div>
+
+      </section>
+
+      <footer class="foot">
+        <span class="f-l">flex-playground</span>
+        <span class="f-sp"></span>
+        <span class="f-r">row · column · wrap · grow · shrink · nest</span>
+      </footer>
+
+    </main>
+  </div>
+</div>

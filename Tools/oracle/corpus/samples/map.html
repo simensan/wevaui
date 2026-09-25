@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Halcyon — World Map</title>
+<link rel="stylesheet" href="map.css" />
+</head>
+<body>
+
+<main class="atlas">
+
+  <!-- ───── MAP CANVAS WITH MARKERS ───── -->
+  <section class="canvas">
+    <div class="canvas-grid"></div>
+    <div class="canvas-vignette"></div>
+
+    <!-- Major cities. Each marker positioned via top/left percentages -->
+    <div class="marker marker-capital" style="top: 28%; left: 42%;">
+      <span class="marker-dot"></span>
+      <span class="marker-label">Brackwater</span>
+    </div>
+    <div class="marker" style="top: 18%; left: 22%;">
+      <span class="marker-dot"></span>
+      <span class="marker-label">Ashfall</span>
+    </div>
+    <div class="marker" style="top: 60%; left: 62%;">
+      <span class="marker-dot"></span>
+      <span class="marker-label">Ironhold</span>
+    </div>
+    <div class="marker" style="top: 72%; left: 28%;">
+      <span class="marker-dot"></span>
+      <span class="marker-label">Marshfen</span>
+    </div>
+
+    <!-- Quest pins -->
+    <div class="pin pin-quest" style="top: 35%; left: 55%;">
+      <span class="pin-glyph">!</span>
+    </div>
+    <div class="pin pin-quest" style="top: 50%; left: 38%;">
+      <span class="pin-glyph">!</span>
+    </div>
+    <div class="pin pin-quest pin-done" style="top: 22%; left: 70%;">
+      <span class="pin-glyph">✓</span>
+    </div>
+
+    <!-- Player position — centered using translate -->
+    <div class="player" style="top: 45%; left: 48%;">
+      <span class="player-fov"></span>
+      <span class="player-icon">▲</span>
+    </div>
+
+  </section>
+
+  <!-- ───── OVERLAY HUD (top-left) ───── -->
+  <div class="hud-card hud-top">
+    <p class="hud-meta">Region</p>
+    <h2 class="hud-name">Brackwater Wilds</h2>
+    <p class="hud-sub">East of the Brass Gate · 412m above sea</p>
+  </div>
+
+  <!-- ───── OVERLAY LEGEND (bottom-left) ───── -->
+  <div class="hud-card hud-legend">
+    <h3 class="legend-title">Legend</h3>
+    <ul class="legend-list">
+      <li class="legend-item"><span class="swatch sw-city"></span>City</li>
+      <li class="legend-item"><span class="swatch sw-quest"></span>Active Quest</li>
+      <li class="legend-item"><span class="swatch sw-done"></span>Completed</li>
+      <li class="legend-item"><span class="swatch sw-player"></span>You</li>
+    </ul>
+  </div>
+
+  <!-- ───── COMPASS (top-right) ───── -->
+  <div class="compass">
+    <span class="compass-mark compass-n">N</span>
+    <span class="compass-mark compass-e">E</span>
+    <span class="compass-mark compass-s">S</span>
+    <span class="compass-mark compass-w">W</span>
+    <span class="compass-needle"></span>
+  </div>
+
+  <!-- ───── FAST-TRAVEL BAR (bottom) ───── -->
+  <footer class="travel">
+    <span class="travel-label">Fast Travel</span>
+    <div class="travel-options">
+      <button class="travel-btn">Brackwater</button>
+      <button class="travel-btn travel-btn-disabled">Ashfall · Locked</button>
+      <button class="travel-btn">Ironhold</button>
+      <button class="travel-btn">Marshfen</button>
+    </div>
+    <span class="travel-cost">Cost: 12¤</span>
+  </footer>
+
+</main>
+
+</body>
+</html>

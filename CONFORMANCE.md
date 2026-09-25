@@ -1,10 +1,12 @@
 # Weva Conformance Reference
 
-> Current status: this reference is being reconciled with the implementation.
-> Use [`CSS_FEATURE_AUDIT.md`](CSS_FEATURE_AUDIT.md) as the authoritative
-> support/partial/stub/missing matrix. The engine now uses the CSS initial
-> value `box-sizing: content-box`; older notes in this file that say
-> `border-box` are stale.
+> **Written against the C# engine, which was deleted on 2026-09-13.** The
+> engine is `libweva/` (C++); its conformance is measured against Chrome
+> captures (`Tools/oracle`, `check.sh`), and the consumer-facing support
+> matrix is `Packages/com.wevaui/Documentation~/supported-css.md`. The
+> tables below describe the feature set the core ported and are kept as the
+> spec-delta record; the `Runtime/...` file references in them no longer
+> exist.
 
 Weva is a green-field HTML/CSS UI layer for Unity. Authors write standard `.html` and `.css`; the runtime parses, cascades, lays out, and paints with browser-faithful semantics for the supported subset. The current engine follows the CSS initial value `box-sizing: content-box`. Unknown properties are dropped with a warning, visual stubs emit diagnostics when authored with non-default values, unknown selectors throw a parse error, and unknown at-rules are skipped intentionally.
 
@@ -419,7 +421,7 @@ Table layout honors `colspan` and `rowspan` for grid placement and spanned cell 
 
 ### Logical axes
 
-Logical sizes, insets, margins, padding, borders, and corner radii are remapped to physical properties during cascade resolution. Horizontal `direction: rtl` maps inline-start to the physical right edge and inline-end to the physical left edge; horizontal LTR maps inline-start to left and inline-end to right. `writing-mode: vertical-rl` / `vertical-lr` / `sideways-rl` / `sideways-lr` remap logical edges and sizes, but text shaping remains horizontal.
+Logical sizes, insets, margins, padding, borders, and corner radii are remapped to physical properties during cascade resolution. Horizontal `direction: rtl` maps inline-start to the physical right edge and inline-end to the physical left edge; horizontal LTR maps inline-start to left and inline-end to right. `writing-mode: vertical-rl` / `vertical-lr` lay out as orthogonal flow roots (the subtree is laid out on rotated styles and transposed back, `libweva/src/writing_mode.cpp`) and paint each text run turned a quarter turn clockwise with the line's over side on the right, as `text-orientation: mixed` does for Latin; a block-level child fills the vertical box's inline size and the box's own inline size fits its content against the containing block's block size (or the viewport's). `sideways-rl` / `sideways-lr` only remap logical edges and sizes; upright CJK, a horizontal box nested inside a vertical one, and decorations, selection and the caret on a vertical run are not done.
 
 | Property                  | Accepted values                                                             | Inh. | Initial          |
 |---------------------------|-----------------------------------------------------------------------------|------|------------------|
@@ -517,7 +519,7 @@ Logical sizes, insets, margins, padding, borders, and corner radii are remapped 
 
 ### Deliberately omitted
 
-`columns`, `column-count`, `column-width`, `column-gap` (the multi-column kind; flex/grid `column-gap` is supported), `column-rule`, vertical text shaping, full bidi reordering, dictionary hyphenation, `text-orientation`, `clip`, `mix-blend-mode`, `background-blend-mode`, `content-visibility`, `touch-action`, `resize`, `appearance`, `quotes`, counters, and full generated-content semantics. `direction` / logical properties exist for cascade and horizontal layout; `writing-mode` remaps logical axes but does not rotate or vertically shape text. `clip-path` is limited to basic shapes; `mask` URL source-pixel sampling remains partial.
+`column-fill: auto`, `orphans`/`widows` values other than the initial 2 (multi-column layout itself -- `column-count`, `column-width`, `column-gap`, `column-rule`, `column-span: all`, `break-inside: avoid`, `break-before: column`, balanced fragmentation between lines and blocks -- landed 2026-09-14, balanced the way Blink balances; a fragmented block's background and border paint over the union of its fragments), `sideways-*` writing modes and upright CJK in vertical text (`vertical-rl` / `vertical-lr` landed 2026-09-14 as orthogonal flows with rotated runs), full bidi reordering, dictionary hyphenation, `text-orientation`, `clip`, `mix-blend-mode`, `background-blend-mode`, `content-visibility`, `touch-action`, `resize`, `appearance`, `quotes`, counters, and full generated-content semantics. `direction` / logical properties exist for cascade and layout in every mode; the user-agent sheet's block margins and list padding are flow-relative (`margin-block`, `padding-inline-start`) as Chrome's are. `clip-path` is limited to basic shapes; `mask` URL source-pixel sampling remains partial.
 
 ---
 
@@ -842,7 +844,7 @@ Each line is one decision; if you reach for a feature here, expect "fail loudly.
 - **Events:** Click synthesis = down-target equals up-target (browsers use deepest common ancestor). No explicit pointer-capture API yet. `KeyPress` enum present but not dispatched. Active flag set on the literal hit element rather than activation chain.
 - **HTML elements not in v1:** `iframe`, `script`, inline `<style>`, `canvas`, `svg`, `audio`, `video`, `picture`. Table elements, `details`/`summary`, and `dialog` exist with the limitations documented above.
 - **CSS at-rules not in v1:** `@page`, `@property`, `@charset`, `@namespace`. `@font-face`, `@supports`, `@layer`, `@container`, and `@scope` exist with the limitations documented in `CSS_FEATURE_AUDIT.md`.
-- **CSS not in v1:** multi-column, vertical text shaping, full bidi reordering, dictionary hyphenation, `mix-blend-mode`, CSS Houdini typed properties, counters, and full generated-content semantics. Logical properties, `direction: rtl`, and `writing-mode` axis remapping exist as partial engine support; floats, tables, object-fit, aspect-ratio, outlines, text shadows, lists, basic `clip-path`, layered masks, `backdrop-filter`, and container queries exist as supported or partial engine features; see `CSS_FEATURE_AUDIT.md`.
+- **CSS not in v1:** `sideways-*` writing modes and upright CJK in vertical text, full bidi reordering, dictionary hyphenation, `mix-blend-mode`, CSS Houdini typed properties, counters, and full generated-content semantics (multi-column layout and `vertical-rl` / `vertical-lr` landed 2026-09-14). Logical properties and `direction: rtl` are supported; floats, tables, object-fit, aspect-ratio, outlines, text shadows, lists, basic `clip-path`, layered masks, `backdrop-filter`, and container queries exist as supported or partial engine features; see `CSS_FEATURE_AUDIT.md`.
 - **Selectors not in v1:** `:current`, `:past`, `:future`, `::first-letter`, `::first-line`, `::file-selector-button`, `::part()`, `::slotted()`.
 
 ---

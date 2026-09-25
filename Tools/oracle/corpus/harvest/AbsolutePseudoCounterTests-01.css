@@ -1,0 +1,11 @@
+
+                .stat-cards { counter-reset: stat; }
+                .stat-card { counter-increment: stat; position: relative; padding: 12px; }
+                .stat-card::before {
+                    content: counter(stat, decimal-leading-zero);
+                    position: absolute;
+                    top: 8px;
+                    right: 10px;
+                    font-size: 10px;
+                }
+            

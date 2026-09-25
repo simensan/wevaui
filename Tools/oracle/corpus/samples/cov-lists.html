@@ -1,0 +1,38 @@
+<link rel="stylesheet" href="cov-lists.css" />
+<!-- List markers and generated content. Markers were added to the port this
+     session and a regression in them (reading only list-style-type, not the
+     shorthand) reached the oracle once already; nothing pinned them. -->
+<div class="page">
+  <ol class="decimal"><li>one</li><li>two</li><li>three</li></ol>
+
+  <ol class="roman"><li>one</li><li>two</li><li>three</li><li>four</li></ol>
+
+  <ol class="alpha"><li>one</li><li>two</li></ol>
+
+  <ul class="disc"><li>alpha</li><li>beta</li></ul>
+
+  <ul class="square"><li>alpha</li><li>beta</li></ul>
+
+  <ul class="none"><li>alpha</li><li>beta</li></ul>
+
+  <ul class="inside"><li>a marker set inside the principal box, which
+  changes where the text starts and how it wraps on the second line</li></ul>
+
+  <ol class="started" start="7"><li>seven</li><li>eight</li></ol>
+
+  <ol class="nested">
+    <li>outer
+      <ol><li>inner one</li><li>inner two</li></ol>
+    </li>
+    <li>outer two</li>
+  </ol>
+
+  <div class="counted">
+    <div class="step">first</div>
+    <div class="step">second</div>
+    <div class="step">third</div>
+  </div>
+
+  <p class="quoted"><q>A quotation, which draws its marks from the quotes
+  property rather than from the text.</q></p>
+</div>

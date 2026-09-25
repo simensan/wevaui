@@ -1,0 +1,5 @@
+
+                #with-size { width: 200px; contain: size; }
+                #with-inline-size { width: 200px; contain: inline-size; }
+                .child { height: 50px; }
+            

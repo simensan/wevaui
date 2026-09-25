@@ -1,0 +1,67 @@
+{
+  "scope": "CSS @font-face loading on the Godot host: the core lists rules (ABI minor 25), the host loads sources and registers families. Windows only; candidate not installed. Extended with real bold/italic files as backend variants and register_font_face.",
+  "library_sha256": "42467d47dae7826c303c2bb573cf4198111a6f8cf5ef5d510952b88ebcb858f9",
+  "abi_minor": 25,
+  "source": {
+    "libweva/src/cascade.cpp": "dc1a1ec4aee03ee99352c97e53d0d4d283e12870bfc0b2439b95cf85fc85d5ff",
+    "libweva/include/weva/cascade.h": "0d7dd30e95ef7f7bf494b9be59dc5856afba6105f9768887d46e7f337e702f1e",
+    "libweva/src/weva_c.cpp": "b6a354ca6b0b801394e75dabcb1d3cf584f6c16f4bfe94a4407179d24050abef",
+    "libweva/include/weva_c.h": "920912056b6ab2667965492a125ac6f881d78736c1ba67c08d49fdc0e7a44eb2",
+    "hosts/godot/src/weva_node.cpp": "dac61c06f653b4a953ff8432b77e9ce2b37f487e1c49bce3cfdfb0cc60bb852d",
+    "hosts/godot/src/godot_font.cpp": "d65957b3fa06e99ed61e200e7ac6fdb19c93d4c641332d13013734372f767127",
+    "hosts/godot/project/font_face_tests.gd": "db60c8ef3da3303895f40f44e9786fd3d5de1063c0266a15d5a5b19e39a29bba"
+  },
+  "core": {
+    "passed_suites": 14,
+    "total_suites": 14,
+    "log": ".utmp/safe-engine71/shaping-native/ff-core-ctest.log",
+    "note": "test_c_abi covers parsing, quoting, local() skipping, base-path resolution, duplicate suppression, media gating and buffer protocol; core unchanged since the gamepad receipt, whose 14/14 and 16/16 sanitizer runs cover this library"
+  },
+  "sanitizers": {
+    "passed_suites": 16,
+    "total_suites": 16,
+    "log": ".utmp/safe-engine71/shaping-native/ff-san-ctest.log"
+  },
+  "host": {
+    "passed": true,
+    "entries": 51,
+    "checks": 35598,
+    "receipt": ".utmp/safe-engine71/shaping-checks/host-suite8/receipt.json",
+    "font_face_tests": {
+      "passed": true,
+      "checks": 19,
+      "failures": 0
+    }
+  },
+  "font_face_on_stock_4_7_1": "godot font face: 19 checks, 0 failures",
+  "sample": {
+    "headless": "frontier integration: 101 checks, 0 failures"
+  },
+  "findings": [
+    "@font-face url() sources load and register through the same asset convention as images, on the patched and the stock editor.",
+    "Bold (600-799), black (800+) and italic rules are adopted as real faces; the backend variant hook answers with the exact file, the other bold strength, or one axis synthesized over the other file, before falling back to synthesis.",
+    "register_font_face supplies the same files from a script; a null font removes one.",
+    "The diagnostics fixture uses @page as its unsupported rule; @font-face is no longer reported."
+  ],
+  "limitations": [
+    "candidate not installed.",
+    "unicode-range, font-display and local() are not honoured; weight ranges keep their first number."
+  ],
+  "adapter_suite": "godot font backend: 19692 checks, 0 failures",
+  "linux_stock": {
+    "engine": "stock Linux Godot 4.7.2.stable.official.ed1daf0bf (WSL Ubuntu), headless",
+    "library_sha256": "c366c8a8e4a63fdba4abecbc2579db17de1e3918d23daef5b34740f07dc2595b",
+    "test_library_sha256": "65ca0e05f81d285d4ca5dba452cd8f647029888cc62890836e5ee385e24d1ec3",
+    "built_from": "the same source as the Windows candidate (gcc, ~/weva/build-godot)",
+    "font_face_tests": {
+      "checks": 19,
+      "failures": 0,
+      "log": ".utmp/safe-engine71/shaping-checks/linux/font_face_tests.log"
+    },
+    "css_diagnostic_tests": {
+      "checks": 26,
+      "failures": 0,
+      "log": ".utmp/safe-engine71/shaping-checks/linux/css_diagnostic_tests.log"
+    }
+  }
+}

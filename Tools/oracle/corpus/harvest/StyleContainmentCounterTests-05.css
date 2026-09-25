@@ -1,0 +1,6 @@
+
+                .outer    { counter-reset: c; }
+                .boundary { contain: strict; width: 100px; height: 100px; }
+                .inner    { counter-increment: c; }
+                .sibling::before { content: counter(c); }
+            

@@ -2,10 +2,9 @@
 
 [← Back to index](index.md)
 
-Weva ships a **hand-rolled HTML parser** for an authored-input subset — no
-HTML5 error-recovery surface. The parser produces a DOM of `Node`, `Element`,
-`TextNode`, and `Document` types. Anything outside the subset below is either
-ignored or fails loudly rather than silently miscomputing.
+Weva parses an authored HTML subset. It does not implement the browser's full
+HTML error-recovery algorithm. Unsupported markup may be ignored or treated as
+generic elements; diagnostics do not cover every unsupported feature.
 
 ## Elements
 
@@ -23,6 +22,10 @@ ignored or fails loudly rather than silently miscomputing.
 
 `<head>`, `<title>`, `<meta>`, and `<link>` are recognized in the document
 head; `<link rel="stylesheet">` pulls in a stylesheet by relative path.
+Link discovery uses the core DOM: comments and template contents are ignored,
+and quoted attributes and character references are parsed as HTML. Duplicate
+attributes keep their first value. Markup inside `textarea` and `title` stays
+text, with character references decoded; `style` contents remain literal CSS.
 
 ### Form controls
 
@@ -38,14 +41,16 @@ These are implemented with the limitations noted in [Supported CSS](supported-cs
 Runtime tables exist (including `border-collapse: collapse` winner resolution),
 but advanced fragmentation and some collapsed-border painting are scoped out of
 v1. `<details>`/`<summary>` get the UA-stylesheet `[open]` toggle visuals;
-`<dialog>` supports modal/non-modal via `DialogElement.ShowModal()`.
+Open a dialog through `doc.Query("#dialog").ShowDialog(modal: true)`;
+use `modal: false` for a non-modal dialog and `.CloseDialog()` to close it.
 
 ### Deliberately omitted
 
-`iframe`, `script`, top-level `<style>` blocks (inline `<style>` inside a
-`<template>` is parsed but not yet wired into the cascade), `canvas`, `svg`,
-`audio`, `video`. There is no JavaScript engine; interactivity comes from C#
-controller binding, not DOM script.
+`iframe`, `script`, `canvas`, `svg`, `audio`, `video`. There is no JavaScript
+engine; interactivity comes from C# controller binding, not DOM script.
+A `<template>`'s content is inert, as in a browser: it renders nothing, and
+`Query`, an element's text and its children never see it -- until `data-each`
+clones rows from it, or a custom element instantiates it.
 
 ## Attributes
 
@@ -56,16 +61,16 @@ controller binding, not DOM script.
 > from C#, but the engine does **not** drive a screen reader / OS accessibility
 > tree — there is no assistive-tech surface in v1. What *does* work today:
 > keyboard `Tab`/`Shift+Tab` focus, gamepad/`DirectionalNavigation`, and
-> `:focus`/`:focus-visible` styling (see [AuthoringGuide §18](AuthoringGuide.md)).
+> `:focus`/`:focus-visible` styling (see [focus and navigation](AuthoringGuide.md#14-focus--controller-navigation)).
 > Build keyboard- and controller-navigable UI; don't rely on screen-reader
 > semantics yet.
 
 - **Form:** `name`, `value`, `placeholder`, `disabled`, `checked`, `min`,
   `max`, `step`, `required`, `readonly`.
 - **Link:** `href` — fires a C# event; no navigation.
-- **Image:** `src`, `alt`, `width`, `height`. `src` and CSS `url(...)` resolve
-  through an `IImageRegistry` you own (see [`AuthoringGuide.md`](AuthoringGuide.md) §13),
-  not a file path.
+- **Image:** `src`, `alt`, `width`, `height`. Image URLs resolve through the
+  document's file reader or `AssetReader`; linked CSS keeps its own base path.
+  See [images and files](AuthoringGuide.md#9-images-and-files).
 - **Event hooks:** `on-click`, `on-change`, `on-input`, `on-submit`,
   `on-focus`, `on-blur`, plus the pointer/keyboard/scroll kinds — bind to C#
   methods on the controller.

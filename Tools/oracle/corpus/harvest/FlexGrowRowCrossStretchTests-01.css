@@ -1,0 +1,5 @@
+
+                .col { display: flex; flex-direction: column; height: 200px; width: 200px; }
+                .top { height: 20px; }
+                .row { display: flex; flex: 1 1 auto; align-items: stretch; }
+                .bar { flex: 0 0 30px; }

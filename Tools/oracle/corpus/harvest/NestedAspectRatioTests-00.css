@@ -1,0 +1,14 @@
+
+            .outer {
+                display: grid;
+                grid-template-columns: 1fr;
+                grid-template-rows: min-content;
+                width: 400px;
+            }
+            .inner {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 8px;
+            }
+            .item { aspect-ratio: 1 / 1; }
+        

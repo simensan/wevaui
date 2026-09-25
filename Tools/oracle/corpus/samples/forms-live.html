@@ -1,0 +1,27 @@
+<div class="panel">
+  <div class="row"><span class="label">Name</span>
+    <input id="name" type="text" value="Vintner of Halden"></div>
+  <div class="row"><span class="label">Notes</span></div>
+  <textarea id="notes">A caret sits where you last typed.
+The second line wraps when it runs past the edge of the box.</textarea>
+  <div class="row"><span class="label">Log</span></div>
+  <div id="log" class="list">
+    <div class="entry">found a key</div>
+    <div class="entry">the door opens</div>
+    <div class="entry">something moves in the dark</div>
+    <div class="entry">took 10 damage</div>
+    <div class="entry">healed 10</div>
+    <div class="entry">revived</div>
+  </div>
+  <div class="row"><span class="label">Quality</span>
+    <select id="q">
+      <option value="low">Low</option>
+      <option value="med" selected>Medium</option>
+      <option value="high">High</option>
+    </select></div>
+  <div class="row">
+    <button id="act" title="Hold me">Press</button>
+    <div id="menu" popover>Menu item</div>
+  </div>
+  <dialog id="ask"><p>Are you sure?</p></dialog>
+</div>

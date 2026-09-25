@@ -1,0 +1,93 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <title>9-Slice Demo — CSS border-image</title>
+        <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+                background: #0a0e16;
+                color: #f3f4f6;
+                font-family: sans-serif;
+                font-size: 14px;
+                padding: 32px;
+            }
+            h1 { font-size: 22px; color: #fbbf24; margin-bottom: 12px; }
+            h2 { font-size: 16px; margin: 24px 0 12px; }
+            p { color: #b4becd; line-height: 1.5; margin-bottom: 12px; }
+            code { font-family: monospace; color: #fbbf24; }
+            .grid {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 24px;
+            }
+            .demo { padding: 16px; background: #11151f; }
+            .label { color: #b4becd; font-size: 12px; margin-bottom: 12px; }
+            /* Slices are source-image pixels. Border widths set their drawn size. */
+            .frame {
+                border: 16px solid transparent;
+                border-image-source: url(assets/9slice-demo/19dd881d5c38d58e-PanelFrame.png);
+                border-image-slice: 16 fill;
+                border-image-repeat: stretch;
+                color: #142333;
+                font-weight: 700;
+            }
+            .panel {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                height: 96px;
+            }
+            .tall { height: 152px; }
+            .outline { border-image-slice: 16; color: #f3f4f6; }
+            .row { display: flex; align-items: center; gap: 20px; }
+            button.frame {
+                font: inherit;
+                font-weight: 700;
+                background: transparent;
+                padding: 8px 24px;
+                cursor: pointer;
+            }
+            button.frame:hover { color: #006a96; }
+            button.frame:focus-visible { outline: 2px solid #fbbf24; outline-offset: 3px; }
+            .source { display: block; width: 192px; height: 64px; }
+            .setup { margin-top: 24px; max-width: 1050px; }
+        </style>
+    </head>
+    <body>
+        <h1>9-Slice Demo</h1>
+        <p>One frame image, panels of any size. CSS keeps the corners fixed and stretches the edges.</p>
+
+        <h2>Panels</h2>
+        <div class="grid">
+            <div class="demo">
+                <div class="label">16px borders, filled center</div>
+                <div class="frame panel">SHORT PANEL</div>
+            </div>
+            <div class="demo">
+                <div class="label">Same corners, more space</div>
+                <div class="frame panel tall">TALL PANEL</div>
+            </div>
+            <div class="demo">
+                <div class="label">Omit fill to leave the center open</div>
+                <div class="frame panel tall outline">OUTLINE ONLY</div>
+            </div>
+        </div>
+
+        <h2>Content determines the width</h2>
+        <div class="row">
+            <button class="frame" type="button">BUY</button>
+            <button class="frame" type="button">UPGRADE</button>
+            <button class="frame" type="button">CONTINUE</button>
+        </div>
+
+        <h2>Source image</h2>
+        <div class="row">
+            <img class="source" src="assets/9slice-demo/19dd881d5c38d58e-PanelFrame.png" alt="Blue panel frame" />
+            <p>An ordinary image preview. The panels use <code>border-image-slice: 16 fill</code><br />
+                and <code>border: 16px solid transparent</code>.</p>
+        </div>
+        <p class="setup">The image URL is relative to the HTML file: <code>Sprites/PanelFrame.png</code>.
+            Slice values belong in CSS; the frame works in both hosts without Sprite importer settings.</p>
+    </body>
+</html>

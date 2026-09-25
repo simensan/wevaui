@@ -1,0 +1,15 @@
+
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                .test-case {
+                  display: flex;
+                  flex-direction: column;
+                  gap: 8px;
+                  padding: 16px;
+                }
+                .flex-row-explicit {
+                  display: flex;
+                  flex-direction: row;
+                  gap: 16px;
+                }
+                .box { width: 100px; height: 100px; }
+            

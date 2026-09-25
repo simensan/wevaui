@@ -1,0 +1,9 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://bidi_tests.gd" id="1"]
+
+[node name="Viewport" type="SubViewport"]
+size = Vector2i(800, 400)
+
+[node name="Root" type="Node2D" parent="."]
+script = ExtResource("1")

@@ -1,0 +1,25 @@
+{
+  "scope": "WevaView live reload of its HTML/CSS files while running (addon GDScript only; no native change).",
+  "view_script_sha256": "613adb0e48efb20cacfa561dd46b2d8df778a2b814c3ae58303d07ea5730fd9b",
+  "library_sha256": "590a7536fff3fd9e81ade07bbbb19224e184a56c3970bfee3214ff325800fd69",
+  "windows_patched_4_7_2": {
+    "checks": 11,
+    "failures": 0,
+    "log": ".utmp/safe-engine71/shaping-checks/live-reload.log"
+  },
+  "linux_stock_4_7_2": {
+    "checks": 11,
+    "failures": 0,
+    "log": ".utmp/safe-engine71/shaping-checks/linux/live_reload_tests.log"
+  },
+  "sample_with_new_view_script": "frontier integration: 101 checks, 0 failures",
+  "findings": [
+    "A stylesheet edit reapplies the CSS and keeps the document, state and bindings; a markup edit reloads the HTML with bound data re-applied; later data changes still reach the reloaded markup.",
+    "A file is read only after its modified time has stayed put for one poll interval, so half-written saves are skipped.",
+    "live_reload=false ignores disk changes; the default is OS.is_debug_build()."
+  ],
+  "limitations": [
+    "Polls modified times (one-second resolution); exported PCK files report no time and never reload.",
+    "Not yet in any packaged addon zip; the preview219 zip predates this script."
+  ]
+}

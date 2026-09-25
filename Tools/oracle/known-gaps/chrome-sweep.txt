@@ -1,0 +1,16 @@
+# Cases allowed to exceed chrome_sweep's --max-worst ceiling, with the cause.
+#
+# Format: `<case-name>: <reason>`. The gate fails on any case over the ceiling
+# that is not listed here, and reports listed cases that no longer need it.
+# A reason must name WHY, so an entry is a finding on record, not an excuse.
+#
+# The gate runs weva_dump with --chrome-metrics: the browser-semantics walk
+# that applies the full transform to every corner and unions an inline's line
+# fragments, the way getBoundingClientRect does. Without that flag the dump
+# reports the C# reference's box semantics and nine more samples land here for
+# reasons that are the dump mode, not the engine — which is what the first
+# version of this file recorded, wrongly, on 2026-09-13.
+#
+#   gap/<feature>    The core lacks the feature; PRODUCT_READINESS.md and
+#                    PORT_PLAN.md already list it.
+

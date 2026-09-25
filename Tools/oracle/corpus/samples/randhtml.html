@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>Ravenmoor — RPG UI</title>
+<link rel="stylesheet" href="randhtml.css" />
+</head>
+<body>
+
+  <!-- panel toggles (CSS :checked pattern) -->
+  <input type="checkbox" id="t-inv"  class="toggle" />
+  <input type="checkbox" id="t-char" class="toggle" />
+  <input type="checkbox" id="t-book" class="toggle" />
+
+  <div class="world" aria-hidden="true"></div>
+
+  <div class="alert">
+    Ravenmoor Vale
+    <span class="sub">Discovered</span>
+  </div>
+
+  <div class="hud">
+
+    <!-- top-left -->
+    <div class="hud-tl">
+      <div class="panel unit">
+        <div class="portrait">🛡️<span class="lvl">42</span></div>
+        <div class="unit-meta">
+          <div class="unit-name">Aerith Stormborn</div>
+          <div class="unit-sub">Arcane Knight</div>
+          <div class="bar hp"><div class="fill" style="--pct:78%"></div><div class="label"><span>HP</span><span>7,820 / 10,000</span></div></div>
+          <div class="bar mp"><div class="fill" style="--pct:64%"></div><div class="label"><span>MP</span><span>4,480 / 7,000</span></div></div>
+          <div class="auras">
+            <div class="aura" title="Stoneskin">🛡<span class="t">28</span></div>
+            <div class="aura" title="Blessing">✦<span class="t">5m</span></div>
+            <div class="aura" title="Empower">⚡<span class="t">12</span></div>
+            <div class="aura debuff" title="Burning">🔥<span class="t">6</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel unit">
+        <div class="portrait">🐲<span class="lvl">??</span></div>
+        <div class="unit-meta">
+          <div class="unit-name">Drakhul the Ember</div>
+          <div class="unit-sub">Elite • Wyrmkin</div>
+          <div class="bar hp"><div class="fill" style="--pct:42%"></div><div class="label"><span>HP</span><span>42%</span></div></div>
+          <div class="auras">
+            <div class="aura debuff" title="Vulnerable">↓<span class="t">9</span></div>
+            <div class="aura debuff" title="Mortal Strike">✕<span class="t">4</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="party">
+        <div class="panel unit">
+          <div class="portrait">🪄</div>
+          <div class="unit-meta">
+            <div class="unit-name">Lyssara <span style="color:var(--muted); font-weight:400">41</span></div>
+            <div class="bar hp"><div class="fill" style="--pct:92%"></div></div>
+            <div class="bar mp"><div class="fill" style="--pct:31%"></div></div>
+          </div>
+        </div>
+        <div class="panel unit">
+          <div class="portrait">⚔️</div>
+          <div class="unit-meta">
+            <div class="unit-name">Brom Ironfist <span style="color:var(--muted); font-weight:400">42</span></div>
+            <div class="bar hp"><div class="fill" style="--pct:56%"></div></div>
+            <div class="bar mp"><div class="fill" style="--pct:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hud-top"></div>
+
+    <!-- top-right -->
+    <div class="hud-tr">
+      <div class="panel minimap">
+        <div class="map">
+          <div class="water"></div>
+          <div class="road"></div>
+          <div class="player"></div>
+          <div class="pin q" style="left:70%; top:35%"></div>
+          <div class="pin q" style="left:28%; top:72%"></div>
+          <div class="pin e" style="left:80%; top:70%"></div>
+          <div class="pin f" style="left:22%; top:30%"></div>
+          <div class="compass">N</div>
+          <div class="label">Ravenmoor Vale</div>
+        </div>
+      </div>
+      <div class="clock"><b>22:14</b> · 348ms</div>
+
+      <div class="panel quest">
+        <h3>Embers of the Wyrm</h3>
+        <div class="obj">Slay Drakhul <b>0/1</b></div>
+        <div class="obj done">Recover the Sun-Sigil</div>
+        <div class="obj">Return to Archon Mira</div>
+      </div>
+    </div>
+
+    <!-- bottom-left chat -->
+    <div class="hud-bl">
+      <div class="panel chat">
+        <div class="tabs">
+          <span class="tab active">General</span>
+          <span class="tab">Party</span>
+          <span class="tab">Guild</span>
+          <span class="tab">Combat</span>
+        </div>
+        <div class="log">
+          <div class="line system">Welcome to Ravenmoor Vale.</div>
+          <div class="line guild"><span class="who">[G] Vex:</span> healers free for the wyrm run?</div>
+          <div class="line party"><span class="who">[P] Lyssara:</span> mana break in 5</div>
+          <div class="line"><span class="who">Aerith:</span> pulling in 3</div>
+          <div class="line combat">Drakhul casts Ember Curse on you (-1,240)</div>
+          <div class="line loot">You receive: <b>Sigil of the Sunfall</b></div>
+          <div class="line combat">Your Arcane Lance <b>crits</b> Drakhul for <b>3,847</b>.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- bottom-center: cast bar + action bars + xp -->
+    <div class="hud-bot">
+      <div class="actionbar-wrap">
+
+        <div class="cast-wrap">
+          <div class="panel cast">
+            <div class="fill" style="--pct: 67%"></div>
+            <div class="label"><span>Arcane Lance</span><span>1.2 / 1.8s</span></div>
+          </div>
+        </div>
+
+        <div class="panel actionbar">
+          <div class="slot" data-rarity="epic"><div>⚡</div><span class="key">1</span></div>
+          <div class="slot" data-rarity="rare"><div>❄</div><span class="key">2</span></div>
+          <div class="slot" data-rarity="uncommon"><div>🔥</div><span class="key">3</span></div>
+          <div class="slot" data-rarity="legendary"><div>✦</div><span class="key">4</span></div>
+          <div class="slot" data-rarity="rare" style="--cd:60%; --cd-show:grid"><div>☾</div><span class="key">5</span><div class="cd-shade"></div><div class="cd-text">4</div></div>
+          <div class="slot" data-rarity="uncommon"><div>➤</div><span class="key">6</span></div>
+          <div class="slot" data-rarity="rare"><div>⊘</div><span class="key">7</span></div>
+          <div class="slot" data-rarity="common"><div>🧪</div><span class="key">8</span><span class="stack">8</span></div>
+          <div class="slot" data-rarity="common"><div>🍷</div><span class="key">9</span><span class="stack">12</span></div>
+          <div class="slot" data-rarity="rare"><div>⌂</div><span class="key">0</span></div>
+        </div>
+
+        <div class="xp-footer">
+          <div class="bar xp"><div class="fill" style="--pct:63%"></div><div class="label"><span>Lv 42</span><span>631,402 / 1,000,000 · rest 5%</span></div></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- bottom-right menu -->
+    <div class="hud-br">
+      <div class="panel actionbar" style="padding: clamp(4px, .6vmin, 7px)">
+        <label for="t-char" class="slot menu" title="Character"><div>👤</div><span class="key">C</span></label>
+        <label for="t-book" class="slot menu" title="Spellbook"><div>📖</div><span class="key">P</span></label>
+        <label for="t-inv"  class="slot menu" title="Inventory"><div>🎒</div><span class="key">I</span></label>
+        <div class="slot menu" title="Map"><div>🗺</div><span class="key">M</span></div>
+        <div class="slot menu" title="Menu"><div>⚙</div><span class="key">Esc</span></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== windows (toggled by checkboxes above) ===== -->
+  <div class="panel window inventory" id="panel-inventory">
+    <div class="window-head">
+      <h2>Backpack</h2>
+      <div class="gold">2,184 g</div>
+      <label for="t-inv" class="close">×</label>
+    </div>
+    <div class="grid-bag">
+      <div class="slot" data-rarity="rare"><div>💎</div><span class="stack">3</span></div>
+      <div class="slot" data-rarity="common"><div>🍞</div><span class="stack">12</span></div>
+      <div class="slot" data-rarity="uncommon"><div>🍀</div></div>
+      <div class="slot empty"></div>
+      <div class="slot" data-rarity="epic"><div>🔮</div></div>
+      <div class="slot" data-rarity="common"><div>🪙</div><span class="stack">47</span></div>
+      <div class="slot empty"></div>
+      <div class="slot" data-rarity="legendary"><div>✨</div></div>
+
+      <div class="slot" data-rarity="rare"><div>🗡</div></div>
+      <div class="slot" data-rarity="common"><div>🍷</div><span class="stack">8</span></div>
+      <div class="slot" data-rarity="uncommon"><div>⚗</div><span class="stack">5</span></div>
+      <div class="slot" data-rarity="rare"><div>📜</div></div>
+      <div class="slot empty"></div>
+      <div class="slot" data-rarity="epic"><div>💍</div></div>
+      <div class="slot" data-rarity="common"><div>🪶</div></div>
+      <div class="slot empty"></div>
+
+      <div class="slot" data-rarity="uncommon"><div>🏹</div></div>
+      <div class="slot" data-rarity="common"><div>🔑</div></div>
+      <div class="slot empty"></div>
+      <div class="slot" data-rarity="rare"><div>⚔</div></div>
+      <div class="slot" data-rarity="legendary"><div>💎</div></div>
+      <div class="slot" data-rarity="common"><div>🍒</div><span class="stack">3</span></div>
+      <div class="slot empty"></div>
+      <div class="slot" data-rarity="epic"><div>🎲</div></div>
+
+      <div class="slot empty"></div>
+      <div class="slot" data-rarity="common"><div>🪙</div><span class="stack">14</span></div>
+      <div class="slot" data-rarity="uncommon"><div>🍀</div></div>
+      <div class="slot empty"></div>
+      <div class="slot" data-rarity="rare"><div>🔮</div></div>
+      <div class="slot empty"></div>
+      <div class="slot" data-rarity="common"><div>🍞</div><span class="stack">6</span></div>
+      <div class="slot empty"></div>
+    </div>
+  </div>
+
+  <div class="panel window character" id="panel-character">
+    <div class="window-head">
+      <h2>Aerith Stormborn</h2>
+      <div class="gold" style="color:var(--muted)">Lv 42 Arcane Knight</div>
+      <label for="t-char" class="close">×</label>
+    </div>
+    <div class="doll">
+      <div class="figure"></div>
+      <div class="slot left"  data-rarity="epic"      title="Helm">🪖</div>
+      <div class="slot right" data-rarity="rare"      title="Amulet">🔱</div>
+      <div class="slot left"  data-rarity="legendary" title="Shoulders">🛡</div>
+      <div class="slot right" data-rarity="epic"      title="Cloak">🧥</div>
+      <div class="slot left"  data-rarity="rare"      title="Chest">🎽</div>
+      <div class="slot right" data-rarity="uncommon"  title="Tabard">🟧</div>
+      <div class="slot left"  data-rarity="rare"      title="Bracers">⌚</div>
+      <div class="slot right" data-rarity="epic"      title="Gloves">🧤</div>
+      <div class="slot left"  data-rarity="legendary" title="Belt">⚜</div>
+      <div class="slot right" data-rarity="rare"      title="Legs">👖</div>
+    </div>
+    <div class="stats">
+      <div class="row"><span>Strength</span><b>184</b></div>
+      <div class="row"><span>Stamina</span><b>302</b></div>
+      <div class="row"><span>Agility</span><b>96</b></div>
+      <div class="row"><span>Intellect</span><b>241</b></div>
+      <div class="row"><span>Spirit</span><b>178</b></div>
+      <div class="row"><span>Armor</span><b>4,820</b></div>
+      <div class="row"><span>Crit</span><b>22.4%</b></div>
+      <div class="row"><span>Haste</span><b>14.0%</b></div>
+      <div class="row"><span>Spellpower</span><b>1,142</b></div>
+      <div class="row"><span>Mastery</span><b>18.6%</b></div>
+    </div>
+  </div>
+
+  <div class="panel window spellbook" id="panel-spellbook">
+    <div class="window-head">
+      <h2>Grimoire</h2>
+      <div class="gold" style="color:var(--muted)">Arcane · Frost · Holy</div>
+      <label for="t-book" class="close">×</label>
+    </div>
+    <div class="spell-grid">
+      <div class="slot" data-rarity="common"><div>⚡</div></div>
+      <div class="slot" data-rarity="common"><div>⚡</div></div>
+      <div class="slot" data-rarity="common"><div>⚡</div></div>
+      <div class="slot" data-rarity="common"><div>⚡</div></div>
+      <div class="slot" data-rarity="common"><div>⚡</div></div>
+      <div class="slot" data-rarity="common"><div>⚡</div></div>
+      <div class="slot" data-rarity="uncommon"><div>❄</div></div>
+      <div class="slot" data-rarity="uncommon"><div>❄</div></div>
+      <div class="slot" data-rarity="uncommon"><div>❄</div></div>
+      <div class="slot" data-rarity="uncommon"><div>❄</div></div>
+      <div class="slot" data-rarity="uncommon"><div>❄</div></div>
+      <div class="slot" data-rarity="uncommon"><div>❄</div></div>
+      <div class="slot" data-rarity="rare"><div>🔥</div></div>
+      <div class="slot" data-rarity="rare"><div>🔥</div></div>
+      <div class="slot" data-rarity="rare"><div>🔥</div></div>
+      <div class="slot" data-rarity="rare"><div>🔥</div></div>
+      <div class="slot" data-rarity="rare"><div>🔥</div></div>
+      <div class="slot" data-rarity="rare"><div>🔥</div></div>
+      <div class="slot" data-rarity="epic"><div>✦</div></div>
+      <div class="slot" data-rarity="epic"><div>✦</div></div>
+      <div class="slot" data-rarity="epic"><div>✦</div></div>
+      <div class="slot" data-rarity="epic"><div>✦</div></div>
+      <div class="slot" data-rarity="epic"><div>✦</div></div>
+      <div class="slot" data-rarity="legendary"><div>✨</div></div>
+    </div>
+  </div>
+
+  <div class="rotate">
+    <div>
+      <div class="icon">⤾</div>
+      <div>Rotate to landscape</div>
+      <div class="sub">Ravenmoor is best in landscape</div>
+    </div>
+  </div>
+
+</body>
+</html>

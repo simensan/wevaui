@@ -9,9 +9,8 @@ using Weva.Rendering.URP;
 namespace Weva.EditorTools.Setup {
     // One-shot helper that adds `UIBatchedRendererFeature` to whichever
     // URP renderer asset the project's currently-active URP pipeline
-    // points at. Without that feature, WevaDocument falls back to the
-    // IMGUI debug renderer (gradients render as flat colors, filters
-    // skipped). This window walks the user through the setup; the menu
+    // points at. Without that feature a WevaDocument has no pass to draw
+    // in. This window walks the user through the setup; the menu
     // entry runs the same logic non-interactively for scripted projects.
     public static class UrpFeatureSetup {
         // All shipped Weva menu items live under Window/Weva so end users
@@ -37,6 +36,44 @@ namespace Weva.EditorTools.Setup {
                     : "Always Included Shaders: nothing to add.\n\n")
                 + shaderDetail;
             EditorUtility.DisplayDialog(title, body, "OK");
+        }
+
+        // Non-interactive variant of RunFromMenu: same work (renderer
+        // feature + Always Included shaders) but logs to the Console instead
+        // of raising a modal dialog. This is the entry point for AI agents,
+        // CI, and scripted project setup — safe under -batchmode:
+        //   Unity -batchmode -quit -projectPath <project> -executeMethod Weva.EditorTools.Setup.UrpFeatureSetup.ApplyNonInteractive
+        // Idempotent: re-running when everything is configured is a no-op.
+        public static void ApplyNonInteractive() {
+            int added = AddFeatureToActiveRenderer(out string detail);
+            int shaderAdded = ShaderIncludeSetup.AddAllToAlwaysIncluded(out string shaderDetail);
+            Debug.Log(
+                "Weva URP setup: "
+                + (added > 0
+                    ? "added UIBatchedRendererFeature to " + added + " renderer(s). "
+                    : "renderer feature — nothing to add. ")
+                + (shaderAdded > 0
+                    ? "Added " + shaderAdded + " shader(s) to Always Included Shaders."
+                    : "Always Included Shaders — nothing to add.")
+                + "\n" + detail + "\n" + shaderDetail);
+        }
+
+        // True when URP is the active pipeline and NONE of its renderer data
+        // assets carry UIBatchedRendererFeature — the misconfiguration the
+        // WevaDocument inspector and the runtime warning point at. False
+        // when URP isn't active (nothing to fix) or when at least one
+        // renderer has the feature (mixed setups are assumed intentional).
+        public static bool IsFeatureMissingOnActiveRenderer() {
+            var pipeline = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (pipeline == null) return false;
+            var rendererListField = typeof(UniversalRenderPipelineAsset)
+                .GetField("m_RendererDataList", BindingFlags.NonPublic | BindingFlags.Instance);
+            var list = rendererListField?.GetValue(pipeline) as ScriptableRendererData[];
+            if (list == null || list.Length == 0) return false;
+            foreach (var data in list) {
+                if (data != null && HasFeature(data)) return false;
+            }
+            return true;
         }
 
         // Returns the number of renderer assets the feature was added to.

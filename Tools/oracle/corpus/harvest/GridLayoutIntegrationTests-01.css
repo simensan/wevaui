@@ -1,0 +1,5 @@
+
+                .grid { display: grid; grid-template-columns: repeat(12, 1fr); width: 1200px; }
+                .col-3 { grid-column: span 3; }
+                .col-9 { grid-column: span 9; }
+            

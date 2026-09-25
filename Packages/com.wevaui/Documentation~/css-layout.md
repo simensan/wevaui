@@ -2,8 +2,8 @@
 
 [← Back to index](index.md) · [← Supported CSS](supported-css.md)
 
-Weva implements its own block, inline, flex, grid, and positioned layout. Flex
-and grid are full reimplementations (not Yoga), matching CSS behavior.
+The shared core implements block, inline, flex, grid, table and positioned
+layout. The supported surface and remaining limits are described below.
 
 ## `display`
 
@@ -11,7 +11,7 @@ and grid are full reimplementations (not Yoga), matching CSS behavior.
 `inline-grid`, `none`, `contents`.
 
 A real **inline formatting context** flows prose, mixed `<span>`/`<strong>`/`<a>`
-runs, and text-with-icons — the thing UI Toolkit cannot do. Mixed-style inline
+runs, and text-with-icons. Mixed-style inline
 runs render correctly within a line.
 
 ## Box model
@@ -19,9 +19,7 @@ runs render correctly within a line.
 - `width`, `height`, `min-/max-width`, `min-/max-height`.
 - Logical sizes: `inline-size`, `block-size`, and logical min/max.
 - `padding`, `margin`, `border` — physical and logical longhands + shorthands.
-  **Note:** the paint converter reads longhand border properties; the
-  `border: 1px solid red` shorthand is expanded by the cascade's
-  `BorderShorthandExpander`.
+  Shorthands such as `border: 1px solid red` expand into longhands in the core.
 - `box-sizing`: `content-box` (default, per spec) and `border-box`.
 - `border-radius` per-corner, including the elliptical `h / v` slash form.
 
@@ -36,16 +34,12 @@ Full property surface: `flex`, `flex-direction`, `flex-wrap`, `flex-basis`,
 `align-content`, `gap`/`row-gap`/`column-gap`, `order`. Row-flex `baseline`
 cross-axis alignment uses each item's first-line ascent.
 
-v1 simplifications:
+Row sizing supports `min-content` / `max-content` probes, and the flex
+distribution loop freezes constrained items and redistributes remaining space.
+Remaining limits include:
 
-- `min-content` / `max-content` sizing keywords are treated as `auto`.
-- `aspect-ratio` is not honored in flex sizing.
+- `aspect-ratio` transfer during flex sizing is incomplete.
 - Column-flex `baseline` cross-alignment falls back to `flex-start`.
-- Item min/max main-size constraints are single-pass (no clamp loop).
-- Longhand flex initial values don't override a user-set `flex` shorthand (the
-  cascade doesn't yet track explicit-vs-initial).
-- Text directly inside a flex container falls into anonymous-block flow rather
-  than becoming an anonymous flex item.
 
 ## Grid
 
@@ -54,7 +48,7 @@ track sizing, `fr` distribution, gap, alignment, auto-flow. Supports
 `grid-template-columns/rows`, `grid-template-areas`, `grid-column`, `grid-row`,
 `grid-auto-flow`, `grid-auto-columns/rows`, `place-items`, `place-content`,
 `place-self`, `repeat()`, `minmax()`, `fr`, `auto-fill`, `auto-fit`, and
-`subgrid` on `grid-auto-rows/columns`. Intrinsic track sizing for spanning
+`subgrid` on `grid-template-rows/columns`. Intrinsic track sizing for spanning
 items follows the §11.5 growth-limit-priority walk.
 
 ## Positioning
@@ -62,27 +56,30 @@ items follows the §11.5 growth-limit-priority walk.
 `position`: `static`, `relative`, `absolute`, `fixed`, `sticky`, with
 `top`/`right`/`bottom`/`left`, `z-index`, and stacking contexts. Anchor
 positioning (`anchor-name`, `position-anchor`, `anchor()`,
-`position-try-fallbacks`) is implemented under `Layout/AnchorPositioning/`.
+`position-try-fallbacks`) is implemented in the core.
 
 v1 simplifications:
 
 - `position: sticky` is **single-axis** (top OR bottom — top wins when both are
   set; same for left/right). Sticky offsets recompute on scroll even on
   paint-only frames.
-- `position: fixed` uses the viewport (unaffected by ancestor scroll).
+- `position: fixed` normally uses the viewport. Ancestor transforms, filters
+  and perspective can establish a containing block instead.
 - The absolute-positioning containing block is the nearest positioned
-  ancestor's **border**-box.
-- Both-pinned absolute boxes (`top: 0; bottom: 0`) don't iterate to reconcile
-  with intrinsic sizes, and don't re-flow their interior.
+  ancestor's **padding** box; containing-block properties such as transforms
+  also qualify. Both-pinned boxes can reflow after their available size resolves.
 - Positioned descendants with `z-index: auto` do **not** create their own
   stacking context (older-spec behavior); `fixed`/`sticky` always do.
 
 ## Overflow & scrolling
 
 `overflow`, `overflow-x`, `overflow-y`: `visible`, `hidden`, `scroll`, `auto`,
-`clip`. Scroll containers, scrollbars, `position: sticky` integration, scroll
-snap, and smooth scrolling exist (`Layout/Scrolling/`). No overscroll chaining
-or scroll anchoring.
+`clip`. Scroll containers, scrollbars, sticky positioning, scroll snap, and
+smooth scrolling run in the shared core. `clip` clips painting without
+establishing a scroll container: it cannot be scrolled by code, and sticky
+elements and snap areas inside it still use an outer scroll container.
+`hidden` permits scripted scrolling and establishes a scroll container.
+Scroll anchoring is not implemented.
 
 **Scrollbar styling** (CSS Scrollbars L1): `scrollbar-color: <thumb> <track>`
 (inherited; `currentColor` and full color syntax) and `scrollbar-width:
@@ -112,13 +109,16 @@ clamp hard.
 
 `column-count`, `column-width`, the `columns` shorthand, `column-gap`
 (`normal` = 1em, Chrome's default), and `column-rule` (painted centered in
-each gap; dashed/dotted render solid in v1) on block containers. Auto-height
-containers balance column heights; explicit heights fill sequentially.
-A block child taller than the column height is sliced across columns
-(paint-level fragmentation, matching Chrome). Remaining divergences: a
-child taller than the whole multi-column span overflows the last column
-downward; margin collapsing across column boundaries isn't performed.
-`column-span` and forced breaks parse but are ignored.
+each gap) on block and inline-block containers. Text, inline elements and
+block children flow into balanced columns; `direction: rtl` reverses the
+column order. Lines can fragment across columns, while `break-inside: avoid`
+keeps a block together. `break-before: column` forces a new column.
+Direct children with `column-span: all` separate independently balanced sets.
+
+Limitations: `column-fill: auto`, nested spanner extraction, authored
+`orphans`/`widows`, and per-fragment backgrounds/borders are not implemented.
+A fragmented block's decorations cover the union of its fragments. Explicit
+container heights do not switch to sequential column filling.
 
 ## Containment & content-visibility
 
@@ -142,14 +142,16 @@ outside the viewport.
 
 `direction: rtl` flips horizontal inline-start/end mapping, `text-align:
 start/end`, logical insets/sizes/box edges, and row-flex main-axis order.
-`writing-mode` remaps logical properties for vertical/sideways modes, **but
-glyph flow stays horizontal** — vertical text layout is a v1 non-goal.
-`unicode-bidi` is registered but no bidi reordering is performed.
+`writing-mode: vertical-rl | vertical-lr` lays out orthogonal flows inside a
+horizontal document and rotates glyph geometry into the vertical flow. Full
+mixed upright/sideways glyph orientation is not implemented. The core uses
+ICU for mixed-direction ordering, including `unicode-bidi` embedding,
+override, isolate and plaintext behavior; glyph shaping remains host-owned.
 
 ## Floats & tables
 
-`float: left/right` with `clear` and per-paragraph exclusion is implemented
-(`Layout/Floats/`), though we recommend flex/grid for new UI. Runtime
+`float: left/right` with `clear` and per-paragraph exclusion is implemented.
+Runtime
 tables exist including collapsed-border winner resolution; advanced
 fragmentation is out of v1.
 

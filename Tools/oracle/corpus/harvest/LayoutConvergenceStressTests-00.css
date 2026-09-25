@@ -1,0 +1,10 @@
+
+            html, body, div, section, header, footer, nav, main, article, aside,
+            p, h1, h2, h3, h4, h5, h6, ul, ol, hr { display: block; }
+            li { display: list-item; }
+            a, span, strong, em, b, i, u, code, small, label { display: inline; }
+            br { display: inline; }
+            body { margin: 0; padding: 0; }
+            template, link, meta, head, title, script, style { display: none; }
+            [hidden] { display: none; }
+        

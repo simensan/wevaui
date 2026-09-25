@@ -1,5 +1,9 @@
 # Combat HUD probe — Weva vs Chrome audit
 
+> **Historical C# render audit.** These June 2026 observations predate the
+> native engine. Use the current [CSS reference](../../Packages/com.wevaui/Documentation~/supported-css.md)
+> and [verification report](../../docs/verification/review-three-days-20260915.md).
+
 Date: 2026-06-01
 Probe: `Assets/UI/combat-hud.{html,css}` (1280×800 viewport)
 Render: `Assets/Screenshots/combat-hud-render.png`

@@ -1,0 +1,4 @@
+
+                .p { display: grid; grid-template-columns: 50px; width: 100px; }
+                .c { display: grid; grid-template-columns: subgrid; }
+            

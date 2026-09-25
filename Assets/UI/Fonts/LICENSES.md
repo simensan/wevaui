@@ -16,5 +16,6 @@ All fonts here are licensed under the **SIL Open Font License 1.1**
 `Assets/TextMesh Pro/Fonts/LiberationSans.ttf` ships with Unity's TextMesh Pro
 package essentials (SIL OFL 1.1) and is included for the TMP text path.
 
-If you fork this repo for redistribution, consider dropping each font's full
-`OFL.txt` (from the source links above) next to its `.ttf`.
+The full notices are included beside these fonts as
+`PatrickHand-Regular-OFL.txt` and `Sniglet-ExtraBold-OFL.txt`; retain them when
+redistributing the demo assets.

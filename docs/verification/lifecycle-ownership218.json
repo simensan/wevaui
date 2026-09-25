@@ -1,0 +1,244 @@
+{
+  "scope": "Short rendered editor ownership classification (5 cycles, 2-second soak, three soak/teardown rounds per arm), Vulkan mobile 1080p 3D world, mixed-script names. Not release qualification.",
+  "native_sha256": "02664d4b022e1c9d1826aea403a17a6dd05ef8ec93a01275e2a8a2c37d49208a",
+  "test_sha256": "38c1ff7706d21b4b711a8d77ce00474bcfb5790e5a6753e37e2cbda5696ca936",
+  "project": ".utmp/safe-engine71/lifecycle-ownership218-project",
+  "output": ".utmp/safe-engine71/lifecycle-ownership218",
+  "arms": {
+    "all-r3": {
+      "passed": true,
+      "soak_settings": true,
+      "soak_sort": true,
+      "soak_names": true,
+      "soak_without_ui": false,
+      "soak_rounds": 3,
+      "name_updates": 1056,
+      "objects_after_recreate": 2033,
+      "objects_after_each_round_teardown": [
+        2038,
+        2038,
+        2038
+      ],
+      "objects_final_teardown": 2038,
+      "growth_between_rounds": 0,
+      "retained_versus_after_recreate": 5,
+      "nodes_final": 491,
+      "texture_bytes_constant": true,
+      "command": {
+        "command": [
+          "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
+          "--path",
+          "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
+          "--audio-driver",
+          "Dummy",
+          "--rendering-method",
+          "mobile",
+          "--position",
+          "-10000,-10000",
+          "--",
+          "--lifecycle"
+        ],
+        "env": {
+          "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218\\all-r3",
+          "WEVA_FRONTIER_CYCLES": "5",
+          "WEVA_FRONTIER_SECONDS": "2",
+          "WEVA_FRONTIER_RESOLUTION": "1920x1080",
+          "WEVA_FRONTIER_WORLD": "3d",
+          "WEVA_FRONTIER_UNICODE": "1",
+          "WEVA_FRONTIER_SOAK_ROUNDS": "3"
+        }
+      }
+    },
+    "nonames-r3": {
+      "passed": true,
+      "soak_settings": true,
+      "soak_sort": true,
+      "soak_names": false,
+      "soak_without_ui": false,
+      "soak_rounds": 3,
+      "name_updates": 50,
+      "objects_after_recreate": 2033,
+      "objects_after_each_round_teardown": [
+        2036,
+        2036,
+        2036
+      ],
+      "objects_final_teardown": 2036,
+      "growth_between_rounds": 0,
+      "retained_versus_after_recreate": 3,
+      "nodes_final": 491,
+      "texture_bytes_constant": true,
+      "command": {
+        "command": [
+          "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
+          "--path",
+          "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
+          "--audio-driver",
+          "Dummy",
+          "--rendering-method",
+          "mobile",
+          "--position",
+          "-10000,-10000",
+          "--",
+          "--lifecycle"
+        ],
+        "env": {
+          "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218\\nonames-r3",
+          "WEVA_FRONTIER_CYCLES": "5",
+          "WEVA_FRONTIER_SECONDS": "2",
+          "WEVA_FRONTIER_RESOLUTION": "1920x1080",
+          "WEVA_FRONTIER_WORLD": "3d",
+          "WEVA_FRONTIER_UNICODE": "1",
+          "WEVA_FRONTIER_SOAK_ROUNDS": "3",
+          "WEVA_FRONTIER_SOAK_NAMES": "0"
+        }
+      }
+    },
+    "nosettings-r3": {
+      "passed": true,
+      "soak_settings": false,
+      "soak_sort": true,
+      "soak_names": true,
+      "soak_without_ui": false,
+      "soak_rounds": 3,
+      "name_updates": 1444,
+      "objects_after_recreate": 2033,
+      "objects_after_each_round_teardown": [
+        2035,
+        2035,
+        2035
+      ],
+      "objects_final_teardown": 2035,
+      "growth_between_rounds": 0,
+      "retained_versus_after_recreate": 2,
+      "nodes_final": 491,
+      "texture_bytes_constant": true,
+      "command": {
+        "command": [
+          "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
+          "--path",
+          "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
+          "--audio-driver",
+          "Dummy",
+          "--rendering-method",
+          "mobile",
+          "--position",
+          "-10000,-10000",
+          "--",
+          "--lifecycle"
+        ],
+        "env": {
+          "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218\\nosettings-r3",
+          "WEVA_FRONTIER_CYCLES": "5",
+          "WEVA_FRONTIER_SECONDS": "2",
+          "WEVA_FRONTIER_RESOLUTION": "1920x1080",
+          "WEVA_FRONTIER_WORLD": "3d",
+          "WEVA_FRONTIER_UNICODE": "1",
+          "WEVA_FRONTIER_SOAK_ROUNDS": "3",
+          "WEVA_FRONTIER_SOAK_SETTINGS": "0"
+        }
+      }
+    },
+    "nosort-r3": {
+      "passed": true,
+      "soak_settings": true,
+      "soak_sort": false,
+      "soak_names": true,
+      "soak_without_ui": false,
+      "soak_rounds": 3,
+      "name_updates": 1009,
+      "objects_after_recreate": 2033,
+      "objects_after_each_round_teardown": [
+        2038,
+        2038,
+        2038
+      ],
+      "objects_final_teardown": 2038,
+      "growth_between_rounds": 0,
+      "retained_versus_after_recreate": 5,
+      "nodes_final": 491,
+      "texture_bytes_constant": true,
+      "command": {
+        "command": [
+          "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
+          "--path",
+          "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
+          "--audio-driver",
+          "Dummy",
+          "--rendering-method",
+          "mobile",
+          "--position",
+          "-10000,-10000",
+          "--",
+          "--lifecycle"
+        ],
+        "env": {
+          "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218\\nosort-r3",
+          "WEVA_FRONTIER_CYCLES": "5",
+          "WEVA_FRONTIER_SECONDS": "2",
+          "WEVA_FRONTIER_RESOLUTION": "1920x1080",
+          "WEVA_FRONTIER_WORLD": "3d",
+          "WEVA_FRONTIER_UNICODE": "1",
+          "WEVA_FRONTIER_SOAK_ROUNDS": "3",
+          "WEVA_FRONTIER_SOAK_SORT": "0"
+        }
+      }
+    },
+    "withoutui-r3": {
+      "passed": true,
+      "soak_settings": true,
+      "soak_sort": true,
+      "soak_names": true,
+      "soak_without_ui": true,
+      "soak_rounds": 3,
+      "name_updates": 1528,
+      "objects_after_recreate": 2033,
+      "objects_after_each_round_teardown": [
+        2035,
+        2035,
+        2035
+      ],
+      "objects_final_teardown": 2035,
+      "growth_between_rounds": 0,
+      "retained_versus_after_recreate": 2,
+      "nodes_final": 491,
+      "texture_bytes_constant": true,
+      "command": {
+        "command": [
+          "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\editor\\godot.windows.editor.x86_64.exe",
+          "--path",
+          "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218-project",
+          "--audio-driver",
+          "Dummy",
+          "--rendering-method",
+          "mobile",
+          "--position",
+          "-10000,-10000",
+          "--",
+          "--lifecycle"
+        ],
+        "env": {
+          "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\lifecycle-ownership218\\withoutui-r3",
+          "WEVA_FRONTIER_CYCLES": "5",
+          "WEVA_FRONTIER_SECONDS": "2",
+          "WEVA_FRONTIER_RESOLUTION": "1920x1080",
+          "WEVA_FRONTIER_WORLD": "3d",
+          "WEVA_FRONTIER_UNICODE": "1",
+          "WEVA_FRONTIER_SOAK_ROUNDS": "3",
+          "WEVA_FRONTIER_SOAK_WITHOUT_UI": "1"
+        }
+      }
+    }
+  },
+  "findings": [
+    "Object counts return to the same plateau after every soak round in all five arms; growth between rounds is zero everywhere.",
+    "With everything enabled the plateau is +5 over the post-recreation count; disabling settings open/close leaves +2, disabling name churn leaves +3, disabling sorting changes nothing.",
+    "The UI-disabled soak also settles at +2, so two objects belong to the driver/scene path rather than the UI.",
+    "Texture memory is identical at every teardown checkpoint; the retained objects are not glyph atlases.",
+    "Classification: bounded one-time retention, not accumulation. Ownership of the individual objects remains unidentified."
+  ],
+  "limitations": [
+    "Editor (debug) engine binary; object counts only, no private-memory sampling.",
+    "Three rounds of two seconds each; the ten-minute release soak in lifecycle217.json remains the long-run evidence."
+  ]
+}

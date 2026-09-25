@@ -60,13 +60,6 @@ namespace Weva.EditorTools.Setup {
 
             var uiGo = new GameObject("DemoUI");
             var doc = uiGo.AddComponent<WevaDocument>();
-            uiGo.AddComponent<Weva.Rendering.IMGUIDocumentRenderer>();
-            // Pointer + keyboard bridge: routes Input System events into the
-            // EventDispatcher so :hover / :focus / :active / click fire from
-            // real input. WevaDocument.OnEnable also adds this lazily, but
-            // adding it at scene-setup time gives the user a visible
-            // component to inspect.
-            uiGo.AddComponent<Weva.Forms.Bridge.UnityInputController>();
 
             var controllerType = ResolveType(ControllerTypeName);
             if (controllerType != null) {
@@ -137,12 +130,12 @@ namespace Weva.EditorTools.Setup {
             bool hasFeature = false;
             if (rendererAsset.rendererFeatures != null) {
                 for (int i = 0; i < rendererAsset.rendererFeatures.Count; i++) {
-                    if (rendererAsset.rendererFeatures[i] is UIRendererFeature) { hasFeature = true; break; }
+                    if (rendererAsset.rendererFeatures[i] is Weva.Rendering.URP.UIBatchedRendererFeature) { hasFeature = true; break; }
                 }
             }
             if (!hasFeature) {
-                var feature = ScriptableObject.CreateInstance<UIRendererFeature>();
-                feature.name = nameof(UIRendererFeature);
+                var feature = ScriptableObject.CreateInstance<Weva.Rendering.URP.UIBatchedRendererFeature>();
+                feature.name = nameof(Weva.Rendering.URP.UIBatchedRendererFeature);
                 AssetDatabase.AddObjectToAsset(feature, rendererAsset);
                 rendererAsset.rendererFeatures.Add(feature);
                 EditorUtility.SetDirty(rendererAsset);
@@ -171,7 +164,7 @@ namespace Weva.EditorTools.Setup {
                 QualitySettings.renderPipeline = pipelineAsset;
             }
 
-            Debug.Log($"Weva: URP configured at {PipelineAssetPath} with UIRendererFeature.");
+            Debug.Log($"Weva: URP configured at {PipelineAssetPath} with UIBatchedRendererFeature.");
         }
     }
 }

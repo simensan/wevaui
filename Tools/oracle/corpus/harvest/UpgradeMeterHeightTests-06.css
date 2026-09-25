@@ -1,0 +1,5 @@
+
+                .card { width: 140px; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 10px 12px; }
+                .track { width: 100%; height: 3px; background: #333; align-self: stretch; }
+                .fill { height: 3px; background: gold; }
+            

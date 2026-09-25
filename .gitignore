@@ -30,8 +30,12 @@ desktop.ini
 # Claude Code workspace (runtime lock files etc.)
 .claude/
 
-# Golden image diff outputs (regenerated each test run)
+# Golden image diff outputs (regenerated each test run). Out/ is the software
+# rasterizer's; Out.GPU/ is GpuGoldenAssert's, written next to Baselines.GPU/
+# when a GPU golden fails. Both hold .actual.png / .diff.png for eyeballing a
+# failure, never anything to commit.
 Packages/com.wevaui/Tests/Runtime/Goldens/Out/
+Packages/com.wevaui/Tests/Runtime/Goldens/Out.GPU/
 
 # Headless tool project build artifacts (BaselineGen, Weva.Generators, etc.)
 Tools/*/bin/
@@ -93,6 +97,7 @@ Assets/UI/Fonts/Source/SegoeUI.ttf.meta
 # stays tracked — CONFORMANCE.md and PLAN.md cite it as the authoritative
 # capability matrix.
 /TECH_AUDIT_*.md
+/AUDIT.md
 /CODE_AUDIT_FINDINGS.md
 /CSS_COMPLIANCE_ISSUES.md
 /CSS_OPEN_GAPS.md
@@ -103,3 +108,34 @@ Assets/UI/Fonts/Source/SegoeUI.ttf.meta
 /compare_coords.js
 /dump_coords.js
 /headless_layout.sh
+
+# The Unity host's native plugin is built from hosts/unity (see its
+# README); the .meta beside it is tracked so the import settings are.
+Packages/com.wevaui/Runtime/Native/Plugins/**/weva_core.dll
+Packages/com.wevaui/Runtime/Native/Plugins/**/weva_core.dll.build.json
+Packages/com.wevaui/Runtime/Native/Plugins/**/weva_core.dll.build.json.meta
+Packages/com.wevaui/Runtime/Native/Plugins/**/libweva_core.so
+
+# ---- Engine (was godot-port/, collapsed into the root) --------------------
+# CMake build trees, one per toolchain. build-clang was committed by
+# accident before this pattern covered it.
+build/
+build-*/
+
+__pycache__/
+
+# The built GDExtension. It lands inside the demo project because that is where
+# weva.gdextension looks for it, not because it belongs in the repository.
+hosts/godot/project/addons/weva/*
+!hosts/godot/project/addons/weva/weva.gdextension
+!hosts/godot/project/addons/weva/weva.gdextension.uid
+!hosts/godot/project/addons/weva/weva_view.gd
+
+# Godot's import cache, with one exception: extension_list.cfg is what tells the
+# engine to load the extension at all, and a headless run without it fails with
+# nothing more helpful than an unknown type.
+hosts/godot/project/.godot/*
+!hosts/godot/project/.godot/extension_list.cfg
+
+# Standalone engine reproduction projects also generate editor/import caches.
+Tools/*/.godot/

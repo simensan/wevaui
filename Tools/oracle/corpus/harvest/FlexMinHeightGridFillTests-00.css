@@ -1,0 +1,6 @@
+
+                .shop  { min-height: 100vh; display: flex; flex-direction: column; }
+                .bar   { height: 100px; }
+                .packs { flex: 1 1 auto; display: grid;
+                         grid-template-columns: 1fr 1fr; grid-auto-rows: 1fr; }
+                .pack  { }

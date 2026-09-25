@@ -1,0 +1,5 @@
+
+.row { display:flex; align-items:flex-start; gap:12px; width:600px; }
+.square { width:80px; aspect-ratio:1/1; }
+.wide { flex:1; height:60px; }
+.auto-ar { width:120px; aspect-ratio:16/9; }

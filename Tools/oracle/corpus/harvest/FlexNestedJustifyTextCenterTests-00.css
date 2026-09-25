@@ -1,0 +1,4 @@
+
+                .row  { display: flex; width: 600px; gap: 8px; align-items: center; }
+                .cell { display: flex; align-items: center; justify-content: center;
+                        min-width: 38px; height: 38px; }

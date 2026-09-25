@@ -1,0 +1,136 @@
+<!--
+  form-demo — exercises EVERY form control the engine supports, in one page:
+  all <input type> values (text, password, email, number, search, tel, url,
+  checkbox, radio, range, hidden) plus <select>/<option>, <textarea>, <label>
+  (click-to-focus / click-to-toggle), and submit/reset <button>s.
+  date / time / color (and any unknown type) fall back to a typable text box,
+  matching the browser's unknown-type behavior. File inputs (which need an OS
+  file dialog) are intentionally omitted.
+-->
+<link rel="stylesheet" href="form-demo.css" />
+
+<div class="page">
+  <form class="card" on-submit="OnSubmit">
+    <header class="card-head">
+      <h1>Account setup</h1>
+      <p class="sub">Every input type the engine supports, in one form.</p>
+    </header>
+
+    <!-- ── Text-family inputs ─────────────────────────────────────────── -->
+    <section class="group">
+      <div class="group-title">Text inputs</div>
+
+      <div class="field">
+        <label for="f-text">Full name <span class="hint">type=text</span></label>
+        <input id="f-text" type="text" placeholder="Ada Lovelace" />
+      </div>
+      <div class="field">
+        <label for="f-email">Email <span class="hint">type=email</span></label>
+        <input id="f-email" type="email" placeholder="ada@example.com" />
+      </div>
+      <div class="field">
+        <label for="f-password">Password <span class="hint">type=password</span></label>
+        <input id="f-password" type="password" placeholder="••••••••" />
+      </div>
+      <div class="field">
+        <label for="f-search">Search <span class="hint">type=search</span></label>
+        <input id="f-search" type="search" placeholder="Search…" />
+      </div>
+      <div class="field">
+        <label for="f-tel">Phone <span class="hint">type=tel</span></label>
+        <input id="f-tel" type="tel" placeholder="+1 555 0100" />
+      </div>
+      <div class="field">
+        <label for="f-url">Website <span class="hint">type=url</span></label>
+        <input id="f-url" type="url" placeholder="https://…" />
+      </div>
+      <div class="field">
+        <label for="f-number">Age <span class="hint">type=number</span></label>
+        <input id="f-number" type="number" min="0" max="120" value="30" />
+      </div>
+    </section>
+
+    <!-- ── Multi-line ─────────────────────────────────────────────────── -->
+    <section class="group">
+      <div class="group-title">Multi-line · textarea</div>
+      <div class="field">
+        <label for="f-bio">Bio</label>
+        <textarea id="f-bio" placeholder="A few words about yourself…"></textarea>
+      </div>
+    </section>
+
+    <!-- ── Choices ────────────────────────────────────────────────────── -->
+    <section class="group">
+      <div class="group-title">Choices</div>
+
+      <div class="check-row">
+        <input id="f-news" type="checkbox" checked />
+        <label for="f-news">Subscribe to the newsletter <span class="hint">type=checkbox</span></label>
+      </div>
+      <div class="check-row">
+        <input id="f-terms" type="checkbox" />
+        <label for="f-terms">I accept the terms</label>
+      </div>
+
+      <div class="radio-set">
+        <div class="group-sub">Plan <span class="hint">type=radio · name=plan</span></div>
+        <div class="check-row">
+          <input id="p-free" type="radio" name="plan" checked />
+          <label for="p-free">Free</label>
+        </div>
+        <div class="check-row">
+          <input id="p-pro" type="radio" name="plan" />
+          <label for="p-pro">Pro</label>
+        </div>
+        <div class="check-row">
+          <input id="p-team" type="radio" name="plan" />
+          <label for="p-team">Team</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="f-country">Country <span class="hint">select</span></label>
+        <select id="f-country">
+          <option>United States</option>
+          <option>Norway</option>
+          <option>Japan</option>
+          <option>Brazil</option>
+        </select>
+      </div>
+    </section>
+
+    <!-- ── Range ──────────────────────────────────────────────────────── -->
+    <section class="group">
+      <div class="group-title">Range</div>
+      <div class="field">
+        <label for="f-volume">Volume <span class="hint">type=range</span></label>
+        <input id="f-volume" type="range" min="0" max="100" value="65" />
+      </div>
+    </section>
+
+    <!-- ── Text-fallback types ────────────────────────────────────────── -->
+    <section class="group">
+      <div class="group-title">Date &amp; more <span class="hint">text fallback</span></div>
+      <div class="field">
+        <label for="f-date">Date <span class="hint">type=date</span></label>
+        <input id="f-date" type="date" placeholder="YYYY-MM-DD" />
+      </div>
+      <div class="field">
+        <label for="f-time">Time <span class="hint">type=time</span></label>
+        <input id="f-time" type="time" placeholder="HH:MM" />
+      </div>
+      <div class="field">
+        <label for="f-color">Color <span class="hint">type=color</span></label>
+        <input id="f-color" type="color" placeholder="#4f7cff" />
+      </div>
+    </section>
+
+    <!-- Hidden: not rendered, carried in the submitted form data. -->
+    <input type="hidden" name="source" value="form-demo" />
+
+    <footer class="card-foot">
+      <button type="reset" class="btn ghost">Reset</button>
+      <button type="submit" class="btn primary">Create account</button>
+    </footer>
+  </form>
+</div>

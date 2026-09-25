@@ -1,0 +1,24 @@
+{
+  "status": "pass",
+  "date": "2026-09-13",
+  "change": "The layout oracle is Chrome-only. run_oracle.py's three-way (C# reference vs core, Chrome arbitrating) is retired from check.sh and CI; chrome_sweep.py --chrome-metrics --max-worst 1.5 --known-gaps is the gate. The corpus and its Chrome captures are tracked.",
+  "mode": "weva_dump --chrome-metrics: the browser-semantics walk (full transform applied to every corner, inline fragments unioned, as getBoundingClientRect does). The default walk keeps the C# reference's box semantics and is not what a Chrome comparison should use.",
+  "captures": {"browser": "Chrome/152.0.7977.83", "metrics": "mono", "font": "bundled Inter via @font-face",
+               "tool": "Tools/Layout/capture-all-chrome-layouts.mjs --metrics=mono",
+               "note": "captured with every fixture asset beside the page; a capture taken without them records Chrome's broken-image placeholder and is wrong, which is how cov-image first read 176px off"},
+  "core": {"build": "gcc, ~/weva/build-gcc", "commit": "f53c7974"},
+  "ceiling_px": 1.5,
+  "ceiling_rationale": "hand 52/52 agree; harvest's five differing cases are inside 1.0px; samples' text-baseline rounding tops out at 1.3px at 1280 wide; the first genuine divergence in any corpus is 356px (a known gap)",
+  "corpora": {
+    "harvest": {"viewport": [800, 600], "cases": 225, "agree": 220, "differ": 5, "crash": 0, "over_ceiling": 0, "excused": 0,
+                "source": "Tools/oracle/harvest_corpus.py over Packages/com.wevaui/Tests (37 files); replaces the earlier 210-case snapshot"},
+    "hand":    {"viewport": [800, 600], "cases": 52, "agree": 52, "differ": 0, "crash": 0, "over_ceiling": 0, "excused": 0},
+    "samples": {"viewport": [1280, 720], "cases": 47, "agree": 29, "differ": 18, "crash": 0, "over_ceiling": 0, "excused": 2,
+                "excused": {"cov-logical": "gap/vertical-writing, 465px", "cov-multicol": "gap/multicol, 356px"},
+                "note": "both exceed the ceiling identically against the pre-existing captures; the three-way masked them because the C# reference agreed with the core"}
+  },
+  "correction": "The first version of this receipt, and of known-gaps/chrome-sweep.txt, ran the dump in its default walk and recorded 12 excused samples, nine of them classified as capture-tool artefacts (transformed AABB, inline union, image loading). They were the dump mode, not tool limits: in --chrome-metrics mode all nine agree. Recorded so the mistake is not repeated.",
+  "also_found": "check.sh tested $GCC/tools/weva_dump (lowercase) since the flatten; the build tree is Tools/, so the layout oracle and six other steps had been skipping silently. Re-cased; a gate that cannot run now fails.",
+  "known_gaps_file": "Tools/oracle/known-gaps/chrome-sweep.txt",
+  "verified_by": "the check.sh chrome_oracle function run verbatim against the tracked corpus (scratchpad/oracle-step.sh): failures=0"
+}

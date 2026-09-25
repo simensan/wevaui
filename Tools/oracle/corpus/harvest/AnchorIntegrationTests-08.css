@@ -1,0 +1,11 @@
+
+                body { margin: 0; }
+                .a { width: 100px; height: 50px; anchor-name: --a; margin-left: 100px; }
+                .tip {
+                    position: absolute;
+                    position-anchor: --a;
+                    left: anchor(center);
+                    top: anchor(center);
+                    width: 80px; height: 20px;
+                }
+            

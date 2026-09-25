@@ -1,0 +1,14 @@
+
+                .parent {
+                    display: grid;
+                    grid-template-rows: 40px 80px 30px;
+                    grid-template-columns: 100px;
+                    width: 200px;
+                    height: 300px;
+                }
+                .child {
+                    display: grid;
+                    grid-row: 1 / 4;
+                    grid-template-rows: subgrid;
+                }
+            

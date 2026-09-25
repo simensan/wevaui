@@ -1,0 +1,5 @@
+
+                .outer { counter-reset: c; counter-increment: c; }
+                .inner { counter-reset: c; counter-increment: c; }
+                .leaf::before { content: counters(c, ".", upper-roman); }
+            

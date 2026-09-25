@@ -1,0 +1,4 @@
+
+                .tip { position: absolute; position-anchor: --missing;
+                       width: anchor-size(--missing width); height: 20px; }
+            

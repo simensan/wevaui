@@ -1,0 +1,46 @@
+{
+  "date": "2026-09-15",
+  "review_window": "2026-09-11 through 2026-09-14",
+  "original_head": "3e6f145d",
+  "core_revision": "b6c88b75",
+  "latest_review_revision": "cb4a9361",
+  "abi": "0.44",
+  "full_gate": {
+    "command": "bash check.sh",
+    "platform": "WSL Linux, gcc/clang, Godot 4.7.2 official.ed1daf0bf, Chrome for Testing 152.0.7977.82",
+    "exit_code": 1,
+    "failed_gates": [
+      "Chrome behaviour: Linux decimal-comma input differs from the pinned Windows reference; a color-channel rounding failure was subsequently fixed and rerun on both platforms",
+      "Stock Godot native-control Unicode safety: 5 of 6 isolated cases fail",
+      "Stock Godot exported Unicode safety: 5 of 6 cases fail in both debug and release"
+    ],
+    "skipped_gates": 0,
+    "evidence": ".utmp/review-20260915/full-gate-final",
+    "evidence_note": "Local ignored receipts include the full log, archived per-step logs, images, temporary projects and failed Unicode evidence. No new failure was waived."
+  },
+  "passed": {
+    "core_checks": 507053,
+    "gcc_suites": 14,
+    "sanitizer_suites": 16,
+    "compiler_warnings": 0,
+    "chrome_layout_captures": 334,
+    "chrome_layout_ceiling_px": 1.5,
+    "excused_layout_captures": 0,
+    "godot_font_adapter_checks": 19833,
+    "backend_samples": 47,
+    "backend_samples_over_structural_gate": 0,
+    "godot_addon_exports": "project, pack, native debug, native release, embedded release",
+    "godot_host_scenes": "all check.sh host scenes pass; live reload now includes 14 checks",
+    "unity_plugins": "Windows and Linux build and dynamic-load tests pass",
+    "unity_editmode": {"passed": 235, "failed": 0, "inconclusive": 2},
+    "unity_native_editmode": {"passed": 234, "failed": 0, "inconclusive": 2},
+    "unity_final_inspector_checks": {"passed": 9, "failed": 0}
+  },
+  "browser_receipts": {
+    "linux_full_run": {"scripts": 65, "passed": 62, "failed": 2, "known_ime_failure": 1},
+    "color_rounding_followup": "33 checks pass on Windows and Linux after cb4a9361; only the two half-byte expectations allow adjacent quantized values",
+    "canonical_windows_reference": "The preceding full 65-script run passed 64 with one documented Chrome IME failure; the changed color oracle was rerun separately",
+    "editing_policy": "The Linux decimal-comma discrepancy remains reported. Engine editing behaviour and Windows expectations were not relaxed."
+  },
+  "remaining_review": "Explicit @scope containment, proximity and dependency-cache regressions reproduced against Chrome; fixes still pending."
+}

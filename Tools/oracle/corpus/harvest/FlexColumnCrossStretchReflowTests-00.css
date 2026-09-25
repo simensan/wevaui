@@ -1,0 +1,5 @@
+
+                .row  { display: flex; align-items: stretch; height: 300px; }
+                .col  { display: flex; flex-direction: column; flex: 0 0 200px; }
+                .top  { height: 20px; }
+                .foot { margin-top: auto; height: 24px; }
