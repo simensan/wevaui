@@ -3573,6 +3573,14 @@ uint32_t weva_abi_version(void) {
     return (static_cast<uint32_t>(WEVA_ABI_VERSION_MAJOR) << 16) | WEVA_ABI_VERSION_MINOR;
 }
 
+// ---- Rasterized textures shared across documents (ABI minor 45) ------------
+
+void weva_set_raster_cache_limit(uint64_t bytes) {
+    set_shared_raster_limit(static_cast<size_t>(std::min<uint64_t>(bytes, SIZE_MAX)));
+}
+
+uint64_t weva_raster_cache_bytes(void) { return shared_raster_bytes(); }
+
 // ---- Unicode facts for a host's shaper (ABI minor 40) ----------------------
 //
 // The same ICU tables bidi.cpp resolves levels with, so a host that asks

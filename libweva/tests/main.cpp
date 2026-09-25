@@ -1,6 +1,7 @@
 void test_parallel_raster_is_byte_identical();
 void test_queued_rasters_match_inline();
 void test_reduced_blur_matches_full();
+void test_shared_raster_cache();
 void test_html_formatting_reconstruction_matches_chrome();
 void test_hostile_depth_fits_small_stack();
 void test_abi_box_text_survives_text_replacement();
@@ -1230,6 +1231,7 @@ int main() {
     test_parallel_raster_is_byte_identical();
     test_queued_rasters_match_inline();
     test_reduced_blur_matches_full();
+    test_shared_raster_cache();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

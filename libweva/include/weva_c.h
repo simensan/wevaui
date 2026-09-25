@@ -43,7 +43,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 44
+#define WEVA_ABI_VERSION_MINOR 45
 
 uint32_t weva_abi_version(void);
 
@@ -1580,6 +1580,19 @@ int32_t weva_char_decompose(uint32_t codepoint, uint32_t* out, int32_t capacity)
  * @font-face rule or the game already claimed alone. Two-call convention.
  * Available since ABI minor 41. */
 size_t weva_document_font_family_names(weva_document_t doc, char* buffer, size_t capacity);
+
+/* Rasterized textures shared across documents: shadows, and gradient and
+ * blurred backgrounds that use no images or font-relative units. A document
+ * created again -- a menu re-enabled after being destroyed -- takes the
+ * pixels an earlier one rasterized instead of rasterizing them anew. The
+ * cache is process-wide, thread-safe, and holds at most `bytes`, least
+ * recently used first; 0 disables it and frees what it held. The default is
+ * 32 MiB. Textures a live document holds are its own copies, so the limit
+ * bounds only the memory spent on documents that are gone.
+ * weva_raster_cache_bytes reports what the cache holds now.
+ * Available since ABI minor 45. */
+void weva_set_raster_cache_limit(uint64_t bytes);
+uint64_t weva_raster_cache_bytes(void);
 
 #ifdef __cplusplus
 }

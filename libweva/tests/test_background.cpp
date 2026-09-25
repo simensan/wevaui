@@ -2363,6 +2363,8 @@ std::vector<std::vector<uint8_t>> published_textures(weva_document_t d) {
 }  // namespace
 
 void test_queued_rasters_match_inline() {
+    // Each document here must rasterize for itself, not take the last one's.
+    weva_set_raster_cache_limit(0);
     // Inline: a host backend takes every texture's pixels as it is made.
     Captured inline_pixels;
     {
@@ -2395,4 +2397,88 @@ void test_queued_rasters_match_inline() {
         weva_document_destroy(d);
     }
     raster_thread_override() = 0;
+    weva_set_raster_cache_limit(kDefaultSharedRasterBytes);
+}
+
+// Pixels outlive their document for the next one that needs them: a document
+// created again draws what the last rasterized, byte for byte, and only what
+// depends on nothing but its key is shared.
+void test_shared_raster_cache() {
+    weva_set_raster_cache_limit(0);
+    CHECK(weva_raster_cache_bytes() == 0);
+    // The reference: nothing shared.
+    weva_document_t d = queued_document();
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    const auto fresh = published_textures(d);
+    weva_document_destroy(d);
+    CHECK(weva_raster_cache_bytes() == 0);
+
+    weva_set_raster_cache_limit(kDefaultSharedRasterBytes);
+    d = queued_document();
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(published_textures(d) == fresh);
+    weva_document_destroy(d);
+    const uint64_t held = weva_raster_cache_bytes();
+    CHECK(held > 0);
+    // Created again: the same pixels, and nothing new to keep.
+    d = queued_document();
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(published_textures(d) == fresh);
+    CHECK(weva_raster_cache_bytes() == held);
+    weva_document_destroy(d);
+
+    // A background measured in viewport units is a different picture in a
+    // different viewport, so the viewport is part of the key.
+    const auto open_vw = [](double width) {
+        weva_config cfg{};
+        cfg.viewport_width = width;
+        cfg.viewport_height = 400;
+        cfg.use_user_agent_stylesheet = 1;
+        weva_document_t doc = weva_document_create(&cfg);
+        const char* css = "body { margin: 0 } #v { width: 300px; height: 200px;"
+                          " background: radial-gradient(circle at 20vw 50%, #fa0, #024 30vw) }";
+        const char* html = "<body><div id=v></div></body>";
+        CHECK(weva_document_add_css(doc, css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        return doc;
+    };
+    weva_set_raster_cache_limit(0);
+    weva_document_t narrow_ref = open_vw(500), wide_ref = open_vw(900);
+    const auto narrow_fresh = published_textures(narrow_ref), wide_fresh = published_textures(wide_ref);
+    weva_document_destroy(narrow_ref);
+    weva_document_destroy(wide_ref);
+    CHECK(narrow_fresh != wide_fresh);
+    weva_set_raster_cache_limit(kDefaultSharedRasterBytes);
+    weva_document_t narrow = open_vw(500);
+    weva_document_destroy(narrow);
+    weva_document_t wide = open_vw(900);
+    CHECK(published_textures(wide) == wide_fresh);
+    weva_document_destroy(wide);
+
+    // Font-relative units are measured in each document's own fonts, so they
+    // are not shared at all.
+    {
+        weva_set_raster_cache_limit(kDefaultSharedRasterBytes);
+        const uint64_t before = weva_raster_cache_bytes();
+        weva_config cfg{};
+        cfg.viewport_width = 640;
+        cfg.viewport_height = 480;
+        weva_document_t doc = weva_document_create(&cfg);
+        const char* css = "#c { width: 200px; height: 100px;"
+                          " background: linear-gradient(90deg, #123 3ch, #f80 9ch) }";
+        const char* html = "<body><div id=c></div></body>";
+        CHECK(weva_document_add_css(doc, css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        weva_document_destroy(doc);
+        CHECK(weva_raster_cache_bytes() == before);
+    }
+
+    // The bound holds, and zero empties it.
+    weva_set_raster_cache_limit(held / 2);
+    CHECK(weva_raster_cache_bytes() <= held / 2);
+    weva_set_raster_cache_limit(0);
+    CHECK(weva_raster_cache_bytes() == 0);
+    weva_set_raster_cache_limit(kDefaultSharedRasterBytes);
 }

@@ -92,6 +92,26 @@ private:
     int misses_ = 0;
 };
 
+// Rasterized pixels kept ACROSS documents, so a screen opened again -- a
+// Unity WevaDocument re-enabled, a Godot scene instanced anew -- is drawn from
+// what the last one rasterized instead of from nothing. TextureCache lives
+// and dies with its document; this is process-wide, holds pixels rather than
+// host handles, and is bounded by bytes, least recently used first.
+//
+// Only pictures that depend on nothing but their key are shared: shadows,
+// and backgrounds and blurs without images or font-relative units. The key
+// adds the viewport, root font size and resolution a `vw` or `rem` resolves
+// against. Thread-safe; weva_set_raster_cache_limit sets the bound.
+struct SharedPixels {
+    std::vector<uint8_t> rgba;
+    int width = 0, height = 0;
+};
+std::shared_ptr<const SharedPixels> shared_raster_find(const std::string& key);
+void shared_raster_insert(const std::string& key, std::shared_ptr<const SharedPixels> pixels);
+void set_shared_raster_limit(size_t bytes);
+size_t shared_raster_bytes();
+inline constexpr size_t kDefaultSharedRasterBytes = size_t{32} << 20;
+
 // Where the text cursor is, for the one field that has focus.
 //
 // The caret is not a property of the document -- nothing in the DOM says where

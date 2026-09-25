@@ -1133,3 +1133,14 @@ unnamed inspector/inline CSS continues to use the document base. The existing
 `add_css` is the same operation with no source URL. Core ABI regressions and
 `check_stylesheet_asset_origins_chrome.cjs` cover nested imports, image/font
 sources, variable use sites, viewport recompilation, and URL reference forms.
+
+ABI minor 45 adds `weva_set_raster_cache_limit(bytes)` and
+`weva_raster_cache_bytes()`, process-wide. Rasterized shadows, and gradient and
+blurred backgrounds without images or font-relative units, are kept after
+their document is destroyed, keyed on everything that decides their pixels
+plus the viewport, root font size and resolution. A document created again
+takes those pixels instead of rasterizing: Unity destroys the native document
+in `OnDisable`, so re-enabling a menu is otherwise a cold open. The cache is
+bounded by bytes (32 MiB by default, 0 disables it), least recently used
+first, and guarded by a mutex. Tested in `test_background.cpp`
+(`test_shared_raster_cache`); neither host changes its default yet.

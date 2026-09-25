@@ -21,7 +21,9 @@
 #include <cstdlib>
 #include <cmath>
 #include <functional>
+#include <list>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <vector>
@@ -85,6 +87,83 @@ void TextureCache::release_all(RenderInterface* backend) {
     entries_.clear();
     by_texture_.clear();
 }
+
+namespace {
+
+class SharedRasterCache {
+public:
+    std::shared_ptr<const SharedPixels> find(const std::string& key) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        const auto it = entries_.find(key);
+        if (it == entries_.end()) return nullptr;
+        order_.splice(order_.begin(), order_, it->second.position);
+        return it->second.pixels;
+    }
+    void insert(const std::string& key, std::shared_ptr<const SharedPixels> pixels) {
+        if (!pixels) return;
+        const size_t size = cost(key, *pixels);
+        std::lock_guard<std::mutex> lock(mutex_);
+        // One entry larger than the whole budget would only evict everything.
+        if (size > limit_) return;
+        const auto old = entries_.find(key);
+        if (old != entries_.end()) {
+            bytes_ -= cost(key, *old->second.pixels);
+            order_.erase(old->second.position);
+            entries_.erase(old);
+        }
+        order_.push_front(key);
+        entries_[key] = Entry{std::move(pixels), order_.begin()};
+        bytes_ += size;
+        trim();
+    }
+    void set_limit(size_t bytes) {
+        std::lock_guard<std::mutex> lock(mutex_);
+        limit_ = bytes;
+        trim();
+    }
+    size_t bytes() {
+        std::lock_guard<std::mutex> lock(mutex_);
+        return bytes_;
+    }
+
+private:
+    struct Entry {
+        std::shared_ptr<const SharedPixels> pixels;
+        std::list<std::string>::iterator position;
+    };
+    static size_t cost(const std::string& key, const SharedPixels& p) {
+        return p.rgba.size() + key.size() + sizeof(Entry);
+    }
+    void trim() {
+        while (bytes_ > limit_ && !order_.empty()) {
+            const auto it = entries_.find(order_.back());
+            bytes_ -= cost(it->first, *it->second.pixels);
+            entries_.erase(it);
+            order_.pop_back();
+        }
+    }
+    std::mutex mutex_;
+    size_t limit_ = kDefaultSharedRasterBytes;
+    size_t bytes_ = 0;
+    std::list<std::string> order_;   // most recently used first
+    std::unordered_map<std::string, Entry> entries_;
+};
+
+SharedRasterCache& shared_raster_cache() {
+    static SharedRasterCache cache;
+    return cache;
+}
+
+} // namespace
+
+std::shared_ptr<const SharedPixels> shared_raster_find(const std::string& key) {
+    return shared_raster_cache().find(key);
+}
+void shared_raster_insert(const std::string& key, std::shared_ptr<const SharedPixels> pixels) {
+    shared_raster_cache().insert(key, std::move(pixels));
+}
+void set_shared_raster_limit(size_t bytes) { shared_raster_cache().set_limit(bytes); }
+size_t shared_raster_bytes() { return shared_raster_cache().bytes(); }
 
 // A clip in force for a subtree: `clip-path`, or the rounded padding box of an
 // `overflow: hidden` box. Chained through the parent so nested clips all
@@ -364,6 +443,7 @@ struct PaintProfile {
     // Nested attribution, like submit: plain fills/borders do not run through
     // the layered-background scope, and color parsing occurs in many buckets.
     double decoration_build = 0, decoration_draw = 0, colors = 0;
+    int shared_hits = 0;   // textures another document had rasterized
     long submit_calls = 0;
     long submit_clipped = 0;
     int glyph_subtrees_reused = 0;
@@ -409,6 +489,9 @@ struct RasterQueue {
         long long cost = 0;   // estimated nanoseconds; see raster_cost
         const char* kind = "";
         std::function<void(std::vector<uint8_t>*)> raster;
+        // Non-empty when the pixels may serve other documents too.
+        std::string shared_key;
+        int width = 0, height = 0;
     };
     std::vector<Job> jobs;
 };
@@ -427,19 +510,70 @@ long long upsample_cost(int w, int h) { return static_cast<long long>(w) * h * 6
 // The texture `raster` fills, queued when the backend can take its pixels
 // later and made now otherwise. `raster` must capture by value: a queued one
 // runs after the caller has returned.
+//
+// `shared_key`, when not empty, names the pixels for every document: another
+// document that already rasterized them hands them over, and pixels made here
+// are kept for the next (SharedRasterCache).
 template <typename Raster>
 TextureHandle make_texture(const PaintContext& paint, int w, int h, const char* kind,
-                           long long cost, Raster&& raster) {
+                           long long cost, const std::string& shared_key, Raster&& raster) {
+    if (!shared_key.empty()) {
+        const std::shared_ptr<const SharedPixels> hit = shared_raster_find(shared_key);
+        if (hit && hit->width == w && hit->height == h) {
+            ++g_paint_profile.shared_hits;
+            return paint.backend->generate_texture(hit->rgba, {w, h});
+        }
+    }
     if (paint.raster_queue) {
         const TextureHandle t = paint.backend->reserve_texture({w, h});
         if (t) {
-            paint.raster_queue->jobs.push_back({t, cost, kind, std::forward<Raster>(raster)});
+            paint.raster_queue->jobs.push_back(
+                {t, cost, kind, std::forward<Raster>(raster), shared_key, w, h});
             return t;
         }
     }
     std::vector<uint8_t> rgba;
     raster(&rgba);
+    if (!shared_key.empty()) {
+        shared_raster_insert(shared_key, std::make_shared<const SharedPixels>(SharedPixels{rgba, w, h}));
+    }
     return paint.backend->generate_texture(rgba, {w, h});
+}
+
+// Whether a background's CSS resolves against anything its texture key does
+// not hold. The key has the font size, the box and the viewport; a `ch` or
+// `ex` is measured in the document's own fonts, which another document may not
+// share. Deliberately blunt -- any digit followed by one of these letters
+// counts -- since a false positive only means the texture is not shared.
+bool uses_font_units(std::string_view css) {
+    static constexpr std::string_view kUnits[] = {"ch", "ex", "ic", "cap", "lh", "rch", "rex",
+                                                  "ric", "rcap", "rlh"};
+    for (size_t i = 1; i < css.size(); ++i) {
+        const char before = css[i - 1];
+        if (!(before >= '0' && before <= '9') && before != '.') continue;
+        const std::string_view rest = css.substr(i);
+        for (const std::string_view unit : kUnits) {
+            if (rest.substr(0, unit.size()) == unit) return true;
+        }
+    }
+    return false;
+}
+
+// The document-independent form of a background texture key, or empty when
+// the picture depends on the document: an image layer (its pixels belong to
+// the document's image store), or a font-relative unit.
+std::string shared_background_key(const char* kind, const std::string& key,
+                                  const std::vector<BackgroundLayer>& layers,
+                                  const LayoutContext& ctx) {
+    for (const BackgroundLayer& l : layers) {
+        if (l.image || !l.url.empty()) return {};
+    }
+    if (uses_font_units(key)) return {};
+    char buf[160];
+    std::snprintf(buf, sizeof(buf), "%s|%.3f;%.3f;%.3f;%.3f;%.3f|", kind, ctx.viewport_width_px,
+                  ctx.viewport_height_px, ctx.root_font_size_px, ctx.root_line_height_px,
+                  ctx.dpi_pixels_per_inch);
+    return buf + key;
 }
 
 // Runs a pass's queued jobs and hands each its texture's pixels.
@@ -515,7 +649,13 @@ void run_raster_jobs(RasterQueue* queue, RenderInterface* backend) {
                          took[i], k < next ? "  (alone)" : "");
         }
     }
-    for (size_t i = 0; i < jobs.size(); ++i) backend->fill_texture(jobs[i].texture, std::move(pixels[i]));
+    for (size_t i = 0; i < jobs.size(); ++i) {
+        if (!jobs[i].shared_key.empty()) {
+            shared_raster_insert(jobs[i].shared_key, std::make_shared<const SharedPixels>(
+                                                         SharedPixels{pixels[i], jobs[i].width, jobs[i].height}));
+        }
+        backend->fill_texture(jobs[i].texture, std::move(pixels[i]));
+    }
     jobs.clear();
 }
 
@@ -1114,10 +1254,12 @@ bool paint_blurred_box_shadow(const Shadow& sh, const Rect& border_box, const Bo
         // Resolved here: the job runs off this thread, and resolving parses.
         const std::shared_ptr<const BackgroundPlan> plan = prepare_background_padded(
             {}, col, shape.width, shape.height, raster_w, raster_h, raster_pad, ctx, font_size);
+        // Everything a shadow's pixels depend on is in its key.
+        const std::string shared_key = key.empty() ? std::string() : "shadow|" + key;
         tex = make_texture(paint, tex_w, tex_h, "shadow",
                            raster_cost(*plan) + blur_cost(raster_w, raster_h, 1) +
                                (grid.reduced ? upsample_cost(tex_w, tex_h) : 0) + coverage_cost(tex_w, tex_h),
-                           [=](std::vector<uint8_t>* out) {
+                           shared_key, [=](std::vector<uint8_t>* out) {
             std::vector<uint8_t>& rgba = *out;
             std::vector<uint8_t> coarse;
             std::vector<uint8_t>& raster = grid.reduced ? coarse : rgba;
@@ -2488,7 +2630,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     const int tex_h = static_cast<int>(std::min(cap, std::ceil(area.height)));
     // Rasterizing is a texel per pixel of the box, so an unchanged background
     // is looked up rather than redrawn. See TextureCache.
-    std::string key;
+    std::string key, shared_key;
     TextureHandle tex;
     if (paint.texture_cache && (style || replaced)) {
         if (replaced) {
@@ -2496,6 +2638,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
         } else {
             key = background_key(style, color, area.width, area.height, radii, font_size, 0, filter,
                                  &layers, tex_w, tex_h);
+            shared_key = shared_background_key("layers", key, layers, ctx);
             append_image_version(key, paint);
         }
         tex = paint.texture_cache->get(key);
@@ -2506,7 +2649,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
         // Resolved here: the job runs off this thread, and resolving parses.
         const std::shared_ptr<const BackgroundPlan> plan =
             prepare_background(layers, color, area.width, area.height, tex_w, tex_h, ctx, font_size);
-        tex = make_texture(paint, tex_w, tex_h, "layers", raster_cost(*plan),
+        tex = make_texture(paint, tex_w, tex_h, "layers", raster_cost(*plan), shared_key,
                            [=](std::vector<uint8_t>* rgba) {
             rasterize_background(*plan, rgba);
             if (job_filter) filter_rgba(rgba, *job_filter);
@@ -2850,7 +2993,8 @@ bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_
     }
     // The stamping above reads the atlas, which later text may grow, so only
     // the blur waits for the pass's other rasters.
-    const TextureHandle tex = make_texture(paint, w, h, "text", blur_cost(w, h, 1),
+    // Not shared: the glyphs come from this document's atlas and fonts.
+    const TextureHandle tex = make_texture(paint, w, h, "text", blur_cost(w, h, 1), std::string(),
                                            [rgba = std::move(rgba), w, h, sigma](std::vector<uint8_t>* out) mutable {
         blur_flat_rgba(&rgba, w, h, sigma);
         *out = std::move(rgba);
@@ -3374,11 +3518,12 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             const int pad = static_cast<int>(std::round(pad_px * scale));
             // Blurring is the most expensive thing paint does, so a box whose
             // blurred image has not changed reuses it. See TextureCache.
-            std::string key;
+            std::string key, shared_key;
             TextureHandle tex;
             if (paint.texture_cache && b.style) {
                 key = background_key(b.style, bg, border_box.width, border_box.height, radii, fs, blur, nullptr,
                                      &layers, tex_w, tex_h);
+                shared_key = shared_background_key("filter", key, layers, ctx);
                 append_image_version(key, paint);
                 tex = paint.texture_cache->get(key);
             }
@@ -3396,7 +3541,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 tex = make_texture(paint, tex_w, tex_h, "filter",
                                    raster_cost(*plan) + blur_cost(raster_w, raster_h, 4) +
                                        (grid.reduced ? upsample_cost(tex_w, tex_h) : 0),
-                                   [=](std::vector<uint8_t>* rgba) {
+                                   shared_key, [=](std::vector<uint8_t>* rgba) {
                     std::vector<uint8_t> coarse;
                     std::vector<uint8_t>* raster = grid.reduced ? &coarse : rgba;
                     {
