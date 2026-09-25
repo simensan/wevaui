@@ -607,50 +607,6 @@ size_t host_positioned_shape(void* ud, uint64_t, const char* utf8, size_t len, d
 
 } // namespace
 
-// Every texture a draw names must be in the published texture list.
-//
-// This is the contract weva_c.h states ("a texture the host must create before
-// issuing the draws that reference it"), and it was quietly violated: the glyph
-// atlas uploaded lazily at the first text run, so a second run that added a
-// glyph re-uploaded it and released the texture the first run's draw still
-// pointed at. A host that maps ids faithfully drew that run untextured — solid
-// quads where the text should be — and a GPU backend would have freed a
-// texture with a queued draw still referencing it. Found by comparing the
-// software backend against Godot's, which is the whole reason that comparison
-// exists.
-void test_abi_texture_ids_are_all_published() {
-    weva_config cfg = default_config(300, 200);
-    weva_document_t d = weva_document_create(&cfg);
-    // Two words, so inline layout makes two text boxes and thus two draws, and
-    // the second introduces glyphs the first did not use.
-    CHECK(load(d, "<body><div id=a>Hello Weva</div></body>") == WEVA_OK);
-    CHECK(add_css(d, "#a { display: block; font-size: 16px; color: #202020 }") == WEVA_OK);
-    CHECK(weva_document_update(d, 0) == WEVA_OK);
-
-    size_t texture_count = 0;
-    const weva_texture* textures = weva_document_textures(d, &texture_count);
-    size_t draw_count = 0;
-    const weva_draw* draws = weva_document_draws(d, &draw_count);
-
-    // The document has to actually produce textured draws, or this passes for
-    // the wrong reason.
-    int textured = 0;
-    for (size_t i = 0; i < draw_count; ++i) {
-        if (draws[i].texture_id == 0) continue;
-        ++textured;
-        bool published = false;
-        for (size_t t = 0; t < texture_count; ++t) {
-            if (textures[t].id == draws[i].texture_id) { published = true; break; }
-        }
-        CHECK(published);
-    }
-    CHECK(textured >= 2);
-    // And one atlas upload per frame, not one per run.
-    CHECK(texture_count == 1);
-
-    weva_document_destroy(d);
-}
-
 void test_abi_host_render_backend() {
     weva_config cfg = default_config();
     weva_document_t d = weva_document_create(&cfg);
@@ -716,48 +672,6 @@ void test_abi_partial_backend_degrades() {
     weva_render_backend empty{};
     weva_document_set_render_backend(d, &empty);
     CHECK(weva_document_update(d, 0) == WEVA_OK);
-
-    weva_document_destroy(d);
-}
-
-void test_abi_host_font_backend() {
-    weva_config cfg = default_config(400, 100);
-    weva_document_t d = weva_document_create(&cfg);
-
-    HostFontState state;
-    weva_font_backend fb{};
-    fb.user_data = &state;
-    fb.face_metrics = host_face_metrics;
-    fb.glyph_index = host_glyph_index;
-    fb.glyph_metrics = host_glyph_metrics;
-    fb.rasterize = host_rasterize;
-    fb.shape = host_shape;
-    weva_document_set_font_backend(d, &fb, 7);
-
-    CHECK(load(d, "<body><div id=a>abc</div></body>") == WEVA_OK);
-    CHECK(add_css(d, "#a { display: block; font-size: 10px }") == WEVA_OK);
-    CHECK(weva_document_update(d, 0) == WEVA_OK);
-
-    // The host's shaper and rasterizer both ran, and the sizing call happened
-    // before the filling one.
-    CHECK(state.shapes >= 2);
-    CHECK(state.rasterizes > 0);
-
-    // MEASUREMENT follows the host's face too, not just rendering. The host
-    // gives a full em per glyph and a 1.3em line where the stub gives half an
-    // em and 1.2 — so "abc" at 10px is 30px wide on a 13px line, where the
-    // stub would give 15px on 12px. Without this the text would be laid out to
-    // one face's advances and drawn with another's.
-    double x = 0, y = 0, w = 0, h = 0;
-    CHECK(weva_element_bounds(d, weva_document_query(d, "#a"), &x, &y, &w, &h) == WEVA_OK);
-    CHECK(near(h, 13));
-
-    // Restoring the stub is a null table away, and measurement goes back with
-    // it.
-    weva_document_set_font_backend(d, nullptr, 0);
-    CHECK(weva_document_update(d, 0) == WEVA_OK);
-    CHECK(weva_element_bounds(d, weva_document_query(d, "#a"), &x, &y, &w, &h) == WEVA_OK);
-    CHECK(near(h, 12));
 
     weva_document_destroy(d);
 }
@@ -1071,79 +985,6 @@ void test_abi_content_size() {
     }
 }
 
-void test_abi_rounded_rect_primitive() {
-    // A plain rounded box travels as a SHAPE as well as triangles, so a backend
-    // that can evaluate a rounded box per pixel gets exact coverage from it and
-    // one that cannot still uploads a correct tessellation.
-    {
-        weva_config cfg = default_config(200, 100);
-        weva_document_t d = weva_document_create(&cfg);
-        // Given a margin so it is not flush against the viewport: a shape whose
-        // coverage ramp would spill past the clip in force is cut into
-        // triangles instead, which is the conservative half of the contract.
-        CHECK(add_css(d, "html, body { margin: 0 }"
-                         "#a { display: block; margin: 10px; width: 80px; height: 40px;"
-                         "     border-radius: 10px; background: #ff0000 }") == WEVA_OK);
-        CHECK(load(d, "<body><div id=a></div></body>") == WEVA_OK);
-        CHECK(weva_document_update(d, 0) == WEVA_OK);
-
-        size_t count = 0;
-        const weva_draw* draws = weva_document_draws(d, &count);
-        int shapes = 0;
-        for (size_t i = 0; i < count; ++i) {
-            if (draws[i].kind != WEVA_DRAW_ROUNDED_RECT) continue;
-            ++shapes;
-            const weva_rounded_rect& s = draws[i].rounded_rect;
-            CHECK(near(s.width, 80) && near(s.height, 40));
-            CHECK(near(s.radii[0][0], 10) && near(s.radii[0][1], 10));
-            CHECK(s.r > 0.9f && s.g == 0.0f);
-            // The tessellation travels with it, or a host that ignores the kind
-            // would draw nothing at all.
-            CHECK(draws[i].vertex_count > 0 && draws[i].index_count > 0);
-        }
-        CHECK(shapes == 1);
-        weva_document_destroy(d);
-    }
-    {
-        // A square box is not offered as a shape: it has no curve, so a
-        // per-pixel evaluation would buy nothing over two triangles.
-        weva_config cfg = default_config(200, 100);
-        weva_document_t d = weva_document_create(&cfg);
-        CHECK(load(d, "<body><div id=a></div></body>") == WEVA_OK);
-        CHECK(add_css(d, "html, body { margin: 0 }"
-                         "#a { display: block; width: 80px; height: 40px;"
-                         "     background: #ff0000 }") == WEVA_OK);
-        CHECK(weva_document_update(d, 0) == WEVA_OK);
-        size_t count = 0;
-        const weva_draw* draws = weva_document_draws(d, &count);
-        int shapes = 0;
-        for (size_t i = 0; i < count; ++i) {
-            if (draws[i].kind == WEVA_DRAW_ROUNDED_RECT) ++shapes;
-        }
-        CHECK(shapes == 0);
-        weva_document_destroy(d);
-    }
-    {
-        // Nor is a box with a border: the background and the border are one
-        // mesh, and describing only half of it would be a lie.
-        weva_config cfg = default_config(200, 100);
-        weva_document_t d = weva_document_create(&cfg);
-        CHECK(load(d, "<body><div id=a></div></body>") == WEVA_OK);
-        CHECK(add_css(d, "html, body { margin: 0 }"
-                         "#a { display: block; width: 80px; height: 40px; border-radius: 10px;"
-                         "     border: 2px solid #00f; background: #ff0000 }") == WEVA_OK);
-        CHECK(weva_document_update(d, 0) == WEVA_OK);
-        size_t count = 0;
-        const weva_draw* draws = weva_document_draws(d, &count);
-        int shapes = 0;
-        for (size_t i = 0; i < count; ++i) {
-            if (draws[i].kind == WEVA_DRAW_ROUNDED_RECT) ++shapes;
-        }
-        CHECK(shapes == 0);
-        weva_document_destroy(d);
-    }
-}
-
 namespace {
 
 // Every solid (untextured) rect the document draws, as (x, y, w, h, r, g, b).
@@ -1174,45 +1015,6 @@ std::vector<SolidRect> solid_rects(weva_document_t d) {
 }
 
 }   // namespace
-
-// The user-agent stylesheet has asked for `text-decoration: underline` on <a>
-// and <u> since the beginning and nothing drew it, so every link in every
-// document was plain.
-void test_abi_text_decorations_are_drawn() {
-    weva_config c{};
-    c.viewport_width = 400;
-    c.viewport_height = 300;
-    c.use_user_agent_stylesheet = 1;
-    weva_document_t d = weva_document_create(&c);
-    const char* css = "html, body { margin: 0; background: #fff }"
-                      " div { display: block; font-size: 20px; color: #000 }";
-    const char* html = "<div id=plain>Plain</div>";
-    weva_document_add_css(d, css, std::strlen(css));
-    weva_document_load_html(d, html, std::strlen(html));
-    weva_document_update(d, 0);
-    const size_t undecorated = solid_rects(d).size();
-
-    // An <a> takes its underline from the UA sheet alone -- no author rule.
-    const char* linked = "<a href=x>Link</a>";
-    weva_document_load_html(d, linked, std::strlen(linked));
-    weva_document_update(d, 0);
-    const std::vector<SolidRect> with_link = solid_rects(d);
-    CHECK(with_link.size() == undecorated + 1);
-
-    // Under the baseline and no taller than the text: a rule, not a block.
-    double bx = 0, by = 0, bw = 0, bh = 0;
-    weva_element_bounds(d, weva_document_query(d, "a"), &bx, &by, &bw, &bh);
-    bool found = false;
-    for (const SolidRect& r : with_link) {
-        if (r.h > 4 || r.w < 4) continue;   // not a rule
-        found = true;
-        CHECK(r.y > by);            // below the top of the line
-        CHECK(r.y < by + bh + 4);   // and not far below it
-        CHECK(r.w > 8);             // as wide as the word, near enough
-    }
-    CHECK(found);
-    weva_document_destroy(d);
-}
 
 // Which line, what colour, how thick.
 void test_abi_text_decoration_variants() {

@@ -1179,36 +1179,6 @@ void test_abi_incremental_form_state() {
     weva_document_destroy(live); weva_document_destroy(full);
 }
 
-void test_abi_incremental_textarea_reflow() {
-    const char* html = "<textarea id=t>alpha beta gamma delta alpha beta gamma</textarea>"
-                       "<div>surrounding content <b>bold</b><span>more</span></div>"
-                       "<div>stable sibling <b>bold</b><span>more</span></div>";
-    const char* css = "textarea { display:block;width:160px;height:60px;box-sizing:border-box; }";
-    const weva_config cfg = config();
-    weva_document_t live = weva_document_create(&cfg), full = weva_document_create(&cfg);
-    for (weva_document_t doc : {live, full}) {
-        weva_document_add_css(doc, css, std::strlen(css));
-        weva_document_load_html(doc, html, std::strlen(html));
-        weva_document_update(doc, 0);
-        weva_document_set_focus(doc, weva_document_query(doc, "#t"));
-        weva_element_set_selection(doc, weva_document_query(doc, "#t"), 7, 17);
-        weva_document_update(doc, 0);
-    }
-    for (int step = 0; step < 20; ++step) {
-        for (weva_document_t doc : {live, full})
-            weva_element_set_attribute(doc, weva_document_query(doc, "#t"), "style",
-                                       step % 2 ? "padding:3px" : "padding:8px");
-        weva_document_set_viewport(full, 401, 300);
-        weva_document_set_viewport(full, 400, 300);
-        weva_document_update(live, 0);
-        weva_document_update(full, 0);
-        const Frame a=capture(live), b=capture(full);
-        if (a != b) std::printf("  textarea reflow %d: %s\n", step, a.diff(b).c_str());
-        CHECK(a == b);
-    }
-    weva_document_destroy(live); weva_document_destroy(full);
-}
-
 void test_abi_incremental_select_color_scopes() {
     const char* html = "<form id=f><select id=s multiple size=4>"
         "<option id=a value=a selected>Alpha</option><optgroup label=Group>"

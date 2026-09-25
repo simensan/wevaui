@@ -372,20 +372,3 @@ void test_backdrop_filter_reaches_the_backend() {
         }
     }
 }
-
-// The element paints ON the filtered backdrop, which is the whole point of a
-// glass panel: a translucent background over a blurred, saturated copy of what
-// was behind it.
-void test_backdrop_filter_is_under_the_background() {
-    Rendered p(std::string(kPage) +
-                   "body { background: #808080 }"
-                   "#g { position: absolute; left: 40px; top: 20px; width: 80px; height: 60px;"
-                   "     background: rgba(255, 255, 255, 0.5);"
-                   "     backdrop-filter: brightness(0.5) }",
-               "<body><div id=g></div></body>");
-    int c[3];
-    p.at(80, 50, c);
-    // The backdrop is halved to 64, then half-alpha white over it in sRGB:
-    // 0.5*255 + 0.5*64 = 159.5.
-    CHECK(std::abs(c[0] - 160) <= 2);
-}

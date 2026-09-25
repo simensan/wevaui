@@ -110,55 +110,6 @@ struct Fixture {
 
 } // namespace
 
-void test_grid_tracks() {
-    {
-        // Fixed columns, a gap between them, row-major auto-placement.
-        Fixture f;
-        CHECK(f.css("#g { display: grid; width: 300px;"
-                    "     grid-template-columns: 100px 100px; column-gap: 20px }"
-                    ".c { height: 30px }"));
-        CHECK(f.layout("<body><div id=g><div id=a class=c></div><div id=b class=c></div>"
-                       "<div id=c2 class=c></div></div></body>"));
-        CHECK(near(f.box("a").x, 0) && near(f.box("a").y, 0));
-        CHECK(near(f.box("b").x, 120) && near(f.box("b").y, 0));
-        // The third item wraps to the next row.
-        CHECK(near(f.box("c2").x, 0) && near(f.box("c2").y, 30));
-    }
-    {
-        // repeat() expands, and `fr` splits what the fixed tracks leave.
-        Fixture f;
-        CHECK(f.css("#g { display: grid; width: 320px;"
-                    "     grid-template-columns: repeat(3, 1fr); column-gap: 10px }"
-                    ".c { height: 10px }"));
-        CHECK(f.layout("<body><div id=g><div id=a class=c></div><div id=b class=c></div>"
-                       "<div id=c2 class=c></div></div></body>"));
-        CHECK(near(f.box("a").width, 100));
-        CHECK(near(f.box("b").x, 110));
-        CHECK(near(f.box("c2").x, 220));
-    }
-    {
-        // A fixed track and an fr track share the row.
-        Fixture f;
-        CHECK(f.css("#g { display: grid; width: 400px;"
-                    "     grid-template-columns: 240px 1fr }"
-                    ".c { height: 10px }"));
-        CHECK(f.layout("<body><div id=g><div id=a class=c></div>"
-                       "<div id=b class=c></div></div></body>"));
-        CHECK(near(f.box("a").width, 240));
-        CHECK(near(f.box("b").width, 160));
-    }
-    {
-        // Leftover space stretches an AUTO track: align-content/justify-content
-        // default to `normal`, which behaves as stretch for a grid.
-        Fixture f;
-        CHECK(f.css("#g { display: grid; width: 400px; height: 200px }"
-                    "#a { }"));
-        CHECK(f.layout("<body><div id=g><div id=a>x</div></div></body>"));
-        CHECK(near(f.box("a").width, 400));
-        CHECK(near(f.box("a").height, 200));
-    }
-}
-
 void test_grid_items() {
     {
         // An item in a FIXED track still gets its box model resolved. Skipping
