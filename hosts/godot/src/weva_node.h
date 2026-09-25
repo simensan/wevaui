@@ -530,6 +530,10 @@ private:
     // Drains the document's event queue into signals.
     void pump_events();
     bool pumping_events_ = false;
+    // Bumped whenever set_html replaces the document. Element handles restart
+    // with the new tree, so an event being delivered when a handler reloads
+    // must not use its target handle afterwards.
+    uint64_t document_generation_ = 0;
     godot::String id_of(uint32_t element);
     // By HANDLE, not by selector. A row a `data-each` produced has no id, so
     // "#" + id_of(e) finds nothing and reads back an empty value.
@@ -642,15 +646,24 @@ private:
     void font_resource_changed();
     void disconnect_theme_font();
 
-    // Only allocated for a document that uses backdrop-filter.
+    // Child canvas items for the ordered layer path (backdrop filters, blend
+    // modes, SDF rounded rects), pooled across frames: acquire_item() reuses
+    // a cleared item where one is left from the last draw, and end_items()
+    // frees only the surplus. Creating and freeing every item per frame
+    // churned RIDs on every redraw.
     std::vector<godot::RID> layer_items_;
+    size_t items_used_ = 0;
+    size_t backdrops_used_ = 0;
+    godot::RID acquire_item(const godot::RID& parent);
+    void begin_items();
+    void end_items();
     // `mix-blend-mode` draws go on child canvas items carrying a
     // CanvasItemMaterial with the nearest Godot blend mode (multiply -> MUL,
     // screen / lighten and the other brightening modes -> ADD, the rest MIX).
     // The materials live as long as the node; the items are per frame like
     // the layer items.
     godot::Ref<godot::CanvasItemMaterial> blend_materials_[5];
-    godot::RID blend_item(int32_t blend_mode);
+    godot::RID blend_material(int32_t blend_mode);
     std::vector<godot::RID> layer_materials_;
     godot::RID backdrop_shader_;
     // The SDF path. Materials are pooled per frame, like the backdrop ones.
