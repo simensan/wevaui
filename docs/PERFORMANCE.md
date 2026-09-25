@@ -5,6 +5,142 @@
 > and reproduction, use [runtime performance](RUNTIME_PERFORMANCE.md) and the
 > [September 15 repeat](verification/performance-20260915-pass2.md).
 
+## Incremental layout through positioned boxes (2026-09-24)
+
+A follow-up to the section below. Incremental layout treated every positioned
+box as nonlocal, so an edit anywhere inside a `position: relative` card rebuilt,
+re-laid and repainted the whole page. Nearly every HUD slot or badge anchor is
+one. A replacement may now contain relative boxes and absolute boxes whose
+containing block it also contains. After re-laying the replacement it runs the
+ordinary positioning pass over the replacement's descendants
+(`position_descendants`). A copy of the ancestor chain gives containing blocks
+the same root-relative origin. `IncrementalLayout` tracks, per box, the
+outermost containing block that an absolute descendant is placed against
+(`escapes_`). A box is local only when no such block lies above it, so an edit
+to an absolute box moves up to the ancestor that holds its block. Fixed boxes,
+anchor functions and viewport-placed absolute boxes stay on the full path. A
+replacement whose root's own relative offset changed is promoted rather than
+recovering its in-flow position by subtraction, which could round differently
+from a full layout.
+
+Also: `resolve_offset`, the containing-block property test,
+`decoration_reach`, the paint clip/visibility checks, font weight/style and
+`independent_height` read properties by id instead of by name.
+`-webkit-background-clip` stays by name, because it is not a registered
+property; `check_cached_ids.py` caught that. The gradient rasterizer hoists its
+premultiplied base colour and skips the average for one-sample texels (dividing
+by 1 is exact).
+
+randhtml, medians of five alternating three-way runs (original `28bb9fe` /
+previous section / this one):
+
+| Workload | Original best | Previous best | This best |
+|---|---:|---:|---:|
+| `--full --mutate=layout --target='.slot:last-child > div'` | 8.516 ms | 4.876 ms | **0.737 ms** |
+| `--cold` | 127.28 ms | 65.98 ms | 64.54 ms |
+| default | 5.113 ms | 1.881 ms | 1.871 ms |
+| `--full --mutate=layout --target=body` | 32.00 ms | 27.91 ms | 27.87 ms |
+| `--full --mutate=paint` (same leaf) | 0.172 ms | 0.167 ms | 0.163 ms |
+
+The visible leaf edit now replaces the action-bar panel (1 subtree, 9 paint
+subtrees reused): allocations 6,531 -> 1,057. `layoutbench.sh --ab` against the
+previous binary over `Assets/UI`: all but four pages faster, by up to 12.6%. Of
+the four, episode-stats (+32% in that sweep) and map (+6%) run 3.7% fewer
+instructions under callgrind and are faster in direct pairs; the other two are
+within 1.3%. Hand corpus unchanged.
+
+Verification: 505,265 checks, 0 failures (also under clang, and ASan+UBSan apart
+from the probe control noted below); `WEVA_INCREMENTAL_CORPUS` over
+`Assets/UI` passes; 1,206 layout dumps identical; renders as before. The
+corpus gate gains `WEVA_INCREMENTAL_TARGETS=N`: N evenly spaced elements per
+page, each given padding, inset, width and cleared edits, compared frame and
+bounds against a full rebuild. With N=40 the 47-page hand corpus passes
+(637,540 checks). `Assets/UI` fails 340 checks on six steps in match3 and
+glass, identically with this change, with the previous incremental code, and
+at `28bb9fe` built with only the harness change. That is a **pre-existing
+incremental bug, not fixed here**. For example, in match3 a padding edit on a
+`width: 10px` dot inside `.score-pill` is accepted at the pill level. The
+check measures the pill at `.center`'s old, content-sized width, where flex
+shrinking squeezes the dots back; an explicit-width item contributes its used
+width (`block_child_contribution`), so the growth is invisible. New test
+`test_abi_incremental_positioned_subtree` checks the frame against a fresh
+document and that the untouched header's draw version is kept (the incremental
+path was taken). It fails with the previous locality rule.
+
+## Core layout: deferred out-of-flow layout, hidden restyles, tile edges (2026-09-24)
+
+Four core changes, measured on the committed demo document
+`Assets/UI/randhtml.html` + `.css` (4,163 boxes, flex/grid HUD panels):
+
+1. **Out-of-flow content is laid out once.** An absolutely positioned or
+   fixed box with an inset on each axis, and either an auto width with at most
+   one horizontal inset or both vertical insets with an auto height, is laid
+   out again from scratch by the positioning pass at its final size. In-flow
+   layout now stops at its box model (`positioning_replaces_layout`). The
+   demo's panels are inset on every side, so most of the page was laid out
+   twice: flow drops from 2.69 to 0.05 ms. Off under a `LayoutReuse` probe
+   (the incremental paths) and in any tree with an anchor-positioned box. The
+   answer is memoised on the style's version, because grid and flex ask it on
+   every measurement of their items.
+2. **Shrink-to-fit skips the min-content probe when max-content fits**, since
+   `min(max, max(min, available))` is then max-content whatever min-content
+   is. That probe is a whole layout of the subtree.
+3. **Restyles under `display: none` invalidate nothing.** Such an element has
+   no box before or after the change; the ancestor's own display change still
+   rebuilds when the panel opens. The benchmark's `--target=last` element is
+   inside the demo's hidden `.rotate` overlay and cost a full rebuild, layout
+   and repaint per edit.
+4. **Adaptive gradient supersampling handles tiles that stop short of the
+   area.** It used to fall back to 3x3 samples on every texel whenever a tile
+   was `no-repeat` and smaller than the box. It now supersamples only texels
+   whose footprint crosses the tile's edge, a repeat seam or a stop.
+   `.world::before` (four layers, 1024x324) went from 331,776 supersampled
+   texels and 84 ms to 3,306 texels and 23 ms.
+
+Linux container, 4 cores, GCC 13 Release, `weva_bench` (fixed metrics). Each
+row is the median over five alternating pairs, order reversed on alternate
+pairs, against a copy of the binary built from `28bb9fe`:
+
+| randhtml workload | Before best | After best | Before mean | After mean |
+|---|---:|---:|---:|---:|
+| `--cold` (10 passes) | 129.70 ms | **67.27 ms** (-48%) | 139.07 ms | 72.28 ms (-48%) |
+| default: boxes + layout + positioning | 5.658 ms | **2.023 ms** (-64%) | 6.184 ms | 2.678 ms (-57%) |
+| `--full --mutate=layout --target='.slot:last-child > div'` | 8.985 ms | **5.286 ms** (-41%) | 9.918 ms | 6.394 ms (-36%) |
+| `--full --mutate=layout --target=last` (hidden leaf) | 8.895 ms | **0.048 ms** | 10.061 ms | 0.055 ms |
+| `--full --mutate=paint --target='.slot:last-child > div'` | 0.173 ms | 0.166 ms | 0.204 ms | 0.198 ms |
+
+Final-pass allocations: cold 84,247 -> 80,344 (39.4 -> 31.7 MB requested),
+default 7,523 -> 3,614, visible layout edit 10,440 -> 6,531, hidden edit
+10,387 -> 49.
+
+`tools/layoutbench.sh --ab` (3 sweeps x 20 passes) over the 33 `Assets/UI`
+pages: 31 faster, e.g. map -51%, settings -46%, glass -46%, stats -45%,
+leaderboard -44%, vendor -36%, layout-stress -2.5%. flex-playground reads
++0.2%, and grid-playground read +20% in that sweep but is 2.4% fewer
+instructions under callgrind and 4-7% faster in three direct pairs. Over the
+47-sample hand corpus, 46 pages are equal or faster; the remaining one is 1 us.
+Pages with positioned boxes that do not defer pay the memoised test: under
+callgrind, neon and level-select layout are +0.5% and +0.7% instructions,
+match3 -0.5%.
+
+Outputs: `weva_dump` layout dumps of 402 pages (Assets/UI, the golden
+snippets, oracle cases and regressions, the hand and harvested corpora,
+examples) at 1280x720, 600x900 and 1920x1080 are byte-identical before and
+after: 1,206 dumps. `weva_render` of 87 pages is identical except randhtml,
+where 213 pixels in `.world::before` move by 1/255 (single-sample centres of
+affine ramps rather than their 3x3 average). Release GCC: 505,241 checks, 0
+failures; clang Release 14/14 CTest targets; ASan+UBSan RelWithDebInfo 15/16.
+The failing one is the `weva_asan_active` control. `sanitizer_probe` is not
+linked to libweva, and on this GCC 13 UBSan's object-size check reports its
+planted overflow before ASan does. New tests: deferred layout matches the
+non-deferred path box for box; hidden-subtree edits publish no frame and
+opening the panel matches a fresh document; a no-repeat tile edge that
+falls mid-texel keeps its exact 3x3 coverage. The hidden-subtree and tile-edge
+tests fail with their change removed. Loosening the deferral to boxes whose
+static position is used fails the new predicate check and an existing flex
+static-position test. The Godot host and the Windows native A/B were not rerun
+for this change.
+
 ## Runtime60: ordinary in-game UI (2026-09-07)
 
 The Windows development project now uses the verified runtime60 DLL. This pass

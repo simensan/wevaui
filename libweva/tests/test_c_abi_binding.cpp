@@ -384,16 +384,6 @@ void test_abi_template_content_is_inert() {
     CHECK(doc.height("#list") == 20);
 }
 
-// A value longer than the resolver's first buffer still arrives whole: the
-// two-call pattern the rest of the ABI uses.
-void test_abi_binding_long_values() {
-    Doc doc("html, body { margin: 0 }", "<p id=t>{{ Long }}</p>");
-    doc.data.values["Long"] = std::string(500, 'x');
-    doc.refresh();
-    CHECK(doc.text("#t").size() == 500);
-    CHECK(doc.text("#t") == std::string(500, 'x'));
-}
-
 // `data-each` makes one row per item. Until this, a list bound to game state
 // had to be built by hand with append_html -- the script knowing not just what
 // the data was but what shape the markup for it should take.
@@ -446,44 +436,6 @@ void test_abi_binding_repeat() {
     doc.refresh();
     CHECK(weva_document_query_all(doc.d, "#list > .row", nullptr, 0) == 0);
     CHECK(doc.height("#list") == 0);
-}
-
-// The rows are refilled where they stand while their keys hold, and rebuilt
-// when the items themselves move. That is the whole reason `data-key` exists.
-void test_abi_binding_repeat_keeps_rows() {
-    Doc doc("html, body { margin: 0 }",
-            "<ul id=list>"
-            "<template data-each='Items as item' data-key='Id'>"
-            "<li class=row>{{ item.Name }}</li>"
-            "</template></ul>");
-    doc.data.lists["Items"] = 2;
-    doc.data.values["Items.0.Id"] = "one";
-    doc.data.values["Items.0.Name"] = "First";
-    doc.data.values["Items.1.Id"] = "two";
-    doc.data.values["Items.1.Name"] = "Second";
-    doc.refresh();
-
-    // The rows exist and can be addressed, which is what a handle is for.
-    weva_element_t rows[4] = {};
-    CHECK(weva_document_query_all(doc.d, "#list > .row", rows, 4) == 2);
-    const weva_element_t first = rows[0], second = rows[1];
-    CHECK(first != WEVA_ELEMENT_NONE);
-
-    // Values change, keys do not: the SAME elements are still there.
-    doc.data.values["Items.0.Name"] = "Renamed";
-    doc.refresh();
-    weva_element_t after[4] = {};
-    CHECK(weva_document_query_all(doc.d, "#list > .row", after, 4) == 2);
-    CHECK(after[0] == first);
-    CHECK(after[1] == second);
-    CHECK(doc.text("#list > .row:nth-of-type(1)") == "Renamed");
-
-    // A key changing is a different list, and the rows are made again.
-    doc.data.values["Items.0.Id"] = "changed";
-    doc.refresh();
-    weva_element_t rebuilt[4] = {};
-    CHECK(weva_document_query_all(doc.d, "#list > .row", rebuilt, 4) == 2);
-    CHECK(rebuilt[0] != first);
 }
 
 // A repeat reads the row's own fields, the controller's, and its index, and

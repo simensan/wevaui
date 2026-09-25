@@ -50,6 +50,17 @@ const int kId_overflow_x = CssPropertyRegistry::instance().id_of("overflow-x");
 const int kId_overflow_y = CssPropertyRegistry::instance().id_of("overflow-y");
 const int kId_will_change = CssPropertyRegistry::instance().id_of("will-change");
 const int kId_z_index = CssPropertyRegistry::instance().id_of("z-index");
+const int kId_top = CssPropertyRegistry::instance().id_of("top");
+const int kId_right = CssPropertyRegistry::instance().id_of("right");
+const int kId_bottom = CssPropertyRegistry::instance().id_of("bottom");
+const int kId_left = CssPropertyRegistry::instance().id_of("left");
+const int kId_transform = CssPropertyRegistry::instance().id_of("transform");
+const int kId_perspective = CssPropertyRegistry::instance().id_of("perspective");
+const int kId_translate = CssPropertyRegistry::instance().id_of("translate");
+const int kId_rotate = CssPropertyRegistry::instance().id_of("rotate");
+const int kId_scale = CssPropertyRegistry::instance().id_of("scale");
+const int kId_box_shadow = CssPropertyRegistry::instance().id_of("box-shadow");
+const int kId_text_shadow = CssPropertyRegistry::instance().id_of("text-shadow");
 
 
 std::string_view get(const ComputedStyle* s, std::string_view property) {
@@ -82,7 +93,7 @@ bool has_token(std::string_view value, std::string_view token) {
     return false;
 }
 
-bool set_and_not_none(const ComputedStyle* s, std::string_view property) {
+bool set_and_not_none(const ComputedStyle* s, int property) {
     const std::string_view v = get(s, property);
     return !v.empty() && !iequals(v, "none");
 }
@@ -91,13 +102,13 @@ bool set_and_not_none(const ComputedStyle* s, std::string_view property) {
 // absolutely positioned descendants even on a static ancestor.
 bool has_containing_block_property(const Box& b) {
     if (!b.style) return false;
-    if (set_and_not_none(b.style, "transform")) return true;
+    if (set_and_not_none(b.style, kId_transform)) return true;
     // CSS Transforms 2 §8: the individual properties count the same way.
-    if (set_and_not_none(b.style, "translate")) return true;
-    if (set_and_not_none(b.style, "rotate")) return true;
-    if (set_and_not_none(b.style, "scale")) return true;
-    if (set_and_not_none(b.style, "filter")) return true;
-    if (set_and_not_none(b.style, "perspective")) return true;
+    if (set_and_not_none(b.style, kId_translate)) return true;
+    if (set_and_not_none(b.style, kId_rotate)) return true;
+    if (set_and_not_none(b.style, kId_scale)) return true;
+    if (set_and_not_none(b.style, kId_filter)) return true;
+    if (set_and_not_none(b.style, kId_perspective)) return true;
     const std::string_view wc = get(b.style, kId_will_change);
     if (has_token(wc, "transform") || has_token(wc, "filter") || has_token(wc, "perspective")) {
         return true;
@@ -129,7 +140,8 @@ ContainingBlock padding_box_of(const BoxTree& tree, BoxId p) {
     return cb;
 }
 
-std::optional<double> resolve_offset(const ComputedStyle* style, std::string_view property,
+// By id: stamp_offsets reads all four insets of every box on every layout.
+std::optional<double> resolve_offset(const ComputedStyle* style, int property,
                                      const LayoutContext& ctx, double font_size, double basis) {
     const std::string_view raw = get(style, property);
     // `auto` is absent, not zero: an absent offset falls back to the static
@@ -153,6 +165,73 @@ bool has_used_size(const ComputedStyle* style, std::string_view property) {
 }
 
 } // namespace
+
+bool positioning_replaces_layout(const BoxTree& tree, BoxId id, const LayoutContext& ctx) {
+    const Box& b = tree[id];
+    if (b.position != PositionType::Absolute && b.position != PositionType::Fixed) return false;
+    return insets_replace_layout(b.style, ctx);
+}
+
+namespace {
+bool compute_insets_replace_layout(const ComputedStyle* style, const LayoutContext& ctx);
+}
+
+bool insets_replace_layout(const ComputedStyle* style, const LayoutContext& ctx) {
+    if (!style) return false;
+    if (style->insets_memo_version != style->version()) {
+        style->insets_memo = compute_insets_replace_layout(style, ctx);
+        style->insets_memo_version = style->version();
+    }
+    return style->insets_memo;
+}
+
+namespace {
+bool compute_insets_replace_layout(const ComputedStyle* style, const LayoutContext& ctx) {
+    // By id: this runs for every out-of-flow box on every layout of its
+    // container, which inside a grid that measures its items is many times a
+    // pass. Looking the six properties up by name cost match3 a fifth of its
+    // layout.
+    static const int kIds[6] = {kId_left, kId_right, kId_top, kId_bottom,
+                                CssPropertyRegistry::instance().id_of("width"), kId_height};
+    std::string_view raw[6];
+    const auto declared = [&](int i) { return !raw[i].empty() && !iequals(raw[i], "auto"); };
+    // A declared inset can still fail to resolve, so declarations bound the
+    // answer from above. Most out-of-flow boxes -- a static position on one
+    // axis, or a stated width with no bottom inset -- are settled here from
+    // the first few declarations, without resolving a length.
+    for (int i = 0; i < 4; ++i) raw[i] = style->get(kIds[i]);
+    if (!(declared(0) || declared(1)) || !(declared(2) || declared(3))) return false;
+    raw[4] = style->get(kIds[4]);
+    raw[5] = style->get(kIds[5]);
+    if (declared(4) && !(declared(2) && declared(3) && !declared(5))) return false;
+    for (const std::string_view value : raw)
+        if (looks_like_anchor_function(value)) return false;
+    // Mirrors resolve_offset: present unless empty, `auto`, or not a length or
+    // percentage. Which of those it is depends on neither the font size nor
+    // the basis, so neither is computed here.
+    const auto inset = [&](int i) {
+        if (!declared(i)) return false;
+        const LengthKind kind = resolve_length(style, kIds[i], ctx, ctx.root_font_size_px, 0.0).kind;
+        return kind == LengthKind::Length || kind == LengthKind::Percent;
+    };
+    const bool left = inset(0), right = inset(1);
+    if (!(left || right)) return false;
+    const bool top = inset(2), bottom = inset(3);
+    if (!(top || bottom)) return false;
+    const bool shrinks = !(left && right) && !declared(4);
+    const bool stretches = top && bottom && !declared(5);
+    return shrinks || stretches;
+}
+}  // namespace
+
+void relative_offset(const Box& box, double* dx, double* dy) {
+    *dx = *dy = 0;
+    if (box.position != PositionType::Relative) return;
+    if (box.offset_left) *dx = *box.offset_left;
+    else if (box.offset_right) *dx = -*box.offset_right;
+    if (box.offset_top) *dy = *box.offset_top;
+    else if (box.offset_bottom) *dy = -*box.offset_bottom;
+}
 
 void absolute_position(const BoxTree& tree, BoxId box, double* x, double* y) {
     double ax = 0, ay = 0;
@@ -327,10 +406,10 @@ void stamp_offsets(BoxTree* tree, BoxId root, const LayoutContext& ctx) {
         // are used as the basis at placement time instead. Here only the
         // lengths are resolved; percentages are re-read against the real basis.
         const double basis = parent == kNoBox ? ctx.viewport_width_px : (*tree)[parent].width;
-        b.offset_top = resolve_offset(b.style, "top", ctx, fs, basis);
-        b.offset_right = resolve_offset(b.style, "right", ctx, fs, basis);
-        b.offset_bottom = resolve_offset(b.style, "bottom", ctx, fs, basis);
-        b.offset_left = resolve_offset(b.style, "left", ctx, fs, basis);
+        b.offset_top = resolve_offset(b.style, kId_top, ctx, fs, basis);
+        b.offset_right = resolve_offset(b.style, kId_right, ctx, fs, basis);
+        b.offset_bottom = resolve_offset(b.style, kId_bottom, ctx, fs, basis);
+        b.offset_left = resolve_offset(b.style, kId_left, ctx, fs, basis);
 
         const std::string_view z = get(b.style, kId_z_index);
         if (!z.empty() && !iequals(z, "auto")) {
@@ -359,13 +438,13 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
 
     // Percentage offsets resolve against the containing block, so they are
     // re-read here now that it is known.
-    const auto off = [&](std::string_view property, double basis) {
+    const auto off = [&](int property, double basis) {
         return resolve_offset(style, property, ctx, fs, basis);
     };
-    (*tree)[id].offset_left = off("left", cb.width);
-    (*tree)[id].offset_right = off("right", cb.width);
-    (*tree)[id].offset_top = off("top", cb.height);
-    (*tree)[id].offset_bottom = off("bottom", cb.height);
+    (*tree)[id].offset_left = off(kId_left, cb.width);
+    (*tree)[id].offset_right = off(kId_right, cb.width);
+    (*tree)[id].offset_top = off(kId_top, cb.height);
+    (*tree)[id].offset_bottom = off(kId_bottom, cb.height);
 
     // CSS Anchor Positioning L1: an `anchor()` inset or an `anchor-size()`
     // extent is a position on ANOTHER element's border box, so it replaces
@@ -495,10 +574,7 @@ void apply_absolute(BoxTree* tree, BoxId id, const ContainingBlock& cb,
 void apply_relative(BoxTree* tree, BoxId id) {
     Box& box = (*tree)[id];
     double dx = 0, dy = 0;
-    if (box.offset_left) dx = *box.offset_left;
-    else if (box.offset_right) dx = -*box.offset_right;
-    if (box.offset_top) dy = *box.offset_top;
-    else if (box.offset_bottom) dy = -*box.offset_bottom;
+    relative_offset(box, &dx, &dy);
     box.x += dx;
     box.y += dy;
 }
@@ -532,6 +608,10 @@ void run_recursive(BoxTree* tree, BoxId id, const LayoutContext& ctx, BlockLayou
 }
 
 } // namespace
+
+void position_descendants(BoxTree* tree, BoxId root, const LayoutContext& ctx, BlockLayout* block) {
+    for (BoxId c : tree->children(root)) run_recursive(tree, c, ctx, block);
+}
 
 void run_positioning(BoxTree* tree, BoxId root, const LayoutContext& ctx, BlockLayout* block) {
     stamp_offsets(tree, root, ctx);
@@ -574,7 +654,7 @@ double decoration_reach(const ComputedStyle* style) {
         }
         return total * scale;
     };
-    for (const char* prop : {"box-shadow", "text-shadow"}) {
+    for (const int prop : {kId_box_shadow, kId_text_shadow}) {
         const std::string_view raw = style->get(prop);
         if (!raw.empty() && raw != "none") reach += sum_lengths(raw, 1.0);
     }

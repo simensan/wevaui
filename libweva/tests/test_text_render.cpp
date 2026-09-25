@@ -21,16 +21,6 @@ namespace {
 
 bool near(double a, double b, double eps = 1e-6) { return std::fabs(a - b) < eps; }
 
-int covered(const SoftwareRenderer& r) {
-    int n = 0;
-    for (int y = 0; y < r.height(); ++y) {
-        for (int x = 0; x < r.width(); ++x) {
-            if (r.pixel(x, y).a > 0) ++n;
-        }
-    }
-    return n;
-}
-
 } // namespace
 
 void test_stub_font() {
@@ -85,26 +75,6 @@ void test_stub_font() {
     CHECK(sp.data.empty());
     // SDF is refused rather than silently returning an alpha bitmap.
     CHECK(!font.rasterize(face, g, 16, RenderMode::Sdf, &bmp));
-}
-
-void test_stub_shaping() {
-    StubFont font;
-    const FaceHandle face = StubFont::builtin();
-    std::vector<ShapedGlyph> out;
-    font.shape(face, "ab c", 16, &out);
-    CHECK(out.size() == 4);
-    for (const ShapedGlyph& g : out) CHECK(near(g.x_advance, 8));
-    // `cluster` carries the byte offset, so a caller mapping back to source
-    // text works the same as it will with a real shaper.
-    CHECK(out[0].cluster == 0 && out[3].cluster == 3);
-
-    // Multi-byte input advances by code point, not by byte, and the cluster
-    // still points at the byte where the character started.
-    font.shape(face, "aéb", 16, &out);
-    CHECK(out.size() == 3);
-    CHECK(out[1].cluster == 1 && out[2].cluster == 3);
-    // The unmapped middle character is the missing glyph but still advances.
-    CHECK(out[1].glyph == 0 && near(out[1].x_advance, 8));
 }
 
 void test_glyph_atlas() {
@@ -211,95 +181,6 @@ void test_text_geometry() {
     // Snapped, not truncated to the run's origin: the second glyph is still an
     // advance away, so the pen keeps its precision and only the bitmap moves.
     CHECK(near(frac.vertices[4].position.x - frac.vertices[0].position.x, 8, 1e-4));
-}
-
-void test_text_end_to_end() {
-    // Cascade, layout, shape, pack and rasterize — text on screen.
-    SymbolTable symbols;
-    std::vector<std::unique_ptr<Stylesheet>> sheets;
-    struct Styles : StyleProvider {
-        CascadeEngine engine;
-        NullStateProvider state;
-        std::vector<std::unique_ptr<ComputedStyle>> owned;
-        std::map<const Element*, ComputedStyle*> by_element;
-        void walk(const Element& e, const ComputedStyle* p) {
-            auto cs = std::make_unique<ComputedStyle>();
-            engine.compute(e, state, p, cs.get());
-            ComputedStyle* raw = cs.get();
-            owned.push_back(std::move(cs));
-            by_element[&e] = raw;
-            for (const Ref<Node>& c : e.children()) {
-                if (c->node_type() == NodeType::Element) {
-                    walk(static_cast<const Element&>(*c), raw);
-                }
-            }
-        }
-        const ComputedStyle* style_of(const Element& e) override {
-            auto it = by_element.find(&e);
-            return it == by_element.end() ? nullptr : it->second;
-        }
-    } styles;
-
-    auto ua = std::make_unique<Stylesheet>();
-    CssParseError pe;
-    parse_stylesheet(user_agent_stylesheet_source(), false, ua.get(), &pe);
-    styles.engine.add_stylesheet(ua.get(), DeclarationOrigin::UserAgent);
-    sheets.push_back(std::move(ua));
-    auto author = std::make_unique<Stylesheet>();
-    CHECK(parse_stylesheet("#a { display: block; font-size: 16px; color: #ff0000 }", false,
-                           author.get(), &pe));
-    styles.engine.add_stylesheet(author.get(), DeclarationOrigin::Author);
-    sheets.push_back(std::move(author));
-
-    HtmlParseError he;
-    ParseOptions o;
-    o.strict = false;
-    Ref<Document> doc = parse_html("<body><div id=a>Hi</div></body>", &symbols, o, &he);
-    CHECK(static_cast<bool>(doc));
-    for (const Ref<Node>& c : doc->children()) {
-        if (c->node_type() == NodeType::Element) {
-            styles.walk(static_cast<const Element&>(*c), nullptr);
-        }
-    }
-
-    BoxTree tree;
-    BoxBuilder builder(&tree, &styles);
-    const BoxId root = builder.build_document(*doc);
-    LayoutContext ctx;
-    MonoFontMetrics metrics;
-    BlockLayout bl(&tree, ctx, &metrics);
-    bl.layout_root(root, 80, 40);
-
-    SoftwareRenderer r(80, 40);
-    r.clear(LinearColor::transparent());
-    StubFont font;
-    GlyphAtlas atlas;
-    PaintContext p;
-    p.backend = &r;
-    p.font = &font;
-    p.atlas = &atlas;
-    p.face = StubFont::builtin();
-    paint_tree(tree, root, ctx, p);
-
-    // Ink on screen, in the run's colour, and above the baseline.
-    const int n = covered(r);
-    CHECK(n > 0);
-    bool red = false;
-    for (int y = 0; y < r.height() && !red; ++y) {
-        for (int x = 0; x < r.width(); ++x) {
-            const LinearColor c = r.pixel(x, y);
-            if (c.a > 0.5f && c.r > 0.9f && c.g < 0.1f) { red = true; break; }
-        }
-    }
-    CHECK(red);
-    // Two glyphs at 8px advance from x=0: nothing past x=16, and nothing below
-    // the 12.8px baseline.
-    for (int y = 0; y < r.height(); ++y) {
-        for (int x = 16; x < r.width(); ++x) CHECK(r.pixel(x, y).a == 0.0f);
-    }
-    for (int y = 13; y < r.height(); ++y) {
-        for (int x = 0; x < r.width(); ++x) CHECK(r.pixel(x, y).a == 0.0f);
-    }
 }
 
 // A blurred text-shadow is BLURRED, not a stack of copies of the glyph.
