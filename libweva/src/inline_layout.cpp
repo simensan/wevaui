@@ -14,6 +14,7 @@
 #include "weva/css_properties.h"
 
 #include <algorithm>
+#include <limits>
 #include <memory>
 
 namespace weva {
@@ -1849,11 +1850,45 @@ struct IntrinsicWidths {
 template<bool Minimum, bool Maximum>
 IntrinsicWidths intrinsic_widths(const BoxTree& tree, BoxId id, const LayoutContext* ctx);
 
+// Contributions already measured in the current IntrinsicContributionScope,
+// one table per template variant: the variants specialize their arithmetic
+// separately, so each keeps its own answers. NaN is "not measured yet".
+struct ContributionMemo {
+    const BoxTree* tree = nullptr;
+    const LayoutContext* ctx = nullptr;
+    std::vector<IntrinsicWidths> tables[3];
+};
+thread_local ContributionMemo* g_contribution_memo = nullptr;
+
+template<bool Minimum, bool Maximum>
+IntrinsicWidths block_child_contribution_uncached(const BoxTree& tree, BoxId c,
+                                                  const LayoutContext* ctx);
+
 // A block-level child's outer max-content contribution: its explicit width
 // when it has one (already resolved onto the box), otherwise its content plus
 // its own frame, bounded by its min-/max-width — plus margins either way.
 template<bool Minimum, bool Maximum>
 IntrinsicWidths block_child_contribution(const BoxTree& tree, BoxId c, const LayoutContext* ctx) {
+    ContributionMemo* memo = g_contribution_memo;
+    if (!memo || memo->tree != &tree || memo->ctx != ctx || !tree.valid(c))
+        return block_child_contribution_uncached<Minimum, Maximum>(tree, c, ctx);
+    std::vector<IntrinsicWidths>& table = memo->tables[Minimum && Maximum ? 2 : Minimum ? 0 : 1];
+    if (table.empty()) {
+        const double unset = std::numeric_limits<double>::quiet_NaN();
+        table.assign(static_cast<size_t>(tree.size()), IntrinsicWidths{unset, unset});
+    }
+    IntrinsicWidths& slot = table[static_cast<size_t>(c)];
+    if (slot.minimum == slot.minimum) return slot;   // measured: not NaN
+    const IntrinsicWidths w = block_child_contribution_uncached<Minimum, Maximum>(tree, c, ctx);
+    // Unused halves stay zero, as the uncached call returns them; only the
+    // marker needs to be a number.
+    table[static_cast<size_t>(c)] = w;
+    return w;
+}
+
+template<bool Minimum, bool Maximum>
+IntrinsicWidths block_child_contribution_uncached(const BoxTree& tree, BoxId c,
+                                                  const LayoutContext* ctx) {
     const Box& b = tree[c];
     const std::string_view width_raw = get(b.style, kId_width);
     const bool explicit_width = !width_raw.empty() && !iequals(width_raw, "auto") &&
@@ -2127,6 +2162,20 @@ double max_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx
 
 double min_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx) {
     return intrinsic_widths<true, false>(tree, id, ctx).minimum;
+}
+
+IntrinsicContributionScope::IntrinsicContributionScope(const BoxTree& tree,
+                                                       const LayoutContext* ctx)
+    : previous_(g_contribution_memo), memo_(new ContributionMemo) {
+    auto* memo = static_cast<ContributionMemo*>(memo_);
+    memo->tree = &tree;
+    memo->ctx = ctx;
+    g_contribution_memo = memo;
+}
+
+IntrinsicContributionScope::~IntrinsicContributionScope() {
+    delete static_cast<ContributionMemo*>(memo_);
+    g_contribution_memo = static_cast<ContributionMemo*>(previous_);
 }
 
 double block_intrinsic_contribution(const BoxTree& tree, BoxId id,

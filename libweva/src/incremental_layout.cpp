@@ -1,4 +1,5 @@
 #include "weva/incremental_layout.h"
+#include "weva/inline_layout.h"
 #include "weva/positioning.h"
 #include <algorithm>
 #include <cstdio>
@@ -217,7 +218,10 @@ void IncrementalLayout::index(const BoxTree& tree, BoxId root, const LayoutConte
     paint_root_flags_.assign(tree.size(), false);
     preserve_ = nullptr;
     global_dependencies_ = false;
-    if (tree.valid(root)) index_subtree(tree, root, ctx);
+    if (tree.valid(root)) {
+        const IntrinsicContributionScope memo(tree, &ctx);
+        index_subtree(tree, root, ctx);
+    }
 }
 
 void IncrementalLayout::unindex_subtree(const BoxTree& tree, BoxId id) {
@@ -415,7 +419,10 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
         paint_root_flags_.resize(tree->size(), false);
         input_versions_.resize(tree->size(), input_serial_);
         grid_versions_.resize(tree->size());
-        index_subtree(*tree, r.into, ctx);
+        {
+            const IntrinsicContributionScope memo(*tree, &ctx);
+            index_subtree(*tree, r.into, ctx);
+        }
         preserve_ = nullptr;
         retained_grids_ += r.retained.size();
         retained_.insert(retained_.end(), r.retained.begin(), r.retained.end());
@@ -597,7 +604,10 @@ bool IncrementalLayout::update_modal(BoxTree* tree, BoxId root, const Document& 
     paint_root_flags_.resize(tree->size(), false);
     input_versions_.resize(tree->size(), input_serial_);
     grid_versions_.resize(tree->size());
-    index_subtree(*tree, root, ctx);
+    {
+        const IntrinsicContributionScope memo(*tree, &ctx);
+        index_subtree(*tree, root, ctx);
+    }
     preserve_ = nullptr;
     sample.lap(7);
     retained_ = std::move(keep);

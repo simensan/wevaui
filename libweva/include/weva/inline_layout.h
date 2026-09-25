@@ -170,6 +170,21 @@ double min_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx
 // frame, min/max constraints and non-auto margins.
 double block_intrinsic_contribution(const BoxTree& tree, BoxId id,
                                     const LayoutContext* ctx, bool minimum);
+// While one of these is alive, block contributions measured in `tree` with
+// `ctx` are remembered, so a caller asking for every box's contribution walks
+// the tree once rather than once per ancestor. The tree must not change
+// meanwhile. IncrementalLayout's index asked for each block's contribution
+// from scratch, and a page 600 blocks deep spent two seconds there.
+class IntrinsicContributionScope {
+public:
+    IntrinsicContributionScope(const BoxTree& tree, const LayoutContext* ctx);
+    ~IntrinsicContributionScope();
+    IntrinsicContributionScope(const IntrinsicContributionScope&) = delete;
+    IntrinsicContributionScope& operator=(const IntrinsicContributionScope&) = delete;
+private:
+    void* previous_;
+    void* memo_;
+};
 ParentLayoutInput measure_parent_layout_input(const BoxTree& tree, BoxId id,
                                               double available_width, const LayoutContext& ctx);
 

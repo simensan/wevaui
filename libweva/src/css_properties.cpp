@@ -9,17 +9,31 @@ struct PropertyDef { const char* name; bool inherited; const char* initial; };
 #include "generated/css_properties.inc"
 }  // namespace
 
+// The built-in list holds no duplicate names, so the table is filled directly
+// and indexed ONCE. Going through register_property rebuilt the whole index
+// after every one of the 334 names -- 334 index builds, each hashing every
+// name so far -- and that construction was a quarter of the instructions in
+// the first cold load of layout-stress.
 CssPropertyRegistry::CssPropertyRegistry() {
     properties_.reserve(sizeof(kProperties) / sizeof(kProperties[0]));
     for (const PropertyDef& d : kProperties) {
-        register_property(d.name, d.inherited, d.initial);
+        CssProperty p;
+        p.name = d.name;
+        p.is_inherited = d.inherited;
+        p.initial_value = d.initial;
+        p.id = static_cast<int>(properties_.size());
+        properties_.push_back(std::move(p));
     }
+    rebuild_index();
 }
 
-CssPropertyRegistry& CssPropertyRegistry::instance() {
+CssPropertyRegistry& CssPropertyRegistry::construct_instance() {
     static CssPropertyRegistry r;
+    instance_.store(&r, std::memory_order_release);
     return r;
 }
+
+std::atomic<CssPropertyRegistry*> CssPropertyRegistry::instance_{nullptr};
 
 // Constant-time, not a pass over the name.
 //
@@ -59,12 +73,6 @@ int CssPropertyRegistry::max_probe() const {
 }
 
 void CssPropertyRegistry::rebuild_index() {
-    sorted_.clear();
-    sorted_.reserve(properties_.size());
-    for (const CssProperty& p : properties_) sorted_.emplace_back(p.name, p.id);
-    std::sort(sorted_.begin(), sorted_.end(),
-              [](const auto& a, const auto& b) { return a.first < b.first; });
-
     size_t cap = 16;
     while (cap < properties_.size() * 4) cap *= 2;
     inherited_.assign(properties_.size(), 0);

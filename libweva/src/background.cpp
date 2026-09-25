@@ -347,50 +347,6 @@ inline double wrap_positive(double x, double m) {
     return r;
 }
 
-// The colour at `t` along normalized stops. Endpoints retain their original
-// sRGB values; interior samples use the prepared premultiplied spans.
-Srgb sample_stops(const std::vector<GradientStop>& stops, const std::vector<Srgb>& srgb, double t,
-                  bool repeating, const std::vector<ColorSpan>& color_spans) {
-    if (stops.empty()) return {0, 0, 0, 0};
-    if (stops.size() == 1) return srgb[0];
-    const double first = stops.front().position;
-    const double last = stops.back().position;
-    if (repeating && last > first) {
-        const double span = last - first;
-        t = first + wrap_positive(t - first, span);
-    }
-    if (t <= first) return srgb.front();
-    if (t >= last) return srgb.back();
-    for (size_t i = 0; i + 1 < stops.size(); ++i) {
-        // A hint sits between two colour stops and bends the interpolation.
-        if (stops[i].is_hint) continue;
-        size_t next = i + 1;
-        const GradientStop* hint = nullptr;
-        if (next < stops.size() && stops[next].is_hint) {
-            hint = &stops[next];
-            ++next;
-        }
-        if (next >= stops.size()) return srgb[i];
-        const double p0 = stops[i].position, p1 = stops[next].position;
-        if (t < p0 || t > p1) continue;
-        if (color_spans[i].constant) return color_spans[i].start;
-        // The reciprocal when prepare() has one: this is the last divide left
-        // in the per-pixel path.
-        double local = 0;
-        if (color_spans[i].inverse_length > 0) {
-            local = (t - p0) * color_spans[i].inverse_length;
-        } else if (p1 > p0) {
-            local = (t - p0) / (p1 - p0);
-        }
-        if (hint && p1 > p0) {
-            const double h = std::clamp((hint->position - p0) / (p1 - p0), 1e-6, 1 - 1e-6);
-            local = std::pow(local, std::log(0.5) / std::log(h));
-        }
-        return mix(color_spans[i], local);
-    }
-    return srgb.back();
-}
-
 // A <position> component: keyword, percentage or length, as an offset in px
 // for a `tile` inside an `area`.
 double resolve_position(std::string_view raw, double area, double tile, bool horizontal,
@@ -634,6 +590,22 @@ struct PreparedGradient {
     // Premultiplied color endpoints and reciprocal length for each span,
     // indexed by the FIRST stop of the pair.
     std::vector<ColorSpan> color_spans;
+    // The pairs sample_stops visits, in visiting order, with everything about
+    // a pair that does not depend on `t` resolved up front. The walk it
+    // replaces re-derived each pair from the stop list per SAMPLE -- skipping
+    // hints, finding `next`, reading positions out of 40-byte stops -- and
+    // took two logs for a colour hint's exponent every time. sample_stops is
+    // a fifth of hud's cold load; this is the part of it that is not the
+    // interpolation itself.
+    struct Segment {
+        double p0 = 0, p1 = 0;
+        double inverse_length = 0;   // as ColorSpan::inverse_length
+        double hint_exponent = 0;    // pow() exponent, when `hinted`
+        int first = 0;               // index of the pair's first stop
+        bool hinted = false;         // a hint between, over a nonzero span
+        bool terminal = false;       // no colour stop after `first`
+    };
+    std::vector<Segment> segments;
     // Whether this gradient has a discontinuity, which decides whether the
     // texel needs more than one sample. A ramp antialiases itself; an edge
     // does not.
@@ -704,7 +676,70 @@ PreparedGradient prepare(const Gradient& g, double w, double h, const LayoutCont
         const double span = p.stops[next].position - p.stops[i].position;
         p.color_spans[i].inverse_length = span > 0 ? 1.0 / span : 0.0;
     }
+    // The same walk, once. A pair whose hint is the last stop has no colour
+    // after it: the sample stops there with the pair's first colour, whatever
+    // `t` is, so it ends the table.
+    for (size_t i = 0; i + 1 < p.stops.size(); ++i) {
+        if (p.stops[i].is_hint) continue;
+        size_t next = i + 1;
+        const GradientStop* hint = nullptr;
+        if (p.stops[next].is_hint) {
+            hint = &p.stops[next];
+            ++next;
+        }
+        PreparedGradient::Segment seg;
+        seg.first = static_cast<int>(i);
+        if (next >= p.stops.size()) {
+            seg.terminal = true;
+            p.segments.push_back(seg);
+            break;
+        }
+        seg.p0 = p.stops[i].position;
+        seg.p1 = p.stops[next].position;
+        seg.inverse_length = p.color_spans[i].inverse_length;
+        if (hint && seg.p1 > seg.p0) {
+            const double h = std::clamp((hint->position - seg.p0) / (seg.p1 - seg.p0), 1e-6, 1 - 1e-6);
+            seg.hinted = true;
+            seg.hint_exponent = std::log(0.5) / std::log(h);
+        }
+        p.segments.push_back(seg);
+    }
     return p;
+}
+
+// The colour at `t` along normalized stops. Endpoints retain their original
+// sRGB values; interior samples use the prepared premultiplied spans. The
+// first segment containing `t` wins, as it did when this walked the stops:
+// at a hard edge two segments share the position and the earlier one owns it.
+Srgb sample_stops(const PreparedGradient& p, double t) {
+    const std::vector<GradientStop>& stops = p.stops;
+    const size_t count = stops.size();
+    if (count == 0) return {0, 0, 0, 0};
+    const Srgb* colors = p.colors.data();
+    if (count == 1) return colors[0];
+    const double first = stops.front().position;
+    const double last = stops.back().position;
+    if (p.g->repeating && last > first) {
+        const double span = last - first;
+        t = first + wrap_positive(t - first, span);
+    }
+    if (t <= first) return colors[0];
+    if (t >= last) return colors[count - 1];
+    for (const PreparedGradient::Segment& seg : p.segments) {
+        if (seg.terminal) return colors[seg.first];
+        if (t < seg.p0 || t > seg.p1) continue;
+        const ColorSpan& span = p.color_spans[static_cast<size_t>(seg.first)];
+        if (span.constant) return span.start;
+        double local = 0;
+        if (seg.inverse_length > 0) {
+            local = (t - seg.p0) * seg.inverse_length;
+        } else if (seg.p1 > seg.p0) {
+            local = (t - seg.p0) / (seg.p1 - seg.p0);
+        }
+        if (seg.hinted) local = std::pow(local, seg.hint_exponent);
+        return mix(span, local);
+    }
+    return colors[count - 1];
 }
 
 // The gradient's parameter at a point, before any stop is consulted.
@@ -731,8 +766,7 @@ double gradient_t(const PreparedGradient& p, double x, double y) {
 }
 
 Srgb sample_prepared(const PreparedGradient& p, double x, double y) {
-    return sample_stops(p.stops, p.colors, gradient_t(p, x, y), p.g->repeating,
-                        p.color_spans);
+    return sample_stops(p, gradient_t(p, x, y));
 }
 
 } // namespace

@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <atomic>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -30,7 +31,14 @@ class CssPropertyRegistry {
 public:
     // The process-wide registry, pre-populated with the 334 built-in
     // properties in the C#'s registration order.
-    static CssPropertyRegistry& instance();
+    //
+    // Inline, because every by-name property read asks for it: the out-of-line
+    // version was a call plus a guard check each time, 2.5 per cent of a
+    // layout-stress cold load. After the first call this is one load.
+    static CssPropertyRegistry& instance() {
+        CssPropertyRegistry* r = instance_.load(std::memory_order_acquire);
+        return r ? *r : construct_instance();
+    }
 
     // Returns the id, or kCustomPropertyId for an unknown or custom property.
     int id_of(std::string_view name) const;
@@ -65,8 +73,9 @@ public:
 
 private:
     CssPropertyRegistry();
+    static CssPropertyRegistry& construct_instance();
+    static std::atomic<CssPropertyRegistry*> instance_;
     std::vector<CssProperty> properties_;                 // indexed by id
-    std::vector<std::pair<std::string, int>> sorted_;      // name -> id, sorted; keeps order
     // Open-addressed name -> id index. id_of ran a binary search over
     // `sorted_`, so every `get(style, "border-top-width")` cost about eight
     // string comparisons -- and layout does nothing but that. Sampling a
