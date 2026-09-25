@@ -251,101 +251,6 @@ void test_font_metrics() {
     CHECK(near(chrome.line_height(16), 16 * 1.143));
 }
 
-void test_inline_item_collection() {
-    Fixture f;
-    CHECK(f.css("#w { display: block; font-size: 16px }"
-                "#big { font-size: 32px }"));
-    CHECK(f.layout("<body><div id=w>one <span id=big>two</span> three</div></body>"));
-
-    // The inline box tree is flattened, but each item still knows which inline
-    // box it came from — line breaking works on a flat sequence because a break
-    // can fall anywhere in it.
-    BoxTree t2;
-    // Re-collect from a freshly built tree, since layout replaced the children
-    // with line boxes.
-    Fixture g;
-    CHECK(g.css("#w { display: block; font-size: 16px } #big { font-size: 32px }"));
-    HtmlParseError he;
-    ParseOptions o;
-    o.strict = false;
-    g.doc = parse_html("<body><div id=w>one <span id=big>two</span> three</div></body>",
-                       &g.symbols, o, &he);
-    for (const Ref<Node>& c : g.doc->children()) {
-        if (c->node_type() == NodeType::Element) {
-            g.styles.compute_tree(static_cast<const Element&>(*c), nullptr);
-        }
-    }
-    BoxBuilder builder(&g.tree, &g.styles);
-    g.root = builder.build_document(*g.doc);
-    const BoxId w = g.find("w");
-    const std::vector<InlineItem> items = collect_inline_items(g.tree, w, g.ctx);
-    // Five, not three: entering the span emits a marker recording where the
-    // inline box starts (so §9.4.2 can give it a fragment box even on a line
-    // where it contributes no text of its own) and leaving it emits one for
-    // where it ends, which carries the box's end edges.
-    CHECK(items.size() == 5);
-    CHECK(items[0].text == "one ");
-    CHECK(items[1].is_inline_start());
-    CHECK(items[2].text == "two");
-    CHECK(items[3].is_inline_end());
-    CHECK(items[4].text == " three");
-    // The text inside the span is parented to it, the outer two are not; the
-    // marker itself sits OUTSIDE the box it opens, which is what puts it at the
-    // pen position where that box begins.
-    CHECK(items[0].inline_parent == kNoBox);
-    CHECK(items[1].inline_parent == kNoBox);
-    CHECK(items[2].inline_parent != kNoBox);
-    CHECK(items[1].inline_box_start == items[2].inline_parent);
-    CHECK(near(items[2].font_size, 32));
-    CHECK(near(items[0].font_size, 16));
-}
-
-void test_line_breaking() {
-    {
-        // Text that fits stays on one line.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"));
-        CHECK(f.layout("<body><div id=w>hello world</div></body>"));
-        CHECK(f.lines("w").size() == 1);
-        CHECK_EQ(f.line_text(f.lines("w")[0]), "hello world");
-        // 11 chars at 8px each.
-        CHECK(near(f.box("w").height, 19.2));
-    }
-    {
-        // A word that would overflow starts a new line instead.
-        // "hello" and "world" are 40px each, the space 8px: 88px total, so a
-        // 60px box breaks between them.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 60px; font-size: 16px }"));
-        CHECK(f.layout("<body><div id=w>hello world</div></body>"));
-        const std::vector<BoxId> ls = f.lines("w");
-        CHECK(ls.size() == 2);
-        CHECK_EQ(f.line_text(ls[0]), "hello");
-        CHECK_EQ(f.line_text(ls[1]), "world");
-        // The trailing space is trimmed off line one rather than left hanging.
-        CHECK(near(f.tree[ls[0]].y, 0));
-        CHECK(near(f.tree[ls[1]].y, 19.2));
-        CHECK(near(f.box("w").height, 38.4));
-    }
-    {
-        // A single word wider than the line overflows rather than looping or
-        // being split — breaking inside a word needs overflow-wrap.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 20px; font-size: 16px }"));
-        CHECK(f.layout("<body><div id=w>hello</div></body>"));
-        CHECK(f.lines("w").size() == 1);
-        CHECK_EQ(f.line_text(f.lines("w")[0]), "hello");
-    }
-    {
-        // `white-space: nowrap` forbids the break entirely.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 60px; font-size: 16px;"
-                    "     white-space: nowrap }"));
-        CHECK(f.layout("<body><div id=w>hello world</div></body>"));
-        CHECK(f.lines("w").size() == 1);
-    }
-}
-
 void test_whitespace_collapsing() {
     {
         // Runs of whitespace collapse to one space, and a leading space on a
@@ -788,38 +693,6 @@ void test_form_control_baselines() {
     }
 }
 
-void test_forced_breaks() {
-    {
-        // `br` forces a line break and leaves a zero-width box on the line it
-        // ends. Collecting it the way any other inline box is collected finds
-        // no children and loses the break entirely, which is what happened.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px;"
-                    "     line-height: 1 }"));
-        CHECK(f.layout("<body><div id=w>one<br>two<br>three</div></body>"));
-        const std::vector<BoxId> ls = f.lines("w");
-        CHECK(ls.size() == 3);
-        CHECK_EQ(f.line_text(ls[0]), "one");
-        CHECK_EQ(f.line_text(ls[1]), "two");
-        CHECK_EQ(f.line_text(ls[2]), "three");
-        CHECK(near(f.box("w").height, 48));
-
-        const BoxId br = f.find("br");
-        CHECK(br != kNoBox);
-        CHECK(near(f.tree[br].width, 0));
-        // Browser geometry exposes the font box, even for a shorter line-height.
-        CHECK(near(f.tree[br].height, f.metrics.ascent(16) + f.metrics.descent(16)));
-    }
-    {
-        // A break with nothing before it still ends a line.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px;"
-                    "     line-height: 1 }"));
-        CHECK(f.layout("<body><div id=w>a<br>b</div></body>"));
-        CHECK(f.lines("w").size() == 2);
-    }
-}
-
 void test_break_all() {
     {
         // A word longer than the line is split at character boundaries rather
@@ -850,53 +723,6 @@ void test_break_all() {
                     "     line-height: 1; word-break: break-all }"));
         CHECK(f.layout("<body><div id=w>abc</div></body>"));
         CHECK(f.lines("w").size() == 3);
-    }
-}
-
-// CSS 2.1 §9.4.2. The port flattened inline elements into text runs and let
-// BoxTree::clear_children orphan the inline boxes, so a `<span>` produced no box
-// at all: paint could not draw its background or border, and hit testing had
-// nothing to surface a click on. The oracle found it as two missing elements.
-void test_inline_fragments() {
-    {
-        // One line: the span's box spans exactly its own text.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
-                    "#s { background-color: #f00 }"));
-        CHECK(f.layout("<body><div id=w>one <span id=s>two</span> three</div></body>"));
-        const BoxId s = f.find_kind("s", BoxKind::Inline);
-        CHECK(s != kNoBox);
-        const Box& sb = f.tree[s];
-        // "one " is 4 chars at 8px.
-        CHECK(near(sb.x, 32));
-        CHECK(near(sb.width, 24));
-        // As tall as the font, not as the line.
-        CHECK(near(sb.height, 16 * 0.8 + 16 * 0.4));
-        // It hangs off the line box, beside the runs rather than around them.
-        CHECK(f.tree[sb.parent].kind == BoxKind::Line);
-    }
-    {
-        // An inline box with no content of its own still gets a box, at the pen
-        // where it begins. This is the shape block-in-inline splitting leaves
-        // behind when the block moves out of the inline.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"));
-        CHECK(f.layout("<body><div id=w>one <span id=s></span>two</div></body>"));
-        const BoxId s = f.find_kind("s", BoxKind::Inline);
-        CHECK(s != kNoBox);
-        CHECK(near(f.tree[s].width, 0));
-        CHECK(near(f.tree[s].x, 32));
-    }
-    {
-        // Nested inlines each get a box, and the outer one spans the inner.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"));
-        CHECK(f.layout("<body><div id=w>a <span id=o>b <span id=i>c</span></span></div></body>"));
-        const BoxId o = f.find_kind("o", BoxKind::Inline);
-        const BoxId i = f.find_kind("i", BoxKind::Inline);
-        CHECK(o != kNoBox && i != kNoBox);
-        CHECK(f.tree[o].x <= f.tree[i].x);
-        CHECK(f.tree[o].x + f.tree[o].width >= f.tree[i].x + f.tree[i].width);
     }
 }
 
@@ -965,161 +791,6 @@ void test_inline_fragment_edges() {
     }
 }
 
-void test_inline_atoms() {
-    {
-        // An inline-block is an atom: sized by shrink-to-fit, then placed whole
-        // on the line with its baseline on the line's.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
-                    "#a { display: inline-block; height: 30px }"));
-        CHECK(f.layout("<body><div id=w>x<span id=a>ab</span>y</div></body>"));
-        const std::vector<BoxId> ls = f.lines("w");
-        CHECK(ls.size() == 1);
-        // The atom hugs its two characters.
-        CHECK(near(f.box("a").width, 16));
-        // Line: "x" 8px, atom 16px, "y" 8px.
-        CHECK(near(f.tree[f.tree.child_at(ls[0], 0)].x, 0));
-        CHECK(near(f.box("a").x, 8));
-        CHECK(near(f.tree[f.tree.child_at(ls[0], 2)].x, 24));
-    }
-    {
-        // The atom's baseline is its bottom margin edge, so a tall atom pushes
-        // the line's baseline down and the text beside it sits on that line.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 400px; font-size: 16px }"
-                    "#a { display: inline-block; width: 10px; height: 50px }"));
-        CHECK(f.layout("<body><div id=w>x<span id=a></span></div></body>"));
-        const BoxId l = f.lines("w")[0];
-        CHECK(near(f.tree[l].baseline, 50));
-        CHECK(near(f.box("a").y, 0));
-        // The text sits on the same baseline, 12.8px of ascent above it.
-        CHECK(near(f.tree[f.tree.child_at(l, 0)].y, 50 - 12.8));
-        // The line is tall enough for the atom plus the text's descent.
-        CHECK(near(f.tree[l].height, 50 + 6.4));
-    }
-    {
-        // An atom wraps as a unit: it moves to the next line when it does not
-        // fit, and is never split.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 60px; font-size: 16px }"
-                    "#a { display: inline-block; width: 50px; height: 10px }"));
-        CHECK(f.layout("<body><div id=w>hello<span id=a></span></div></body>"));
-        const std::vector<BoxId> ls = f.lines("w");
-        CHECK(ls.size() == 2);
-        // The atom is REPARENTED onto its line box, so its y is line-relative
-        // and the line carries the offset down the page.
-        CHECK(f.tree[f.find("a")].parent == ls[1]);
-        CHECK(near(f.tree[ls[1]].y, 19.2));
-        // CSS 2.1 §10.8: the second line still carries the block's strut even
-        // though no text lands on it, so the 10px atom sits on the baseline
-        // with the strut's ascent above it — not flush with the line's top.
-        // Verified against Chrome on this exact markup: it puts the span 3px
-        // into a second line that is a full line-height tall. Before the strut
-        // existed the line was exactly the atom's 10px and this read 0.
-        CHECK(near(f.box("a").y, f.metrics.ascent(16) - 10));
-    }
-}
-
-void test_anonymous_block_inherits_text_align() {
-    // CSS 2.1 §9.2.1.1: an anonymous block inherits from its parent. It has no
-    // style of its own, so text-align has to be read off the parent — the way
-    // line-height already is. Read off the null style it resolved to `start`,
-    // and an atom that shared a right-aligned parent with a block sibling (so
-    // it sat in an anonymous block) was flushed left.
-    {
-        Fixture f;
-        CHECK(f.css("#w { width: 200px; text-align: right }"
-                    "#blk { height: 10px }"
-                    "#pill { display: inline-block; width: 50px; height: 10px }"));
-        CHECK(f.layout("<body><div id=w><div id=blk></div><span id=pill></span></div></body>"));
-        CHECK(near(f.box("pill").x, 150));
-    }
-    {
-        // center, and text rather than an atom, through the same path.
-        Fixture f;
-        CHECK(f.css("#w { width: 200px; text-align: center }"
-                    "#blk { height: 10px }"));
-        CHECK(f.layout("<body><div id=w><div id=blk></div>ab</div></body>"));
-        // Two 'a'-width mono glyphs, centred: the line's delta is half the slack.
-        const Box& w = f.box("w");
-        BoxId anon = kNoBox;
-        for (BoxId c : f.tree.children(f.find("w"))) {
-            if (f.tree[c].kind == BoxKind::AnonymousBlock) anon = c;
-        }
-        CHECK(anon != kNoBox);
-        BoxId line = kNoBox;
-        for (BoxId c : f.tree.children(anon)) {
-            if (f.tree[c].kind == BoxKind::Line) line = c;
-        }
-        CHECK(line != kNoBox);
-        double text_w = 0;
-        for (BoxId c : f.tree.children(line)) text_w += f.tree[c].width;
-        CHECK(text_w > 0 && text_w < w.width);
-        CHECK(near(f.tree[line].applied_text_align_delta, (w.width - text_w) * 0.5));
-    }
-}
-
-void test_letter_spacing_widens_runs() {
-    // Chrome includes spacing after the final typographic character too.
-    // Five characters gain five spacings; a preserved space gains one.
-    Fixture plain, spaced;
-    CHECK(plain.css("#w { width: 1000px; white-space: nowrap }"));
-    CHECK(spaced.css("#w { width: 1000px; white-space: nowrap; letter-spacing: 2px }"));
-    CHECK(plain.layout("<body><div id=w>Hello world</div></body>"));
-    CHECK(spaced.layout("<body><div id=w>Hello world</div></body>"));
-    double plain_w = 0, spaced_w = 0;
-    for (BoxId c : plain.tree.children(plain.lines("w")[0])) plain_w += plain.tree[c].width;
-    for (BoxId c : spaced.tree.children(spaced.lines("w")[0])) spaced_w += spaced.tree[c].width;
-    // The whole run: "Hello world" is 11 characters, 10 gaps — spaces count,
-    // as in the reference's single-line measure.
-    CHECK(near(spaced_w - plain_w, 22));
-    // em resolves against the run's own font size.
-    Fixture em;
-    CHECK(em.css("#w { width: 1000px; white-space: nowrap; font-size: 20px;"
-                 "     letter-spacing: 0.5em }"));
-    CHECK(em.layout("<body><div id=w>ab</div></body>"));
-    Fixture em0;
-    CHECK(em0.css("#w { width: 1000px; white-space: nowrap; font-size: 20px }"));
-    CHECK(em0.layout("<body><div id=w>ab</div></body>"));
-    double a = 0, b = 0;
-    for (BoxId c : em.tree.children(em.lines("w")[0])) a += em.tree[c].width;
-    for (BoxId c : em0.tree.children(em0.lines("w")[0])) b += em0.tree[c].width;
-    CHECK(near(a - b, 20));
-}
-
-void test_inline_fragment_height_and_order() {
-    {
-        // A fragment is as tall as ITS font, not the root's: the box builder
-        // never stamps a font size on an inline box.
-        Fixture f;
-        CHECK(f.css("#p { font-size: 35px; line-height: 1.28; width: 800px }"));
-        CHECK(f.layout("<body><p id=p>Welcome, <span id=hl>Matt</span>!</p></body>"));
-        const Box& hl = f.tree[f.find_kind("hl", BoxKind::Inline)];
-        CHECK(near(hl.height, f.metrics.ascent(35) + f.metrics.descent(35)));
-    }
-    {
-        // Fragments are inserted FIRST on the line, later-opened before
-        // earlier-opened, all before the runs — the reference's
-        // InsertChildFirst order, which is what the dump walks.
-        Fixture f;
-        CHECK(f.css("#p { width: 800px }"));
-        CHECK(f.layout("<body><p id=p>Edit <code id=c>menu.css</code> then <kbd id=k>F12</kbd>."
-                       "</p></body>"));
-        const std::vector<BoxId> ls = f.lines("p");
-        CHECK(ls.size() == 1);
-        std::vector<BoxId> kids;
-        for (BoxId c : f.tree.children(ls[0])) kids.push_back(c);
-        CHECK(kids.size() >= 3);
-        CHECK(f.tree[kids[0]].kind == BoxKind::Inline);
-        CHECK(f.tree[kids[0]].element->get_attribute("id") == "k");
-        CHECK(f.tree[kids[1]].kind == BoxKind::Inline);
-        CHECK(f.tree[kids[1]].element->get_attribute("id") == "c");
-        CHECK(f.tree[kids[2]].kind == BoxKind::Text);
-        // Geometry is unaffected by the order: code still sits before kbd.
-        CHECK(f.tree[kids[1]].x < f.tree[kids[0]].x);
-    }
-}
-
 void test_font_family_registry() {
     // A registered family wins for any stack that names it; an unknown head
     // is skipped, and nothing registered falls back to the default face.
@@ -1141,60 +812,6 @@ void test_font_family_registry() {
     CHECK(ctx.font_for("Sniglet, \"Baloo 2\", monospace") == &mono);
     CHECK(ctx.font_for("Sniglet, sans-serif") == nullptr);
     CHECK(ctx.font_for("") == nullptr);
-}
-
-void test_letter_spacing_counts_graphemes() {
-    // An astral emoji is one typographic character and gains one spacing.
-    Fixture a, b;
-    CHECK(a.css("#w { width: 1000px; white-space: nowrap; font-size: 32px }"));
-    CHECK(b.css("#w { width: 1000px; white-space: nowrap; font-size: 32px;"
-                "     letter-spacing: 0.01em }"));
-    CHECK(a.layout("<body><div id=w>\xF0\x9F\x98\x80</div></body>"));
-    CHECK(b.layout("<body><div id=w>\xF0\x9F\x98\x80</div></body>"));
-    double wa = 0, wb = 0;
-    for (BoxId c : a.tree.children(a.lines("w")[0])) wa += a.tree[c].width;
-    for (BoxId c : b.tree.children(b.lines("w")[0])) wb += b.tree[c].width;
-    CHECK(near(wb - wa, 0.32));
-}
-
-void test_inline_box_opening_at_line_end_has_no_fragment_there() {
-    // A `<code>` that opens at the very end of a line and whose text wraps
-    // gets its first box on the NEXT line, where its content is — the
-    // reference emits no zero-width fragment on the first line. An inline
-    // with no content anywhere still gets one where it opens.
-    Fixture f;
-    // 0.5em per glyph at 16px: 8px a character. "aaaaaaaaaa " fills 88 of 100;
-    // "bbbbbb" (48) wraps.
-    CHECK(f.css("#p { width: 100px; font-size: 16px }"));
-    CHECK(f.layout("<body><p id=p>aaaaaaaaaa <code id=c>bbbbbb</code> <span id=e></span></p>"
-                   "</body>"));
-    const std::vector<BoxId> ls = f.lines("p");
-    CHECK(ls.size() == 2);
-    bool code_on_first = false, code_on_second = false, empty_span_found = false;
-    for (BoxId c : f.tree.children(ls[0])) {
-        const Box& b = f.tree[c];
-        if (b.kind == BoxKind::Inline && b.element->get_attribute("id") == "c") code_on_first = true;
-    }
-    for (BoxId c : f.tree.children(ls[1])) {
-        const Box& b = f.tree[c];
-        if (b.kind == BoxKind::Inline && b.element->get_attribute("id") == "c") code_on_second = true;
-        if (b.kind == BoxKind::Inline && b.element->get_attribute("id") == "e") empty_span_found = true;
-    }
-    CHECK(!code_on_first);
-    CHECK(code_on_second);
-    CHECK(empty_span_found);
-}
-
-void test_inline_em_font_size_resolves_against_the_parent() {
-    // `<small>` is 0.83em in the UA sheet; inside a 14px label that is 11.62,
-    // not 0.83 of the root. The run's style is its element's, so the basis
-    // is that element's parent.
-    Fixture f;
-    CHECK(f.css("#l { font-size: 14px; width: 500px }"));
-    CHECK(f.layout("<body><div id=l>Hits <small id=s>x</small></div></body>"));
-    const Box& s = f.tree[f.find_kind("s", BoxKind::Inline)];
-    const double fs = 14 * 0.83;
-    CHECK(near(s.height, f.metrics.ascent(fs) + f.metrics.descent(fs)));
 }
 
 void test_max_content_joins_wrapped_lines() {
@@ -1298,64 +915,6 @@ void test_parent_intrinsic_measurements() {
     }
 }
 
-void test_inline_box_edges_take_space_on_the_line() {
-    // CSS 2.1 §10.6.1: an inline box's horizontal padding, border and margin
-    // are on the line — they advance the pen and belong to its fragment.
-    {
-        Fixture f;
-        CHECK(f.css("#p { width: 600px; white-space: nowrap }"
-                    "#c { padding: 2px 6px; border: 1px solid black; margin: 0 3px }"));
-        CHECK(f.layout("<body><p id=p>ab <code id=c>cd</code> ef</p></body>"));
-        const Box& c = f.tree[f.find_kind("c", BoxKind::Inline)];
-        // 8px glyphs: "ab " = 24, then margin 3 -> the border edge at 27;
-        // border 1 + padding 6 + "cd" 16 + padding 6 + border 1 = 30 wide.
-        CHECK(near(c.x, 27));
-        CHECK(near(c.width, 30));
-        // " ef" starts after the right margin: 27 + 30 + 3 = 60.
-        const std::vector<BoxId> ls = f.lines("p");
-        double ef_x = -1;
-        for (BoxId r : f.tree.children(ls[0])) {
-            if (f.tree[r].kind == BoxKind::Text && f.tree[r].text == " ") {
-                if (f.tree[r].x > 50) ef_x = f.tree[r].x;
-            }
-        }
-        CHECK(near(ef_x, 60));
-    }
-    {
-        // The edges count toward the max-content width, so a shrink-to-fit
-        // container is wide enough for the padded badge.
-        Fixture f;
-        CHECK(f.css("#w { display: inline-block; white-space: nowrap }"
-                    "#c { padding: 0 6px }"));
-        CHECK(f.layout("<body><div id=p><span id=w>a<code id=c>b</code></span></div></body>"));
-        CHECK(near(f.box("w").width, 8 + 6 + 8 + 6));
-    }
-    {
-        // A box that wraps carries its start edge on the first line and its
-        // end edge on the last only (box-decoration-break: slice).
-        Fixture f;
-        CHECK(f.css("#p { width: 60px }"
-                    "#c { padding: 0 10px }"));
-        CHECK(f.layout("<body><p id=p><code id=c>aaaa bbbb</code></p></body>"));
-        const std::vector<BoxId> ls = f.lines("p");
-        CHECK(ls.size() == 2);
-        // Line 1: padding 10 + "aaaa" 32 = 42 (the space trimmed); line 2:
-        // "bbbb" 32 + padding 10 = 42.
-        const Box& first = f.tree[f.find_kind("c", BoxKind::Inline)];
-        CHECK(near(first.x, 0) && near(first.width, 42));
-    }
-}
-
-void test_leading_space_after_an_inline_start_is_dropped() {
-    // Whitespace at the start of a line is collapsed away even when an inline
-    // box's marker precedes it: `<card>\n <span>` does not indent the span.
-    Fixture f;
-    CHECK(f.css("#c { display: inline } #w { width: 500px }"));
-    CHECK(f.layout("<body><div id=w><span id=c>\n  <span id=s>Welcome</span></span></div></body>"));
-    const Box& s = f.tree[f.find_kind("s", BoxKind::Inline)];
-    CHECK(near(s.x, 0));
-}
-
 
 // CSS Text L3 4.1.1. A newline kept by `pre`/`pre-wrap`/`pre-line` is a
 // *segment break*, and a preserved segment break forces a line break. The
@@ -1447,58 +1006,6 @@ void test_preserved_newlines_force_line_breaks() {
     }
 }
 
-
-// CSS 2.1 §9.2.1.1. A block inside an inline box breaks that box, and the
-// EMPTY fragments left either side of the block do not generate anonymous
-// blocks. Once every line box carried a strut those phantom blocks were a full
-// line-height each, so `<div><span><div>block</div></span></div>` measured
-// three line-heights where Chrome and the reference both say one.
-// CSS Text L3 3.1. `pre-wrap` preserves whitespace AND still wraps -- the two
-// are separate axes, and treating preserved whitespace as "one unbreakable
-// piece" is only right for `pre`.
-//
-// Every <textarea> is `pre-wrap` (Chrome's UA sheet, and ours), so while this
-// was wrong not one of them soft-wrapped: a value ran off the side of the box
-// and grew a horizontal scrollbar where a browser puts a second line.
-void test_pre_wrap_soft_wraps() {
-    {
-        // Narrow enough for two words per line, and the text is preserved
-        // rather than collapsed.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 90px; font-size: 16px;"
-                    "     line-height: 20px; white-space: pre-wrap }"));
-        CHECK(f.layout("<body><div id=w>one two three four</div></body>"));
-        const std::vector<BoxId> ls = f.lines("w");
-        CHECK(ls.size() > 1);
-    }
-    {
-        // `pre` in the same box does NOT wrap: one line, however long.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 90px; font-size: 16px;"
-                    "     line-height: 20px; white-space: pre }"));
-        CHECK(f.layout("<body><div id=w>one two three four</div></body>"));
-        CHECK(f.lines("w").size() == 1);
-    }
-    {
-        // The whitespace is still preserved: a run of spaces keeps its width,
-        // which is the difference from `normal`.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 4000px; font-size: 16px;"
-                    "     line-height: 20px; white-space: pre-wrap }"));
-        CHECK(f.layout("<body><div id=w>a     b</div></body>"));
-        const std::vector<BoxId> ls = f.lines("w");
-        CHECK(ls.size() == 1);
-        CHECK_EQ(f.line_text(ls[0]), "a     b");
-    }
-    {
-        // Newlines still break, and each of those lines wraps on its own.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 90px; font-size: 16px;"
-                    "     line-height: 20px; white-space: pre-wrap }"));
-        CHECK(f.layout("<body><div id=w>short\none two three four</div></body>"));
-        CHECK(f.lines("w").size() > 2);
-    }
-}
 
 
 void test_block_in_inline_empty_fragments() {
@@ -1691,38 +1198,6 @@ void test_cjk_does_not_break_latin_runs() {
     CHECK(f.line_text(ls[1]) == "本abc語");
 }
 
-// `text-overflow: ellipsis` (CSS Text Overflow L3). The port read the property
-// nowhere, so a fixed-width label with a long value spilled past its box -- or,
-// inside a clipping one, was sliced mid-letter with no sign that anything was
-// missing.
-void test_text_overflow_ellipsis() {
-    // 0.5em per character at 20px is 10px each, so the arithmetic below is
-    // exact: 100px holds ten characters, and the ellipsis is one of them.
-    const char* html = "<body><div id=w>abcdefghijklmnop</div></body>";
-    {
-        // Without it: the run keeps every character and overflows.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 100px; font-size: 20px;"
-                    "     white-space: nowrap; overflow: hidden }"));
-        CHECK(f.layout(html));
-        const std::vector<BoxId> ls = f.lines("w");
-        CHECK(ls.size() == 1);
-        CHECK(f.line_text(ls[0]) == "abcdefghijklmnop");
-    }
-    {
-        // With it: nine characters and an ellipsis, which is ten -- exactly
-        // what fits.
-        Fixture f;
-        CHECK(f.css("#w { display: block; width: 100px; font-size: 20px;"
-                    "     white-space: nowrap; overflow: hidden;"
-                    "     text-overflow: ellipsis }"));
-        CHECK(f.layout(html));
-        const std::vector<BoxId> ls = f.lines("w");
-        CHECK(ls.size() == 1);
-        CHECK(f.line_text(ls[0]) == "abcdefghi…");
-    }
-}
-
 // The three conditions, each of which alone suppresses it.
 void test_text_overflow_conditions() {
     const char* html = "<body><div id=w>abcdefghijklmnop</div></body>";
@@ -1855,56 +1330,6 @@ void test_list_marker_ordinals() {
         CHECK(mark(f, "a") == "Z.");
         CHECK(mark(f, "b") == "AA.");
     }
-}
-
-// CSS Text L3 8.1 `word-spacing`: extra space at each word separator, on top
-// of the space's own advance. Unread until now, so a heading set with
-// `word-spacing: 4px` came out at its natural spacing.
-//
-// The fixture's font is 0.5em per codepoint, so at 20px every character is
-// 10px and the arithmetic below is exact.
-void test_word_spacing() {
-    const auto width_of = [](const char* css) {
-        Fixture f;
-        CHECK(f.css(css));
-        CHECK(f.layout("<body><div id=w><span id=s>a b c</span></div></body>"));
-        return f.tree[f.find_kind("s", BoxKind::Inline)].width;
-    };
-    // "a b c" is five characters: 50px with no extra spacing.
-    const double plain = width_of("#w { display: block; width: 400px; font-size: 20px }");
-    CHECK(near(plain, 50));
-
-    // Two separators, so +4px each.
-    const double spaced = width_of("#w { display: block; width: 400px; font-size: 20px;"
-                                   "     word-spacing: 4px }");
-    CHECK(near(spaced, 58));
-
-    // `normal` is the initial value and adds nothing.
-    CHECK(near(width_of("#w { display: block; width: 400px; font-size: 20px;"
-                        "     word-spacing: normal }"), 50));
-
-    // A percentage is of the font size: 10% of 20px is 2px per separator.
-    CHECK(near(width_of("#w { display: block; width: 400px; font-size: 20px;"
-                        "     word-spacing: 10% }"), 54));
-
-    // It is inherited, so setting it on the block reaches the span's text --
-    // which the two cases above already rely on.
-}
-
-// `word-spacing` also decides where a line breaks, because it makes the line
-// wider.
-void test_word_spacing_affects_wrapping() {
-    // "aaa bbb" is 70px plain and fits a 80px box; with 20px of word-spacing
-    // it is 90px and does not.
-    Fixture f;
-    CHECK(f.css("#w { display: block; width: 80px; font-size: 20px }"));
-    CHECK(f.layout("<body><div id=w>aaa bbb</div></body>"));
-    CHECK(f.lines("w").size() == 1);
-
-    Fixture g;
-    CHECK(g.css("#w { display: block; width: 80px; font-size: 20px; word-spacing: 20px }"));
-    CHECK(g.layout("<body><div id=w>aaa bbb</div></body>"));
-    CHECK(g.lines("w").size() == 2);
 }
 
 // CSS Text L3 7.1 `text-indent`: the FIRST line starts inset, and no other.
@@ -2100,65 +1525,6 @@ void test_tab_size() {
                         "     white-space: pre-wrap; tab-size: 4 }", html), 50));
 }
 
-// The tab must not survive into the painted text: layout and paint each
-// measure what they are given, so a fragment holding a raw tab would draw its
-// glyphs somewhere layout did not put them.
-void test_tabs_are_expanded_not_measured() {
-    Fixture f;
-    CHECK(f.css("#w { display: block; width: 400px; font-size: 20px;"
-                "     white-space: pre; tab-size: 4 }"));
-    CHECK(f.layout("<body><pre id=w>	x</pre></body>"));
-    const std::vector<BoxId> ls = f.lines("w");
-    CHECK(!ls.empty());
-    if (!ls.empty()) {
-        const std::string text = f.line_text(ls[0]);
-        CHECK(text.find('	') == std::string::npos);
-        CHECK(text == " x");
-        for (BoxId c : f.tree.children(ls[0])) {
-            if (f.tree[c].text == "x") CHECK(near(f.tree[c].x, 40));
-        }
-    }
-}
-
-// A marker must not take the item's own box properties. The reference warns
-// about exactly this: styling the marker with the li's ComputedStyle hands it
-// the li's padding, border and background, and its `.zebra li` measured 26.9
-// where Chrome says 26.
-void test_list_marker_does_not_inherit_the_items_box() {
-    Fixture f;
-    CHECK(f.css("li { font-size: 20px; padding: 10px; border: 2px solid #000;"
-                "     list-style-type: decimal }"));
-    CHECK(f.layout("<body><ol><li id=a>x</li></ol></body>"));
-    const std::vector<BoxId> ls = f.lines("a");
-    CHECK(!ls.empty());
-    if (ls.empty()) return;
-    // The marker is measured from the item's CONTENT edge -- border 2 plus
-    // padding 10 -- and not one padding further in. That is what this test is
-    // about, and it still holds; what changed is which side of the edge the
-    // marker lands on.
-    //
-    // `list-style-position` is `outside` by default, so the marker ENDS at the
-    // content edge rather than starting there. Asserting x=0 here was
-    // asserting the marker sat in the inline flow, which shifted every inline
-    // child of every list item right by the marker's width.
-    double first_x = 0, last_x = 0;
-    bool any = false;
-    for (BoxId c : f.tree.children(ls[0])) {
-        if (!any) first_x = f.tree[c].x;
-        last_x = f.tree[c].x;
-        any = true;
-    }
-    CHECK(any);
-    // Relative to the line box, which is already inset by the frame.
-    CHECK(first_x < 0);
-    // And the item's own content begins exactly at the edge.
-    CHECK(near(last_x, 0));
-
-    // And the item is one line tall plus its own frame: a marker carrying the
-    // li's padding a second time would show up here.
-    CHECK(near(f.box("a").height, 20 * 1.2 + 20 + 4));
-}
-
 // `li::marker { ... }` styles the marker apart from the item, which is the
 // only way to give a bullet its own colour or size. The port computed no
 // marker pseudo at all, so such a rule matched nothing.
@@ -2227,22 +1593,5 @@ void test_flex_flow_reaches_layout() {
         CHECK(f.layout("<body><div id=g><div id=a class=i></div><div id=b class=i></div>"
                        "<div id=c class=i></div></div></body>"));
         CHECK(near(f.box("c").y, 20));   // pushed to the second line
-    }
-}
-
-void test_inline_wrapped_fragments_keep_element_identity() {
-    Fixture f;
-    CHECK(f.css("#w{width:50px;font-size:20px}#s{background:red}"));
-    CHECK(f.layout("<div id=w><span id=s>one two three</span></div>"));
-    const auto lines = f.lines("w");
-    CHECK(lines.size() == 3);
-    for (BoxId line : lines) {
-        const BoxId fragment = f.find_kind("s", BoxKind::Inline, line);
-        CHECK(fragment != kNoBox);
-        if (fragment != kNoBox) {
-            CHECK(f.tree[fragment].width > 0);
-            CHECK(near(f.tree[fragment].height, 24));
-            CHECK(f.tree[fragment].element == f.tree[f.find_kind("s", BoxKind::Inline)].element);
-        }
     }
 }

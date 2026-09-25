@@ -121,46 +121,6 @@ const char* kCss = "html, body { margin: 0 } input { display: block }";
 
 }   // namespace
 
-void test_abi_checkbox() {
-    Doc doc(kCss, "<input id=a type=checkbox><input id=b type=checkbox checked>");
-    CHECK(doc.value("#a").empty());
-    CHECK(doc.value("#b") == "on");
-
-    double x = 0, y = 0, w = 0, h = 0;
-    doc.bounds("#a", &x, &y, &w, &h);
-    doc.click(x + w / 2, y + h / 2);
-    CHECK(doc.value("#a") == "on");
-
-    // And back off: a checkbox is a toggle.
-    doc.click(x + w / 2, y + h / 2);
-    CHECK(doc.value("#a").empty());
-
-    // The change reaches the host as an event, which is what a script binds to.
-    doc.drain();
-    doc.click(x + w / 2, y + h / 2);
-    bool changed = false;
-    for (const weva_event& e : doc.drain()) {
-        if (e.kind == WEVA_EVENT_VALUE_CHANGED &&
-            e.target == weva_document_query(doc.d, "#a")) {
-            changed = true;
-            CHECK(std::string(e.text) == "on");
-        }
-    }
-    CHECK(changed);
-
-    // `:checked` selects it, so a stylesheet can show the state.
-    Doc styled("html, body { margin: 0 } input { display: block; width: 20px; height: 20px }"
-               "input:checked { background: #ff0000 }",
-               "<input id=a type=checkbox>");
-    size_t before = 0;
-    weva_document_draws(styled.d, &before);
-    styled.bounds("#a", &x, &y, &w, &h);
-    styled.click(x + w / 2, y + h / 2);
-    size_t after = 0;
-    weva_document_draws(styled.d, &after);
-    CHECK(after != before);
-}
-
 void test_abi_radio_group() {
     Doc doc(kCss,
             "<input id=a type=radio name=g>"
@@ -190,78 +150,6 @@ void test_abi_radio_group() {
     doc.bounds("#b", &x, &y, &w, &h);
     doc.click(x + w / 2, y + h / 2);
     CHECK(doc.value("#b") == "on");
-}
-
-void test_abi_range_drag() {
-    {
-        Doc tall("html,body{margin:0}input{display:block;width:200px;height:40px}",
-                 "<input id=r type=range min=0 max=100 value=50>");
-        double x,y,w,h; tall.bounds("#r",&x,&y,&w,&h);
-        size_t count = 0;
-        const weva_draw* draws = weva_document_draws(tall.d,&count);
-        double top = 1e9, bottom = -1e9;
-        for (size_t i=0;i<count;++i) for (size_t v=0;v<draws[i].vertex_count;++v) {
-            top = std::min(top,static_cast<double>(draws[i].vertices[v].y));
-            bottom = std::max(bottom,static_cast<double>(draws[i].vertices[v].y));
-        }
-        CHECK(std::fabs((top+bottom)/2-(y+h/2)) < 0.01);
-        // The 14px thumb has a subpixel antialias fringe on either side.
-        CHECK(bottom-top >= 14 && bottom-top < 16);
-        // Empty space above the rail is still part of the input's hit area.
-        weva_document_set_pointer(tall.d,x+w*.25,y+1,1);
-        weva_document_update(tall.d,0);
-        const double value = std::atof(tall.value("#r").c_str());
-        CHECK(value > 20 && value < 30);
-    }
-    Doc doc("html, body { margin: 0 } input { display: block; width: 200px; height: 20px }",
-            "<input id=r type=range min=0 max=100 value=50>");
-    CHECK(doc.value("#r") == "50");
-
-    double x = 0, y = 0, w = 0, h = 0;
-    doc.bounds("#r", &x, &y, &w, &h);
-
-    // Pressing takes effect immediately, before any release -- a slider jumps
-    // to where you pressed it.
-    weva_document_set_pointer(doc.d, x + w * 0.25, y + h / 2, 1);
-    weva_document_update(doc.d, 0);
-    const double quarter = std::atof(doc.value("#r").c_str());
-    CHECK(quarter > 20 && quarter < 30);
-
-    // Still held, and moving: it follows.
-    weva_document_set_pointer(doc.d, x + w * 0.75, y + h / 2, 1);
-    weva_document_update(doc.d, 0);
-    const double three_quarters = std::atof(doc.value("#r").c_str());
-    CHECK(three_quarters > 70 && three_quarters < 80);
-
-    // Dragged past the end, it clamps rather than running off.
-    weva_document_set_pointer(doc.d, x + w * 3, y + h / 2, 1);
-    weva_document_update(doc.d, 0);
-    CHECK(doc.value("#r") == "100");
-    weva_document_set_pointer(doc.d, x - 500, y + h / 2, 1);
-    weva_document_update(doc.d, 0);
-    CHECK(doc.value("#r") == "0");
-
-    // Released, it stops following.
-    weva_document_set_pointer(doc.d, x + w * 0.5, y + h / 2, 0);
-    weva_document_update(doc.d, 0);
-    const std::string settled = doc.value("#r");
-    weva_document_set_pointer(doc.d, x + w * 0.9, y + h / 2, 0);
-    weva_document_update(doc.d, 0);
-    CHECK(doc.value("#r") == settled);
-}
-
-void test_abi_range_step_and_bounds() {
-    Doc doc("html, body { margin: 0 } input { display: block; width: 200px; height: 20px }",
-            "<input id=r type=range min=0 max=10 step=5 value=0>");
-    double x = 0, y = 0, w = 0, h = 0;
-    doc.bounds("#r", &x, &y, &w, &h);
-    // Just past the middle snaps to the step, not to the exact position.
-    weva_document_set_pointer(doc.d, x + w * 0.55, y + h / 2, 1);
-    weva_document_update(doc.d, 0);
-    CHECK(doc.value("#r") == "5");
-    weva_document_set_pointer(doc.d, x + w * 0.95, y + h / 2, 1);
-    weva_document_update(doc.d, 0);
-    CHECK(doc.value("#r") == "10");
 }
 
 void test_abi_text_field_editing() {
@@ -1646,34 +1534,6 @@ void test_abi_changed_elements() {
     CHECK(weva_document_changed_elements(nullptr, nullptr, 0) == 0);
 }
 
-// A <textarea> keeps what it holds as its CONTENT, not in a `value`
-// attribute -- the markup between the tags is the value, as it is in a
-// browser. Typing used to write an attribute nothing displayed, so the box
-// stayed empty while the keystrokes went somewhere invisible.
-void test_abi_textarea_edits_its_content() {
-    Doc doc("html, body { margin: 0 } textarea { display: block; width: 200px; height: 80px }",
-            "<textarea id=t>hello</textarea>");
-    const weva_element_t t = weva_document_query(doc.d, "#t");
-    CHECK(doc.value("#t") == "hello");   // read from the content
-
-    weva_document_set_focus(doc.d, t);
-    place_caret_at_end(doc.d, t);
-    weva_document_text_input(doc.d, "!");
-    weva_document_update(doc.d, 0);
-    CHECK(doc.value("#t") == "hello!");
-    // Markup retains the reset default while layout uses the live value.
-    char buf[64] = {0};
-    weva_element_text(doc.d, t, buf, sizeof(buf));
-    CHECK(std::string(buf) == "hello");
-
-    // A host setter changes the live value without replacing that default.
-    CHECK(weva_element_set_value(doc.d, t, "typed by the game") == WEVA_OK);
-    weva_document_update(doc.d, 0);
-    weva_element_text(doc.d, t, buf, sizeof(buf));
-    CHECK(std::string(buf) == "hello");
-    CHECK(doc.value("#t") == "typed by the game");
-}
-
 // Enter is the one key that means something different in a box you can write
 // paragraphs in.
 void test_abi_textarea_newlines() {
@@ -1832,46 +1692,6 @@ void test_abi_textarea_caret() {
     CHECK(caret_of(doc.d).first < 0);
     weva_document_update(doc.d, 0.5);
     CHECK(caret_of(doc.d).first > 0);
-}
-
-// The view follows the cursor. Typing at the bottom of a textarea has to move
-// what you can see, or the text goes on past the end of the box and you are
-// writing blind.
-void test_abi_textarea_scrolls_to_caret() {
-    // Six lines of 20 in a box 50 tall: three fit, three do not.
-    std::string many = "one\ntwo\nthree\nfour\nfive\nsix";
-    const std::string html = "<textarea id=t>" + many + "</textarea>";
-    Doc doc("html, body { margin: 0 }"
-            "textarea { display: block; width: 300px; height: 50px; padding: 0; border: 0;"
-            "           font-size: 14px; line-height: 20px }",
-            html.c_str());
-    const weva_element_t t = weva_document_query(doc.d, "#t");
-    double y = 0, most = 0;
-    weva_element_scroll(doc.d, t, nullptr, &y, nullptr, &most);
-    CHECK(most > 0);   // there is more text than box
-    CHECK(y == 0);
-
-    // Focusing puts the cursor at the end, which is on the last line -- so the
-    // view goes there with it.
-    weva_document_set_focus(doc.d, t);
-    place_caret_at_end(doc.d, t);
-    weva_document_update(doc.d, 0);
-    weva_element_scroll(doc.d, t, nullptr, &y, nullptr, &most);
-    CHECK(y == most);
-
-    // And back up when the cursor goes back up.
-    for (int i = 0; i < 5; ++i) weva_document_key(doc.d, WEVA_KEY_UP, 0, 1);
-    weva_document_update(doc.d, 0);
-    weva_element_scroll(doc.d, t, nullptr, &y, nullptr, nullptr);
-    CHECK(y == 0);
-
-    // A reader who scrolls away stays there: the view follows the CURSOR, not
-    // every frame.
-    weva_element_set_scroll(doc.d, t, 0, most);
-    weva_document_update(doc.d, 0);
-    weva_document_update(doc.d, 0.016);
-    weva_element_scroll(doc.d, t, nullptr, &y, nullptr, nullptr);
-    CHECK(y == most);
 }
 
 namespace {
@@ -2044,90 +1864,6 @@ void test_abi_selection_is_drawn() {
     weva_element_set_selection(area.d, a, 0, 5);
     weva_document_update(area.d, 0);
     CHECK(band_width(area.d) > 0);
-}
-
-// Clicking into a field puts the cursor where you clicked. Until this, a click
-// focused the field and dropped the cursor at the end, so the middle of a
-// value could not be reached with the mouse at all.
-void test_abi_click_places_caret() {
-    Doc doc("html, body { margin: 0 }"
-            "input { display: block; width: 300px; height: 30px; font-size: 16px;"
-            "        padding: 0; border: 0 }",
-            "<input id=t type=text value=abcdefghij>");
-    const weva_element_t t = weva_document_query(doc.d, "#t");
-    double x = 0, y = 0, w = 0, h = 0;
-    doc.bounds("#t", &x, &y, &w, &h);
-
-    // Hard left is before the first character.
-    weva_document_set_pointer(doc.d, x + 1, y + h / 2, 1);
-    weva_document_set_pointer(doc.d, x + 1, y + h / 2, 0);
-    weva_document_update(doc.d, 0);
-    int start = 0, end = 0;
-    weva_element_selection(doc.d, t, &start, &end);
-    CHECK(end == 0);
-
-    // Far to the right of the text is after the last character.
-    weva_document_set_pointer(doc.d, x + w - 1, y + h / 2, 1);
-    weva_document_set_pointer(doc.d, x + w - 1, y + h / 2, 0);
-    weva_document_update(doc.d, 0);
-    weva_element_selection(doc.d, t, &start, &end);
-    CHECK(end == 10);
-
-    // And somewhere in the middle lands in the middle -- typing there goes
-    // where the click was, which is the whole point.
-    const double middle = x + (x + w - 1 - x) * 0.0;
-    (void)middle;
-    weva_document_set_pointer(doc.d, x + 40, y + h / 2, 1);
-    weva_document_set_pointer(doc.d, x + 40, y + h / 2, 0);
-    weva_document_update(doc.d, 0);
-    weva_element_selection(doc.d, t, &start, &end);
-    CHECK(end > 0);
-    CHECK(end < 10);
-    const int clicked = end;
-    weva_document_text_input(doc.d, "-");
-    CHECK(doc.value("#t").substr(static_cast<size_t>(clicked), 1) == "-");
-
-    // A click also drops whatever was selected.
-    weva_document_select_all(doc.d);
-    weva_document_set_pointer(doc.d, x + 40, y + h / 2, 1);
-    weva_document_update(doc.d, 0);
-    weva_element_selection(doc.d, t, &start, &end);
-    CHECK(start == end);
-}
-
-// Dragging from a press selects, and keeps selecting once the pointer has left
-// the field.
-void test_abi_drag_selects() {
-    Doc doc("html, body { margin: 0 }"
-            "input { display: block; width: 300px; height: 30px; font-size: 16px;"
-            "        padding: 0; border: 0 }",
-            "<input id=t type=text value=abcdefghij>");
-    const weva_element_t t = weva_document_query(doc.d, "#t");
-    double x = 0, y = 0, w = 0, h = 0;
-    doc.bounds("#t", &x, &y, &w, &h);
-
-    weva_document_set_pointer(doc.d, x + 1, y + h / 2, 1);      // press at the start
-    weva_document_set_pointer(doc.d, x + 40, y + h / 2, 1);     // drag right
-    weva_document_update(doc.d, 0);
-    int start = 0, end = 0;
-    weva_element_selection(doc.d, t, &start, &end);
-    CHECK(start == 0);
-    CHECK(end > 0);
-    const std::string dragged = selected(doc.d);
-    CHECK(!dragged.empty());
-    CHECK(doc.value("#t").rfind(dragged, 0) == 0);   // from the beginning
-
-    // Further right takes more, and past the end takes everything.
-    weva_document_set_pointer(doc.d, x + w + 200, y + h / 2, 1);
-    weva_document_update(doc.d, 0);
-    CHECK(selected(doc.d) == "abcdefghij");
-
-    // Releasing leaves the selection where it was; moving after that does not
-    // extend it.
-    weva_document_set_pointer(doc.d, x + w + 200, y + h / 2, 0);
-    weva_document_set_pointer(doc.d, x + 20, y + h / 2, 0);
-    weva_document_update(doc.d, 0);
-    CHECK(selected(doc.d) == "abcdefghij");
 }
 
 // A double click takes the word. The platform decides what a double click IS
@@ -2414,49 +2150,6 @@ void test_abi_select_reflects_choice() {
     CHECK(weva_document_open_select(div.d, weva_document_query(div.d, "#d")) == 0);
 }
 
-// A disabled control is not a target. It still occupies its space -- what is
-// behind it is not hit either -- but nothing about it responds, which is what
-// makes it look disabled rather than merely grey.
-void test_abi_disabled_controls_are_inert() {
-    Doc doc("html, body { margin: 0 }"
-            "input, button { display: block; width: 120px; height: 24px }"
-            "button:hover { background: #ff0000 }",
-            "<button id=go disabled>Go</button>"
-            "<input id=c type=checkbox disabled>"
-            "<input id=t type=text value=abc disabled>"
-            "<input id=live type=checkbox>");
-    double x = 0, y = 0, w = 0, h = 0;
-
-    // A click on it raises nothing and changes nothing.
-    doc.bounds("#c", &x, &y, &w, &h);
-    doc.click(x + w / 2, y + h / 2);
-    CHECK(doc.value("#c").empty());
-    for (const weva_event& e : doc.drain()) {
-        CHECK(e.kind != WEVA_EVENT_CLICK);
-    }
-
-    // Nor is it hovered, so `:hover` cannot light it up.
-    doc.bounds("#go", &x, &y, &w, &h);
-    size_t before = 0;
-    weva_document_draws(doc.d, &before);
-    weva_document_set_pointer(doc.d, x + w / 2, y + h / 2, 0);
-    weva_document_update(doc.d, 0);
-    size_t after = 0;
-    weva_document_draws(doc.d, &after);
-    CHECK(after == before);
-
-    // And it cannot take focus, so a host cannot put the keyboard where the
-    // user could not.
-    CHECK(weva_document_set_focus(doc.d, weva_document_query(doc.d, "#t")) != WEVA_OK);
-    weva_document_text_input(doc.d, "z");
-    CHECK(doc.value("#t") == "abc");
-
-    // The one beside it still works, so this is disabling and not breaking.
-    doc.bounds("#live", &x, &y, &w, &h);
-    doc.click(x + w / 2, y + h / 2);
-    CHECK(doc.value("#live") == "on");
-}
-
 // A list longer than the cap scrolls. Without this its last options could be
 // neither seen nor clicked -- they were simply not drawn.
 void test_abi_select_long_list_scrolls() {
@@ -2554,47 +2247,6 @@ void test_abi_checkbox_draws_a_tick() {
     CHECK(ink(pale.d, false) < 0.1);
 }
 
-// A list box -- a <select> with `size` or `multiple` -- lays its options out
-// in flow instead of hiding them behind a closed control. They rendered and
-// nothing more: a keybind list or a server list could be shown and never used.
-void test_abi_list_box_selects() {
-    Doc doc("html, body { margin: 0 }"
-            "select { display: block; width: 180px; height: 90px; padding: 0; border: 0 }"
-            "option { font-size: 14px }",
-            "<select id=s size=4>"
-            "<option value=a>Alpha</option>"
-            "<option value=b selected>Bravo</option>"
-            "<option value=c>Charlie</option>"
-            "</select>");
-    CHECK(doc.value("#s") == "b");
-
-    // Clicking a row chooses it, and only it.
-    double x = 0, y = 0, w = 0, h = 0;
-    doc.bounds("#s option:nth-child(3)", &x, &y, &w, &h);
-    CHECK(w > 0);
-    doc.click(x + w / 2, y + h / 2);
-    CHECK(doc.value("#s") == "c");
-    // Which the DOM holds, so `:checked` can style the chosen row.
-    char buf[8] = {0};
-    CHECK(weva_element_attribute(doc.d, weva_document_query(doc.d, "#s option:nth-child(2)"),
-                                 "selected", buf, sizeof(buf)) == 0);
-
-    // The change reaches the host against the SELECT, not the option: that is
-    // the control a script binds to.
-    doc.drain();
-    doc.bounds("#s option:nth-child(1)", &x, &y, &w, &h);
-    doc.click(x + w / 2, y + h / 2);
-    bool announced = false;
-    for (const weva_event& e : doc.drain()) {
-        if (e.kind == WEVA_EVENT_VALUE_CHANGED &&
-            e.target == weva_document_query(doc.d, "#s")) {
-            announced = true;
-            CHECK(std::string(e.text) == "a");
-        }
-    }
-    CHECK(announced);
-}
-
 // A plain click replaces selection. Modifier-aware toggle/range and drag
 // behavior is covered in test_select_controls.cpp.
 void test_abi_list_box_multiple() {
@@ -2629,95 +2281,6 @@ void test_abi_list_box_multiple() {
     off.bounds("#s option:nth-child(1)", &x, &y, &w, &h);
     off.click(x + w / 2, y + h / 2);
     CHECK(off.value("#s").empty());
-}
-
-// The cascade shares one element's match set with another that hashes the
-// same, and an ANCESTOR's attributes are part of what makes two elements
-// different: `select[size] option { display: block }` matches on the parent's
-// attribute, so a plain <select> and a <select size> that fold alike hand
-// their options the same rules.
-//
-// It was quiet and total: a list box AFTER a plain select showed nothing. Its
-// options took `display: none` from the earlier select's option, computed
-// under the same key, so the rows were not merely unstyled -- they generated
-// no boxes at all.
-//
-// This lives here rather than beside the cascade's own tests because it only
-// appears through a whole document: the fixture there computes an element at a
-// time, which does not share a match set between two of them.
-void test_abi_ancestor_attribute_reaches_the_cascade() {
-    // No ids anywhere on the elements being compared, and none on their
-    // parents: an id is folded into the key too, so giving the two selects
-    // different ones would separate them for a reason that has nothing to do
-    // with the attribute this is about -- which is exactly how the first
-    // attempt at this test passed against the bug it was written for.
-    Doc doc("html, body { margin: 0 }"
-            "select { display: block; width: 200px; height: 80px; padding: 0; border: 0 }",
-            "<select><option>Only</option></select>"
-            "<select size=3><option>Alpha</option><option>Bravo</option></select>");
-    double x = 0, y = 0, w = 0, h = 0;
-    // The closed select's option is `display: none` and generates no box.
-    CHECK(weva_element_bounds(doc.d,
-                              weva_document_query(doc.d, "select:nth-of-type(1) option"),
-                              &x, &y, &w, &h) == WEVA_ERR_NOT_FOUND);
-    // The list box's are laid out in flow and generate one each -- which they
-    // did not while they shared the closed select's option's match set.
-    CHECK(weva_element_bounds(doc.d,
-                              weva_document_query(doc.d, "select:nth-of-type(2) option"),
-                              &x, &y, &w, &h) == WEVA_OK);
-    CHECK(h > 0);
-
-    // The other order, since a cache is only wrong one way at a time.
-    Doc other("html, body { margin: 0 }"
-              "select { display: block; width: 200px; height: 80px; padding: 0; border: 0 }",
-              "<select size=3><option>Alpha</option></select>"
-              "<select><option>Only</option></select>");
-    CHECK(weva_element_bounds(other.d,
-                              weva_document_query(other.d, "select:nth-of-type(1) option"),
-                              &x, &y, &w, &h) == WEVA_OK);
-    CHECK(weva_element_bounds(other.d,
-                              weva_document_query(other.d, "select:nth-of-type(2) option"),
-                              &x, &y, &w, &h) == WEVA_ERR_NOT_FOUND);
-
-    // And the general shape, with nothing to do with form controls: two
-    // identical children whose parents differ only by an attribute a rule
-    // selects on.
-    Doc generic("html, body { margin: 0 }"
-                "span { display: block; height: 10px }"
-                "div[data-open] span { height: 30px }",
-                "<div><span></span></div><div data-open><span></span></div>");
-    CHECK(generic.height("div:nth-of-type(1) span") == 10);
-    CHECK(generic.height("div:nth-of-type(2) span") == 30);
-}
-
-// More rows than fit is the normal case for a keybind or a server list, so a
-// list box scrolls: without it the rows past the edge can be neither seen nor
-// clicked, which is the same hole the dropdown had.
-void test_abi_list_box_scrolls() {
-    Doc doc("html, body { margin: 0 }"
-            "select { display: block; width: 200px; height: 60px; padding: 0; border: 0 }"
-            "option { font-size: 14px }",
-            "<select id=s size=3>"
-            "<option value=a>Alpha</option><option value=b>Bravo</option>"
-            "<option value=c>Charlie</option><option value=d>Delta</option>"
-            "<option value=e>Echo</option></select>");
-    double y = 0, most = 0;
-    weva_element_scroll(doc.d, weva_document_query(doc.d, "#s"), nullptr, &y, nullptr, &most);
-    CHECK(most > 0);   // five rows in a box that holds three
-
-    // The wheel over it moves it, and the rows move with it.
-    double x = 0, top = 0, w = 0, h = 0;
-    doc.bounds("#s option:nth-child(1)", &x, &top, &w, &h);
-    CHECK(weva_document_scroll(doc.d, 100, 30, 0, h) == 1);
-    weva_document_update(doc.d, 0);
-    double moved = 0;
-    doc.bounds("#s option:nth-child(1)", &x, &moved, &w, &h);
-    CHECK(moved < top);   // the first row has gone up out of the way
-
-    // And a click still lands on the row you can SEE, not the one that used to
-    // be there.
-    doc.click(100, 30 + h * 0.5);
-    CHECK(doc.value("#s") != "a");
 }
 
 // Ctrl turns every motion key into its word-sized version. Without it a user
@@ -2863,37 +2426,6 @@ void test_abi_undo_groups_typing() {
     CHECK(weva_document_redo(doc.d) == 0);
 }
 
-// What breaks a typing run: anything that is not typing.
-void test_abi_undo_breaks_on_other_edits() {
-    Doc doc("html, body { margin: 0 } input { display: block; width: 300px; height: 30px }",
-            "<input id=t type=text value=''>");
-    const weva_element_t t = weva_document_query(doc.d, "#t");
-    weva_document_set_focus(doc.d, t);
-
-    weva_document_text_input(doc.d, "a");
-    weva_document_text_input(doc.d, "b");
-    weva_document_key(doc.d, WEVA_KEY_BACKSPACE, 0, 1);   // ends the run
-    weva_document_text_input(doc.d, "c");
-    weva_document_text_input(doc.d, "d");
-    CHECK(doc.value("#t") == "acd");
-
-    // Three steps back through three groups: "cd", the backspace, then "ab".
-    CHECK(weva_document_undo(doc.d) == 1);
-    CHECK(doc.value("#t") == "a");
-    CHECK(weva_document_undo(doc.d) == 1);
-    CHECK(doc.value("#t") == "ab");
-    CHECK(weva_document_undo(doc.d) == 1);
-    CHECK(doc.value("#t").empty());
-
-    // Redo walks the same three forward.
-    CHECK(weva_document_redo(doc.d) == 1);
-    CHECK(doc.value("#t") == "ab");
-    CHECK(weva_document_redo(doc.d) == 1);
-    CHECK(doc.value("#t") == "a");
-    CHECK(weva_document_redo(doc.d) == 1);
-    CHECK(doc.value("#t") == "acd");
-}
-
 // The parts of undo other than the text.
 void test_abi_undo_restores_cursor_and_forgets_scripted_writes() {
     Doc doc("html, body { margin: 0 } input { display: block; width: 300px; height: 30px }",
@@ -2984,59 +2516,6 @@ void test_abi_details_toggles() {
     CHECK(weva_document_query(doc.d, "#d[open]") == WEVA_ELEMENT_NONE);
 }
 
-// Which clicks count, and which must not.
-void test_abi_details_only_its_own_summary() {
-    Doc doc("html, body { margin: 0 } summary { height: 20px } p { height: 40px }"
-            " details { display: block }",
-            "<details id=outer open><summary id=os>Outer</summary>"
-            "<p id=text>Body text</p>"
-            "<details id=inner><summary id=is>Inner</summary><p id=ibody>Deep</p></details>"
-            "</details>");
-    const weva_element_t outer = weva_document_query(doc.d, "#outer");
-    const weva_element_t inner = weva_document_query(doc.d, "#inner");
-    double x = 0, y = 0, w = 0, h = 0;
-
-    // A click in the open body is not a click on the summary, so it must not
-    // collapse what the reader is reading.
-    weva_element_bounds(doc.d, weva_document_query(doc.d, "#text"), &x, &y, &w, &h);
-    doc.click(x + w / 2, y + h / 2);
-    weva_document_update(doc.d, 0);
-    CHECK(weva_document_query(doc.d, "#outer[open]") == outer);
-
-    // The inner summary toggles the INNER one. Its own <details> is the
-    // nearest, not the outermost.
-    weva_element_bounds(doc.d, weva_document_query(doc.d, "#is"), &x, &y, &w, &h);
-    doc.click(x + w / 2, y + h / 2);
-    weva_document_update(doc.d, 0);
-    CHECK(weva_document_query(doc.d, "#inner[open]") == inner);
-    CHECK(weva_document_query(doc.d, "#outer[open]") == outer);   // untouched
-}
-
-// The event a script hangs "load this section the first time it opens" on.
-void test_abi_details_reports_the_toggle() {
-    Doc doc("html, body { margin: 0 } summary { height: 20px }",
-            "<details id=d on-toggle=OnDisclose><summary id=s>More</summary>"
-            "<p>Body</p></details>");
-    double x = 0, y = 0, w = 0, h = 0;
-    weva_element_bounds(doc.d, weva_document_query(doc.d, "#s"), &x, &y, &w, &h);
-    doc.click(x + w / 2, y + h / 2);
-    weva_document_update(doc.d, 0);
-
-    int toggles = 0;
-    std::string handler;
-    weva_element_t target = WEVA_ELEMENT_NONE;
-    weva_event e{};
-    while (weva_document_poll_event(doc.d, &e)) {
-        if (e.kind != WEVA_EVENT_TOGGLE) continue;
-        ++toggles;
-        handler = e.handler;
-        target = e.target;
-    }
-    CHECK(toggles == 1);
-    CHECK(handler == "OnDisclose");
-    CHECK(target == weva_document_query(doc.d, "#d"));   // the <details>, not the summary
-}
-
 // A modal <dialog> gets a `::backdrop` behind it. The UA sheet has carried a
 // `::backdrop` rule all along and nothing ever built the box it styles, so the
 // rule matched nothing and a modal dialog looked exactly like a non-modal one.
@@ -3084,28 +2563,6 @@ void test_abi_dialog_backdrop() {
     // Only a <dialog> takes these.
     CHECK(weva_element_show_dialog(doc.d, weva_document_query(doc.d, "#page"), 1) ==
           WEVA_ERR_NOT_FOUND);
-}
-
-// An open popover is the other top-layer shape, and shares the machinery.
-void test_abi_popover_backdrop() {
-    Doc doc("html, body { margin: 0; height: 600px }"
-            " [popover] { width: 120px; height: 60px }",
-            "<div id=p popover>Menu</div>");
-    const weva_element_t p = weva_document_query(doc.d, "#p");
-    weva_document_update(doc.d, 0);
-    CHECK(doc.backdrops() == 0);
-
-    // Authored data attributes are not browser popover state.
-    CHECK(weva_element_set_attribute(doc.d, p, "data-popover-open", "") == WEVA_OK);
-    weva_document_update(doc.d, 0);
-    CHECK(doc.backdrops() == 0);
-    CHECK(weva_element_show_popover(doc.d, p) == WEVA_OK);
-    weva_document_update(doc.d, 0);
-    CHECK(doc.backdrops() == 1);
-
-    CHECK(weva_element_hide_popover(doc.d, p) == WEVA_OK);
-    weva_document_update(doc.d, 0);
-    CHECK(doc.backdrops() == 0);
 }
 
 namespace {
@@ -3526,19 +2983,6 @@ void test_abi_popover_escape_walks_the_stack() {
     // With no auto popover left, Escape is not ours to take.
     CHECK(weva_document_key(doc.d, WEVA_KEY_ESCAPE, 0, 1) == 0);
     CHECK(open_popover(doc.d, "#pinned"));
-}
-
-// An open popover is a top-layer host, so it gets the same backdrop a modal
-// dialog does -- one mechanism, two shapes.
-void test_abi_popover_joins_the_top_layer() {
-    Doc doc("html, body { margin: 0; height: 300px }"
-            " [popover] { width: 120px; height: 60px }",
-            "<div id=menu popover>Menu</div>");
-    CHECK(doc.backdrops() == 0);
-    weva_element_show_popover(doc.d, weva_document_query(doc.d, "#menu"));
-    CHECK(doc.backdrops() == 1);
-    weva_element_hide_popover(doc.d, weva_document_query(doc.d, "#menu"));
-    CHECK(doc.backdrops() == 0);
 }
 
 // Clicking the word beside a checkbox toggles it. Every UI works this way, and

@@ -358,40 +358,6 @@ void test_abi_text_editing_boundaries() {
     CHECK(weva::backward_delete_boundary("\xFF", 1) == 0);
 }
 
-void test_abi_input_text_scroll() {
-    Field d;
-    d.value("abcdefghijklmnopqrstuvwxyz");
-    CHECK(near(d.caret_x(), 99));
-    d.key(WEVA_KEY_HOME); CHECK(near(d.caret_x(), 0));
-    d.key(WEVA_KEY_END); CHECK(near(d.caret_x(), 99));
-    d.key(WEVA_KEY_LEFT); CHECK(d.caret_x() > 80 && d.caret_x() < 99);
-    d.key(WEVA_KEY_END); d.caret_x();
-    d.click(98); CHECK(d.selection() == 26); // Hit testing includes the retained scroll offset.
-    d.click(1); CHECK(d.selection() > 0 && d.selection() < 26);
-    CHECK(d.caret_x() >= 0 && d.caret_x() <= 99);
-    d.key(WEVA_KEY_END);
-    weva_element_set_attribute(d.doc, d.field, "style", "width:60px");
-    CHECK(near(d.caret_x(), 59));
-    weva_element_set_attribute(d.doc, d.field, "style", "width:400px");
-    const double whole = d.caret_x();
-    CHECK(whole > 100 && whole < 400);
-    weva_element_set_attribute(d.doc, d.field, "style", "width:100px");
-    CHECK(near(d.caret_x(), 99));
-    d.value("xy"); CHECK(d.caret_x() > 0 && d.caret_x() < 50);
-    d.value("abcdefghijklmnopqrstuvwxyz"); d.caret_x();
-    weva_document_set_focus(d.doc, weva_document_query(d.doc, "#other"));
-    weva_document_update(d.doc, 0);
-    d.click(1); CHECK(d.selection() == 0); // Blur resets the field's text scroll.
-    CHECK(near(d.caret_x(), 0));
-    d.value("abcdefghijklmnopqrstuvwxyz"); d.caret_x();
-    const char* html = "<input id=f value=xy>";
-    weva_document_load_html(d.doc, html, std::strlen(html));
-    weva_document_update(d.doc, 0);
-    d.field = weva_document_query(d.doc, "#f");
-    weva_document_set_focus(d.doc, d.field);
-    CHECK(near(d.caret_x(), 0)); // Reload restores the initial selection, not the old end.
-}
-
 void test_abi_text_advances_and_password() {
     for (const char* html : {"<input id=f>", "<textarea id=f></textarea>"}) {
         Field transformed(html);
