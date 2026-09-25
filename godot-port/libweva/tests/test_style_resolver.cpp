@@ -421,6 +421,25 @@ void test_font_size_inheritance_chain() {
     CHECK(near(font_size_px(&child, &parent, ctx), 64));
 }
 
+void test_line_height_resolution() {
+    LayoutContext ctx;
+    Fixture f;
+    CHECK(f.css("#n { line-height: normal } #num { line-height: 1.5 }"
+                "#px { line-height: 30px } #pct { line-height: 200% }"
+                "#em { line-height: 2em } #none {}"));
+    CHECK(f.html("<div id=n></div><div id=num></div><div id=px></div>"
+                 "<div id=pct></div><div id=em></div><div id=none></div>"));
+
+    CHECK(near(line_height_px(f.style("n"), 20, ctx), 24));   // 1.2 x
+    CHECK(near(line_height_px(f.style("none"), 20, ctx), 24));
+    // A unitless line-height is a MULTIPLIER — the same syntax means pixels
+    // for font-size, which is the trap this pins.
+    CHECK(near(line_height_px(f.style("num"), 20, ctx), 30));
+    CHECK(near(line_height_px(f.style("px"), 20, ctx), 30));
+    CHECK(near(line_height_px(f.style("pct"), 20, ctx), 40));
+    CHECK(near(line_height_px(f.style("em"), 20, ctx), 40));
+}
+
 void test_line_height_inheritance() {
     LayoutContext ctx;
     struct Case { const char* raw; double p, c, g; };

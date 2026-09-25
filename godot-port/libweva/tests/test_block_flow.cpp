@@ -127,6 +127,159 @@ void test_margin_collapse_rules() {
     CHECK(near(collapse_margins(nan, nan), 0));
 }
 
+void test_block_stacking() {
+    Fixture f;
+    CHECK(f.css("#a { height: 50px } #b { height: 30px } #c { height: 20px }"));
+    CHECK(f.layout("<body><div id=a></div><div id=b></div><div id=c></div></body>"));
+
+    // Children stack in document order, each starting where the last ended.
+    CHECK(near(f.y("a"), 0));
+    CHECK(near(f.y("b"), 50));
+    CHECK(near(f.y("c"), 80));
+    // The UA sheet gives body `height: 100%`, so it fills the viewport rather
+    // than shrinking to content — a deliberate departure from the browser
+    // default, so `height: 100%` bottoms out at the viewport for authors.
+    CHECK(near(f.h("body"), 600));
+    // An auto width fills the containing block.
+    CHECK(near(f.box("a").width, 1000));
+}
+
+void test_sibling_margin_collapse() {
+    {
+        // Adjoining sibling margins collapse to the larger, not the sum.
+        Fixture f;
+        CHECK(f.css("body, div { display: block; margin: 0 }"
+                    "#a { height: 50px; margin-bottom: 30px }"
+                    "#b { height: 30px; margin-top: 20px }"));
+        CHECK(f.layout("<body><div id=a></div><div id=b></div></body>"));
+        CHECK(near(f.y("b"), 80));   // 50 + max(30, 20), not 50 + 50
+    }
+    {
+        // Mixed signs sum.
+        Fixture f;
+        CHECK(f.css("body, div { display: block; margin: 0 }"
+                    "#a { height: 50px; margin-bottom: 30px }"
+                    "#b { height: 30px; margin-top: -10px }"));
+        CHECK(f.layout("<body><div id=a></div><div id=b></div></body>"));
+        CHECK(near(f.y("b"), 70));   // 50 + (30 - 10)
+    }
+    {
+        // Padding on the parent closes its top edge, so the first child's
+        // margin sits INSIDE rather than collapsing out.
+        Fixture f;
+        CHECK(f.css("body { display: block; margin: 0; padding-top: 5px }"
+                    "#a { display: block; height: 50px; margin-top: 30px }"));
+        CHECK(f.layout("<body><div id=a></div></body>"));
+        CHECK(near(f.y("a"), 35));
+    }
+}
+
+void test_mixed_sign_chain() {
+    // The case that makes pairwise folding wrong. Across a chain the result is
+    // max(positives) + min(negatives): {+20, -15, +10, -25} gives -5, where
+    // folding left with collapse_margins gives -10.
+    //
+    // Verified against the fold: collapse(collapse(collapse(20,-15),10),-25)
+    //   = collapse(collapse(5,10),-25) = collapse(10,-25) = -15.
+    // Either way it is not -5, which is why the chain tracks max and min.
+    Fixture f;
+    CHECK(f.css("body { display: block; margin: 0; padding-top: 1px }"
+                "div { display: block; height: 40px }"
+                "#a { margin-bottom: 20px } #b { margin-top: -15px; margin-bottom: 10px }"
+                "#c { margin-top: -25px }"));
+    CHECK(f.layout("<body><div id=a></div><div id=b></div><div id=c></div></body>"));
+
+    // a: padding 1, height 40 -> bottom 41. Chain to b is {+20, -15} -> +5.
+    CHECK(near(f.y("a"), 1));
+    CHECK(near(f.y("b"), 46));
+    // Chain to c is {+10, -25} -> max 10, min -25 -> -15.
+    CHECK(near(f.y("c"), 71));
+}
+
+void test_parent_child_collapse() {
+    {
+        // With the parent's top open, the first child's margin collapses OUT
+        // onto the parent, and the child sits flush at the inner edge.
+        Fixture f;
+        CHECK(f.css("body { display: block; margin: 0 }"
+                    "#p { display: block } #a { display: block; height: 50px; margin-top: 30px }"));
+        CHECK(f.layout("<body><div id=p><div id=a></div></div></body>"));
+        CHECK(near(f.box("p").margin_top, 30));
+        CHECK(near(f.y("a"), 0));
+        CHECK(near(f.h("p"), 50));
+    }
+    {
+        // A border closes the top, so the margin stays inside.
+        Fixture f;
+        CHECK(f.css("body { display: block; margin: 0 }"
+                    "#p { display: block; border-top-style: solid; border-top-width: 2px }"
+                    "#a { display: block; height: 50px; margin-top: 30px }"));
+        CHECK(f.layout("<body><div id=p><div id=a></div></div></body>"));
+        CHECK(near(f.box("p").margin_top, 0));
+        CHECK(near(f.y("a"), 32));
+    }
+    {
+        // A new block formatting context closes the top regardless of padding.
+        Fixture f;
+        CHECK(f.css("body { display: block; margin: 0 }"
+                    "#p { display: block; overflow: hidden }"
+                    "#a { display: block; height: 50px; margin-top: 30px }"));
+        CHECK(f.layout("<body><div id=p><div id=a></div></div></body>"));
+        CHECK(near(f.box("p").margin_top, 0));
+        CHECK(near(f.y("a"), 30));
+    }
+    {
+        // The bottom collapses too when the parent's height is auto...
+        Fixture f;
+        CHECK(f.css("body { display: block; margin: 0 }"
+                    "#p { display: block } #a { display: block; height: 50px; margin-bottom: 40px }"));
+        CHECK(f.layout("<body><div id=p><div id=a></div></div></body>"));
+        CHECK(near(f.h("p"), 50));
+        CHECK(near(f.box("p").margin_bottom, 40));
+    }
+    {
+        // ...but an explicit height blocks it, and the margin becomes a gap
+        // inside the parent instead. Note an explicit height does NOT block
+        // TOP collapsing, which is the asymmetry worth pinning.
+        Fixture f;
+        CHECK(f.css("body { display: block; margin: 0 }"
+                    "#p { display: block; height: 200px }"
+                    "#a { display: block; height: 50px; margin-top: 10px; margin-bottom: 40px }"));
+        CHECK(f.layout("<body><div id=p><div id=a></div></div></body>"));
+        CHECK(near(f.box("p").margin_top, 10));    // top still collapses out
+        CHECK(near(f.box("p").margin_bottom, 0));  // bottom does not
+        CHECK(near(f.h("p"), 200));
+    }
+}
+
+void test_self_collapsing_block() {
+    {
+        // An empty block with no padding, border or height contributes no
+        // height, and its two margins join one chain with its neighbours'.
+        Fixture f;
+        CHECK(f.css("body { display: block; margin: 0; padding-top: 1px }"
+                    "div { display: block }"
+                    "#a { height: 40px; margin-bottom: 10px }"
+                    "#empty { margin-top: 25px; margin-bottom: 5px }"
+                    "#b { height: 40px; margin-top: 15px }"));
+        CHECK(f.layout("<body><div id=a></div><div id=empty></div><div id=b></div></body>"));
+        // Chain across a, empty and b is {+10, +25, +5, +15} -> 25.
+        CHECK(near(f.y("a"), 1));
+        CHECK(near(f.y("b"), 66));
+        CHECK(near(f.h("empty"), 0));
+    }
+    {
+        // Padding stops a block self-collapsing: it now has a height.
+        Fixture f;
+        CHECK(f.css("body { display: block; margin: 0; padding-top: 1px }"
+                    "div { display: block }"
+                    "#a { height: 40px } #mid { padding-top: 3px } #b { height: 40px }"));
+        CHECK(f.layout("<body><div id=a></div><div id=mid></div><div id=b></div></body>"));
+        CHECK(near(f.h("mid"), 3));
+        CHECK(near(f.y("b"), 44));
+    }
+}
+
 void test_barriers_do_not_collapse() {
     {
         // An inline-block between two blocks is classified as INLINE by the
@@ -161,6 +314,27 @@ void test_barriers_do_not_collapse() {
         CHECK(near(f.y("b"), 40));
         CHECK(near(f.h("w"), 80));
     }
+}
+
+void test_percent_height_chain() {
+    // A percentage height needs a DEFINITE basis, which the viewport-seeded
+    // synthetic root provides: viewport -> html -> body.
+    Fixture f;
+    CHECK(f.css("html, body { display: block; margin: 0; height: 100% }"
+                "#half { display: block; height: 50% }"));
+    CHECK(f.layout("<body><div id=half></div></body>", 1000, 600));
+    CHECK(near(f.h("html"), 600));
+    CHECK(near(f.h("body"), 600));
+    CHECK(near(f.h("half"), 300));
+
+    // The synthetic root collapses back to its content once children are
+    // placed — it is seeded with the viewport height only so percentages have a
+    // basis. Here html fills the viewport (UA `height: 100%`), so the root
+    // reports 600; with the UA rule overridden it follows the content.
+    Fixture g;
+    CHECK(g.css("html, body { height: auto } div { display: block; height: 25px }"));
+    CHECK(g.layout("<body><div id=a></div><div id=b></div></body>", 1000, 600));
+    CHECK(near(g.tree[g.root].height, 50));
 }
 
 void test_auto_height_clamps() {

@@ -190,6 +190,39 @@ void test_box_model_width() {
     CHECK(near(f.box("ratiobb").width, 220));
 }
 
+void test_box_model_min_max() {
+    Fixture f;
+    CHECK(f.css("#max { width: 800px; max-width: 300px }"
+                "#min { width: 100px; min-width: 400px }"
+                "#both { width: 500px; min-width: 400px; max-width: 200px }"
+                "#pct { width: 800px; max-width: 25% }"
+                "#frame { width: 800px; max-width: 300px; padding: 10px }"
+                "#framebb { width: 800px; max-width: 300px; padding: 10px;"
+                "           box-sizing: border-box }"));
+    CHECK(f.build("<div id=max></div><div id=min></div><div id=both></div>"
+                  "<div id=pct></div><div id=frame></div><div id=framebb></div>"));
+
+    f.apply("max", 1000);
+    CHECK(near(f.box("max").width, 300));
+    f.apply("min", 1000);
+    CHECK(near(f.box("min").width, 400));
+
+    // CSS Sizing L3 §5.2: when min exceeds max, MIN wins. Applying max first
+    // and min second gets that without a special case.
+    f.apply("both", 1000);
+    CHECK(near(f.box("both").width, 400));
+
+    f.apply("pct", 1000);
+    CHECK(near(f.box("pct").width, 250));
+
+    // min/max share width's box-sizing basis, so under content-box the bound
+    // is a CONTENT bound and the frame is added before comparing.
+    f.apply("frame", 1000);
+    CHECK(near(f.box("frame").width, 320));
+    f.apply("framebb", 1000);
+    CHECK(near(f.box("framebb").width, 300));
+}
+
 void test_box_model_height_and_position() {
     Fixture f;
     CHECK(f.css("#h { height: 200px; padding: 10px }"

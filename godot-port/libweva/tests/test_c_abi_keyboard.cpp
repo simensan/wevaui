@@ -182,6 +182,22 @@ void test_abi_tabindex_order() {
     CHECK(weva_document_focus_next(doc.d, 0) == d);
 }
 
+void test_abi_focus_skips_unreachable() {
+    // `disabled` and anything not displayed are out of the order. A hidden
+    // element that could still be tabbed to is a real accessibility bug and a
+    // real "why is my focus ring nowhere" bug.
+    Doc doc("html, body { margin: 0 } button { display: block } #hidden { display: none }",
+            "<button id=a>a</button>"
+            "<button id=hidden>hidden</button>"
+            "<button id=b disabled>disabled</button>"
+            "<button id=c>c</button>");
+    const weva_element_t a = weva_document_query(doc.d, "#a");
+    const weva_element_t c = weva_document_query(doc.d, "#c");
+    CHECK(weva_document_focus_next(doc.d, 0) == a);
+    CHECK(weva_document_focus_next(doc.d, 0) == c);
+    CHECK(weva_document_focus_next(doc.d, 0) == a);   // only two in the ring
+}
+
 void test_abi_keyboard_events() {
     Doc doc("html, body { margin: 0 } button { display: block }",
             "<button id=a>a</button><button id=b>b</button>");

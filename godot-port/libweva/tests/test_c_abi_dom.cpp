@@ -164,6 +164,39 @@ void test_abi_remove_element() {
     CHECK(draws == 0);
 }
 
+// Removing an element the document is holding state about. Every one of these
+// caches is keyed on the pointer, and the node dies with its last reference:
+// under a sanitizer a missed one is a use-after-free, and without one it is a
+// wrong style on whatever is allocated there next.
+void test_abi_remove_clears_state() {
+    Doc doc("html, body { margin: 0 }"
+            "#list { width: 200px; height: 40px; overflow: auto }"
+            ".row { height: 20px }"
+            ".row:hover { background: #ff0000 }",
+            "<div id=list><div id=a class=row></div><div id=b class=row></div>"
+            "<div id=c class=row></div><input id=f type=text value=hi></div>");
+    // Hovered, pressed, focused and scrolled, all at once.
+    weva_document_set_pointer(doc.d, 10, 10, 1);
+    weva_document_set_focus(doc.d, doc.at("#f"));
+    weva_element_set_scroll(doc.d, doc.at("#list"), 0, 10);
+    weva_document_update(doc.d, 0);
+
+    CHECK(weva_element_remove(doc.d, doc.at("#a")) == WEVA_OK);
+    CHECK(weva_element_remove(doc.d, doc.at("#f")) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.count(".row") == 2);
+
+    // The pointer and the keyboard still work afterwards.
+    weva_document_set_pointer(doc.d, 10, 10, 0);
+    weva_document_text_input(doc.d, "x");
+    weva_document_update(doc.d, 0);
+
+    // Removing the scroller itself takes its offset with it.
+    CHECK(weva_element_remove(doc.d, doc.at("#list")) == WEVA_OK);
+    weva_document_update(doc.d, 0);
+    CHECK(doc.count(".row") == 0);
+}
+
 // Every match, not just the first: what a script binding a list needs to walk
 // the rows it built.
 void test_abi_query_all() {
@@ -186,4 +219,34 @@ void test_abi_query_all() {
 
     // A selector that does not parse matches nothing rather than everything.
     CHECK(weva_document_query_all(doc.d, "!!!", found, 8) == 0);
+}
+
+// A list that grows under a scrolled view keeps its place, and one that
+// shrinks is pulled back to what there is -- the same clamp a relayout does,
+// now reached by the DOM changing rather than a class.
+void test_abi_mutation_keeps_scroll() {
+    Doc doc("html, body { margin: 0 }"
+            "#list { width: 200px; height: 40px; overflow: auto }"
+            ".row { height: 20px }",
+            "<div id=list><div class=row></div><div class=row></div>"
+            "<div class=row></div><div class=row></div></div>");
+    weva_element_set_scroll(doc.d, doc.at("#list"), 0, 40);
+    weva_document_update(doc.d, 0);
+    double y = 0, most = 0;
+    weva_element_scroll(doc.d, doc.at("#list"), nullptr, &y, nullptr, &most);
+    CHECK(y == 40);
+    CHECK(most == 40);
+
+    doc.append("#list", "<div class=row></div>");
+    weva_document_update(doc.d, 0);
+    weva_element_scroll(doc.d, doc.at("#list"), nullptr, &y, nullptr, &most);
+    CHECK(y == 40);    // where the reader left it
+    CHECK(most == 60);
+
+    const char* two = "<div class=row></div><div class=row></div>";
+    weva_element_set_html(doc.d, doc.at("#list"), two, std::strlen(two));
+    weva_document_update(doc.d, 0);
+    weva_element_scroll(doc.d, doc.at("#list"), nullptr, &y, nullptr, &most);
+    CHECK(most == 0);
+    CHECK(y == 0);
 }

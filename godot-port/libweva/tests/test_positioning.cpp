@@ -139,6 +139,149 @@ void test_relative_positioning() {
     CHECK(near(f.box("after").y, 200));
 }
 
+void test_absolute_containing_block() {
+    {
+        // The containing block is the nearest POSITIONED ancestor's padding
+        // box — inside the border, so `inset: 0` lands two border-widths
+        // smaller than the ancestor's border box.
+        Fixture f;
+        CHECK(f.css("#outer { display: block; position: relative; width: 400px;"
+                    "         height: 300px; margin-left: 100px;"
+                    "         border-left-style: solid; border-left-width: 5px;"
+                    "         border-top-style: solid; border-top-width: 5px }"
+                    "#a { position: absolute; top: 0; left: 0; width: 10px; height: 10px }"));
+        CHECK(f.layout("<body><div id=outer><div id=a></div></div></body>"));
+        const auto p = f.abs_pos("a");
+        CHECK(near(p.first, 105) && near(p.second, 5));
+    }
+    {
+        // A STATIC ancestor does not establish one, so the box resolves against
+        // the viewport instead.
+        Fixture f;
+        CHECK(f.css("#outer { display: block; margin-left: 100px; margin-top: 50px }"
+                    "#a { position: absolute; top: 0; left: 0; width: 10px; height: 10px }"));
+        CHECK(f.layout("<body><div id=outer><div id=a></div></div></body>"));
+        const auto p = f.abs_pos("a");
+        CHECK(near(p.first, 0) && near(p.second, 0));
+    }
+    {
+        // ...but a `transform` on a static ancestor DOES capture it (CSS
+        // Transforms L1 §6.1). Missing this is how an `inset: 0` child of
+        // `transform: scale(1)` ends up filling the viewport.
+        Fixture f;
+        CHECK(f.css("#outer { display: block; margin-left: 100px; width: 200px;"
+                    "         height: 100px; transform: scale(1) }"
+                    "#a { position: absolute; top: 0; left: 0; width: 10px; height: 10px }"));
+        CHECK(f.layout("<body><div id=outer><div id=a></div></div></body>"));
+        CHECK(near(f.abs_pos("a").first, 100));
+    }
+    {
+        // The same properties capture `position: fixed`, which otherwise
+        // resolves against the viewport regardless of positioned ancestors.
+        Fixture f;
+        CHECK(f.css("#rel { display: block; position: relative; margin-left: 100px;"
+                    "       width: 200px; height: 100px }"
+                    "#tr { display: block; position: relative; margin-left: 60px;"
+                    "      width: 200px; height: 100px; filter: blur(1px) }"
+                    "#a, #b { position: fixed; top: 0; left: 0; width: 10px; height: 10px }"));
+        CHECK(f.layout("<body><div id=rel><div id=a></div></div>"
+                       "<div id=tr><div id=b></div></div></body>"));
+        // A merely positioned ancestor does NOT capture a fixed box.
+        CHECK(near(f.abs_pos("a").first, 0));
+        // A filtered one does.
+        CHECK(near(f.abs_pos("b").first, 60));
+    }
+}
+
+void test_absolute_placement() {
+    {
+        // Each edge places against the corresponding containing-block edge.
+        Fixture f;
+        CHECK(f.css("#o { display: block; position: relative; width: 400px; height: 300px }"
+                    "div div { position: absolute; width: 20px; height: 10px }"
+                    "#tl { top: 5px; left: 7px } #br { bottom: 5px; right: 7px }"));
+        CHECK(f.layout("<body><div id=o><div id=tl></div><div id=br></div></div></body>"));
+        CHECK(near(f.box("tl").x, 7) && near(f.box("tl").y, 5));
+        // right/bottom measure from the far edge inward, so the box's own size
+        // is subtracted.
+        CHECK(near(f.box("br").x, 400 - 7 - 20));
+        CHECK(near(f.box("br").y, 300 - 5 - 10));
+    }
+    {
+        // Percentage offsets resolve against the containing block, not the
+        // parent's provisional width.
+        Fixture f;
+        CHECK(f.css("#o { display: block; position: relative; width: 400px; height: 200px }"
+                    "#a { position: absolute; top: 50%; left: 25%; width: 10px; height: 10px }"));
+        CHECK(f.layout("<body><div id=o><div id=a></div></div></body>"));
+        CHECK(near(f.box("a").x, 100) && near(f.box("a").y, 100));
+    }
+    {
+        // Both edges pinned with no explicit size: the box stretches between
+        // them.
+        Fixture f;
+        CHECK(f.css("#o { display: block; position: relative; width: 400px; height: 200px }"
+                    "#a { position: absolute; left: 30px; right: 50px; top: 10px; bottom: 20px }"));
+        CHECK(f.layout("<body><div id=o><div id=a></div></div></body>"));
+        CHECK(near(f.box("a").width, 400 - 30 - 50));
+        CHECK(near(f.box("a").height, 200 - 10 - 20));
+        CHECK(near(f.box("a").x, 30) && near(f.box("a").y, 10));
+    }
+    {
+        // `inset: 0; margin: auto` centres, which is the dialog pattern. The
+        // slack on each axis is split evenly between the two auto margins.
+        Fixture f;
+        CHECK(f.css("#o { display: block; position: relative; width: 400px; height: 200px }"
+                    "#a { position: absolute; inset: 0; margin: auto;"
+                    "     width: 100px; height: 50px }"));
+        CHECK(f.layout("<body><div id=o><div id=a></div></div></body>"));
+        CHECK(near(f.box("a").x, (400 - 100) * 0.5));
+        CHECK(near(f.box("a").y, (200 - 50) * 0.5));
+    }
+    {
+        Fixture f;
+        CHECK(f.css("#o{position:relative;width:400px;height:200px}"
+                    "#a{position:absolute;inset:0;margin:auto;width:100px;height:fit-content}"
+                    "#child{height:50px}"));
+        CHECK(f.layout("<div id=o><div id=a><div id=child></div></div></div>"));
+        CHECK(near(f.box("a").y, 75));
+        CHECK(near(f.box("a").height, 50));
+    }
+    {
+        // With NEITHER edge on an axis, the box keeps its STATIC position —
+        // where it would have been in flow — rather than snapping to the
+        // containing block's origin.
+        Fixture f;
+        CHECK(f.css("#o { display: block; position: relative; width: 400px }"
+                    "#first { display: block; height: 60px }"
+                    "#a { position: absolute; width: 10px; height: 10px }"));
+        CHECK(f.layout("<body><div id=o><div id=first></div><div id=a></div></div></body>"));
+        CHECK(near(f.box("a").y, 60));
+        CHECK(near(f.box("a").x, 0));
+    }
+}
+
+void test_offsets_and_zindex() {
+    Fixture f;
+    CHECK(f.css("#auto { display: block } #zero { display: block; top: 0 }"
+                "#z { display: block; z-index: 5 } #zn { display: block; z-index: -2 }"
+                "#za { display: block; z-index: auto }"));
+    CHECK(f.layout("<body><div id=auto></div><div id=zero></div><div id=z></div>"
+                   "<div id=zn></div><div id=za></div></body>"));
+
+    // `auto` is ABSENT, not zero: the two lead to different placement, so the
+    // distinction has to survive into the box.
+    CHECK(!f.box("auto").offset_top.has_value());
+    CHECK(f.box("zero").offset_top.has_value() && near(*f.box("zero").offset_top, 0));
+
+    CHECK(f.box("z").z_index.has_value() && *f.box("z").z_index == 5);
+    CHECK(f.box("zn").z_index.has_value() && *f.box("zn").z_index == -2);
+    // `auto` z-index is absent too — it participates in its parent's stacking
+    // context rather than creating one.
+    CHECK(!f.box("za").z_index.has_value());
+    CHECK(!f.box("auto").z_index.has_value());
+}
+
 void test_out_of_flow_relayout() {
     // The children of a pinned box were sized against the containing block's
     // PROVISIONAL width during block layout. Once the pin narrows the box, its

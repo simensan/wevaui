@@ -272,3 +272,81 @@ void test_computed_style() {
         CHECK(values.get(width) == reg.initial_value(width));
     }
 }
+
+void test_lazy_inheritance() {
+    auto& reg = CssPropertyRegistry::instance();
+    const int color = reg.id_of("color");
+    const int width = reg.id_of("width");
+
+    ComputedStyle root, mid, leaf;
+    root.set(color, "red");
+    mid.set_inherit_parent(&root);
+    leaf.set_inherit_parent(&mid);
+
+    // ---- an inherited property resolves up the chain WITHOUT being copied
+    CHECK(leaf.get(color) == "red");
+    CHECK(!leaf.contains(color));         // nothing was materialised here
+    CHECK(!mid.contains(color));
+    CHECK(leaf.set_count() == 0);
+
+    // ---- a non-inherited property falls to its initial, not the ancestor's
+    root.set(width, "100px");
+    CHECK(root.get(width) == "100px");
+    CHECK(leaf.get(width) == "auto");
+
+    // ---- an explicit value shadows the inherited one
+    mid.set(color, "blue");
+    CHECK(leaf.get(color) == "blue");
+    CHECK(mid.get(color) == "blue");
+    CHECK(root.get(color) == "red");
+
+    // ---- unset() restores the fall-through
+    mid.unset(color);
+    CHECK(!mid.contains(color));
+    CHECK(leaf.get(color) == "red");
+    CHECK(mid.set_count() == 0);
+
+    // ---- custom properties inherit through the chain too
+    root.set("--brand", "#f00");
+    CHECK(leaf.get("--brand") == "#f00");
+    CHECK(leaf.contains("--brand"));      // reachable, though not local
+    CHECK(leaf.custom_properties().empty());
+
+    // Name views need not be terminated at their boundary. Custom names are
+    // case-sensitive, and an explicitly empty value still shadows ancestors.
+    const std::string name = "--component-primary-accent-color";
+    const std::string extended = name + "-suffix";
+    const std::string_view name_view(extended.data(), name.size());
+    root.set(name, "first");
+    root.set("--component-primary-Accent-color", "different case");
+    CHECK(leaf.get(name_view) == "first");
+    CHECK(leaf.get("--component-primary-Accent-color") == "different case");
+    CHECK(leaf.get(extended).empty());
+    CHECK(!leaf.contains(extended));
+    CHECK(leaf.contains(name_view));
+    CHECK(!leaf.contains_own(name_view));
+    CHECK(root.contains_own(name_view));
+    const int64_t before_read = leaf.version();
+    CHECK(leaf.get(name_view) == "first");
+    CHECK(leaf.version() == before_read);
+    root.set(name, "updated");
+    CHECK(leaf.get(name_view) == "updated");
+    mid.set(name, "");
+    CHECK(leaf.get(name_view).empty());
+    CHECK(leaf.contains(name_view));
+    CHECK(mid.contains_own(name_view));
+    CHECK(root.get(name_view) == "updated");
+    mid.clear();
+    mid.set_inherit_parent(&root);
+    CHECK(leaf.get(name_view) == "updated");
+    ComputedStyle other;
+    other.set(name, "other parent");
+    leaf.set_inherit_parent(&other);
+    CHECK(leaf.get(name_view) == "other parent");
+    CHECK(!leaf.contains("--brand"));
+
+    // ---- clear() drops the link, so reads fall back to initials only
+    leaf.clear();
+    CHECK(leaf.inherit_parent() == nullptr);
+    CHECK(leaf.get(color) == "black");     // color's registered initial
+}

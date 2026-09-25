@@ -379,6 +379,35 @@ void test_abi_transition_runs() {
     }
 }
 
+// The clock is the only thing that moved, so the document must still redraw --
+// and must not restyle to find that out.
+void test_abi_transition_costs_nothing_when_idle() {
+    Doc doc("html, body { margin: 0 }"
+            "#a { width: 100px; height: 40px; background: #222;"
+            "     transition: width 1s linear }"
+            "#a:hover { width: 300px }",
+            kHtml);
+    // Nothing is animating: time passes and the frame stands.
+    size_t before = 0;
+    weva_document_draws(doc.d, &before);
+    weva_document_update(doc.d, 0.5);
+    weva_document_update(doc.d, 0.5);
+    size_t after = 0;
+    weva_document_draws(doc.d, &after);
+    CHECK(before == after);
+    CHECK(after > 0);
+    CHECK(doc.width_of("#a") == 100);
+
+    // Now one IS running, so the same call has to move it.
+    weva_document_set_pointer(doc.d, 50, 20, 0);
+    weva_document_update(doc.d, 0);
+    weva_document_update(doc.d, 0.25);
+    const double a = doc.width_of("#a");
+    weva_document_update(doc.d, 0.25);
+    const double b = doc.width_of("#a");
+    CHECK(b > a);
+}
+
 // A shorthand with several entries, which is how a stylesheet actually writes
 // this, and the ragged-list rule that lets one duration serve two properties.
 void test_transition_shorthand_lists() {

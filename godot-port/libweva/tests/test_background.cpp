@@ -1097,6 +1097,32 @@ void test_blur_and_padded_rasterize() {
     }
 }
 
+void test_paint_transform_rotates_geometry() {
+    // A 100x50 box rotated 90deg about its centre paints as a 50x100 mesh
+    // around the same centre; a translate(50%, 0) shifts it by half its width.
+    Fixture f;
+    CHECK(f.css("#r { width: 100px; height: 50px; background: #f00; transform: rotate(90deg) }"
+                "#t { width: 100px; height: 50px; background: #0f0; transform: translate(50%, 0) }"));
+    CHECK(f.layout("<body><div id=r></div><div id=t></div></body>"));
+    RecordingBackend backend;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    bool rotated = false, shifted = false;
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.geometry.vertices.empty()) continue;
+        const Rect r = bounds_of(d.geometry);
+        const LinearColor c = d.geometry.vertices[0].color;
+        if (near(c.r, 1) && near(c.g, 0) && near(r.width, 50, 1e-3) && near(r.height, 100, 1e-3) &&
+            near(r.x, 25, 1e-3) && near(r.y, -25, 1e-3)) {
+            rotated = true;
+        }
+        if (near(c.g, 1) && near(c.r, 0) && near(r.x, 50, 1e-3) && near(r.y, 50, 1e-3)) shifted = true;
+    }
+    CHECK(rotated);
+    CHECK(shifted);
+}
+
 // Runtime/Forms/InputRenderer.cs: the UA drawings on a control's box.
 void test_paint_form_control_marks() {
     Fixture f;
@@ -1225,6 +1251,37 @@ void test_paint_clip_follows_descendant_transform() {
         CHECK(minx > 49.9 && maxx < 100.1);
     }
     CHECK(blue);
+}
+
+// CSS 2.1 Appendix E: positioned children paint after in-flow ones, and
+// z-index orders stacking contexts regardless of tree order.
+void test_paint_stacking_order() {
+    Fixture f;
+    CHECK(f.css("html, body { margin: 0 }"
+                "#p { position: relative; width: 200px; height: 100px }"
+                "#red { position: absolute; left: 0; top: 0; width: 50px; height: 50px; background: #f00 }"
+                "#grey { width: 50px; height: 50px; background: #808080 }"
+                "#blue { position: absolute; z-index: 1; left: 0; top: 0; width: 50px; height: 50px; background: #00f }"
+                "#green { position: absolute; left: 0; top: 0; width: 50px; height: 50px; background: #0f0 }"
+                "#neg { position: absolute; z-index: -1; left: 0; top: 0; width: 50px; height: 50px; background: #ff0 }"));
+    CHECK(f.layout("<body><div id=p><div id=red></div><div id=grey></div><div id=blue></div>"
+                   "<div id=green></div><div id=neg></div></div></body>"));
+    RecordingBackend backend;
+    PaintContext paint;
+    paint.backend = &backend;
+    paint_tree(f.tree, f.root, f.ctx, paint);
+    std::string order;
+    for (const RecordingBackend::Draw& d : backend.draws) {
+        if (d.geometry.vertices.empty()) continue;
+        const LinearColor c = d.geometry.vertices[0].color;
+        if (near(c.r, 1) && near(c.g, 0) && near(c.b, 0)) order += 'R';
+        else if (near(c.g, 1) && near(c.r, 0) && near(c.b, 0)) order += 'G';
+        else if (near(c.b, 1) && near(c.r, 0) && near(c.g, 0)) order += 'B';
+        else if (near(c.r, 1) && near(c.g, 1) && near(c.b, 0)) order += 'Y';
+        else if (c.r > 0.2f && c.r < 0.3f && near(c.g, c.r) && near(c.b, c.r)) order += 'g';
+    }
+    // yellow (z -1), grey (in flow), red then green (positioned, tree order), blue (z 1)
+    CHECK_EQ(order, std::string("YgRGB"));
 }
 
 // A colour glyph keeps its texels in the atlas and is drawn white.
@@ -1504,6 +1561,42 @@ void test_font_weight_resolution() {
     CHECK(resolve_font_italic(style("d")));
     CHECK(resolve_font_italic(style("e")));
     CHECK(!resolve_font_italic(style("n")));
+}
+
+// A border as thick as its own radius. Ordinary CSS, and it used to draw
+// NOTHING: tessellate_border zips an outer and an inner outline, the inner
+// radius collapses to zero when the width eats it, a zero radius emitted one
+// point where a rounded corner emits `segments + 1`, and the mismatched counts
+// made the function bail. The same shape is what an outer box-shadow's knockout
+// ring asks for, so the two were broken together.
+void test_border_as_thick_as_its_radius() {
+    const auto border_draws = [](const char* css, const char* html) {
+        Fixture f;
+        CHECK(f.css(css));
+        CHECK(f.layout(html));
+        RecordingBackend backend;
+        PaintContext paint;
+        paint.backend = &backend;
+        paint_tree(f.tree, f.root, f.ctx, paint);
+        int n = 0;
+        for (const RecordingBackend::Draw& d : backend.draws) {
+            if (d.geometry.vertices.empty() || d.texture != 0) continue;
+            const LinearColor c = d.geometry.vertices[0].color;
+            // The border is the opaque red one.
+            if (c.r > 0.4f && c.g == 0 && c.b == 0 && c.a == 1) ++n;
+        }
+        return n;
+    };
+    CHECK(border_draws(
+              "html, body { margin: 0 } #b { width: 200px; height: 120px;"
+              " border-radius: 20px; border: 20px solid #c00 }",
+              "<body><div id=b></div></body>") >= 1);
+    // And the ordinary case, where the radius is larger than the border, keeps
+    // working — that one always zipped cleanly.
+    CHECK(border_draws(
+              "html, body { margin: 0 } #b { width: 200px; height: 120px;"
+              " border-radius: 40px; border: 10px solid #c00 }",
+              "<body><div id=b></div></body>") >= 1);
 }
 
 // background_size_independent() promises that two boxes of DIFFERENT sizes

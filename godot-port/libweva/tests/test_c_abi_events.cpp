@@ -316,6 +316,64 @@ void test_abi_event_handlers() {
     weva_document_destroy(d);
 }
 
+// `change` is not `input`. A search box wants to run once, when the user is
+// done, not once per keystroke -- and nothing but the focus leaving can tell
+// the engine that the user is done.
+void test_abi_change_event() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0 } input { display: block; width: 120px }";
+    const char* html = "<input id=a type=text value='' on-change=OnSearch>"
+                       "<input id=b type=text value=''>"
+                       "<input id=c type=checkbox on-change=OnToggle>";
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+
+    const auto drain = [&](int kind) {
+        std::vector<std::string> handlers;
+        weva_event e{};
+        while (weva_document_poll_event(d, &e)) {
+            if (e.kind == kind) handlers.push_back(e.handler);
+        }
+        return handlers;
+    };
+
+    // Typing raises `input` every keystroke and `change` not at all.
+    weva_document_set_focus(d, weva_document_query(d, "#a"));
+    drain(WEVA_EVENT_CHANGE);
+    weva_document_text_input(d, "h");
+    weva_document_text_input(d, "i");
+    CHECK(drain(WEVA_EVENT_CHANGE).empty());
+
+    // The focus leaving commits it, once.
+    weva_document_set_focus(d, weva_document_query(d, "#b"));
+    const std::vector<std::string> committed = drain(WEVA_EVENT_CHANGE);
+    CHECK(committed.size() == 1);
+    CHECK(committed[0] == "OnSearch");
+
+    // Visiting a field and leaving it unchanged commits nothing: `change`
+    // means the value moved, not that the user passed through.
+    weva_document_set_focus(d, weva_document_query(d, "#a"));
+    weva_document_set_focus(d, weva_document_query(d, "#b"));
+    CHECK(drain(WEVA_EVENT_CHANGE).empty());
+
+    // A checkbox has no editing state to leave, so it commits the moment it
+    // changes -- `input` and `change` are the same instant for it.
+    double x = 0, y = 0, w = 0, h = 0;
+    weva_element_bounds(d, weva_document_query(d, "#c"), &x, &y, &w, &h);
+    weva_document_set_pointer(d, x + w / 2, y + h / 2, 1);
+    weva_document_set_pointer(d, x + w / 2, y + h / 2, 0);
+    weva_document_update(d, 0);
+    const std::vector<std::string> toggled = drain(WEVA_EVENT_CHANGE);
+    CHECK(toggled.size() == 1);
+    CHECK(toggled[0] == "OnToggle");
+    weva_document_destroy(d);
+}
+
 // A form submits, from the keyboard or from a button, and reports itself
 // rather than whatever was pressed.
 void test_abi_submit_event() {
@@ -372,5 +430,56 @@ void test_abi_submit_event() {
     weva_document_set_focus(d, weva_document_query(d, "#loose"));
     weva_document_key(d, WEVA_KEY_ENTER, 0, 1);
     CHECK(std::get<0>(submits()) == 0);
+    weva_document_destroy(d);
+}
+
+// Scrolling is an event, however it was caused -- a wheel, a bar, the
+// keyboard, or a script. A list that loads more when it reaches the bottom
+// needs to hear about all four.
+void test_abi_scroll_event() {
+    weva_config c{};
+    c.viewport_width = 400;
+    c.viewport_height = 300;
+    c.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&c);
+    const char* css = "html, body { margin: 0 }"
+                      ".list { width: 200px; height: 60px; overflow: auto }"
+                      ".row { height: 40px }";
+    const char* html = "<div id=list class=list on-scroll=OnScrolled>"
+                       "<div class=row></div><div class=row></div>"
+                       "<div class=row></div></div>";
+    weva_document_add_css(d, css, std::strlen(css));
+    weva_document_load_html(d, html, std::strlen(html));
+    weva_document_update(d, 0);
+
+    const auto scrolls = [&]() {
+        std::vector<std::pair<std::string, double>> out;
+        weva_event e{};
+        while (weva_document_poll_event(d, &e)) {
+            if (e.kind == WEVA_EVENT_SCROLL) out.emplace_back(e.handler, e.y);
+        }
+        return out;
+    };
+
+    CHECK(weva_document_scroll(d, 100, 30, 0, 20) == 1);
+    const auto wheeled = scrolls();
+    CHECK(wheeled.size() == 1);
+    CHECK(wheeled[0].first == "OnScrolled");
+    CHECK(wheeled[0].second == 20);   // where it scrolled TO
+
+    // A script moving it says so too, so a host that drives the scroll sees
+    // the same events as one that lets the user.
+    weva_element_set_scroll(d, weva_document_query(d, "#list"), 0, 45);
+    weva_document_update(d, 0);   // offsets are applied by the update
+    const auto scripted = scrolls();
+    CHECK(scripted.size() == 1);
+    CHECK(scripted[0].second == 45);
+
+    // A wheel that moves nothing raises nothing.
+    weva_document_scroll(d, 100, 30, 0, 1000);
+    weva_document_update(d, 0);
+    scrolls();
+    CHECK(weva_document_scroll(d, 100, 30, 0, 10) == 0);
+    CHECK(scrolls().empty());
     weva_document_destroy(d);
 }

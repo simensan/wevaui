@@ -265,3 +265,18 @@ void test_size_containment() {
         CHECK(near(f.box("c").height, 100));
     }
 }
+
+void test_anonymous_box_inherits_line_height() {
+    // CSS 2.1 §9.2.1.1. An anonymous block is created with a null style, so
+    // reading line-height off the container alone missed the author's value and
+    // fell back to the font's metric height. The case that exposed it was a
+    // list item holding both text and a nested list: the text is wrapped in an
+    // anonymous block, and only that block came out 18.29 tall instead of 16.
+    Fixture f;
+    CHECK(f.css("#w { width: 400px; font-size: 16px; line-height: 1 }"
+                "#inner { height: 10px }"));
+    CHECK(f.layout("<body><div id=w>text<div id=inner></div></div></body>"));
+    // 16 for the anonymous block holding "text", plus the 10px child.
+    CHECK(near(f.box("w").height, 26));
+    CHECK(near(f.box("inner").y, 16));
+}

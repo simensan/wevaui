@@ -204,6 +204,25 @@ void test_float_placement() {
     }
 }
 
+void test_float_does_not_advance_flow() {
+    // A float is out of the normal flow: the in-flow sibling after it keeps the
+    // Y it would have had, and the float does not join the margin-collapse
+    // chain either.
+    Fixture f;
+    CHECK(f.css("#w { display: block }"
+                "#a { height: 30px } #b { height: 30px }"
+                "#fl { float: left; width: 100px; height: 200px }"));
+    CHECK(f.layout("<body><div id=w><div id=a></div><div id=fl></div>"
+                   "<div id=b></div></div></body>"));
+    CHECK(near(f.box("a").y, 0));
+    CHECK(near(f.box("b").y, 30));
+    // ...but the container still grows to enclose the float, because body's UA
+    // `overflow: hidden` makes it a BFC and #w is inside it. #w itself is not a
+    // BFC, so the float belongs to body's context and #w keeps its flow height.
+    CHECK(near(f.box("w").height, 60));
+    CHECK(near(f.box("fl").y, 30));
+}
+
 void test_clear() {
     // Chrome152: signed margins, matching sides, empty clearing blocks and
     // sibling/parent collapse. Check the following sibling as well as the clearer.

@@ -247,6 +247,54 @@ void test_flex_min_height_is_not_a_definite_height() {
     CHECK(near(f.box("rest").height, 500));
 }
 
+void test_flex_cross_axis() {
+    {
+        // stretch is the initial alignment: an auto-height item fills the line.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; width: 200px; height: 80px }"
+                    "#a { width: 50px }"
+                    "#b { width: 50px; height: 20px }"));
+        CHECK(f.layout("<body><div id=r><div id=a></div><div id=b></div></div></body>"));
+        CHECK(near(f.box("a").height, 80));
+        CHECK(near(f.box("b").height, 20));
+    }
+    {
+        // center leaves the item at its own size and moves it.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; width: 200px; height: 80px; align-items: center }"
+                    "#a { width: 50px; height: 20px }"));
+        CHECK(f.layout("<body><div id=r><div id=a></div></div></body>"));
+        CHECK(near(f.box("a").height, 20));
+        CHECK(near(f.box("a").y, 30));
+    }
+    {
+        // A column container's non-stretched item sizes to its content on the
+        // cross axis rather than filling the container — it was coming out full
+        // width and then being "centred" with nowhere to move.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; flex-direction: column; width: 200px;"
+                    "     height: 100px; align-items: center }"
+                    "#a { }"));
+        CHECK(f.layout("<body><div id=r><div id=a>ab</div></div></body>"));
+        // Two characters at 8px.
+        CHECK(near(f.box("a").width, 16));
+        CHECK(near(f.box("a").x, 92));
+    }
+    {
+        // A stretched item's content is re-laid at the imposed size, so a
+        // nested column container has a main size to distribute. Without the
+        // re-layout the inner justify-content has nothing to centre in.
+        Fixture f;
+        CHECK(f.css("#r { display: flex; width: 200px; height: 100px }"
+                    "#t { width: 60px; display: flex; flex-direction: column;"
+                    "     justify-content: center }"
+                    "#i { width: 20px; height: 10px }"));
+        CHECK(f.layout("<body><div id=r><div id=t><div id=i></div></div></div></body>"));
+        CHECK(near(f.box("t").height, 100));
+        CHECK(near(f.box("i").y, 45));
+    }
+}
+
 void test_flex_direction_and_order() {
     {
         // A column stacks along the block axis and gaps use row-gap.
@@ -488,6 +536,22 @@ void test_flex_row_min_height_is_the_line_cross_size() {
     CHECK(near(f.box("d").x, 90));
 }
 
+void test_flex_row_max_content_sums_its_items() {
+    // The intrinsic width of a flex row is the sum of its items plus gaps, not
+    // the widest item: an absolutely positioned pill (icon + amount) shrank to
+    // fit its amount alone and its icon was then shrunk to make room.
+    Fixture f;
+    CHECK(f.css("#pill { position: absolute; top: 0; right: 0; display: flex;"
+                "        align-items: center; gap: 10px; padding: 8px 20px 8px 12px }"
+                "#coin { width: 26px; height: 26px }"
+                "#amt { width: 50px; height: 10px }"));
+    CHECK(f.layout("<body><div id=w><div id=pill><div id=coin></div><div id=amt></div>"
+                   "</div></div></body>"));
+    CHECK(near(f.box("pill").width, 12 + 26 + 10 + 50 + 20));
+    CHECK(near(f.box("coin").width, 26));
+    CHECK(near(f.box("amt").x, 12 + 26 + 10));
+}
+
 void test_flex_center_is_unsafe() {
     // An item wider than the line, centred, overflows both sides equally
     // rather than being pushed back to the start (Box Alignment §5.4).
@@ -498,6 +562,29 @@ void test_flex_center_is_unsafe() {
     CHECK(f.layout("<body><div id=col><div id=p></div></div></body>"));
     CHECK(near(f.box("p").width, 104));
     CHECK(near(f.box("p").x, -2));
+}
+
+void test_flex_aspect_ratio_height_is_definite() {
+    // css-sizing-4 §4.2: a height derived from aspect-ratio is definite, so a
+    // square flex container centres its child vertically.
+    Fixture f;
+    CHECK(f.css("#p { width: 200px; aspect-ratio: 1 / 1; display: flex;"
+                "     align-items: center; justify-content: center }"
+                "#g { width: 40px; height: 40px }"));
+    CHECK(f.layout("<body><div id=p><div id=g></div></div></body>"));
+    CHECK(near(f.box("p").height, 200));
+    CHECK(near(f.box("g").x, 80) && near(f.box("g").y, 80));
+    // With a border the ratio applies to the border box and the content box
+    // is what the child centres in.
+    Fixture g;
+    CHECK(g.css("#p { width: 200px; aspect-ratio: 1 / 1; display: flex; align-items: center;"
+                "     border: 10px solid black }"
+                "#g { width: 40px; height: 40px }"));
+    CHECK(g.layout("<body><div id=p><div id=g></div></div></body>"));
+    // Under content-box sizing the ratio applies to the 200px content box, so
+    // the border box is 220 (Chrome agrees), and the child centres in 200.
+    CHECK(near(g.box("p").height, 220));
+    CHECK(near(g.box("g").y, 10 + (200 - 40) * 0.5));
 }
 
 void test_flex_percent_height_against_an_auto_parent_is_indefinite() {
@@ -603,6 +690,35 @@ void test_flex_wrap() {
     }
 }
 
+void test_flex_column_items_do_not_shrink_below_their_content() {
+    // §4.5: `min-height: auto` on a column item is its content height, so a
+    // fixed-height column whose content overflows keeps its items whole and
+    // overflows itself; `min-height: 0` or a scroll container lets them
+    // shrink.
+    {
+        Fixture f;
+        CHECK(f.css("#col { display: flex; flex-direction: column; height: 100px; width: 200px }"
+                    "#a { padding: 14px 0 } #a-in { height: 34px }"
+                    "#b { height: 80px } #c { height: 80px }"));
+        CHECK(f.layout("<body><div id=col><div id=a><div id=a-in></div></div><div id=b></div>"
+                       "<div id=c></div></div></body>"));
+        // a's content (62) is its minimum and it stays whole; b and c have an
+        // explicit height and no content, so their minimum is 0 and they take
+        // the whole 122 of negative space between them.
+        CHECK(near(f.box("a").height, 62));
+        CHECK(near(f.box("b").height, 19));
+        CHECK(near(f.box("c").y, 81));
+    }
+    {
+        Fixture f;
+        CHECK(f.css("#col { display: flex; flex-direction: column; height: 100px; width: 200px }"
+                    "#b { height: 80px; min-height: 0 } #c { height: 80px; overflow: auto }"));
+        CHECK(f.layout("<body><div id=col><div id=b></div><div id=c></div></div></body>"));
+        CHECK(near(f.box("b").height, 50));
+        CHECK(near(f.box("c").height, 50));
+    }
+}
+
 void test_flex_row_items_do_not_shrink_below_their_min_content() {
     {
         // A row item holding fixed-width children keeps their total and
@@ -698,6 +814,19 @@ void test_intrinsic_width_ignores_auto_margins() {
     // 360 + 360 + 220 + 28 = 968 fits: one line, the 4px grown three ways.
     CHECK(near(f.box("a").y, f.box("c").y));
     CHECK(near(f.box("a").width, 361.0 + 1.0 / 3));
+}
+
+void test_grid_intrinsic_width_is_its_tracks() {
+    // A grid container centred in a flex row shrink-fits to its tracks and
+    // gaps, not to its widest child.
+    Fixture f;
+    CHECK(f.css("#wrap { display: flex; justify-content: center; width: 800px }"
+                "#board { display: grid; grid-template-columns: repeat(4, 50px); gap: 10px }"
+                ".t { height: 50px }"));
+    CHECK(f.layout("<body><div id=wrap><div id=board><div class=t></div><div class=t></div>"
+                   "<div class=t></div><div class=t></div></div></div></body>"));
+    CHECK(near(f.box("board").width, 230));
+    CHECK(near(f.box("board").x, 285));
 }
 
 void test_flex_wrap_reverse_flips_item_alignment() {
