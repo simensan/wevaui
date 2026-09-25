@@ -693,74 +693,144 @@ namespace Weva.Native
         private static int FaceMetrics(void* self, ulong face, double px, double* ascent, double* descent, double* lineGap)
         {
             UnityFontBackend me = Self(self);
-            if (me == null || !me._faces.TryGetValue(face, out Face f)) return 0;
-            Source s = f.Sources[0];
-            if (!me.Activate(s) || s.UnitsPerEm <= 0) return 0;
-            double scale = px / s.UnitsPerEm;
-            if (ascent != null) *ascent = s.Ascent * scale;
-            if (descent != null) *descent = s.Descent * scale;
-            if (lineGap != null) *lineGap = s.LineGap * scale;
-            return 1;
+            // Nothing may unwind into the core: under IL2CPP an exception
+            // crossing native frames aborts the process.
+            try
+            {
+                if (me == null || !me._faces.TryGetValue(face, out Face f)) return 0;
+                Source s = f.Sources[0];
+                if (!me.Activate(s) || s.UnitsPerEm <= 0) return 0;
+                double scale = px / s.UnitsPerEm;
+                if (ascent != null) *ascent = s.Ascent * scale;
+                if (descent != null) *descent = s.Descent * scale;
+                if (lineGap != null) *lineGap = s.LineGap * scale;
+                return 1;
+            }
+            catch (Exception ex)
+            {
+                if (me != null) me.LastError = ex.Message;
+                return 0;
+            }
         }
 
         [MonoPInvokeCallback(typeof(GlyphIndexFn))]
         private static int GlyphIndex(void* self, ulong face, uint codepoint, uint* glyph)
         {
             UnityFontBackend me = Self(self);
-            if (me == null || !me._faces.TryGetValue(face, out Face f)) return 0;
-            uint id = me.Lookup(f, codepoint);
-            if (glyph != null) *glyph = id;
-            return id != 0 ? 1 : 0;
+            // Nothing may unwind into the core: under IL2CPP an exception
+            // crossing native frames aborts the process.
+            try
+            {
+                if (me == null || !me._faces.TryGetValue(face, out Face f)) return 0;
+                uint id = me.Lookup(f, codepoint);
+                if (glyph != null) *glyph = id;
+                return id != 0 ? 1 : 0;
+            }
+            catch (Exception ex)
+            {
+                if (me != null) me.LastError = ex.Message;
+                return 0;
+            }
         }
 
         [MonoPInvokeCallback(typeof(GlyphMetricsFn))]
         private static int GlyphMetrics(void* self, ulong face, uint glyph, double px, double* advance, double* bearingX, double* bearingY, int* width, int* height)
         {
             UnityFontBackend me = Self(self);
-            if (me == null || !me._faces.TryGetValue(face, out Face f)) return 0;
-            int slot = SlotOf(glyph);
-            if (slot >= f.Sources.Count) return 0;
-            if (!me.Metrics(f.Sources[slot], IndexOf(glyph), SizeOf(px), out GlyphInfo info)) return 0;
-            if (advance != null) *advance = info.Advance;
-            if (bearingX != null) *bearingX = info.BearingX;
-            if (bearingY != null) *bearingY = info.BearingY;
-            if (width != null) *width = info.Width;
-            if (height != null) *height = info.Height;
-            return 1;
+            // Nothing may unwind into the core: under IL2CPP an exception
+            // crossing native frames aborts the process.
+            try
+            {
+                if (me == null || !me._faces.TryGetValue(face, out Face f)) return 0;
+                int slot = SlotOf(glyph);
+                if (slot >= f.Sources.Count) return 0;
+                if (!me.Metrics(f.Sources[slot], IndexOf(glyph), SizeOf(px), out GlyphInfo info)) return 0;
+                if (advance != null) *advance = info.Advance;
+                if (bearingX != null) *bearingX = info.BearingX;
+                if (bearingY != null) *bearingY = info.BearingY;
+                if (width != null) *width = info.Width;
+                if (height != null) *height = info.Height;
+                return 1;
+            }
+            catch (Exception ex)
+            {
+                if (me != null) me.LastError = ex.Message;
+                return 0;
+            }
         }
 
         [MonoPInvokeCallback(typeof(RasterizeFn))]
         private static int Rasterize(void* self, ulong face, uint glyph, double px, weva_glyph_bitmap* bitmap)
         {
             UnityFontBackend me = Self(self);
-            if (me == null || bitmap == null || !me._faces.TryGetValue(face, out Face f)) return 0;
-            int slot = SlotOf(glyph);
-            if (slot >= f.Sources.Count || IndexOf(glyph) == 0) return 0;
-            return me.RasterizeGlyph(f.Sources[slot], IndexOf(glyph), SizeOf(px), bitmap) ? 1 : 0;
+            // Nothing may unwind into the core: under IL2CPP an exception
+            // crossing native frames aborts the process.
+            try
+            {
+                if (me == null || bitmap == null || !me._faces.TryGetValue(face, out Face f)) return 0;
+                int slot = SlotOf(glyph);
+                if (slot >= f.Sources.Count || IndexOf(glyph) == 0) return 0;
+                return me.RasterizeGlyph(f.Sources[slot], IndexOf(glyph), SizeOf(px), bitmap) ? 1 : 0;
+            }
+            catch (Exception ex)
+            {
+                if (me != null) me.LastError = ex.Message;
+                return 0;
+            }
         }
 
         [MonoPInvokeCallback(typeof(ShapeFn))]
         private static nuint Shape(void* self, ulong face, byte* utf8, nuint length, double px, uint* glyphs, double* advances, uint* clusters, nuint capacity)
         {
             UnityFontBackend me = Self(self);
-            if (me == null || !me._faces.TryGetValue(face, out Face f)) return 0;
-            return me.ShapeRun(f, utf8, (int)length, SizeOf(px), glyphs, advances, clusters, null, (int)capacity);
+            // Nothing may unwind into the core: under IL2CPP an exception
+            // crossing native frames aborts the process.
+            try
+            {
+                if (me == null || !me._faces.TryGetValue(face, out Face f)) return 0;
+                return me.ShapeRun(f, utf8, (int)length, SizeOf(px), glyphs, advances, clusters, null, (int)capacity);
+            }
+            catch (Exception ex)
+            {
+                if (me != null) me.LastError = ex.Message;
+                return 0;
+            }
         }
 
         [MonoPInvokeCallback(typeof(PositionedFn))]
         private static nuint ShapePositioned(void* self, ulong face, byte* utf8, nuint length, double px, weva_shaped_glyph* glyphs, nuint capacity)
         {
             UnityFontBackend me = Self(self);
-            if (me == null || !me._faces.TryGetValue(face, out Face f)) return 0;
-            return me.ShapeRun(f, utf8, (int)length, SizeOf(px), null, null, null, glyphs, (int)capacity);
+            // Nothing may unwind into the core: under IL2CPP an exception
+            // crossing native frames aborts the process.
+            try
+            {
+                if (me == null || !me._faces.TryGetValue(face, out Face f)) return 0;
+                return me.ShapeRun(f, utf8, (int)length, SizeOf(px), null, null, null, glyphs, (int)capacity);
+            }
+            catch (Exception ex)
+            {
+                if (me != null) me.LastError = ex.Message;
+                return 0;
+            }
         }
 
         [MonoPInvokeCallback(typeof(VariantFn))]
         private static ulong Variant(void* self, ulong face, int weight, int italic)
         {
             UnityFontBackend me = Self(self);
-            if (me == null || !me._faces.TryGetValue(face, out Face f)) return face;
-            return me.PickVariant(f, face, weight, italic != 0);
+            // Nothing may unwind into the core: under IL2CPP an exception
+            // crossing native frames aborts the process.
+            try
+            {
+                if (me == null || !me._faces.TryGetValue(face, out Face f)) return face;
+                return me.PickVariant(f, face, weight, italic != 0);
+            }
+            catch (Exception ex)
+            {
+                if (me != null) me.LastError = ex.Message;
+                return face;
+            }
         }
 
         // ---- implementation -----------------------------------------------

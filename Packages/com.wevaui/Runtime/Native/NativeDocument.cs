@@ -253,6 +253,15 @@ namespace Weva.Native
             return draws == null ? ReadOnlySpan<weva_draw>.Empty : new ReadOnlySpan<weva_draw>(draws, (int)count);
         }
 
+        /// <summary>One version per published draw, parallel to <see cref="Draws"/>: equal
+        /// versions are the same immutable command. Empty when the core publishes none.</summary>
+        public ReadOnlySpan<ulong> DrawVersions()
+        {
+            nuint count;
+            ulong* versions = WevaNative.weva_document_draw_versions(Handle, &count);
+            return versions == null ? ReadOnlySpan<ulong>.Empty : new ReadOnlySpan<ulong>(versions, (int)count);
+        }
+
         /// <summary>The textures the draws reference (8-bit RGBA), same lifetime as the draws.</summary>
         public ReadOnlySpan<weva_texture> Textures()
         {
@@ -301,8 +310,31 @@ namespace Weva.Native
         /// </summary>
         public string Cursor
         {
-            get { return ReadString((buffer, capacity) => WevaNative.weva_document_cursor(Handle, buffer, capacity)); }
+            get
+            {
+                // Polled every frame by games, and nearly always the same short
+                // keyword: read into the stack and hand back the cached string
+                // while the bytes match, rather than a closure and a string a read.
+                const int capacity = 64;
+                byte* buffer = stackalloc byte[capacity];
+                nuint length = WevaNative.weva_document_cursor(Handle, buffer, capacity);
+                if (length >= capacity)
+                    return ReadString((b, c) => WevaNative.weva_document_cursor(Handle, b, c));
+                int n = (int)length;
+                if (_cursorText != null && _cursorBytes.Length == n)
+                {
+                    bool same = true;
+                    for (int i = 0; i < n && same; i++) same = _cursorBytes[i] == buffer[i];
+                    if (same) return _cursorText;
+                }
+                _cursorBytes = new byte[n];
+                for (int i = 0; i < n; i++) _cursorBytes[i] = buffer[i];
+                _cursorText = Encoding.UTF8.GetString(buffer, n);
+                return _cursorText;
+            }
         }
+        private string _cursorText;
+        private byte[] _cursorBytes = Array.Empty<byte>();
 
         /// <summary>The cursor the page asks for at a point in document pixels.</summary>
         public string CursorAt(double x, double y)
@@ -433,7 +465,11 @@ namespace Weva.Native
             {
                 _assetReader = value;
                 _trackedAssetReader = TrackReader(value);
-                if (!_self.IsAllocated) _self = GCHandle.Alloc(this);
+                // Weak: a strong handle rooted the document, so a forgotten one
+                // was never finalized and its native memory never freed. The
+                // reader only runs inside a call on this document, which keeps
+                // it alive for the call; the callback tolerates a null target.
+                if (!_self.IsAllocated) _self = GCHandle.Alloc(this, GCHandleType.Weak);
                 var reader = (delegate* unmanaged[Cdecl]<void*, byte*, byte*, nuint, nuint>)Marshal.GetFunctionPointerForDelegate(s_readAsset);
                 Check(WevaNative.weva_document_set_asset_reader(Handle, reader, (void*)GCHandle.ToIntPtr(_self)), "weva_document_set_asset_reader");
             }
@@ -584,6 +620,7 @@ namespace Weva.Native
                 WevaNative.weva_document_destroy(_handle);
                 _handle = IntPtr.Zero;
             }
+            if (_self.IsAllocated) _self.Free();
         }
 
         // ---- interaction: the same calls the Godot host's _gui_input makes ----
@@ -713,13 +750,31 @@ namespace Weva.Native
         /// <summary>The focused text control an IME should be active over, or WEVA_ELEMENT_NONE.</summary>
         public uint TextInputTarget => WevaNative.weva_document_text_input_target(Handle);
 
+        /// <summary>Replaces the preedit. <paramref name="start"/> and <paramref name="end"/>
+        /// are C# string indices (UTF-16 code units) into <paramref name="text"/>; the ABI
+        /// takes UTF-8 byte offsets, so they are converted here. Passing the string length
+        /// put a CJK preedit caret a third of the way along, since each such character is
+        /// one UTF-16 unit and three UTF-8 bytes.</summary>
         public bool SetComposition(string text, int start, int end)
         {
+            text ??= string.Empty;
             byte[] utf8 = NullTerminated(text);
+            int byteStart = Utf8Offset(text, start);
+            int byteEnd = Utf8Offset(text, end);
             fixed (byte* p = utf8)
             {
-                return WevaNative.weva_document_set_composition(Handle, p, start, end) != 0;
+                return WevaNative.weva_document_set_composition(Handle, p, byteStart, byteEnd) != 0;
             }
+        }
+
+        // The UTF-8 byte offset of a UTF-16 index, clamped to the string and
+        // never inside a surrogate pair.
+        private static int Utf8Offset(string text, int utf16)
+        {
+            if (utf16 <= 0) return 0;
+            if (utf16 >= text.Length) return Encoding.UTF8.GetByteCount(text);
+            if (char.IsLowSurrogate(text[utf16]) && char.IsHighSurrogate(text[utf16 - 1])) utf16--;
+            return Encoding.UTF8.GetByteCount(text.AsSpan(0, utf16));
         }
 
         public bool CommitComposition(string text)

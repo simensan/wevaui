@@ -40,6 +40,10 @@ namespace Weva.Native
             public int Blend;   // weva_blend_mode
             public bool Backdrop;
             public weva_backdrop_effect Effect;
+            // The draw versions this run was built from, when the core
+            // publishes them: an identical sequence next frame is the same
+            // geometry, and its mesh is kept instead of rebuilt.
+            public ulong[] Versions;
         }
 
         private static readonly int IdBackdropCopy = Shader.PropertyToID("_WevaBackdropCopy");
@@ -87,6 +91,14 @@ namespace Weva.Native
         private readonly Dictionary<ulong, Material> _materials = new Dictionary<ulong, Material>();
         private Material _untextured;
         private readonly List<Batch> _batches = new List<Batch>();
+        // Last frame's runs by first draw version, for reuse; and scratch the
+        // sync reuses rather than allocating each frame.
+        private readonly Dictionary<ulong, Batch> _previousRuns = new Dictionary<ulong, Batch>();
+        private readonly List<ulong> _runVersions = new List<ulong>(64);
+        private readonly HashSet<ulong> _keepTextures = new HashSet<ulong>();
+        private readonly List<ulong> _droppedTextures = new List<ulong>();
+        private readonly List<(ulong, int)> _staleBlends = new List<(ulong, int)>();
+        public int RunsReused { get; private set; }
         private readonly List<Mesh> _meshPool = new List<Mesh>();
         private readonly List<Vector3> _positions = new List<Vector3>(1024);
         private readonly List<Color> _colors = new List<Color>(1024);
@@ -139,7 +151,8 @@ namespace Weva.Native
             ReadOnlySpan<weva_texture> published = doc.Textures();
             // Ids are never reused within a document: keep what is held, add
             // what is new, drop what the document no longer publishes.
-            var keep = new HashSet<ulong>();
+            HashSet<ulong> keep = _keepTextures;
+            keep.Clear();
             for (int i = 0; i < published.Length; i++)
             {
                 weva_texture t = published[i];
@@ -158,10 +171,13 @@ namespace Weva.Native
                 // Row 0 of the core's pixels is the image's top row, and it lands
                 // at v = 0, which is where the core's uvs put the top: no flip.
                 texture.LoadRawTextureData((IntPtr)t.rgba, t.width * t.height * 4);
-                texture.Apply(false, false);
+                // Not readable: an id's pixels never change, and nothing reads
+                // them back, so the CPU copy was a second copy of every image.
+                texture.Apply(false, true);
                 _textures[t.id] = texture;
             }
-            var dropped = new List<ulong>();
+            List<ulong> dropped = _droppedTextures;
+            dropped.Clear();
             foreach (KeyValuePair<ulong, Texture2D> held in _textures)
             {
                 if (!keep.Contains(held.Key)) dropped.Add(held.Key);
@@ -175,7 +191,8 @@ namespace Weva.Native
                     Destroy(m);
                     _materials.Remove(id);
                 }
-                var stale = new List<(ulong, int)>();
+                List<(ulong, int)> stale = _staleBlends;
+                stale.Clear();
                 foreach (var key in _blendMaterials.Keys) if (key.Item1 == id) stale.Add(key);
                 foreach (var key in stale)
                 {
@@ -187,12 +204,24 @@ namespace Weva.Native
 
         private void BuildBatches(NativeDocument doc)
         {
-            foreach (Batch b in _batches) _meshPool.Add(b.Mesh);
+            // Last frame's versioned runs stay available for reuse; everything
+            // else goes back to the pool now.
+            _previousRuns.Clear();
+            foreach (Batch b in _batches)
+            {
+                if (b.Versions != null && b.Versions.Length > 0 && !_previousRuns.ContainsKey(b.Versions[0]))
+                    _previousRuns[b.Versions[0]] = b;
+                else
+                    _meshPool.Add(b.Mesh);
+            }
             _batches.Clear();
             DrawsSkipped = 0;
             TrianglesUploaded = 0;
             BackdropDraws = 0;
+            RunsReused = 0;
             ReadOnlySpan<weva_draw> draws = doc.Draws();
+            ReadOnlySpan<ulong> versions = doc.DrawVersions();
+            if (versions.Length != draws.Length) versions = ReadOnlySpan<ulong>.Empty;
             int i = 0;
             while (i < draws.Length)
             {
@@ -227,11 +256,39 @@ namespace Weva.Native
                 _uvs.Clear();
                 _indices.Clear();
                 ulong texture = first.texture_id;
+                // The run's extent and versions first: when last frame built a
+                // run from the same commands, its mesh is reused as it is.
+                int end = i;
+                _runVersions.Clear();
+                int skipped = 0;
+                while (end < draws.Length)
+                {
+                    weva_draw d = draws[end];
+                    if (d.kind == (int)weva_draw_kind.WEVA_DRAW_BACKDROP_FILTER) break;
+                    if (d.vertex_count == 0 || d.index_count == 0)
+                    {
+                        skipped++;
+                        end++;
+                        continue;
+                    }
+                    if (d.texture_id != texture || d.blend_mode != first.blend_mode) break;
+                    if (!versions.IsEmpty) _runVersions.Add(versions[end]);
+                    end++;
+                }
+                if (_runVersions.Count > 0 && _previousRuns.TryGetValue(_runVersions[0], out Batch previous) &&
+                    SameVersions(previous.Versions, _runVersions))
+                {
+                    _previousRuns.Remove(_runVersions[0]);
+                    _batches.Add(previous);
+                    DrawsSkipped += skipped;
+                    RunsReused++;
+                    i = end;
+                    continue;
+                }
                 int j = i;
-                while (j < draws.Length)
+                while (j < end)
                 {
                     weva_draw d = draws[j];
-                    if (d.kind == (int)weva_draw_kind.WEVA_DRAW_BACKDROP_FILTER) break;
                     if (d.vertex_count == 0 || d.index_count == 0)
                     {
                         // An empty draw between two runs does not split them.
@@ -239,7 +296,6 @@ namespace Weva.Native
                         j++;
                         continue;
                     }
-                    if (d.texture_id != texture || d.blend_mode != first.blend_mode) break;
                     int baseVertex = _positions.Count;
                     for (nuint v = 0; v < d.vertex_count; v++)
                     {
@@ -258,10 +314,27 @@ namespace Weva.Native
                 mesh.SetUVs(0, _uvs);
                 mesh.SetIndices(_indices, MeshTopology.Triangles, 0, false);
                 mesh.bounds = new Bounds(Vector3.zero, new Vector3(1e6f, 1e6f, 1f));
-                _batches.Add(new Batch { Mesh = mesh, Texture = texture, Triangles = _indices.Count / 3, Blend = first.blend_mode });
+                _batches.Add(new Batch
+                {
+                    Mesh = mesh, Texture = texture, Triangles = _indices.Count / 3, Blend = first.blend_mode,
+                    Versions = _runVersions.Count > 0 ? _runVersions.ToArray() : null,
+                });
                 TrianglesUploaded += _indices.Count / 3;
                 i = j;
             }
+            // Runs that did not come back: their meshes return to the pool.
+            foreach (Batch stale in _previousRuns.Values) _meshPool.Add(stale.Mesh);
+            _previousRuns.Clear();
+        }
+
+        private static bool SameVersions(ulong[] held, List<ulong> run)
+        {
+            if (held == null || held.Length != run.Count) return false;
+            for (int k = 0; k < held.Length; k++)
+            {
+                if (held[k] != run[k]) return false;
+            }
+            return true;
         }
 
         private Mesh RentMesh()
@@ -372,6 +445,11 @@ namespace Weva.Native
                 if (shader == null) return;
                 _backdrop = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
             }
+            // Inside the render graph without a copy: the backdrop appeared
+            // after the feature decided this frame needed none. The legacy
+            // Blit fallback must not run in a graph pass (see above); the
+            // next frame declares the copy.
+            if (target.ColorHandle != null && target.CopyHandle == null) return;
             bool graph = target.ColorHandle != null && target.CopyHandle != null;
             if (graph)
             {
