@@ -297,6 +297,41 @@ bool is_on_stack_named(const Stack& stack, std::string_view tag) {
     return false;
 }
 
+// HTML §13.2.4.3's "Noah's Ark" clause, as Chrome applies it: before a
+// formatting element joins the list, if three entries already share its tag
+// name and attributes, the earliest of them leaves. Without it, text after
+// `<b><b><b><b>x</div>` reopened four <b>s where Chrome reopens three.
+void push_to_afl(std::vector<Element*>* afl, Element* element) {
+    const auto same = [element](const Element* other) {
+        if (other->tag_name() != element->tag_name()) return false;
+        const AttributeMap& a = other->attributes();
+        const AttributeMap& b = element->attributes();
+        if (a.size() != b.size()) return false;
+        for (size_t i = 0; i < a.size(); ++i) {
+            if (!b.contains(a.name_at(i)) || b.get(a.name_at(i)) != a.value_at(i)) return false;
+        }
+        return true;
+    };
+    int matches = 0;
+    size_t earliest = afl->size();
+    for (size_t i = afl->size(); i-- > 0;) {
+        if (!same((*afl)[i])) continue;
+        ++matches;
+        earliest = i;
+    }
+    if (matches >= 3) afl->erase(afl->begin() + static_cast<long>(earliest));
+    afl->push_back(element);
+}
+
+// The elements that bound "button scope" (§13.2.4.2), which is where a </p>
+// looks for its <p>. Phrasing and formatting elements in between do not stop
+// it: `<p>a<b>b</p>c` closes the paragraph and the <b> reopens around `c`.
+bool bounds_button_scope(std::string_view tag) {
+    return tag == "button" || tag == "applet" || tag == "caption" || tag == "html" ||
+           tag == "table" || tag == "td" || tag == "th" || tag == "marquee" ||
+           tag == "object" || tag == "template";
+}
+
 bool remove_from_afl(std::vector<Element*>* afl, std::string_view tag) {
     for (int i = static_cast<int>(afl->size()) - 1; i >= 0; --i) {
         if ((*afl)[static_cast<std::size_t>(i)]->tag_name() == tag) {
@@ -438,7 +473,7 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
 
                 if (!html_elements::is_void(name) && !t.self_closing) {
                     stack.push_back(elem.get());
-                    if (is_formatting) afl.push_back(elem.get());
+                    if (is_formatting) push_to_afl(&afl, elem.get());
                 }
                 break;
             }
@@ -483,12 +518,17 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                 // `<li><ul><span></span></li></ul>` mis-attributes the </li> to
                 // the outer <li> and trips a fatal error in the pop loop below.
                 bool optional_target = html_elements::is_optional_close(name);
+                const bool paragraph = name == "p" && !options.strict;
                 int match_depth = -1;
                 int idx = 0;
                 for (auto it = stack.rbegin(); it != stack.rend(); ++it, ++idx) {
                     if (!(*it)->is_element()) continue;
                     auto* el = static_cast<Element*>(*it);
                     if (el->tag_name() == name) { match_depth = idx; break; }
+                    if (paragraph) {
+                        if (bounds_button_scope(el->tag_name())) break;
+                        continue;
+                    }
                     if (optional_target &&
                         !html_elements::is_optional_close(el->tag_name())) {
                         break;   // scope boundary: the end tag is stray

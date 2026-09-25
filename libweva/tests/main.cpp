@@ -1,3 +1,4 @@
+void test_html_formatting_reconstruction_matches_chrome();
 void test_hostile_depth_fits_small_stack();
 void test_abi_box_text_survives_text_replacement();
 void test_abi_set_style_is_one_declaration();
@@ -1222,6 +1223,7 @@ int main() {
     test_abi_text_direction_chunks();
     test_hostile_nested_intrinsic_layout();
     test_hostile_depth_fits_small_stack();
+    test_html_formatting_reconstruction_matches_chrome();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }
