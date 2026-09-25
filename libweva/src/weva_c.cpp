@@ -1958,10 +1958,11 @@ struct weva_document {
     StyleMap styles;
     ContainerQueryState container_queries;
     BoxTree tree;
-    // Text nodes weva_element_set_text replaced, kept until the update that
-    // rebuilds the boxes viewing them: Box::text is a view, and the ABI
+    // Nodes removed from the document -- text set_text replaced, subtrees
+    // set_html or remove took out -- kept until the update that rebuilds the
+    // boxes viewing them: Box::text is a view into a text node, and the ABI
     // promises weva_box.text until the next update.
-    std::vector<Ref<Node>> retired_text;
+    std::vector<Ref<Node>> retired_nodes;
     IncrementalLayout incremental_layout;
     LayoutContext ctx;
     MonoFontMetrics metrics;
@@ -3870,7 +3871,7 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     // rebuilds it, so it goes now; the published draws do not depend on it.
     doc->tree.reset();
     doc->root = kNoBox;
-    doc->retired_text.clear();
+    doc->retired_nodes.clear();
     doc->incremental_layout.index(doc->tree, kNoBox, doc->ctx, true);
     doc->snap_settle = weva_document::SnapSettle{};
     doc->snap_animation = weva_document::SnapAnimation{};
@@ -4332,7 +4333,7 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
 
 weva_status weva_document_update_geometry(weva_document_t doc) {
     const weva_status status = update_document(doc, 0, 0, false);
-    if (doc && status == WEVA_OK) doc->retired_text.clear();
+    if (doc && status == WEVA_OK) doc->retired_nodes.clear();
     return status;
 }
 
@@ -4341,7 +4342,7 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
 }
 weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_seconds, double input_seconds) {
     const weva_status status = update_document(doc, dt_seconds, input_seconds, true);
-    if (doc && status == WEVA_OK) doc->retired_text.clear();
+    if (doc && status == WEVA_OK) doc->retired_nodes.clear();
     return status;
 }
 
@@ -8143,6 +8144,9 @@ static void detach_boxes(weva_document* doc, const std::unordered_set<const Elem
 }
 
 void weva_internal_forget_subtree(weva_document* doc, const Element& e) {
+    // Every removal comes through here. The subtree outlives its removal
+    // until the next update, so text views taken from the box tree stay valid.
+    doc->retired_nodes.push_back(Ref<Node>::retain(const_cast<Element*>(&e)));
     std::unordered_set<const Element*> gone;
     forget_elements_below(doc, e, &gone);
     detach_boxes(doc, gone);
@@ -8414,7 +8418,7 @@ weva_status weva_element_set_html(weva_document_t doc, weva_element_t element, c
             weva_internal_forget_subtree(doc, static_cast<const Element&>(*c));
         } else {
             // The element's own text boxes still view this until the update.
-            doc->retired_text.push_back(c);
+            doc->retired_nodes.push_back(c);
         }
         e->remove_child(c.get());
     }
@@ -8509,7 +8513,7 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     Element* e = doc->element_at(element);
     if (!e) return WEVA_ERR_NOT_FOUND;
-    if (!replace_text(*e, text ? text : "", &doc->retired_text)) {
+    if (!replace_text(*e, text ? text : "", &doc->retired_nodes)) {
         // Setting textarea default text replaces its selection even when the
         // text is equal. Keep ordinary HUD text no-ops allocation-free.
         if (e->tag_name() == "textarea") form_children_changed(*e);

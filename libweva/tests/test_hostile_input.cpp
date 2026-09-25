@@ -275,7 +275,8 @@ void test_hostile_nested_intrinsic_layout() {
 
 // Content nested at the parser's 512-level limit lays out, paints and hit
 // tests on a 512 KB stack: half the 1 MB a Windows main thread gets. Nested
-// inline-blocks use about 3.3 KB a level, so boxes stop at kMaxBoxDepth.
+// inline-blocks are two frames of paint recursion a level, so boxes stop at
+// kMaxBoxDepth.
 namespace {
 struct DeepJob {
     const char* css;

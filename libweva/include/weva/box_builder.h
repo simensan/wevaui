@@ -76,11 +76,14 @@ public:
     }
 
     // Boxes are generated for elements at most this deep. Layout, paint and
-    // hit testing recurse once or more per level -- about 3.3 KB of stack per
-    // nested inline-block at -O2 -- and a host's main thread may have 1 MB.
-    // The parser keeps Chrome's 512-deep DOM; content nested past this is
-    // not rendered, as it would otherwise overflow the stack.
-    static constexpr int kMaxBoxDepth = 128;
+    // hit testing recurse once or more per level: a nested inline-block is
+    // two painted boxes a level, and paint_recursive's frame is 1.7 KB with
+    // GCC and 2.7 KB with Clang, so 96 levels still needed over 512 KB. A
+    // host's main thread may have 1 MB, with its own frames below ours, and
+    // MSVC's frames are not measured here. The deepest corpus page nests 13
+    // elements. The parser keeps Chrome's 512-deep DOM; content nested past
+    // this is not rendered, as it would otherwise overflow the stack.
+    static constexpr int kMaxBoxDepth = 64;
     // How many elements enclose `e`, counting itself. A build reaches an
     // element's children with element_depth_ at one less than this.
     static int element_depth_of(const Element& e);
