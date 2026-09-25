@@ -41,6 +41,19 @@ millisecond stay on the calling thread. Every texel is computed with the
 serial arithmetic, so output is byte-identical. Set `WEVA_RASTER_THREADS=1`
 to keep all work on the caller.
 
+Whole textures run side by side as well. Paint does not rasterize a
+background, shadow or blur where it meets it: it resolves everything that
+needs CSS parsing on the paint thread (`prepare_background`), takes the
+texture's id from `RenderInterface::reserve_texture`, and queues the pixel
+work (`RasterQueue` in `paint.cpp`). `paint_tree` runs the queue before it
+returns. A job larger than a thread's share of the remaining work runs alone
+and splits its rows; the rest share the threads, one job per thread. The CSS
+parser keeps single-threaded scratch state, which is why jobs never parse.
+Only the collecting backend reserves ids, since hosts read its pixels after
+the update; a registered render backend still receives pixels as each
+texture is made. `WEVA_RASTER_JOB_LOG` prints each job's cost estimate beside
+its time.
+
 ## Positioned content in collapsed tables
 
 The table paint pass retains ordinary content, cell backgrounds and shared borders

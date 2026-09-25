@@ -373,6 +373,22 @@ public:
         textures[h.id] = {rgba, size};
         return h;
     }
+    // The host reads pixels only after the update returns, so an id can be
+    // issued before its pixels exist. See RenderInterface::reserve_texture.
+    TextureHandle reserve_texture(Vec2i size) override {
+        if (size.x <= 0 || size.y <= 0) return {};
+        const TextureHandle h{next_texture_++};
+        textures[h.id] = {std::vector<uint8_t>(), size};
+        return h;
+    }
+    void fill_texture(TextureHandle t, std::vector<uint8_t>&& rgba) override {
+        const auto it = textures.find(t.id);
+        if (it == textures.end()) return;
+        // The host reads width * height texels whatever the job produced.
+        const Vec2i size = it->second.second;
+        rgba.resize(static_cast<size_t>(size.x) * size.y * 4, 0);
+        it->second.first = std::move(rgba);
+    }
     void release_texture(TextureHandle t) override {
         if (defer_releases) {
             // Published pixels stay readable until the next update. Held

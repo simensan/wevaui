@@ -7,6 +7,7 @@
 #include "weva/style_resolver.h"
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -177,6 +178,29 @@ void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
                                  int tex_w, int tex_h, int pad, const struct BorderRadii* radii,
                                  const LayoutContext& ctx, double font_size,
                                  std::vector<uint8_t>* out_rgba);
+
+// The two halves of the above. prepare_background resolves every CSS value a
+// rasterization needs -- positions, sizes, gradient geometry -- and so parses,
+// which only the thread that owns the document may do; the CSS parser keeps
+// single-threaded scratch state. Rasterizing a prepared plan reads nothing
+// but the plan and the decoded images it names, so any thread may run it,
+// and several at once. Paint queues its rasters this way (RasterQueue).
+struct BackgroundPlan {
+    virtual ~BackgroundPlan() = default;
+};
+std::shared_ptr<const BackgroundPlan> prepare_background(
+    const std::vector<BackgroundLayer>& layers, const LinearColor& color, double width,
+    double height, int tex_w, int tex_h, const LayoutContext& ctx, double font_size);
+void rasterize_background(const BackgroundPlan& plan, std::vector<uint8_t>* out_rgba);
+// Roughly how long rasterizing `plan` takes, in nanoseconds on a desktop
+// core: enough to order a pass's jobs, not to predict a frame.
+long long raster_cost(const BackgroundPlan& plan);
+// `tex_w` x `tex_h` is the padded texture; the plan is its inside.
+std::shared_ptr<const BackgroundPlan> prepare_background_padded(
+    const std::vector<BackgroundLayer>& layers, const LinearColor& color, double width,
+    double height, int tex_w, int tex_h, int pad, const LayoutContext& ctx, double font_size);
+void rasterize_background_padded(const BackgroundPlan& plan, int tex_w, int tex_h, int pad,
+                                 const struct BorderRadii* radii, std::vector<uint8_t>* out_rgba);
 
 // Coverage of a rounded rectangle at a point, with the box's origin at (0,0)
 // and `radii` its corners. Antialiased: half a texel either side of the edge,

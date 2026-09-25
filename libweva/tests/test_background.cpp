@@ -2238,3 +2238,104 @@ void test_parallel_raster_is_byte_identical() {
     }
     raster_thread_override() = 0;
 }
+
+// Paint queues a pass's rasters and runs them together at its end. The pixels
+// a host reads must be the ones the inline path makes -- the path a host
+// render backend still takes, since it needs pixels when the texture is made
+// -- and every queued texture must be filled by the time update returns.
+namespace {
+
+const char* kQueuedHtml =
+    "<body><div class=card id=a>Alpha</div><div class=card id=b>Beta</div>"
+    "<div class=blob></div><div class=ring></div><p class=glow>Shadowed</p>"
+    "<div class=card id=c>Gamma</div><div class=card id=d>Delta</div></body>";
+const char* kQueuedCss =
+    "body { margin: 0; font-size: 18px; background: linear-gradient(180deg, #102 0%, #214 60%, #001 100%) }"
+    ".card { width: 22em; height: 90px; margin: 30px; border-radius: 14px;"
+    "  background: radial-gradient(circle at calc(20% + 1em) 30%, rgba(255,255,255,.3), transparent 60%),"
+    "              repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 8px, transparent 8px 16px),"
+    "              linear-gradient(135deg, #3a2 0%, #125 100%);"
+    "  box-shadow: 0 12px 40px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.2) }"
+    "#b { box-shadow: 0 4px 12px rgba(80,0,0,.8) } #c { border-radius: 50% / 30% }"
+    ".blob { width: 300px; height: 200px; filter: blur(24px);"
+    "  background: radial-gradient(ellipse at 30% 40%, #f0a 0%, transparent 70%), #235 }"
+    ".ring { width: 120px; height: 120px; border-radius: 50%;"
+    "  background: conic-gradient(from -90deg, #7df 270deg, rgba(255,255,255,.06) 270deg) }"
+    ".glow { color: #fff; text-shadow: 0 0 6px #0ff, 2px 2px 3px #000 }";
+
+struct Captured {
+    std::vector<std::vector<uint8_t>> pixels;   // in the order they were made
+};
+
+uint64_t captured_generate(void* user, const uint8_t* rgba, int32_t w, int32_t h) {
+    auto* c = static_cast<Captured*>(user);
+    c->pixels.emplace_back(rgba, rgba + static_cast<size_t>(w) * h * 4);
+    return c->pixels.size();
+}
+uint64_t captured_compile(void*, const weva_vertex*, size_t, const uint32_t*, size_t) { return 1; }
+void captured_render(void*, uint64_t, float, float, uint64_t) {}
+void captured_release(void*, uint64_t) {}
+void captured_scissor(void*, int32_t, int32_t, int32_t, int32_t, int32_t) {}
+
+weva_document_t queued_document() {
+    weva_config cfg{};
+    cfg.viewport_width = 900;
+    cfg.viewport_height = 700;
+    cfg.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&cfg);
+    CHECK(weva_document_add_css(d, kQueuedCss, std::strlen(kQueuedCss)) == WEVA_OK);
+    CHECK(weva_document_load_html(d, kQueuedHtml, std::strlen(kQueuedHtml)) == WEVA_OK);
+    return d;
+}
+
+// The published textures in id order: the order paint made them.
+std::vector<std::vector<uint8_t>> published_textures(weva_document_t d) {
+    size_t n = 0;
+    const weva_texture* t = weva_document_textures(d, &n);
+    std::map<uint64_t, std::vector<uint8_t>> by_id;
+    for (size_t i = 0; i < n; ++i) {
+        const size_t bytes = static_cast<size_t>(t[i].width) * t[i].height * 4;
+        CHECK(t[i].rgba != nullptr);   // reserved and never filled would be null
+        if (t[i].rgba) by_id[t[i].id].assign(t[i].rgba, t[i].rgba + bytes);
+    }
+    std::vector<std::vector<uint8_t>> out;
+    for (auto& kv : by_id) out.push_back(std::move(kv.second));
+    return out;
+}
+
+}  // namespace
+
+void test_queued_rasters_match_inline() {
+    // Inline: a host backend takes every texture's pixels as it is made.
+    Captured inline_pixels;
+    {
+        weva_document_t d = queued_document();
+        weva_render_backend rb{};
+        rb.user_data = &inline_pixels;
+        rb.compile_geometry = captured_compile;
+        rb.render_geometry = captured_render;
+        rb.release_geometry = captured_release;
+        rb.generate_texture = captured_generate;
+        rb.set_scissor = captured_scissor;
+        weva_document_set_render_backend(d, &rb);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        weva_document_destroy(d);
+    }
+    // Enough for the pass to hold both kinds of job: ones large enough to
+    // split their own rows and ones that share the threads.
+    CHECK(inline_pixels.pixels.size() >= 8);
+
+    for (const int threads : {1, 4}) {
+        raster_thread_override() = threads;
+        weva_document_t d = queued_document();
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        const auto queued = published_textures(d);
+        CHECK(queued.size() == inline_pixels.pixels.size());
+        CHECK(queued == inline_pixels.pixels);
+        // A later update reuses the cached textures, still filled.
+        CHECK(weva_document_update(d, 0.016) == WEVA_OK);
+        CHECK(published_textures(d) == queued);
+        weva_document_destroy(d);
+    }
+    raster_thread_override() = 0;
+}

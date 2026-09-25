@@ -1093,43 +1093,70 @@ Srgb sample_image(const DecodedImage& image, double lx, double ly, double tw, do
     return s;
 }
 
-void rasterize_background(const std::vector<BackgroundLayer>& layers, const LinearColor& color,
-                          double width, double height, int tex_w, int tex_h,
-                          const LayoutContext& ctx, double font_size,
-                          std::vector<uint8_t>* out_rgba) {
-    static const bool gradient_log = std::getenv("WEVA_GRADIENT_LOG") != nullptr;
-    const auto raster_start = gradient_log ? std::chrono::steady_clock::now()
-                                           : std::chrono::steady_clock::time_point{};
+namespace {
+
+struct Tile {
+    PreparedGradient prepared;
+    // Set instead of `prepared` for a url layer. Unlike a gradient an
+    // image has an INTRINSIC size, which is what `auto`, `cover` and
+    // `contain` are all measured against.
+    const DecodedImage* image = nullptr;
+    double ox, oy, tw, th;
+    bool repeat_x, repeat_y;
+    // Whether the tile's repetition can actually be reached inside the
+    // painting area. `background-repeat` is `repeat` unless a sheet says
+    // otherwise, so nearly every layer sets repeat_x and repeat_y -- and
+    // nearly every layer is also a gradient sized to the area it fills,
+    // which puts every sample inside the first tile. The wrap is then two
+    // fmods that cannot change their argument, run for every texel of
+    // every layer: eight of them per texel of a two-layer background.
+    bool wrap_x, wrap_y;
+    BlendMode blend = BlendMode::Normal;
+    bool is_mask = false, luminance = false;
+};
+struct EdgeTest {
+    double half_width = 0;
+    double span = 0;        // repeating period, 0 when not repeating
+    std::vector<double> positions;
+};
+// Everything rasterize_background resolves from CSS text, resolved: the
+// tiles with their prepared gradients, and which shortcuts apply. See
+// prepare_background in background.h.
+struct PreparedBackground final : BackgroundPlan {
+    // Owned, because each tile's prepared gradient points into its layer.
+    std::vector<BackgroundLayer> layers;
+    std::vector<Tile> tiles;
+    std::vector<EdgeTest> edges;
+    Srgb base{};
+    bool any_mask = false;
+    int samples = 1;
+    bool flat_x = false, flat_y = false;
+    int period_x = 0, period_y = 0;
+    double width = 0, height = 0;
+    int tex_w = 1, tex_h = 1;
+};
+
+} // namespace
+
+std::shared_ptr<const BackgroundPlan> prepare_background(
+    const std::vector<BackgroundLayer>& layers, const LinearColor& color, double width,
+    double height, int tex_w, int tex_h, const LayoutContext& ctx, double font_size) {
+    auto plan = std::make_shared<PreparedBackground>();
     tex_w = std::max(1, tex_w);
     tex_h = std::max(1, tex_h);
-    out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
-    const Srgb base = to_srgb(color);
+    plan->layers = layers;
+    plan->base = to_srgb(color);
+    plan->width = width;
+    plan->height = height;
+    plan->tex_w = tex_w;
+    plan->tex_h = tex_h;
 
     // Each layer's tile and origin; a gradient has no intrinsic size, so
     // `auto`, `cover` and `contain` all mean the painting area (§3.9).
-    struct Tile {
-        PreparedGradient prepared;
-        // Set instead of `prepared` for a url layer. Unlike a gradient an
-        // image has an INTRINSIC size, which is what `auto`, `cover` and
-        // `contain` are all measured against.
-        const DecodedImage* image = nullptr;
-        double ox, oy, tw, th;
-        bool repeat_x, repeat_y;
-        // Whether the tile's repetition can actually be reached inside the
-        // painting area. `background-repeat` is `repeat` unless a sheet says
-        // otherwise, so nearly every layer sets repeat_x and repeat_y -- and
-        // nearly every layer is also a gradient sized to the area it fills,
-        // which puts every sample inside the first tile. The wrap is then two
-        // fmods that cannot change their argument, run for every texel of
-        // every layer: eight of them per texel of a two-layer background.
-        bool wrap_x, wrap_y;
-        BlendMode blend = BlendMode::Normal;
-        bool is_mask = false, luminance = false;
-    };
-    std::vector<Tile> tiles;
-    bool any_mask = false;
+    std::vector<Tile>& tiles = plan->tiles;
+    bool& any_mask = plan->any_mask;
     const double outer_width = width, outer_height = height;
-    for (const BackgroundLayer& l : layers) {
+    for (const BackgroundLayer& l : plan->layers) {
         if (!l.is_gradient && !l.image) continue;
         Tile t;
         t.image = l.is_gradient ? nullptr : l.image;
@@ -1206,7 +1233,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     // So the sample count is chosen from the content rather than turned up
     // everywhere: this runs on every update, and a viewport-sized gradient is
     // already the most expensive thing here.
-    int samples = 1;
+    int& samples = plan->samples;
     for (const Tile& t : tiles) {
         if (t.prepared.has_hard_edge) samples = 3;
     }
@@ -1236,8 +1263,8 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         }
         return !tiles.empty();
     };
-    const bool flat_x = constant_along(true);
-    const bool flat_y = !flat_x && constant_along(false);
+    const bool flat_x = plan->flat_x = constant_along(true);
+    plan->flat_y = !flat_x && constant_along(false);
 
     // How many texels before the picture REPEATS, on each axis, or 0 for never.
     //
@@ -1317,8 +1344,8 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         return static_cast<int>(lcm);
     };
     // Only where the cheaper flat path does not already cover the axis.
-    const int period_x = flat_x ? 0 : period_along(true);
-    const int period_y = flat_y ? 0 : period_along(false);
+    plan->period_x = flat_x ? 0 : period_along(true);
+    plan->period_y = plan->flat_y ? 0 : period_along(false);
 
     // A texel only needs more than one sample where the gradient actually
     // steps. Everywhere else the ramp is linear across the texel, so the nine
@@ -1332,12 +1359,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     // t-range is the same everywhere and comes out of prepare(). Radial and
     // conic have no such constant -- their gradient of t blows up at the centre
     // -- so they keep sampling as before.
-    struct EdgeTest {
-        double half_width = 0;
-        double span = 0;        // repeating period, 0 when not repeating
-        std::vector<double> positions;
-    };
-    std::vector<EdgeTest> edges;
+    std::vector<EdgeTest>& edges = plan->edges;
     bool adaptive = samples > 1;
     for (const Tile& t : tiles) {
         const PreparedGradient& g = t.prepared;
@@ -1358,6 +1380,25 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         edges.push_back(std::move(e));
     }
     if (!adaptive) edges.clear();
+
+    return plan;
+}
+
+void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* out_rgba) {
+    const auto& plan = static_cast<const PreparedBackground&>(prepared);
+    static const bool gradient_log = std::getenv("WEVA_GRADIENT_LOG") != nullptr;
+    const auto raster_start = gradient_log ? std::chrono::steady_clock::now()
+                                           : std::chrono::steady_clock::time_point{};
+    const std::vector<Tile>& tiles = plan.tiles;
+    const std::vector<EdgeTest>& edges = plan.edges;
+    const Srgb base = plan.base;
+    const bool any_mask = plan.any_mask;
+    const int samples = plan.samples;
+    const bool flat_x = plan.flat_x, flat_y = plan.flat_y;
+    const int period_x = plan.period_x, period_y = plan.period_y;
+    const double width = plan.width, height = plan.height;
+    const int tex_w = plan.tex_w, tex_h = plan.tex_h;
+    out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
 
     // True when the texel's t-range reaches a stop, so the value across it is
     // not one straight ramp.
@@ -1549,6 +1590,28 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     }
 }
 
+long long raster_cost(const BackgroundPlan& prepared) {
+    const auto& plan = static_cast<const PreparedBackground&>(prepared);
+    // The rows and texels actually sampled, as rasterize_background decides
+    // them; the rest are copies. A hard edge is charged every texel's full
+    // supersampling, which it can reach: menu's progress bar is 100%.
+    const long long rows = plan.flat_y ? 1 : plan.period_y > 0 ? std::min(plan.period_y, plan.tex_h) : plan.tex_h;
+    const long long cols = plan.flat_x ? 1 : plan.period_x > 0 ? std::min(plan.period_x, plan.tex_w) : plan.tex_w;
+    const long long sampled = rows * cols;
+    const long long samples = static_cast<long long>(plan.samples) * plan.samples;
+    const long long texels = static_cast<long long>(plan.tex_w) * plan.tex_h;
+    return sampled * (8 + samples * static_cast<long long>(plan.tiles.size()) * 30) + texels;
+}
+
+void rasterize_background(const std::vector<BackgroundLayer>& layers, const LinearColor& color,
+                          double width, double height, int tex_w, int tex_h,
+                          const LayoutContext& ctx, double font_size,
+                          std::vector<uint8_t>* out_rgba) {
+    rasterize_background(*prepare_background(layers, color, width, height, tex_w, tex_h, ctx,
+                                             font_size),
+                         out_rgba);
+}
+
 } // namespace weva
 
 namespace weva {
@@ -1602,14 +1665,20 @@ double rounded_rect_coverage(double px, double py, double w, double h,
     return rounded_coverage(px, py, w, h, radii);
 }
 
-void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
-                                 const LinearColor& color, double width, double height,
-                                 int tex_w, int tex_h, int pad, const BorderRadii* radii,
-                                 const LayoutContext& ctx, double font_size,
-                                 std::vector<uint8_t>* out_rgba) {
+std::shared_ptr<const BackgroundPlan> prepare_background_padded(
+    const std::vector<BackgroundLayer>& layers, const LinearColor& color, double width,
+    double height, int tex_w, int tex_h, int pad, const LayoutContext& ctx, double font_size) {
     const int inner_w = std::max(1, tex_w - 2 * pad), inner_h = std::max(1, tex_h - 2 * pad);
+    return prepare_background(layers, color, width, height, inner_w, inner_h, ctx, font_size);
+}
+
+void rasterize_background_padded(const BackgroundPlan& prepared, int tex_w, int tex_h, int pad,
+                                 const BorderRadii* radii, std::vector<uint8_t>* out_rgba) {
+    const auto& plan = static_cast<const PreparedBackground&>(prepared);
+    const double width = plan.width, height = plan.height;
+    const int inner_w = plan.tex_w, inner_h = plan.tex_h;
     std::vector<uint8_t> inner;
-    rasterize_background(layers, color, width, height, inner_w, inner_h, ctx, font_size, &inner);
+    rasterize_background(prepared, &inner);
     out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
     if (!radii || radii->is_zero()) {
         // Without rounded corners every inner texel has full coverage.
@@ -1637,6 +1706,16 @@ void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
             }
         }
     });
+}
+
+void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
+                                 const LinearColor& color, double width, double height,
+                                 int tex_w, int tex_h, int pad, const BorderRadii* radii,
+                                 const LayoutContext& ctx, double font_size,
+                                 std::vector<uint8_t>* out_rgba) {
+    rasterize_background_padded(*prepare_background_padded(layers, color, width, height, tex_w,
+                                                           tex_h, pad, ctx, font_size),
+                                tex_w, tex_h, pad, radii, out_rgba);
 }
 
 // The blur, over one channel or four.

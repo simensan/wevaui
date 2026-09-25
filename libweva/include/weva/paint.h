@@ -16,6 +16,7 @@
 
 namespace weva {
 class StyleProvider;
+struct RasterQueue;
 
 // Walks a laid-out box tree and issues draws through the render interface.
 //
@@ -184,6 +185,8 @@ struct PaintContext {
     // When set, rasterized backgrounds and blurs are cached here instead of
     // being regenerated and released every pass.
     TextureCache* texture_cache = nullptr;
+    // Set by paint_tree for the pass: where rasters wait to run together.
+    RasterQueue* raster_queue = nullptr;
     // Where a `url(...)` in a background gets its pixels. Null means images
     // do not paint, which is what the engine did before it existed.
     ImageStore* images = nullptr;

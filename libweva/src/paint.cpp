@@ -391,6 +391,133 @@ struct ProfileScope {
     }
 };
 
+} // namespace
+
+// Textures a pass needs, rasterized together once the tree has been walked.
+//
+// Opening a screen is almost all rasterizing: hud spends 56 of its 63 ms
+// there, across 23 gradient, shadow and blur textures made one after another
+// in tree order. Rows of one large texture already split across
+// threads, but most textures are too small to split, and glass's 23 shadow
+// textures ran serially on one core. Paint now takes a texture's id when it
+// draws the quad and leaves the pixels to a job; the jobs run side by side
+// at the end of paint_tree. Each job does exactly what the inline raster
+// did, so the pixels are byte-identical.
+struct RasterQueue {
+    struct Job {
+        TextureHandle texture;
+        long long cost = 0;   // estimated nanoseconds; see raster_cost
+        const char* kind = "";
+        std::function<void(std::vector<uint8_t>*)> raster;
+    };
+    std::vector<Job> jobs;
+};
+
+namespace {
+
+// What a job costs, in rough nanoseconds on a desktop core, to decide which
+// jobs are worth all the threads and which share them. Calibrated with
+// WEVA_RASTER_JOB_LOG across the sample corpus; only the ordering matters.
+long long blur_cost(int w, int h, int channels) {
+    return static_cast<long long>(w) * h * (channels > 1 ? 70 : 25);
+}
+long long coverage_cost(int w, int h) { return static_cast<long long>(w) * h * 8; }
+
+// The texture `raster` fills, queued when the backend can take its pixels
+// later and made now otherwise. `raster` must capture by value: a queued one
+// runs after the caller has returned.
+template <typename Raster>
+TextureHandle make_texture(const PaintContext& paint, int w, int h, const char* kind,
+                           long long cost, Raster&& raster) {
+    if (paint.raster_queue) {
+        const TextureHandle t = paint.backend->reserve_texture({w, h});
+        if (t) {
+            paint.raster_queue->jobs.push_back({t, cost, kind, std::forward<Raster>(raster)});
+            return t;
+        }
+    }
+    std::vector<uint8_t> rgba;
+    raster(&rgba);
+    return paint.backend->generate_texture(rgba, {w, h});
+}
+
+// Runs a pass's queued jobs and hands each its texture's pixels.
+//
+// A job larger than a thread's share of what remains runs alone, first,
+// splitting its own rows as before; a viewport-sized background is one job and
+// would otherwise leave three threads idle while it ran. The rest go to every
+// thread at once, largest first, each on one thread (raster_job_worker). A
+// pass with a few large textures therefore runs as it did; one with many
+// small ones -- glass's 23 shadows -- runs them side by side.
+void run_raster_jobs(RasterQueue* queue, RenderInterface* backend) {
+    std::vector<RasterQueue::Job>& jobs = queue->jobs;
+    if (jobs.empty()) return;
+    std::vector<std::vector<uint8_t>> pixels(jobs.size());
+    std::vector<size_t> order(jobs.size());
+    long long total = 0;
+    for (size_t i = 0; i < jobs.size(); ++i) {
+        order[i] = i;
+        total += jobs[i].cost;
+    }
+    std::stable_sort(order.begin(), order.end(),
+                     [&](size_t a, size_t b) { return jobs[a].cost > jobs[b].cost; });
+    const int threads = raster_thread_count();
+    // Below about a millisecond of work in all, starting threads costs more.
+    constexpr long long kParallelNanoseconds = 1000000;
+    size_t next = 0;
+    if (threads <= 1 || total < kParallelNanoseconds) {
+        next = order.size();
+    } else {
+        // Against what is LEFT: once the largest are out of the way, a job
+        // that was a small share of the whole can be most of the rest, and
+        // on one thread it would finish long after the others.
+        long long remaining = total;
+        while (next < order.size() && jobs[order[next]].cost * threads >= remaining) {
+            remaining -= jobs[order[next]].cost;
+            ++next;
+        }
+    }
+    // WEVA_RASTER_JOB_LOG: each job's estimate beside what it took, which is
+    // what the estimates are calibrated against.
+    static const bool job_log = std::getenv("WEVA_RASTER_JOB_LOG") != nullptr;
+    std::vector<double> took(job_log ? jobs.size() : 0);
+    const auto run = [&](size_t i) {
+        const auto t0 = job_log ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
+        jobs[i].raster(&pixels[i]);
+        if (job_log) {
+            took[i] = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();
+        }
+    };
+    // The large ones, or everything when there is nothing to share.
+    for (size_t k = 0; k < next; ++k) run(order[k]);
+    if (next < order.size()) {
+        std::atomic<size_t> cursor{next};
+        const auto work = [&] {
+            bool& worker = raster_job_worker();
+            const bool was = worker;
+            worker = true;
+            for (size_t k; (k = cursor.fetch_add(1)) < order.size();) run(order[k]);
+            worker = was;
+        };
+        const size_t remaining = order.size() - next;
+        const int helpers = static_cast<int>(std::min<size_t>(static_cast<size_t>(threads), remaining)) - 1;
+        std::vector<std::thread> pool;
+        pool.reserve(static_cast<size_t>(std::max(0, helpers)));
+        for (int t = 0; t < helpers; ++t) pool.emplace_back(work);
+        work();
+        for (std::thread& t : pool) t.join();
+    }
+    if (job_log) {
+        for (size_t k = 0; k < order.size(); ++k) {
+            const size_t i = order[k];
+            std::fprintf(stderr, "  [raster job] %-7s cost %10lld  %8.3f ms%s\n", jobs[i].kind, jobs[i].cost,
+                         took[i], k < next ? "  (alone)" : "");
+        }
+    }
+    for (size_t i = 0; i < jobs.size(); ++i) backend->fill_texture(jobs[i].texture, std::move(pixels[i]));
+    jobs.clear();
+}
+
 // Consumes a temporary mesh. Callers must finish any geometry measurements
 // before handing it over; retained draws own their buffers in the backend.
 void draw_mesh(Mesh&& mesh, RenderInterface* backend, TextureHandle tex, double opacity = 1,
@@ -976,45 +1103,49 @@ bool paint_blurred_box_shadow(const Shadow& sh, const Rect& border_box, const Bo
 
     if (!tex) {
         ++g_paint_profile.shadow_textures;
-        std::vector<uint8_t> rgba;
-        {
-            ProfileScope r(&g_paint_profile.shadow_raster);
-            rasterize_background_padded({}, col, shape.width, shape.height, tex_w, tex_h, pad,
-                                        &shape_radii, ctx, font_size, &rgba);
-        }
-        {
-            ProfileScope b(&g_paint_profile.shadow_blur);
-            blur_flat_rgba(&rgba, tex_w, tex_h, sigma * scale);
-        }
-        ProfileScope punch(&g_paint_profile.shadow_punch);
-
-        // CSS Backgrounds L3 §7.1: an outer shadow is not painted inside the
-        // border box. The ring path did this by never drawing there; here the
-        // blurred image is punched through, which is the same thing and keeps
-        // the soft edge the blur put on it.
-        const double inv = scale > 0 ? 1.0 / scale : 0.0;
-        // Rows are independent; see parallel.h.
-        parallel_ranges(tex_h, 1, static_cast<long long>(tex_w) * tex_h, 1 << 16,
-                        [&](int row_begin, int row_end) {
-            for (int ty = row_begin; ty < row_end; ++ty) {
-                const double sy = (ty - pad + 0.5) * inv;
-                const double by = sy + sh.y - grow;
-                if (by < -1 || by > border_box.height + 1) continue;
-                for (int tx = 0; tx < tex_w; ++tx) {
-                    const double sx = (tx - pad + 0.5) * inv;
-                    const double bx = sx + sh.x - grow;
-                    const double cov = rounded_rect_coverage(bx, by, border_box.width,
-                                                             border_box.height, &box_radii);
-                    if (cov <= 0) continue;
-                    uint8_t& a = rgba[(static_cast<size_t>(ty) * tex_w + tx) * 4 + 3];
-                    a = static_cast<uint8_t>(a * (1.0 - cov) + 0.5);
-                }
+        const Rect box = border_box;
+        const Shadow cast = sh;
+        // Resolved here: the job runs off this thread, and resolving parses.
+        const std::shared_ptr<const BackgroundPlan> plan = prepare_background_padded(
+            {}, col, shape.width, shape.height, tex_w, tex_h, pad, ctx, font_size);
+        tex = make_texture(paint, tex_w, tex_h, "shadow",
+                           raster_cost(*plan) + blur_cost(tex_w, tex_h, 1) + coverage_cost(tex_w, tex_h),
+                           [=](std::vector<uint8_t>* out) {
+            std::vector<uint8_t>& rgba = *out;
+            {
+                ProfileScope r(&g_paint_profile.shadow_raster);
+                rasterize_background_padded(*plan, tex_w, tex_h, pad, &shape_radii, &rgba);
             }
-        });
+            {
+                ProfileScope b(&g_paint_profile.shadow_blur);
+                blur_flat_rgba(&rgba, tex_w, tex_h, sigma * scale);
+            }
+            ProfileScope punch(&g_paint_profile.shadow_punch);
 
-        punch.close();
-        ProfileScope up(&g_paint_profile.shadow_upload);
-        tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
+            // CSS Backgrounds L3 §7.1: an outer shadow is not painted inside the
+            // border box. The ring path did this by never drawing there; here the
+            // blurred image is punched through, which is the same thing and keeps
+            // the soft edge the blur put on it.
+            const double inv = scale > 0 ? 1.0 / scale : 0.0;
+            // Rows are independent; see parallel.h.
+            parallel_ranges(tex_h, 1, static_cast<long long>(tex_w) * tex_h, 1 << 16,
+                            [&](int row_begin, int row_end) {
+                for (int ty = row_begin; ty < row_end; ++ty) {
+                    const double sy = (ty - pad + 0.5) * inv;
+                    const double by = sy + cast.y - grow;
+                    if (by < -1 || by > box.height + 1) continue;
+                    for (int tx = 0; tx < tex_w; ++tx) {
+                        const double sx = (tx - pad + 0.5) * inv;
+                        const double bx = sx + cast.x - grow;
+                        const double cov = rounded_rect_coverage(bx, by, box.width,
+                                                                 box.height, &box_radii);
+                        if (cov <= 0) continue;
+                        uint8_t& a = rgba[(static_cast<size_t>(ty) * tex_w + tx) * 4 + 3];
+                        a = static_cast<uint8_t>(a * (1.0 - cov) + 0.5);
+                    }
+                }
+            });
+        });
         if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
         else if (paint.owned_textures) paint.owned_textures->push_back(tex);
     }
@@ -2360,11 +2491,16 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
         tex = paint.texture_cache->get(key);
     }
     if (!tex) {
-        std::vector<uint8_t> rgba;
-        rasterize_background(layers, color, area.width, area.height, tex_w, tex_h, ctx, font_size,
-                             &rgba);
-        if (filter) filter_rgba(&rgba, *filter);
-        tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
+        const std::optional<ColorFilter> job_filter =
+            filter ? std::optional<ColorFilter>(*filter) : std::nullopt;
+        // Resolved here: the job runs off this thread, and resolving parses.
+        const std::shared_ptr<const BackgroundPlan> plan =
+            prepare_background(layers, color, area.width, area.height, tex_w, tex_h, ctx, font_size);
+        tex = make_texture(paint, tex_w, tex_h, "layers", raster_cost(*plan),
+                           [=](std::vector<uint8_t>* rgba) {
+            rasterize_background(*plan, rgba);
+            if (job_filter) filter_rgba(rgba, *job_filter);
+        });
         if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
         else if (paint.owned_textures) paint.owned_textures->push_back(tex);
     }
@@ -2702,9 +2838,13 @@ bool paint_blurred_text_shadow(std::string_view text, double x, double baseline_
             }
         }
     }
-    blur_flat_rgba(&rgba, w, h, sigma);
-
-    const TextureHandle tex = paint.backend->generate_texture(rgba, {w, h});
+    // The stamping above reads the atlas, which later text may grow, so only
+    // the blur waits for the pass's other rasters.
+    const TextureHandle tex = make_texture(paint, w, h, "text", blur_cost(w, h, 1),
+                                           [rgba = std::move(rgba), w, h, sigma](std::vector<uint8_t>* out) mutable {
+        blur_flat_rgba(&rgba, w, h, sigma);
+        *out = std::move(rgba);
+    });
     if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
     else if (paint.owned_textures) paint.owned_textures->push_back(tex);
     const Rect area(x + sh.x + lo_x - pad, baseline_y + sh.y + lo_y - pad, w, h);
@@ -3234,20 +3374,20 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             }
             if (!tex) {
                 if (g_paint_profile.on) ++g_paint_profile.filter_textures;
-                std::vector<uint8_t> rgba;
-                {
-                    ProfileScope raster(&g_paint_profile.filter_raster);
-                    rasterize_background_padded(layers, bg, border_box.width, border_box.height, tex_w, tex_h, pad, &radii,
-                                                ctx, fs, &rgba);
-                }
-                {
+                const BorderRadii job_radii = radii;
+                // Resolved here: the job runs off this thread, and resolving parses.
+                const std::shared_ptr<const BackgroundPlan> plan = prepare_background_padded(
+                    layers, bg, border_box.width, border_box.height, tex_w, tex_h, pad, ctx, fs);
+                tex = make_texture(paint, tex_w, tex_h, "filter",
+                                   raster_cost(*plan) + blur_cost(tex_w, tex_h, 4),
+                                   [=](std::vector<uint8_t>* rgba) {
+                    {
+                        ProfileScope raster(&g_paint_profile.filter_raster);
+                        rasterize_background_padded(*plan, tex_w, tex_h, pad, &job_radii, rgba);
+                    }
                     ProfileScope convolution(&g_paint_profile.filter_blur);
-                    blur_rgba(&rgba, tex_w, tex_h, blur * scale);
-                }
-                {
-                    ProfileScope upload(&g_paint_profile.filter_upload);
-                    tex = paint.backend->generate_texture(rgba, {tex_w, tex_h});
-                }
+                    blur_rgba(rgba, tex_w, tex_h, blur * scale);
+                });
                 if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
                 else if (paint.owned_textures) paint.owned_textures->push_back(tex);
             }
@@ -4417,8 +4557,18 @@ void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const Pai
 }
 
 void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
-                const PaintContext& paint) {
-    if (!paint.backend || root == kNoBox) return;
+                const PaintContext& outer) {
+    if (!outer.backend || root == kNoBox) return;
+    // The pass's rasters wait here and run together below, before returning:
+    // callers see textures filled exactly as they were when paint made them
+    // inline. A caller's own queue (none today) would be flushed by it.
+    RasterQueue raster_queue;
+    PaintContext with_queue;
+    if (!outer.raster_queue) {
+        with_queue = outer;
+        with_queue.raster_queue = &raster_queue;
+    }
+    const PaintContext& paint = outer.raster_queue ? outer : with_queue;
 
     g_paint_profile = PaintProfile{};
     static const bool paint_log = std::getenv("WEVA_PAINT_LOG") != nullptr;
@@ -4441,6 +4591,16 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
     paint_recursive(tree, root, ctx, 0, 0, paint, atlas_texture, canvas_owner, PaintState{});
     // Last, and over everything: an open dropdown is not in the box tree.
     paint_select_popup(tree, ctx, paint, atlas_texture);
+    if (paint.raster_queue == &raster_queue) {
+        const auto jobs_start = std::chrono::steady_clock::now();
+        const size_t job_count = raster_queue.jobs.size();
+        run_raster_jobs(&raster_queue, paint.backend);
+        if (g_paint_profile.on) {
+            std::fprintf(stderr, "    paint: %zu raster jobs %6.2f ms\n", job_count,
+                         std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() -
+                                                                   jobs_start).count());
+        }
+    }
 
     if (g_paint_profile.on) {
         const double total =

@@ -25,9 +25,18 @@ inline std::atomic<int>& raster_thread_override() {
     return value;
 }
 
+// Set while a thread runs one of several raster jobs side by side
+// (run_raster_jobs in paint.cpp). Every thread is busy then, so a job keeps
+// its rows to itself rather than starting threads of its own.
+inline bool& raster_job_worker() {
+    static thread_local bool value = false;
+    return value;
+}
+
 // Threads a raster job may use, the caller's included. WEVA_RASTER_THREADS
 // overrides it; 1 keeps every job on the calling thread.
 inline int raster_thread_count() {
+    if (raster_job_worker()) return 1;
     if (const int forced = raster_thread_override().load(std::memory_order_relaxed)) return forced;
     static const int count = [] {
         if (const char* env = std::getenv("WEVA_RASTER_THREADS")) {
