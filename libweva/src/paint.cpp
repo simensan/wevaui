@@ -422,6 +422,7 @@ long long blur_cost(int w, int h, int channels) {
     return static_cast<long long>(w) * h * (channels > 1 ? 70 : 25);
 }
 long long coverage_cost(int w, int h) { return static_cast<long long>(w) * h * 8; }
+long long upsample_cost(int w, int h) { return static_cast<long long>(w) * h * 6; }
 
 // The texture `raster` fills, queued when the backend can take its pixels
 // later and made now otherwise. `raster` must capture by value: a queued one
@@ -1105,20 +1106,29 @@ bool paint_blurred_box_shadow(const Shadow& sh, const Rect& border_box, const Bo
         ++g_paint_profile.shadow_textures;
         const Rect box = border_box;
         const Shadow cast = sh;
+        // A wide blur is drawn on a coarser grid and resampled; see ReducedBlur.
+        const ReducedBlur grid = reduced_blur_grid(tex_w - 2 * pad, tex_h - 2 * pad, sigma * scale);
+        const int raster_w = grid.reduced ? grid.width() : tex_w;
+        const int raster_h = grid.reduced ? grid.height() : tex_h;
+        const int raster_pad = grid.reduced ? grid.pad : pad;
         // Resolved here: the job runs off this thread, and resolving parses.
         const std::shared_ptr<const BackgroundPlan> plan = prepare_background_padded(
-            {}, col, shape.width, shape.height, tex_w, tex_h, pad, ctx, font_size);
+            {}, col, shape.width, shape.height, raster_w, raster_h, raster_pad, ctx, font_size);
         tex = make_texture(paint, tex_w, tex_h, "shadow",
-                           raster_cost(*plan) + blur_cost(tex_w, tex_h, 1) + coverage_cost(tex_w, tex_h),
+                           raster_cost(*plan) + blur_cost(raster_w, raster_h, 1) +
+                               (grid.reduced ? upsample_cost(tex_w, tex_h) : 0) + coverage_cost(tex_w, tex_h),
                            [=](std::vector<uint8_t>* out) {
             std::vector<uint8_t>& rgba = *out;
+            std::vector<uint8_t> coarse;
+            std::vector<uint8_t>& raster = grid.reduced ? coarse : rgba;
             {
                 ProfileScope r(&g_paint_profile.shadow_raster);
-                rasterize_background_padded(*plan, tex_w, tex_h, pad, &shape_radii, &rgba);
+                rasterize_background_padded(*plan, raster_w, raster_h, raster_pad, &shape_radii, &raster);
             }
             {
                 ProfileScope b(&g_paint_profile.shadow_blur);
-                blur_flat_rgba(&rgba, tex_w, tex_h, sigma * scale);
+                blur_flat_rgba(&raster, raster_w, raster_h, grid.reduced ? grid.sigma() : sigma * scale);
+                if (grid.reduced) upsample_blurred(coarse, grid, tex_w, tex_h, pad, &rgba);
             }
             ProfileScope punch(&g_paint_profile.shadow_punch);
 
@@ -3375,18 +3385,27 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             if (!tex) {
                 if (g_paint_profile.on) ++g_paint_profile.filter_textures;
                 const BorderRadii job_radii = radii;
+                // A wide blur is drawn on a coarser grid and resampled; see ReducedBlur.
+                const ReducedBlur grid = reduced_blur_grid(tex_w - 2 * pad, tex_h - 2 * pad, blur * scale);
+                const int raster_w = grid.reduced ? grid.width() : tex_w;
+                const int raster_h = grid.reduced ? grid.height() : tex_h;
+                const int raster_pad = grid.reduced ? grid.pad : pad;
                 // Resolved here: the job runs off this thread, and resolving parses.
                 const std::shared_ptr<const BackgroundPlan> plan = prepare_background_padded(
-                    layers, bg, border_box.width, border_box.height, tex_w, tex_h, pad, ctx, fs);
+                    layers, bg, border_box.width, border_box.height, raster_w, raster_h, raster_pad, ctx, fs);
                 tex = make_texture(paint, tex_w, tex_h, "filter",
-                                   raster_cost(*plan) + blur_cost(tex_w, tex_h, 4),
+                                   raster_cost(*plan) + blur_cost(raster_w, raster_h, 4) +
+                                       (grid.reduced ? upsample_cost(tex_w, tex_h) : 0),
                                    [=](std::vector<uint8_t>* rgba) {
+                    std::vector<uint8_t> coarse;
+                    std::vector<uint8_t>* raster = grid.reduced ? &coarse : rgba;
                     {
-                        ProfileScope raster(&g_paint_profile.filter_raster);
-                        rasterize_background_padded(*plan, tex_w, tex_h, pad, &job_radii, rgba);
+                        ProfileScope r(&g_paint_profile.filter_raster);
+                        rasterize_background_padded(*plan, raster_w, raster_h, raster_pad, &job_radii, raster);
                     }
                     ProfileScope convolution(&g_paint_profile.filter_blur);
-                    blur_rgba(rgba, tex_w, tex_h, blur * scale);
+                    blur_rgba(raster, raster_w, raster_h, grid.reduced ? grid.sigma() : blur * scale);
+                    if (grid.reduced) upsample_blurred(coarse, grid, tex_w, tex_h, pad, rgba);
                 });
                 if (paint.texture_cache && !key.empty()) paint.texture_cache->put(key, tex);
                 else if (paint.owned_textures) paint.owned_textures->push_back(tex);

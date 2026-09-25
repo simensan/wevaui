@@ -54,6 +54,18 @@ the update; a registered render backend still receives pixels as each
 texture is made. `WEVA_RASTER_JOB_LOG` prints each job's cost estimate beside
 its time.
 
+A box shadow or `filter: blur()` whose sigma is at least 17 texels is
+rasterized and blurred on a coarser grid, then resampled bilinearly, in
+premultiplied alpha, to the texture's full size (`ReducedBlur` in
+`background.h`). The grid is scaled so the coarse blur is exactly three box
+passes of radius 8, a Gaussian of sigma sqrt(72), so the blur keeps its
+requested width. The texture keeps its size and every texel, which matters
+because the Godot host samples with nearest filtering. An outer shadow's
+punch-out still runs at full resolution. Against the texel-for-texel blur the
+result is within 4 levels (`test_reduced_blur_matches_full`); across the
+sample renders the largest change is 3 levels, and the distance to Chrome's
+screenshots is unchanged.
+
 ## Positioned content in collapsed tables
 
 The table paint pass retains ordinary content, cell backgrounds and shared borders

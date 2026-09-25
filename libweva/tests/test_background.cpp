@@ -2239,6 +2239,63 @@ void test_parallel_raster_is_byte_identical() {
     raster_thread_override() = 0;
 }
 
+// A wide blur rasterized and blurred on a coarse grid, then resampled, stays
+// within four levels of the same blur done texel for texel: the grid is
+// chosen so the coarse blur is exact, and what the resampling loses is below
+// the eighth bit. Small blurs are left at full resolution.
+void test_reduced_blur_matches_full() {
+    LayoutContext ctx;
+    CHECK(!reduced_blur_grid(300, 200, 12.0).reduced);
+    CHECK(reduced_blur_grid(300, 200, 17.0).reduced);
+    std::vector<BackgroundLayer> layers(1);
+    CHECK(parse_gradient("radial-gradient(circle at 30% 40%, #f0a 0%, rgba(40,80,255,.6) 45%, transparent 70%)",
+                         LinearColor::black(), &layers[0].gradient));
+    layers[0].is_gradient = true;
+    BorderRadii radii;
+    radii.top_left = radii.bottom_right = {40, 40};
+    radii.top_right = {12, 30};
+    const LinearColor shadow{0.02f, 0.01f, 0.05f, 0.7f};
+    for (const double sigma : {18.0, 30.0, 60.0}) {
+        for (const bool flat : {true, false}) {
+            const double w = 320, h = 180;
+            const int pad = static_cast<int>(std::ceil(3 * sigma));
+            const int tex_w = static_cast<int>(w) + 2 * pad, tex_h = static_cast<int>(h) + 2 * pad;
+            const std::vector<BackgroundLayer> content = flat ? std::vector<BackgroundLayer>{} : layers;
+            const LinearColor color = flat ? shadow : LinearColor{0.1f, 0.3f, 0.2f, 0.9f};
+            std::vector<uint8_t> full;
+            rasterize_background_padded(content, color, w, h, tex_w, tex_h, pad, &radii, ctx, 16, &full);
+            if (flat) blur_flat_rgba(&full, tex_w, tex_h, sigma);
+            else blur_rgba(&full, tex_w, tex_h, sigma);
+
+            const ReducedBlur grid = reduced_blur_grid(tex_w - 2 * pad, tex_h - 2 * pad, sigma);
+            CHECK(grid.reduced);
+            CHECK(grid.width() * grid.height() * 4 <= tex_w * tex_h);
+            std::vector<uint8_t> coarse, reduced;
+            rasterize_background_padded(content, color, w, h, grid.width(), grid.height(), grid.pad,
+                                        &radii, ctx, 16, &coarse);
+            if (flat) blur_flat_rgba(&coarse, grid.width(), grid.height(), grid.sigma());
+            else blur_rgba(&coarse, grid.width(), grid.height(), grid.sigma());
+            upsample_blurred(coarse, grid, tex_w, tex_h, pad, &reduced);
+            CHECK(reduced.size() == full.size());
+
+            // Premultiplied, since a colour under no coverage is not a picture.
+            int worst = 0;
+            for (size_t i = 0; i + 3 < full.size(); i += 4) {
+                for (int c = 0; c < 4; ++c) {
+                    const int a = c == 3 ? full[i + 3] : full[i + c] * full[i + 3] / 255;
+                    const int b = c == 3 ? reduced[i + 3] : reduced[i + c] * reduced[i + 3] / 255;
+                    worst = std::max(worst, std::abs(a - b));
+                }
+            }
+            // Part of the difference is the reference's: texel for texel, a
+            // sigma of 18 rounds to box radius 18, which is a Gaussian of
+            // sqrt(18 * 19) = 18.5, while the coarse grid's is exact.
+            if (worst > 4) std::printf("  reduced blur sigma %g %s: worst %d levels\n", sigma, flat ? "flat" : "rgba", worst);
+            CHECK(worst <= 4);
+        }
+    }
+}
+
 // Paint queues a pass's rasters and runs them together at its end. The pixels
 // a host reads must be the ones the inline path makes -- the path a host
 // render backend still takes, since it needs pixels when the texture is made

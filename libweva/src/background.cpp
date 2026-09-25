@@ -2032,4 +2032,84 @@ void blur_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma) 
     blur_impl(rgba, width, height, sigma, false);
 }
 
+double ReducedBlur::sigma() const {
+    return std::sqrt(static_cast<double>(kReducedBlurRadius) * (kReducedBlurRadius + 1));
+}
+
+ReducedBlur reduced_blur_grid(int inner_w, int inner_h, double sigma) {
+    ReducedBlur grid;
+    const double coarse_sigma = grid.sigma();
+    // Half the resolution per axis at least, or the resampling costs more
+    // than it saves.
+    if (!(sigma >= 2 * coarse_sigma) || inner_w <= 0 || inner_h <= 0) return grid;
+    const double shrink = coarse_sigma / sigma;
+    grid.reduced = true;
+    grid.inner_w = std::max(1, static_cast<int>(std::lround(inner_w * shrink)));
+    grid.inner_h = std::max(1, static_cast<int>(std::lround(inner_h * shrink)));
+    // Three sigma, as the full-resolution pad, and a texel for the filter.
+    grid.pad = static_cast<int>(std::ceil(3 * coarse_sigma)) + 1;
+    return grid;
+}
+
+void upsample_blurred(const std::vector<uint8_t>& coarse, const ReducedBlur& grid, int tex_w,
+                      int tex_h, int pad, std::vector<uint8_t>* out_rgba) {
+    out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
+    const int cw = grid.width(), ch = grid.height();
+    if (cw <= 0 || ch <= 0 || coarse.size() < static_cast<size_t>(cw) * ch * 4) return;
+    const int inner_w = std::max(1, tex_w - 2 * pad), inner_h = std::max(1, tex_h - 2 * pad);
+    // Where a texel's centre falls on the coarse grid, measured through the
+    // box both grids share: a texel `pad` in is the box's left edge on each.
+    const double kx = static_cast<double>(grid.inner_w) / inner_w;
+    const double ky = static_cast<double>(grid.inner_h) / inner_h;
+    struct Tap { int i0, i1; float f; };
+    const auto taps = [&](int n, int full_pad, double k, int coarse_pad, int coarse_n) {
+        std::vector<Tap> out(static_cast<size_t>(n));
+        for (int i = 0; i < n; ++i) {
+            const double u = (i - full_pad + 0.5) * k + coarse_pad - 0.5;
+            const double c = std::clamp(u, 0.0, static_cast<double>(coarse_n - 1));
+            const int i0 = static_cast<int>(c);
+            const int i1 = std::min(i0 + 1, coarse_n - 1);
+            out[static_cast<size_t>(i)] = {i0, i1, static_cast<float>(c - i0)};
+        }
+        return out;
+    };
+    const std::vector<Tap> xs = taps(tex_w, pad, kx, grid.pad, cw);
+    const std::vector<Tap> ys = taps(tex_h, pad, ky, grid.pad, ch);
+    const uint8_t* src = coarse.data();
+    uint8_t* dst = out_rgba->data();
+    parallel_ranges(tex_h, 1, static_cast<long long>(tex_w) * tex_h, 1 << 17,
+                    [&](int row_begin, int row_end) {
+        for (int y = row_begin; y < row_end; ++y) {
+            const Tap& ty = ys[static_cast<size_t>(y)];
+            const uint8_t* r0 = src + static_cast<size_t>(ty.i0) * cw * 4;
+            const uint8_t* r1 = src + static_cast<size_t>(ty.i1) * cw * 4;
+            uint8_t* o = dst + static_cast<size_t>(y) * tex_w * 4;
+            for (int x = 0; x < tex_w; ++x, o += 4) {
+                const Tap& tx = xs[static_cast<size_t>(x)];
+                const uint8_t* q[4] = {r0 + tx.i0 * 4, r0 + tx.i1 * 4, r1 + tx.i0 * 4, r1 + tx.i1 * 4};
+                const float w[4] = {(1 - tx.f) * (1 - ty.f), tx.f * (1 - ty.f),
+                                    (1 - tx.f) * ty.f, tx.f * ty.f};
+                // Premultiplied, so a colour does not bleed out of texels
+                // with no coverage: a GPU filtering straight alpha would.
+                float a = 0, r = 0, g = 0, b = 0;
+                for (int k = 0; k < 4; ++k) {
+                    const float wa = w[k] * q[k][3];
+                    a += wa;
+                    r += wa * q[k][0];
+                    g += wa * q[k][1];
+                    b += wa * q[k][2];
+                }
+                if (a <= 0) continue;
+                const auto byte = [](float v) {
+                    return static_cast<uint8_t>((v < 0 ? 0.0f : v > 255 ? 255.0f : v) + 0.5f);
+                };
+                o[0] = byte(r / a);
+                o[1] = byte(g / a);
+                o[2] = byte(b / a);
+                o[3] = byte(a);
+            }
+        }
+    });
+}
+
 } // namespace weva
