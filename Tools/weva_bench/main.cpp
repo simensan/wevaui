@@ -239,6 +239,11 @@ void* operator new(size_t size) {
 // share our allocator and counter, including in an AddressSanitizer build.
 void* operator new[](size_t size) { return ::operator new(size); }
 void* operator new[](size_t size, const std::nothrow_t&) noexcept { return ::operator new(size, std::nothrow); }
+// GCC 13 warns that free() does not match `new`: it cannot see that this
+// program replaces operator new with malloc above. The pairing is right.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wmismatched-new-delete"
+#endif
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete(void* p, size_t) noexcept { std::free(p); }
 void operator delete[](void* p) noexcept { std::free(p); }
