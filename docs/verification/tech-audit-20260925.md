@@ -119,86 +119,156 @@ checks. With the fixes, all of them pass under ASan and UBSan.
 No entry points were added or removed. The header only documents the two
 limits.
 
-## Open items
+## Follow-up: the open items, resolved
 
-These were found and verified by reading the code but are not fixed here.
-They need a decision, or an engine installation this environment lacks.
+The first pass left the items below open. The follow-up fixes every one, and
+checks it as far as this Linux environment allows. It downloaded stock Godot
+4.7.2 and the pinned godot-cpp, and built the Unity plugin for Linux. Unity
+itself is not available, so the renderer, URP pass, font backend and
+component edits were syntax-checked only (Roslyn); see "What could not be
+run here".
+
+After the follow-up the core suite passes **507,732 checks, 0 failures** with
+gcc and with clang (Release, 0 warnings). Under ASan and UBSan it passes
+507,726: the 512 KB small-stack test skips itself there, since the sanitizers
+inflate every frame. All 47 corpus renders stay byte-identical, the threaded
+raster included, and ThreadSanitizer reports nothing on the raster tests.
 
 ### Core
 
-- **P1: rasterize cold paint on more than one thread.** Gradients and blurs
-  are still 65–75% of a cold load on hud and randhtml. Each texel is
-  independent, so splitting rows across a small pool would be byte-identical.
-  But the core has no threads today, and hosts would have to agree to it.
-- **C1:** `weva_element_set_text` frees the text node that `Box::text` views.
-  Only the tooling call `weva_document_boxes` reads it before the next update.
-  The structural cases are fixed here.
-- **C2:** `weva_element_set_style(e, "color", "red; display:none")` injects a
-  second declaration.
-- **C3:** `weva_text_direction` truncates its length to `int32_t`. It returns
-  the wrong answer but never reads out of bounds.
-- **C4:** Chrome's "Noah's Ark" limit of three identical active formatting
-  elements would make reconstruction linear. It changes the tree for pages
-  with more than three identical open formatting tags, so it needs Chrome
-  captures first.
-- **C5:** recursive layout at the 512-depth cap is untested on 1 MB Windows
-  main-thread stacks.
+- **P1: threaded rasterization.** Rows of gradient and image backgrounds,
+  both blur passes, the blur conversions, rounded coverage and the shadow
+  punch-out run on up to four threads. Threads are started and joined inside
+  the call, so there is no pool to tear down at unload. Output is
+  byte-identical: the 47 renders match, a test compares serial and threaded
+  bytes, and ThreadSanitizer is clean on eight samples. Cold load with 1
+  thread against the default, on a 4-core machine:
 
-### Unity package (not compiled here)
+  | Sample | 1 thread | default |
+  |---|---:|---:|
+  | hud | 139.8 ms | **55.3 ms** |
+  | episode-stats | 107.4 ms | **37.6 ms** |
+  | randhtml | 121.5 ms | **61.8 ms** |
+  | glass | 139.1 ms | **79.5 ms** |
+  | map | 31.9 ms | **16.8 ms** |
 
-- **U1 (bug):** `NativeInputFeed` → `SetComposition` passes UTF-16
-  `text.Length` where the ABI takes UTF-8 byte offsets, so a CJK preedit caret
-  lands mid-character. Godot converts correctly.
-- **U2 (perf):** every frame, the binding refresh allocates per binding: path
-  strings, `Split`, boxing, UTF-8 encoding, a `QueryAll("[data-model]")`, and a
-  closure per `ReadString`. Cache the split paths and model elements by
-  `StructureVersion`.
-- **U3 (perf):** `NativeDocumentRenderer` recopies and re-uploads every
-  mesh on any draw-serial change and ignores `weva_document_draw_versions`,
-  which the Godot host already uses.
-- **U4:** the URP pass sizes the viewport from the render-scaled camera
-  target, while input uses screen pixels. With two cameras of different sizes,
-  the document lays out twice per frame.
-- **U5:** a full-screen backdrop copy is allocated every frame even when no
-  `backdrop-filter` exists.
-- **U6:** `texture.Apply(false, false)` keeps CPU copies of every document
-  texture.
-- **U7:** strong `GCHandle`s make `NativeDocument`'s finalizer unreachable,
-  and seven of the eight font callbacks lack exception guards, which aborts
-  under IL2CPP.
+- **C1:** text nodes replaced by `set_text`/`set_html` are kept until the
+  next update, so `weva_box.text` stays valid, as documented.
+- **C2:** `set_style` rejects a value that is not exactly one declaration, and
+  a property name holding a separator. The getter ignores entries with no
+  colon.
+- **C3:** `weva_text_direction` scans in chunks that end on character
+  boundaries. A test covers every seam position.
+- **C4:** a `</p>` finds its paragraph in button scope, and the Noah's Ark
+  limit of three identical formatting elements applies. Eight cases now match
+  headless Chromium's DOM exactly, where seven differed before. None of the
+  337 corpus pages changes DOM.
+- **C5, and what measuring it found.** At the depth cap, nested inline-blocks
+  and grids did not just overflow the stack; they never finished. Shrink-to-fit
+  laid each level out 3^depth times, and grid stretch did 2^depth. Twelve
+  nested inline-blocks took 836 ms; twenty nested grids took 2.2 s.
+  Shrink-to-fit probes are now memoized per pass. A stretch that would
+  reproduce the item's existing height is skipped, unless its subtree reads a
+  definite height. Twenty levels of either now take about 3 ms. Boxes stop at
+  64 nested elements; the deepest corpus page nests 13. A nested inline-block is two frames of paint recursion,
+  at 1.7 KB each with GCC and 2.7 KB with Clang, and 320 levels overflowed
+  1 MB. Every layout mode now completes
+  600-deep markup on a 512 KB stack, pinned by a test.
+
+Oracle output is identical to the first pass's commit on all 334 captures,
+and the renders are byte-identical.
+
+### Unity package
+
+- **U1:** `NativeDocument.SetComposition` takes C# string indices and converts
+  them to UTF-8 byte offsets, never splitting a surrogate pair.
+- **U2:** a binding refresh no longer re-queries `[data-model]` controls
+  unless the structure changed, and no longer re-splits paths. Callback paths
+  are decoded through a cache, and values are encoded straight into the
+  core's buffer.
+- **U3:** runs whose draw versions match the previous frame keep their mesh
+  (`RunsReused`). The per-sync collections are reused.
+- **U4:** layout uses the camera's pixel size, not the render-scaled target's.
+- **U5:** the backdrop copy is allocated only when a document draws a
+  backdrop filter. A backdrop that appears mid-frame waits one frame, rather
+  than taking the Blit path inside a render graph pass.
+- **U6:** document textures are uploaded non-readable.
+- **U7:** the document's `GCHandle` is weak, so a forgotten document is
+  finalized. All seven unguarded font callbacks catch and record exceptions.
+- **Minor:** handler reflection is cached per (type, name). `Cursor` returns a
+  cached string while the page's cursor is unchanged.
+
+The Unity-free wrappers (`NativeDocument`, `NativeBindings`,
+`UIBindResolver`) were compiled with .NET 8 and run against the Linux
+`weva_core.so`. With the fixes, 21 of 21 checks pass. The same program on the
+previous sources fails 3:
+
+| Check | Before | After |
+|---|---|---|
+| caret x for a preedit at indices 0–3 of 日本語 | 9, 9, 9, 19 | 9, 19, 29, 39 |
+| bytes allocated per unchanged binding refresh | 1,032 | 560 |
+| a forgotten document is finalized | no | yes |
+| repeated `Cursor` reads return one string | no | yes |
+
+A new EditMode test, `Composition_CaretOffsetsAreStringIndices`, pins U1.
 
 ### Godot host
 
-- **G1 (bug):** blended runs and SDF rects draw on child canvas items, so
-  later normal content paints beneath them.
-- **G2 (bug):** `pump_events` keeps using handles after a handler reloads the
-  document. Unity guards against this with `IsCurrent`.
-- **G3 (perf):** canvas items, materials and packed arrays are recreated on
-  every `_draw`.
+- **G1:** blended runs and SDF rounded rects go through the ordered layer path.
+  Content painted after them is on a higher layer.
+- **G2:** `pump_events` stops using the event's handle once a handler has
+  replaced the document.
+- **G3:** layer canvas items and backdrop materials are pooled across frames.
+  They are cleared and reused, and only the surplus is freed.
+
+`layer_order_tests.tscn` pins G1 (pixel readback under Xvfb with OpenGL) and
+G2 (headless).
 
 ### Tooling and CI
 
-- **T1:** `check.sh` runs every Godot gate against whatever
-  `libweva_godot.so` already exists when the extension build is skipped.
-- **T2:** several scene steps check only the summary line, not the exit
-  status or `SCRIPT ERROR`. Logs go to fixed `/tmp` paths.
-- **T3:** workflow actions are pinned by tag, not SHA, including
-  `ilammy/msvc-dev-cmd@v1`, and `persist-credentials` is left on.
-- **T4:** gcc 13 reports `-Wmismatched-new-delete` in `weva_bench`'s
-  allocation hook. This is a known false positive for a replacement
-  `operator delete` that calls `free`, and it predates this pass.
+- **T1:** when the extension build is skipped, the gates that load the addon
+  skip too. The engine-only text-safety gate still runs.
+- **T2:** the demo, inventory, bindings, hover and gallery-hover steps now
+  require a clean Godot exit and no `SCRIPT ERROR`, as well as the summary
+  line. Every log goes to a per-run `mktemp` directory, which is printed and
+  kept.
+- **T3:** every action is pinned to a commit SHA, with its tag in a comment.
+  Checkouts no longer persist credentials; no job pushes.
+- **T4:** the known false positive is suppressed at the definition. The
+  benchmark builds without warnings.
 
-Fixed in tooling: under gcc 13 the `weva_asan_active` probe failed because
-UBSan's object-size check reported the deliberate heap overflow before ASan
-could. The probe is now built with `-fno-sanitize=object-size`. The UBSan
-control is a signed overflow and is unaffected.
+### Still open
+
+- **Nested flex** is polynomial, roughly depth⁴: 40 levels take 7 ms, 80 take
+  67 ms. The 64-level box cap bounds it, but intrinsic sizes inside flex
+  layout are recomputed per level. Caching them needs invalidation while
+  layout mutates the tree.
+- **Floats in intrinsic sizing.** A float containing a float measures 0 wide;
+  Chrome gives it the inner float's width. The engine deliberately excludes
+  floats from min/max-content (inline_layout.cpp). Changing that needs new
+  Chrome captures.
+- **Corpus DOM against Chromium.** 117 of 337 pages differ, and every sampled
+  difference is inert: whitespace after `</body>`, or `<link>` placement
+  between head and body.
+- **Glass** still has 23 small shadow textures that are each too small to
+  split. Rasterizing independent textures concurrently would help.
+- **Two cameras of different sizes** still lay a Unity document out twice per
+  frame. Which camera should own the viewport is a product decision.
+
+### What could not be run here
+
+The Unity editor suites could not run. `NativeDocumentRenderer`,
+`UnityFontBackend`, `UIRenderGraphPass`, `UIBatchedRendererFeature`,
+`WevaDocument` and the new EditMode test parse cleanly with Roslyn, but were
+not compiled against UnityEngine. Run the Native EditMode suite before
+releasing the package.
 
 ## Reproduce
 
 ```sh
 cmake -S . -B build-rel -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build-rel
-./build-rel/libweva/tests/weva_tests                     # 507,471 checks
+./build-rel/libweva/tests/weva_tests                     # 507,732 checks
 valgrind --tool=callgrind build-rel/Tools/weva_bench/weva_bench \
     Tools/oracle/corpus/samples/hud.html Tools/oracle/corpus/samples/hud.css 1 --cold
 WEVA_STAGE_LOG=1 build-rel/Tools/weva_bench/weva_bench deep600.html "" 1 --cold

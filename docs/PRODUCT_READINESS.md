@@ -48,9 +48,14 @@ and browser-level visual/text fidelity remain incomplete.
 - **Performance:** measure screen opening as well as steady gameplay. Across the
   latest runs, the slowest core-only cold-creation samples averaged 52–56 ms,
   before host rendering or asset loading. Preparing and reusing screens may help.
+  Since the [September 25 audit](verification/tech-audit-20260925.md), cold paint
+  uses up to four threads for large rasters, which is 1.7–2.9× faster on a
+  4-core machine. `WEVA_RASTER_THREADS=1` keeps everything on the calling thread.
   The [two performance passes](verification/performance-20260915-pass2.md) cover
   standalone Godot fixtures on a Ryzen 7 9800X3D/RTX 5080; they do not establish
   Unity performance, full-game FPS or lower-end hardware suitability.
+- **Deep markup:** content nested more than 64 elements deep is not rendered,
+  so layout stays within a 1 MB thread stack. Real screens nest far less.
 
 ## Evidence behind this status
 

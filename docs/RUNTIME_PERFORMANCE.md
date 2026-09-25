@@ -20,7 +20,9 @@ core cold-load instructions by 8% on hud and randhtml and by 28% on a
 process's first document, with byte-identical renders. It also removed a
 depth-cubic cost from the incremental layout index: a 600-deep page dropped
 from 2.2 s to 52 ms. Those figures are Linux core measurements. They are not
-a new Windows or host baseline.
+a new Windows or host baseline. The follow-up spreads cold paint across up to
+four threads with byte-identical output: hud 139.8 → 55.3 ms, and
+episode-stats 107.4 → 37.6 ms, on a 4-core machine.
 
 ## What the measurements cover
 

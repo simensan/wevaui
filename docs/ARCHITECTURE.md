@@ -9,6 +9,38 @@ This is an engineering reference. Start with [input parity](INPUT_PARITY.md),
 or the ABI section. The port-design sections retain the rationale for the
 shared engine; dated implementation receipts describe their own checkpoints.
 
+## Bounds on hostile input, and raster threads
+
+The core treats markup and stylesheets as untrusted: a mod, a save file or a
+server can supply them. Each limit below is pinned by
+`libweva/tests/test_hostile_input.cpp`, and the
+[technical audit](verification/tech-audit-20260925.md) records what each one
+prevented.
+
+| Input | Bound |
+|---|---|
+| HTML nesting | 512 open elements, Chrome's `kMaximumHTMLParserDOMTreeDepth`; deeper nodes attach to the current node's parent |
+| Rendered nesting | Boxes are generated at most 64 elements deep (`BoxBuilder::kMaxBoxDepth`); a nested inline-block is two frames of paint recursion (1.7 KB each with GCC, 2.7 KB with Clang), and hosts may run on a 1 MB main thread |
+| Selector nesting | 64 levels of `:is`/`:not`/`:where`/`:has`/`of S` |
+| Value nesting | 64 levels of functions and parentheses; 512 binary `calc()` operators |
+| `var()` substitution | 2 MiB per value, Chrome's `kMaxVariableBytes` |
+| `@import` | Depth 8, and 256 loads per document |
+| PNG inflate | Output stops at the header's scanline size |
+| Host lengths | Binding values 64 MiB, assets 512 MiB |
+
+Shrink-to-fit probes are remembered per `(element, style)` for one layout pass,
+and a stretched grid item is not re-laid out at the height it already has
+unless its subtree reads a definite height. Without either, nested
+inline-blocks cost 3^depth layouts, and nested grids cost 2^depth.
+
+Cold paint runs its independent rows on up to four threads: gradient and image
+backgrounds, both blur passes and their conversions, rounded-corner coverage
+and the shadow punch-out (`libweva/src/parallel.h`). Threads are started and
+joined inside the call, so no thread outlives it. Jobs under about a
+millisecond stay on the calling thread. Every texel is computed with the
+serial arithmetic, so output is byte-identical. Set `WEVA_RASTER_THREADS=1`
+to keep all work on the caller.
+
 ## Positioned content in collapsed tables
 
 The table paint pass retains ordinary content, cell backgrounds and shared borders
