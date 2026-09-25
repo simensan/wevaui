@@ -1,3 +1,4 @@
+void test_parallel_raster_is_byte_identical();
 void test_html_formatting_reconstruction_matches_chrome();
 void test_hostile_depth_fits_small_stack();
 void test_abi_box_text_survives_text_replacement();
@@ -1224,6 +1225,7 @@ int main() {
     test_hostile_nested_intrinsic_layout();
     test_hostile_depth_fits_small_stack();
     test_html_formatting_reconstruction_matches_chrome();
+    test_parallel_raster_is_byte_identical();
     std::printf("%d checks, %d failures\n", wevatest::checks, wevatest::failures);
     return wevatest::failures == 0 ? 0 : 1;
 }

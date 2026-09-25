@@ -1,4 +1,5 @@
 #include "weva/paint.h"
+#include "parallel.h"
 #include "weva/grapheme.h"
 #include "weva/form_values.h"
 #include "weva/form_state.h"
@@ -992,20 +993,24 @@ bool paint_blurred_box_shadow(const Shadow& sh, const Rect& border_box, const Bo
         // blurred image is punched through, which is the same thing and keeps
         // the soft edge the blur put on it.
         const double inv = scale > 0 ? 1.0 / scale : 0.0;
-        for (int ty = 0; ty < tex_h; ++ty) {
-            const double sy = (ty - pad + 0.5) * inv;
-            const double by = sy + sh.y - grow;
-            if (by < -1 || by > border_box.height + 1) continue;
-            for (int tx = 0; tx < tex_w; ++tx) {
-                const double sx = (tx - pad + 0.5) * inv;
-                const double bx = sx + sh.x - grow;
-                const double cov = rounded_rect_coverage(bx, by, border_box.width,
-                                                         border_box.height, &box_radii);
-                if (cov <= 0) continue;
-                uint8_t& a = rgba[(static_cast<size_t>(ty) * tex_w + tx) * 4 + 3];
-                a = static_cast<uint8_t>(a * (1.0 - cov) + 0.5);
+        // Rows are independent; see parallel.h.
+        parallel_ranges(tex_h, 1, static_cast<long long>(tex_w) * tex_h, 1 << 16,
+                        [&](int row_begin, int row_end) {
+            for (int ty = row_begin; ty < row_end; ++ty) {
+                const double sy = (ty - pad + 0.5) * inv;
+                const double by = sy + sh.y - grow;
+                if (by < -1 || by > border_box.height + 1) continue;
+                for (int tx = 0; tx < tex_w; ++tx) {
+                    const double sx = (tx - pad + 0.5) * inv;
+                    const double bx = sx + sh.x - grow;
+                    const double cov = rounded_rect_coverage(bx, by, border_box.width,
+                                                             border_box.height, &box_radii);
+                    if (cov <= 0) continue;
+                    uint8_t& a = rgba[(static_cast<size_t>(ty) * tex_w + tx) * 4 + 3];
+                    a = static_cast<uint8_t>(a * (1.0 - cov) + 0.5);
+                }
             }
-        }
+        });
 
         punch.close();
         ProfileScope up(&g_paint_profile.shadow_upload);

@@ -2202,3 +2202,39 @@ void test_blur_matches_scalar() {
         }
     }
 }
+
+#include "../src/parallel.h"
+
+// Rows split across threads produce the serial bytes exactly: gradients with
+// hard edges, repeats, radials, conics and blends; both blur variants.
+void test_parallel_raster_is_byte_identical() {
+    const LinearColor base{0.1f, 0.2f, 0.3f, 1.0f};
+    LayoutContext ctx;
+    const char* stacks[][2] = {
+        {"repeating-linear-gradient(118deg, #f00 0 7px, #00f 7px 13px)", "radial-gradient(circle at 30% 40%, rgba(255,255,255,.4), transparent 60%)"},
+        {"conic-gradient(from 20deg, red, yellow 30%, blue 30% 70%, red)", "linear-gradient(180deg, #123 0%, #456 60%, #789 100%)"},
+        {"radial-gradient(ellipse at 18% 12%, rgba(179,136,255,.22) 0%, transparent 55%)", "linear-gradient(90deg, #ff7a8a, #74dcff)"},
+    };
+    for (const auto& stack : stacks) {
+        std::vector<BackgroundLayer> layers(2);
+        for (int i = 0; i < 2; ++i) {
+            CHECK(parse_gradient(stack[i], LinearColor::black(), &layers[static_cast<size_t>(i)].gradient));
+            layers[static_cast<size_t>(i)].is_gradient = true;
+        }
+        std::vector<uint8_t> serial, threaded;
+        raster_thread_override() = 1;
+        rasterize_background(layers, base, 700, 500, 700, 500, ctx, 16, &serial);
+        raster_thread_override() = 4;
+        rasterize_background(layers, base, 700, 500, 700, 500, ctx, 16, &threaded);
+        CHECK(serial == threaded);
+        for (const bool flat : {false, true}) {
+            std::vector<uint8_t> a = serial, b = serial;
+            raster_thread_override() = 1;
+            if (flat) blur_flat_rgba(&a, 700, 500, 9.5); else blur_rgba(&a, 700, 500, 23.0);
+            raster_thread_override() = 3;
+            if (flat) blur_flat_rgba(&b, 700, 500, 9.5); else blur_rgba(&b, 700, 500, 23.0);
+            CHECK(a == b);
+        }
+    }
+    raster_thread_override() = 0;
+}
