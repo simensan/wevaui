@@ -188,6 +188,10 @@ struct Reader {
     std::size_t i = 0;
     CssParseError* error;
     bool failed = false;
+    // Open function and parenthesis groups, and binary calc() operators
+    // read so far. See kMaxValueNesting and kMaxCalcOperators.
+    int nesting = 0;
+    int calc_operators = 0;
 
     const CssToken& peek() const { return (*toks)[i]; }
     void advance() { if (i + 1 < toks->size()) ++i; }
@@ -533,6 +537,21 @@ CssValuePtr eval_colour_function(const CssFunctionCall& call) {
 // Real sheets nest a couple of levels; the cap stops hostile input from
 // recursing the parser off the stack, matching the C#'s MaxCalcDepth.
 constexpr int kMaxCalcDepth = 64;
+// kMaxCalcDepth bounds calc() NESTING. A chain `1px + 1px + ...` does not
+// nest: it builds a left-deep tree one level per operator, which evaluation,
+// type classification (quadratic in the chain) and destruction all walk
+// recursively. A hundred thousand terms overflowed the stack.
+constexpr int kMaxCalcOperators = 512;
+// Generic functions and parenthesis groups -- anything calc() does not own --
+// recurse through parse_single with no calc depth to stop them: `f(` repeated
+// a hundred thousand times overflowed the stack.
+constexpr int kMaxValueNesting = 64;
+
+bool count_calc_operator(Reader& r, const CssToken& at) {
+    if (++r.calc_operators <= kMaxCalcOperators) return true;
+    r.fail("calc() expression too long", at);
+    return false;
+}
 
 CalcNodePtr calc_from_value(const CssValue& v) {
     switch (v.kind()) {
@@ -637,6 +656,7 @@ CalcNodePtr parse_calc_term(Reader& r, int depth) {
             break;
         }
         r.advance();
+        if (!count_calc_operator(r, t)) return nullptr;
         CalcNodePtr right = parse_calc_factor(r, depth);
         if (!right) return nullptr;
         auto b = std::make_unique<CalcBinaryNode>();
@@ -686,6 +706,7 @@ CalcNodePtr parse_calc_expression(Reader& r, int depth) {
             r.fail("calc() requires whitespace around '" + t.text + "'", t);
             return nullptr;
         }
+        if (!count_calc_operator(r, t)) return nullptr;
         CalcNodePtr right = parse_calc_term(r, depth);
         if (!right) return nullptr;
         auto b = std::make_unique<CalcBinaryNode>();
@@ -724,6 +745,12 @@ CssValuePtr parse_function(Reader& r) {
         c->raw = fn.text + "(";
         return c;
     }
+    if (r.nesting >= kMaxValueNesting) return r.fail("Value nesting too deep", fn);
+    struct Nest {
+        int& n;
+        explicit Nest(int& x) : n(x) { ++n; }
+        ~Nest() { --n; }
+    } nest(r.nesting);
     r.advance();
     auto call = std::make_unique<CssFunctionCall>();
     call->name = ascii_lower(fn.text);
@@ -772,6 +799,12 @@ CssValuePtr parse_function(Reader& r) {
 }
 
 CssValuePtr parse_paren_group(Reader& r) {
+    if (r.nesting >= kMaxValueNesting) return r.fail("Value nesting too deep", r.peek());
+    struct Nest {
+        int& n;
+        explicit Nest(int& x) : n(x) { ++n; }
+        ~Nest() { --n; }
+    } nest(r.nesting);
     r.advance();   // '('
     auto list = std::make_unique<CssValueList>();
     list->separator = CssListSeparator::Space;

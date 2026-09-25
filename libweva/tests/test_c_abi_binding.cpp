@@ -650,12 +650,13 @@ void test_abi_binding_value_changes_during_read() {
         size_t calls = 0;
         bool missing_on_retry = false;
         int impossible_on_call = -1;
+        size_t impossible = size_t(-1);
         static size_t read(void* user, const char*, char* buffer, size_t capacity, int* found) {
             auto& self = *static_cast<ChangingData*>(user);
             const size_t index = self.calls++;
             *found = !(self.missing_on_retry && index > 0);
             if (!*found) return 0;
-            if (static_cast<int>(index) == self.impossible_on_call) return size_t(-1);
+            if (static_cast<int>(index) == self.impossible_on_call) return self.impossible;
             const auto& value = self.values[index < self.values.size() ? index : self.values.size() - 1];
             if (capacity) {
                 const size_t n = value.size() < capacity - 1 ? value.size() : capacity - 1;
@@ -688,12 +689,17 @@ void test_abi_binding_value_changes_during_read() {
         CHECK(doc.text("#t").empty());
         CHECK(data.calls == 2);
         data.missing_on_retry = false;
-        for (int invalid_call : {0, 1}) {
-            data.calls = 0;
-            data.impossible_on_call = invalid_call;
-            doc.refresh();
-            CHECK(doc.text("#t").empty());
-            CHECK(data.calls == static_cast<size_t>(invalid_call + 1));
+        // Beyond max_size, and merely beyond what could ever be allocated:
+        // with exceptions disabled the second one aborted the host.
+        for (size_t impossible : {size_t(-1), size_t(1) << 62, size_t(64) << 20}) {
+            data.impossible = impossible;
+            for (int invalid_call : {0, 1}) {
+                data.calls = 0;
+                data.impossible_on_call = invalid_call;
+                doc.refresh();
+                CHECK(doc.text("#t").empty());
+                CHECK(data.calls == static_cast<size_t>(invalid_call + 1));
+            }
         }
     }
 }

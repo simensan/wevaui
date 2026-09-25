@@ -2,6 +2,7 @@
 #include "weva/html.h"
 
 #include <algorithm>
+#include <unordered_map>
 #include <unordered_set>
 
 // Ports Runtime/Parsing/HtmlParser.cs.
@@ -250,13 +251,43 @@ std::vector<HtmlToken> normalize_fragment(const std::vector<HtmlToken>& tokens,
 
 // ----------------------------------------------------------------- tree build
 
-using Stack = std::vector<Node*>;
+// The open elements, with a count of how often each is open so membership is
+// a lookup. Every push and pop in this file goes through here.
+struct Stack : std::vector<Node*> {
+    void push_back(Node* n) {
+        std::vector<Node*>::push_back(n);
+        ++open_[n];
+    }
+    void pop_back() {
+        const auto it = open_.find(back());
+        if (it != open_.end() && --it->second == 0) open_.erase(it);
+        std::vector<Node*>::pop_back();
+    }
+    bool contains(const Node* n) const { return open_.count(n) != 0; }
+
+private:
+    std::unordered_map<const Node*, int> open_;
+};
+
+// Chrome's kMaximumHTMLParserDOMTreeDepth. Past it an element is still OPEN
+// -- it is pushed, and its end tag still closes it -- but it is attached to
+// the current node's parent rather than to the current node, so markup
+// nested a million deep builds a tree 512 deep. Everything that walks the
+// DOM recursively (destruction, component expansion, the cascade, layout)
+// relies on that bound; `<div>` repeated 200,000 times overflowed the
+// stack in the document's destructor alone.
+constexpr std::size_t kMaxTreeDepth = 512;
+
+// Where the next node goes. stack[0] is the document, which Chrome's count of
+// open elements does not include.
+Node* insertion_parent(const Stack& stack) {
+    Node* parent = stack.back();
+    if (stack.size() - 1 > kMaxTreeDepth && parent->parent()) return parent->parent();
+    return parent;
+}
 
 bool is_on_stack(const Stack& stack, const Element* target) {
-    for (auto it = stack.rbegin(); it != stack.rend(); ++it) {
-        if (*it == target) return true;
-    }
-    return false;
+    return stack.contains(target);
 }
 
 bool is_on_stack_named(const Stack& stack, std::string_view tag) {
@@ -280,6 +311,11 @@ bool remove_from_afl(std::vector<Element*>* afl, std::string_view tag) {
 // entry not currently on the stack, clone it (with attributes) into the
 // insertion point and replace the AFL entry with the clone, so a later end tag
 // matches the live element.
+//
+// Runs before every text token and formatting start tag, and asks, for every
+// AFL entry, whether it is open. That was a scan of the stack per entry, and
+// `<b>` repeated ten thousand times made the parse cubic; the stack now
+// answers it with a lookup.
 void reconstruct_afl(Stack* stack, std::vector<Element*>* afl) {
     for (std::size_t i = 0; i < afl->size(); ++i) {
         Element* fe = (*afl)[i];
@@ -288,7 +324,7 @@ void reconstruct_afl(Stack* stack, std::vector<Element*>* afl) {
         for (std::size_t a = 0; a < fe->attributes().size(); ++a) {
             clone->set_attribute(fe->attributes().name_at(a), fe->attributes().value_at(a));
         }
-        stack->back()->append_child(clone.get());
+        insertion_parent(*stack)->append_child(clone.get());
         stack->push_back(clone.get());
         (*afl)[i] = clone.get();
     }
@@ -371,7 +407,7 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                 if (t.text.empty()) break;
                 reconstruct_afl(&stack, &afl);
                 auto text = make_ref<TextNode>(t.text);
-                stack.back()->append_child(text.get());
+                insertion_parent(stack)->append_child(text.get());
                 break;
             }
 
@@ -398,7 +434,7 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                     const std::string_view attribute = symbols->text(a.name);
                     if (!elem->has_attribute(attribute)) elem->set_attribute(attribute, a.value);
                 }
-                stack.back()->append_child(elem.get());
+                insertion_parent(stack)->append_child(elem.get());
 
                 if (!html_elements::is_void(name) && !t.self_closing) {
                     stack.push_back(elem.get());
@@ -428,7 +464,7 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                     // empty <p>. Needed so the trailing </p> in
                     // `<p>...<div>...</p>` produces the sibling Chrome emits.
                     if (name == "p") {
-                        stack.back()->append_child(make_ref<Element>(name).get());
+                        insertion_parent(stack)->append_child(make_ref<Element>(name).get());
                         break;
                     }
                     if (options.strict && !html_elements::is_optional_close(name)) {
@@ -465,7 +501,7 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                     // mirrors Chrome's DOM after the AAA fixup on
                     // `<p>...<div>...</p>`, so LayoutDiff lines up exactly.
                     if (name == "p") {
-                        stack.back()->append_child(make_ref<Element>(name).get());
+                        insertion_parent(stack)->append_child(make_ref<Element>(name).get());
                         break;
                     }
                     if (options.strict && !optional_target) {

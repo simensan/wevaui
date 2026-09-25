@@ -961,7 +961,8 @@ typedef struct weva_binding_source {
      * host having to invent a value for it. The callback may be called again
      * with a larger buffer. Each return length must describe the value written
      * by that call; changing values are retried until one fits. An impossible
-     * buffer length is diagnosed and treated as an unavailable value. */
+     * buffer length -- 64 MiB or more -- is diagnosed and treated as an
+     * unavailable value. */
     size_t (*value)(void* user, const char* path, char* buffer, size_t capacity, int* found);
     /* How many items are in the list at `path`, or -1 when it is not a list.
      * Only `data-each` asks; a host with no lists can leave this null.
@@ -1456,7 +1457,8 @@ size_t weva_element_computed_style_all(weva_document_t doc, weva_element_t eleme
 
 /* How the core obtains an asset's bytes. Returns the number of bytes the asset
  * HAS, writing up to `capacity` of them -- the two-call convention the rest of
- * the ABI uses -- or 0 when there is no such asset. Passing a null function
+ * the ABI uses -- or 0 when there is no such asset. A size above 512 MiB is
+ * diagnosed and treated as a missing asset. Passing a null function
  * restores the built-in filesystem reader. Changing it drops every decoded
  * image. */
 typedef size_t (*weva_asset_reader)(void* user_data, const char* path, uint8_t* buffer,

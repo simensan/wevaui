@@ -60,6 +60,8 @@ add_executable(weva_tests
     test_c_abi_dom.cpp
     test_c_abi_binding.cpp
     test_c_abi_scroll.cpp
+    test_c_abi_lifetime.cpp
+    test_hostile_input.cpp
     test_c_abi_incremental.cpp
     test_c_abi_keyboard.cpp
     test_c_abi_input_repeat.cpp

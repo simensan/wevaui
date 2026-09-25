@@ -8,6 +8,8 @@ namespace weva {
 namespace {
 
 constexpr int kMaxDepth = 32;
+// The longest substituted value, as Chrome's CSSVariableData::kMaxVariableBytes.
+constexpr std::size_t kMaxSubstitutionBytes = std::size_t{2} << 20;
 
 bool starts_with_ci(std::string_view s, std::size_t at, std::string_view needle) {
     if (at + needle.size() > s.size()) return false;
@@ -113,6 +115,12 @@ struct Resolver {
                     // §3: one invalid var() taints the entire declaration.
                     return false;
                 }
+                // kMaxDepth bounds how deep references go, not how wide: each
+                // of `--a1: var(--a0) var(--a0)` ... `--a30` doubles the text,
+                // so thirty lines asked for a gigabyte per element. Past
+                // Chrome's limit the value is invalid, as it is there.
+                if (sb.size() + replacement.size() + (value.size() - end) > kMaxSubstitutionBytes)
+                    return false;
                 sb += replacement;
                 i = end + 1;
                 continue;

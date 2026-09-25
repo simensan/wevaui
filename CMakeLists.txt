@@ -73,6 +73,15 @@ if(WEVA_BUILD_TESTS)
     if(WEVA_SANITIZERS)
         add_executable(weva_sanitizer_probe Tools/sanitizer_probe.cpp)
         target_link_libraries(weva_sanitizer_probe PRIVATE weva_sanitizers)
+        # The address control is a heap overflow. GCC 13's UBSan object-size
+        # check reports it first, as a UB runtime error, and the probe then
+        # never sees the AddressSanitizer report it asserts. The undefined
+        # control is a signed overflow and does not need object-size.
+        # Per source, so it lands after the interface's -fsanitize=undefined.
+        if(NOT MSVC)
+            set_source_files_properties(Tools/sanitizer_probe.cpp PROPERTIES
+                COMPILE_OPTIONS -fno-sanitize=object-size)
+        endif()
         add_test(NAME weva_asan_active COMMAND ${CMAKE_COMMAND}
             -DPROBE=$<TARGET_FILE:weva_sanitizer_probe> -DMODE=address
             -DWORK=${CMAKE_CURRENT_BINARY_DIR}/sanitizer-probes
