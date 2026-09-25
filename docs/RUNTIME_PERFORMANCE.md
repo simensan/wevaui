@@ -15,6 +15,13 @@ HUD, 0.748 ms for the bound HUD and 1.251 ms for inventory scrolling. The
 slowest cold-creation mean is 51.857 ms. These are repeated measurements of
 unchanged binaries, not a code speedup; both passes remain recorded.
 
+The September 25 [technical audit](verification/tech-audit-20260925.md) cut
+core cold-load instructions by 8% on hud and randhtml and by 28% on a
+process's first document, with byte-identical renders. It also removed a
+depth-cubic cost from the incremental layout index: a 600-deep page dropped
+from 2.2 s to 52 ms. Those figures are Linux core measurements. They are not
+a new Windows or host baseline.
+
 ## What the measurements cover
 
 The native runs use standalone Godot fixtures on Windows, a Ryzen 7 9800X3D
