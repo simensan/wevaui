@@ -36,7 +36,8 @@ $css = 'Tools/oracle/corpus/samples/layout-stress.css'
 | Mode | Timed and counted work |
 |---|---|
 | Default | Box construction, layout and positioning; parsed DOM and cascade are prepared beforehand. |
-| `--cold` | Fresh document creation, CSS/HTML loading and initial update at time zero; destruction is excluded. |
+| `--cold` | Fresh document creation, CSS/HTML loading and initial update at time zero; destruction is excluded. The cross-document raster cache is off, so every pass is a first opening. |
+| `--reopen` | As `--cold`, with the cross-document raster cache on: after the first pass, a screen created again. `best` is the reopen. |
 | `--full` | Update after initial document/atlas preparation; the caller's mutation is excluded. `--dt` advances CSS animations. |
 
 Allocation counts cover the final measured pass and report C++ `operator new`

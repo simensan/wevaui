@@ -1,10 +1,12 @@
 #include "weva/background.h"
+#include "parallel.h"
 #include "weva/box.h"
 #include "weva/style_resolver.h"
 
 #include "weva/css_value.h"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -1091,43 +1093,70 @@ Srgb sample_image(const DecodedImage& image, double lx, double ly, double tw, do
     return s;
 }
 
-void rasterize_background(const std::vector<BackgroundLayer>& layers, const LinearColor& color,
-                          double width, double height, int tex_w, int tex_h,
-                          const LayoutContext& ctx, double font_size,
-                          std::vector<uint8_t>* out_rgba) {
-    static const bool gradient_log = std::getenv("WEVA_GRADIENT_LOG") != nullptr;
-    const auto raster_start = gradient_log ? std::chrono::steady_clock::now()
-                                           : std::chrono::steady_clock::time_point{};
+namespace {
+
+struct Tile {
+    PreparedGradient prepared;
+    // Set instead of `prepared` for a url layer. Unlike a gradient an
+    // image has an INTRINSIC size, which is what `auto`, `cover` and
+    // `contain` are all measured against.
+    const DecodedImage* image = nullptr;
+    double ox, oy, tw, th;
+    bool repeat_x, repeat_y;
+    // Whether the tile's repetition can actually be reached inside the
+    // painting area. `background-repeat` is `repeat` unless a sheet says
+    // otherwise, so nearly every layer sets repeat_x and repeat_y -- and
+    // nearly every layer is also a gradient sized to the area it fills,
+    // which puts every sample inside the first tile. The wrap is then two
+    // fmods that cannot change their argument, run for every texel of
+    // every layer: eight of them per texel of a two-layer background.
+    bool wrap_x, wrap_y;
+    BlendMode blend = BlendMode::Normal;
+    bool is_mask = false, luminance = false;
+};
+struct EdgeTest {
+    double half_width = 0;
+    double span = 0;        // repeating period, 0 when not repeating
+    std::vector<double> positions;
+};
+// Everything rasterize_background resolves from CSS text, resolved: the
+// tiles with their prepared gradients, and which shortcuts apply. See
+// prepare_background in background.h.
+struct PreparedBackground final : BackgroundPlan {
+    // Owned, because each tile's prepared gradient points into its layer.
+    std::vector<BackgroundLayer> layers;
+    std::vector<Tile> tiles;
+    std::vector<EdgeTest> edges;
+    Srgb base{};
+    bool any_mask = false;
+    int samples = 1;
+    bool flat_x = false, flat_y = false;
+    int period_x = 0, period_y = 0;
+    double width = 0, height = 0;
+    int tex_w = 1, tex_h = 1;
+};
+
+} // namespace
+
+std::shared_ptr<const BackgroundPlan> prepare_background(
+    const std::vector<BackgroundLayer>& layers, const LinearColor& color, double width,
+    double height, int tex_w, int tex_h, const LayoutContext& ctx, double font_size) {
+    auto plan = std::make_shared<PreparedBackground>();
     tex_w = std::max(1, tex_w);
     tex_h = std::max(1, tex_h);
-    out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
-    const Srgb base = to_srgb(color);
+    plan->layers = layers;
+    plan->base = to_srgb(color);
+    plan->width = width;
+    plan->height = height;
+    plan->tex_w = tex_w;
+    plan->tex_h = tex_h;
 
     // Each layer's tile and origin; a gradient has no intrinsic size, so
     // `auto`, `cover` and `contain` all mean the painting area (§3.9).
-    struct Tile {
-        PreparedGradient prepared;
-        // Set instead of `prepared` for a url layer. Unlike a gradient an
-        // image has an INTRINSIC size, which is what `auto`, `cover` and
-        // `contain` are all measured against.
-        const DecodedImage* image = nullptr;
-        double ox, oy, tw, th;
-        bool repeat_x, repeat_y;
-        // Whether the tile's repetition can actually be reached inside the
-        // painting area. `background-repeat` is `repeat` unless a sheet says
-        // otherwise, so nearly every layer sets repeat_x and repeat_y -- and
-        // nearly every layer is also a gradient sized to the area it fills,
-        // which puts every sample inside the first tile. The wrap is then two
-        // fmods that cannot change their argument, run for every texel of
-        // every layer: eight of them per texel of a two-layer background.
-        bool wrap_x, wrap_y;
-        BlendMode blend = BlendMode::Normal;
-        bool is_mask = false, luminance = false;
-    };
-    std::vector<Tile> tiles;
-    bool any_mask = false;
+    std::vector<Tile>& tiles = plan->tiles;
+    bool& any_mask = plan->any_mask;
     const double outer_width = width, outer_height = height;
-    for (const BackgroundLayer& l : layers) {
+    for (const BackgroundLayer& l : plan->layers) {
         if (!l.is_gradient && !l.image) continue;
         Tile t;
         t.image = l.is_gradient ? nullptr : l.image;
@@ -1204,7 +1233,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     // So the sample count is chosen from the content rather than turned up
     // everywhere: this runs on every update, and a viewport-sized gradient is
     // already the most expensive thing here.
-    int samples = 1;
+    int& samples = plan->samples;
     for (const Tile& t : tiles) {
         if (t.prepared.has_hard_edge) samples = 3;
     }
@@ -1234,8 +1263,8 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         }
         return !tiles.empty();
     };
-    const bool flat_x = constant_along(true);
-    const bool flat_y = !flat_x && constant_along(false);
+    const bool flat_x = plan->flat_x = constant_along(true);
+    plan->flat_y = !flat_x && constant_along(false);
 
     // How many texels before the picture REPEATS, on each axis, or 0 for never.
     //
@@ -1315,8 +1344,8 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         return static_cast<int>(lcm);
     };
     // Only where the cheaper flat path does not already cover the axis.
-    const int period_x = flat_x ? 0 : period_along(true);
-    const int period_y = flat_y ? 0 : period_along(false);
+    plan->period_x = flat_x ? 0 : period_along(true);
+    plan->period_y = plan->flat_y ? 0 : period_along(false);
 
     // A texel only needs more than one sample where the gradient actually
     // steps. Everywhere else the ramp is linear across the texel, so the nine
@@ -1330,12 +1359,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     // t-range is the same everywhere and comes out of prepare(). Radial and
     // conic have no such constant -- their gradient of t blows up at the centre
     // -- so they keep sampling as before.
-    struct EdgeTest {
-        double half_width = 0;
-        double span = 0;        // repeating period, 0 when not repeating
-        std::vector<double> positions;
-    };
-    std::vector<EdgeTest> edges;
+    std::vector<EdgeTest>& edges = plan->edges;
     bool adaptive = samples > 1;
     for (const Tile& t : tiles) {
         const PreparedGradient& g = t.prepared;
@@ -1355,6 +1379,25 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         edges.push_back(std::move(e));
     }
     if (!adaptive) edges.clear();
+
+    return plan;
+}
+
+void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* out_rgba) {
+    const auto& plan = static_cast<const PreparedBackground&>(prepared);
+    static const bool gradient_log = std::getenv("WEVA_GRADIENT_LOG") != nullptr;
+    const auto raster_start = gradient_log ? std::chrono::steady_clock::now()
+                                           : std::chrono::steady_clock::time_point{};
+    const std::vector<Tile>& tiles = plan.tiles;
+    const std::vector<EdgeTest>& edges = plan.edges;
+    const Srgb base = plan.base;
+    const bool any_mask = plan.any_mask;
+    const int samples = plan.samples;
+    const bool flat_x = plan.flat_x, flat_y = plan.flat_y;
+    const int period_x = plan.period_x, period_y = plan.period_y;
+    const double width = plan.width, height = plan.height;
+    const int tex_w = plan.tex_w, tex_h = plan.tex_h;
+    out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
 
     // True when the texel's t-range reaches a stop, so the value across it is
     // not one straight ramp.
@@ -1419,136 +1462,151 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
         std::fprintf(stderr, "  [grad] %dx%d tex, %zu tiles, %d^2 samples, flat_x %d flat_y %d\n",
                      tex_w, tex_h, tiles.size(), samples, flat_x ? 1 : 0, flat_y ? 1 : 0);
     }
-    // Loop invariants the compiler did not hoist past the stores to out_rgba.
+    // Loop invariants shared by all raster workers.
     const float base_r = base.r * base.a, base_g = base.g * base.a, base_b = base.b * base.a;
     const double samples_inv = 1.0 / samples;
-    for (int py = 0; py < tex_h; ++py) {
-        if (flat_y && py > 0) {
+    // The rows that are rasterized; the rest copy one of them. Each is
+    // independent of every other, so they split across threads (parallel.h)
+    // with byte-identical results, and the copies follow on this thread.
+    const int computed_rows = flat_y ? std::min(1, tex_h)
+                            : period_y > 0 ? std::min(period_y, tex_h) : tex_h;
+    std::atomic<long> supersampled_total{0};
+    const auto raster_rows = [&](int row_begin, int row_end) {
+        long local_supersampled = 0;
+        for (int py = row_begin; py < row_end; ++py) {
+            for (int px = 0; px < tex_w; ++px) {
+                if (flat_x && px > 0) {
+                    std::memcpy(out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4,
+                                out_rgba->data() + static_cast<size_t>(py) * tex_w * 4, 4);
+                    continue;
+                }
+                if (period_x > 0 && px >= period_x) {
+                    // The rest of the row is this row's first period, repeated. One
+                    // memcpy of the whole tail would be wrong: the source overlaps
+                    // the destination whenever the tail is longer than the period.
+                    const size_t row = static_cast<size_t>(py) * tex_w * 4;
+                    const int run = std::min(period_x, tex_w - px);
+                    std::memcpy(out_rgba->data() + row + static_cast<size_t>(px) * 4,
+                                out_rgba->data() + row + static_cast<size_t>(px - period_x) * 4,
+                                static_cast<size_t>(run) * 4);
+                    px += run - 1;
+                    continue;
+                }
+                float ar = 0, ag = 0, ab = 0, aa = 0;
+                int texel_samples = samples;
+                if (!edges.empty()) {
+                    texel_samples = 1;
+                    for (size_t i = 0; i < edges.size(); ++i) {
+                        if (texel_crosses_edge(i, px, py)) {
+                            texel_samples = samples;
+                            break;
+                        }
+                    }
+                }
+                if (gradient_log && texel_samples > 1) ++local_supersampled;
+                const double tinv = texel_samples == samples ? samples_inv : 1.0;
+                for (int oy = 0; oy < texel_samples; ++oy) {
+                    const double y = (py + (oy + 0.5) * tinv) * sy;
+                    for (int ox = 0; ox < texel_samples; ++ox) {
+                        const double x = (px + (ox + 0.5) * tinv) * sx;
+                        // Premultiplied source-over, bottom layer (the last) first.
+                        float r = base_r, g = base_g, b = base_b;
+                        float a = base.a;
+                        // A mask's coverage; the layers add (1 - the product of what
+                        // each leaves uncovered).
+                        float uncovered = 1;
+                        for (size_t i = tiles.size(); i-- > 0;) {
+                            const Tile& t = tiles[i];
+                            double lx = x - t.ox, ly = y - t.oy;
+                            if (t.wrap_x) lx = wrap_positive(lx, t.tw);
+                            else if (!t.repeat_x && (lx < 0 || lx >= t.tw)) continue;
+                            if (t.wrap_y) ly = wrap_positive(ly, t.th);
+                            else if (!t.repeat_y && (ly < 0 || ly >= t.th)) continue;
+                            const Srgb s = t.image ? sample_image(*t.image, lx, ly, t.tw, t.th)
+                                                   : sample_prepared(t.prepared, lx, ly);
+                            const float sa = s.a;
+                            if (t.is_mask) {
+                                uncovered *= 1 - mask_coverage(s, t.luminance);
+                                continue;
+                            }
+                            if (t.blend == BlendMode::Normal) {
+                                r = s.r * sa + r * (1 - sa);
+                                g = s.g * sa + g * (1 - sa);
+                                b = s.b * sa + b * (1 - sa);
+                            } else {
+                                // CSS Compositing 1 §5.1: the source blended with
+                                // the backdrop where there is one, then source-over.
+                                const float cb_r = a > 0 ? r / a : 0, cb_g = a > 0 ? g / a : 0, cb_b = a > 0 ? b / a : 0;
+                                const float co_r = (1 - a) * s.r + a * blend_channel(t.blend, cb_r, s.r);
+                                const float co_g = (1 - a) * s.g + a * blend_channel(t.blend, cb_g, s.g);
+                                const float co_b = (1 - a) * s.b + a * blend_channel(t.blend, cb_b, s.b);
+                                r = co_r * sa + r * (1 - sa);
+                                g = co_g * sa + g * (1 - sa);
+                                b = co_b * sa + b * (1 - sa);
+                            }
+                            a = sa + a * (1 - sa);
+                        }
+                        if (any_mask) {
+                            const float m = 1 - uncovered;
+                            r *= m; g *= m; b *= m; a *= m;
+                        }
+                        // Accumulated PREMULTIPLIED, or a sample that is barely
+                        // covered drags the colour of a fully covered neighbour
+                        // towards whatever its own undefined colour happens to be.
+                        ar += r;
+                        ag += g;
+                        ab += b;
+                        aa += a;
+                    }
+                }
+                // One sample needs no average.
+                float r = ar, g = ag, b = ab, a = aa;
+                if (texel_samples > 1) {
+                    const float n = static_cast<float>(texel_samples * texel_samples);
+                    r = ar / n; g = ag / n; b = ab / n;
+                    a = aa / n;
+                }
+                uint8_t* o = out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4;
+                if (a > 0) { r /= a; g /= a; b /= a; }
+                // std::lround is a libm CALL, and this runs four times for every
+                // texel of every background: 4% of a viewport-sized one. The value
+                // is clamped to [0, 255] first, and for a non-negative float
+                // lround is floor(v + 0.5), which is what the cast does.
+                const auto byte = [](float v) {
+                    // The product is taken first and kept, so the compiler cannot
+                    // fuse it with the +0.5 into an FMA and round the pair at
+                    // higher precision than lround did -- which moved eighteen of
+                    // hud's texels by one when it could.
+                    // As in mix(), keep this a value rather than a selected reference.
+                    const float scaled = (v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v) * 255.0f;
+                    return static_cast<uint8_t>(scaled + 0.5f);
+                };
+                o[0] = byte(r);
+                o[1] = byte(g);
+                o[2] = byte(b);
+                o[3] = byte(a);
+            }
+        }
+        if (local_supersampled) supersampled_total += local_supersampled;
+    };
+    const long long samples_per_texel = static_cast<long long>(samples) * samples;
+    const long long work = static_cast<long long>(computed_rows) * tex_w * samples_per_texel *
+                           static_cast<long long>(std::max<size_t>(1, tiles.size()));
+    // About a millisecond of sampling; below it, starting threads costs more.
+    constexpr long long kParallelSamples = 60000;
+    parallel_ranges(computed_rows, 1, work, kParallelSamples, raster_rows);
+    supersampled = supersampled_total.load();
+    for (int py = computed_rows; py < tex_h; ++py) {
+        if (flat_y) {
             // Every row is the row above it.
             std::memcpy(out_rgba->data() + static_cast<size_t>(py) * tex_w * 4, out_rgba->data(),
                         static_cast<size_t>(tex_w) * 4);
             continue;
         }
-        if (period_y > 0 && py >= period_y) {
-            // A whole row, already drawn one period up.
-            std::memcpy(out_rgba->data() + static_cast<size_t>(py) * tex_w * 4,
-                        out_rgba->data() + static_cast<size_t>(py - period_y) * tex_w * 4,
-                        static_cast<size_t>(tex_w) * 4);
-            continue;
-        }
-        for (int px = 0; px < tex_w; ++px) {
-            if (flat_x && px > 0) {
-                std::memcpy(out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4,
-                            out_rgba->data() + static_cast<size_t>(py) * tex_w * 4, 4);
-                continue;
-            }
-            if (period_x > 0 && px >= period_x) {
-                // The rest of the row is this row's first period, repeated. One
-                // memcpy of the whole tail would be wrong: the source overlaps
-                // the destination whenever the tail is longer than the period.
-                const size_t row = static_cast<size_t>(py) * tex_w * 4;
-                const int run = std::min(period_x, tex_w - px);
-                std::memcpy(out_rgba->data() + row + static_cast<size_t>(px) * 4,
-                            out_rgba->data() + row + static_cast<size_t>(px - period_x) * 4,
-                            static_cast<size_t>(run) * 4);
-                px += run - 1;
-                continue;
-            }
-            float ar = 0, ag = 0, ab = 0, aa = 0;
-            int texel_samples = samples;
-            if (!edges.empty()) {
-                texel_samples = 1;
-                for (size_t i = 0; i < edges.size(); ++i) {
-                    if (texel_crosses_edge(i, px, py)) {
-                        texel_samples = samples;
-                        break;
-                    }
-                }
-            }
-            if (gradient_log && texel_samples > 1) ++supersampled;
-            const double tinv = texel_samples == samples ? samples_inv : 1.0;
-            for (int oy = 0; oy < texel_samples; ++oy) {
-                const double y = (py + (oy + 0.5) * tinv) * sy;
-                for (int ox = 0; ox < texel_samples; ++ox) {
-                    const double x = (px + (ox + 0.5) * tinv) * sx;
-                    // Premultiplied source-over, bottom layer (the last) first.
-                    float r = base_r, g = base_g, b = base_b;
-                    float a = base.a;
-                    // A mask's coverage; the layers add (1 - the product of what
-                    // each leaves uncovered).
-                    float uncovered = 1;
-                    for (size_t i = tiles.size(); i-- > 0;) {
-                        const Tile& t = tiles[i];
-                        double lx = x - t.ox, ly = y - t.oy;
-                        if (t.wrap_x) lx = wrap_positive(lx, t.tw);
-                        else if (!t.repeat_x && (lx < 0 || lx >= t.tw)) continue;
-                        if (t.wrap_y) ly = wrap_positive(ly, t.th);
-                        else if (!t.repeat_y && (ly < 0 || ly >= t.th)) continue;
-                        const Srgb s = t.image ? sample_image(*t.image, lx, ly, t.tw, t.th)
-                                               : sample_prepared(t.prepared, lx, ly);
-                        const float sa = s.a;
-                        if (t.is_mask) {
-                            uncovered *= 1 - mask_coverage(s, t.luminance);
-                            continue;
-                        }
-                        if (t.blend == BlendMode::Normal) {
-                            r = s.r * sa + r * (1 - sa);
-                            g = s.g * sa + g * (1 - sa);
-                            b = s.b * sa + b * (1 - sa);
-                        } else {
-                            // CSS Compositing 1 §5.1: the source blended with
-                            // the backdrop where there is one, then source-over.
-                            const float cb_r = a > 0 ? r / a : 0, cb_g = a > 0 ? g / a : 0, cb_b = a > 0 ? b / a : 0;
-                            const float co_r = (1 - a) * s.r + a * blend_channel(t.blend, cb_r, s.r);
-                            const float co_g = (1 - a) * s.g + a * blend_channel(t.blend, cb_g, s.g);
-                            const float co_b = (1 - a) * s.b + a * blend_channel(t.blend, cb_b, s.b);
-                            r = co_r * sa + r * (1 - sa);
-                            g = co_g * sa + g * (1 - sa);
-                            b = co_b * sa + b * (1 - sa);
-                        }
-                        a = sa + a * (1 - sa);
-                    }
-                    if (any_mask) {
-                        const float m = 1 - uncovered;
-                        r *= m; g *= m; b *= m; a *= m;
-                    }
-                    // Accumulated PREMULTIPLIED, or a sample that is barely
-                    // covered drags the colour of a fully covered neighbour
-                    // towards whatever its own undefined colour happens to be.
-                    ar += r;
-                    ag += g;
-                    ab += b;
-                    aa += a;
-                }
-            }
-            // One sample needs no average: dividing by 1 is exact, and it was
-            // four of the ten divides a single-sample texel paid.
-            float r = ar, g = ag, b = ab, a = aa;
-            if (texel_samples > 1) {
-                const float n = static_cast<float>(texel_samples * texel_samples);
-                r = ar / n; g = ag / n; b = ab / n;
-                a = aa / n;
-            }
-            uint8_t* o = out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4;
-            if (a > 0) { r /= a; g /= a; b /= a; }
-            // std::lround is a libm CALL, and this runs four times for every
-            // texel of every background: 4% of a viewport-sized one. The value
-            // is clamped to [0, 255] first, and for a non-negative float
-            // lround is floor(v + 0.5), which is what the cast does.
-            const auto byte = [](float v) {
-                // The product is taken first and kept, so the compiler cannot
-                // fuse it with the +0.5 into an FMA and round the pair at
-                // higher precision than lround did -- which moved eighteen of
-                // hud's texels by one when it could.
-                // As in mix(), keep this a value rather than a selected reference.
-                const float scaled = (v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v) * 255.0f;
-                return static_cast<uint8_t>(scaled + 0.5f);
-            };
-            o[0] = byte(r);
-            o[1] = byte(g);
-            o[2] = byte(b);
-            o[3] = byte(a);
-        }
+        // A whole row, already drawn one period up.
+        std::memcpy(out_rgba->data() + static_cast<size_t>(py) * tex_w * 4,
+                    out_rgba->data() + static_cast<size_t>(py - period_y) * tex_w * 4,
+                    static_cast<size_t>(tex_w) * 4);
     }
     if (gradient_log && (period_x > 0 || period_y > 0)) {
         std::fprintf(stderr, "  [grad]   period %d x %d of %d x %d texels\n",
@@ -1564,6 +1622,28 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
             std::chrono::steady_clock::now() - raster_start).count();
         std::fprintf(stderr, "  [grad]   raster %.3f ms\n", elapsed);
     }
+}
+
+long long raster_cost(const BackgroundPlan& prepared) {
+    const auto& plan = static_cast<const PreparedBackground&>(prepared);
+    // The rows and texels actually sampled, as rasterize_background decides
+    // them; the rest are copies. A hard edge is charged every texel's full
+    // supersampling, which it can reach: menu's progress bar is 100%.
+    const long long rows = plan.flat_y ? 1 : plan.period_y > 0 ? std::min(plan.period_y, plan.tex_h) : plan.tex_h;
+    const long long cols = plan.flat_x ? 1 : plan.period_x > 0 ? std::min(plan.period_x, plan.tex_w) : plan.tex_w;
+    const long long sampled = rows * cols;
+    const long long samples = static_cast<long long>(plan.samples) * plan.samples;
+    const long long texels = static_cast<long long>(plan.tex_w) * plan.tex_h;
+    return sampled * (8 + samples * static_cast<long long>(plan.tiles.size()) * 30) + texels;
+}
+
+void rasterize_background(const std::vector<BackgroundLayer>& layers, const LinearColor& color,
+                          double width, double height, int tex_w, int tex_h,
+                          const LayoutContext& ctx, double font_size,
+                          std::vector<uint8_t>* out_rgba) {
+    rasterize_background(*prepare_background(layers, color, width, height, tex_w, tex_h, ctx,
+                                             font_size),
+                         out_rgba);
 }
 
 } // namespace weva
@@ -1619,14 +1699,20 @@ double rounded_rect_coverage(double px, double py, double w, double h,
     return rounded_coverage(px, py, w, h, radii);
 }
 
-void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
-                                 const LinearColor& color, double width, double height,
-                                 int tex_w, int tex_h, int pad, const BorderRadii* radii,
-                                 const LayoutContext& ctx, double font_size,
-                                 std::vector<uint8_t>* out_rgba) {
+std::shared_ptr<const BackgroundPlan> prepare_background_padded(
+    const std::vector<BackgroundLayer>& layers, const LinearColor& color, double width,
+    double height, int tex_w, int tex_h, int pad, const LayoutContext& ctx, double font_size) {
     const int inner_w = std::max(1, tex_w - 2 * pad), inner_h = std::max(1, tex_h - 2 * pad);
+    return prepare_background(layers, color, width, height, inner_w, inner_h, ctx, font_size);
+}
+
+void rasterize_background_padded(const BackgroundPlan& prepared, int tex_w, int tex_h, int pad,
+                                 const BorderRadii* radii, std::vector<uint8_t>* out_rgba) {
+    const auto& plan = static_cast<const PreparedBackground&>(prepared);
+    const double width = plan.width, height = plan.height;
+    const int inner_w = plan.tex_w, inner_h = plan.tex_h;
     std::vector<uint8_t> inner;
-    rasterize_background(layers, color, width, height, inner_w, inner_h, ctx, font_size, &inner);
+    rasterize_background(prepared, &inner);
     out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
     if (!radii || radii->is_zero()) {
         // Without rounded corners every inner texel has full coverage.
@@ -1639,17 +1725,31 @@ void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
         return;
     }
     const double sx = width / inner_w, sy = height / inner_h;
-    for (int y = 0; y < inner_h; ++y) {
-        for (int x = 0; x < inner_w; ++x) {
-            const uint8_t* src = inner.data() + (static_cast<size_t>(y) * inner_w + x) * 4;
-            uint8_t* dst = out_rgba->data() + (static_cast<size_t>(y + pad) * tex_w + (x + pad)) * 4;
-            const double cov = rounded_coverage((x + 0.5) * sx, (y + 0.5) * sy, width, height, radii);
-            dst[0] = src[0];
-            dst[1] = src[1];
-            dst[2] = src[2];
-            dst[3] = static_cast<uint8_t>(std::lround(src[3] * cov));
+    // Rows are independent; see parallel.h.
+    parallel_ranges(inner_h, 1, static_cast<long long>(inner_w) * inner_h, 1 << 16,
+                    [&](int y_begin, int y_end) {
+        for (int y = y_begin; y < y_end; ++y) {
+            for (int x = 0; x < inner_w; ++x) {
+                const uint8_t* src = inner.data() + (static_cast<size_t>(y) * inner_w + x) * 4;
+                uint8_t* dst = out_rgba->data() + (static_cast<size_t>(y + pad) * tex_w + (x + pad)) * 4;
+                const double cov = rounded_coverage((x + 0.5) * sx, (y + 0.5) * sy, width, height, radii);
+                dst[0] = src[0];
+                dst[1] = src[1];
+                dst[2] = src[2];
+                dst[3] = static_cast<uint8_t>(std::lround(src[3] * cov));
+            }
         }
-    }
+    });
+}
+
+void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
+                                 const LinearColor& color, double width, double height,
+                                 int tex_w, int tex_h, int pad, const BorderRadii* radii,
+                                 const LayoutContext& ctx, double font_size,
+                                 std::vector<uint8_t>* out_rgba) {
+    rasterize_background_padded(*prepare_background_padded(layers, color, width, height, tex_w,
+                                                           tex_h, pad, ctx, font_size),
+                                tex_w, tex_h, pad, radii, out_rgba);
 }
 
 // The blur, over one channel or four.
@@ -1683,9 +1783,15 @@ void blur_planes(float* p, float* tmp, int width, int height, int r,
     //
     // Edges extend the outermost pixel, which is what the window did when it
     // clamped its index, so the divisor stays 2r+1 everywhere.
+    // Rows (horizontal) and column strips (vertical) are independent, so each
+    // pass splits across threads (parallel.h); a pass over fewer floats than
+    // this stays on the calling thread.
+    const long long pass_work = static_cast<long long>(width) * height * CH;
+    constexpr long long kParallelFloats = 1 << 17;
     const auto pass_h = [&](const float* in, float* out) {
         if constexpr (CH == 4) {
-            for (int y = 0; y < height; ++y) {
+            parallel_ranges(height, 1, pass_work, kParallelFloats, [&](int y_begin, int y_end) {
+            for (int y = y_begin; y < y_end; ++y) {
                 const float* row = in + static_cast<size_t>(y) * width * CH;
                 float* orow = out + static_cast<size_t>(y) * width * CH;
 #if WEVA_BLUR_SSE2
@@ -1725,6 +1831,7 @@ void blur_planes(float* p, float* tmp, int width, int height, int r,
                 }
 #endif
             }
+            });
             return;
         }
         // Independent row sums hide the running sum's dependency latency and
@@ -1756,9 +1863,12 @@ void blur_planes(float* p, float* tmp, int width, int height, int r,
                 }
             }
         };
-        int y = 0;
-        for (; y + 4 <= height; y += 4) rows_h(std::integral_constant<int, 4>{}, y);
-        for (; y < height; ++y) rows_h(std::integral_constant<int, 1>{}, y);
+        // Ranges start on multiples of four, so the groups are the serial ones.
+        parallel_ranges(height, 4, pass_work, kParallelFloats, [&](int y_begin, int y_end) {
+            int y = y_begin;
+            for (; y + 4 <= y_end; y += 4) rows_h(std::integral_constant<int, 4>{}, y);
+            for (; y < y_end; ++y) rows_h(std::integral_constant<int, 1>{}, y);
+        });
     };
     // The vertical pass walks DOWN a row-major buffer, so consecutive reads are
     // a row apart and every one of them is a cache miss. Taken one column at a
@@ -1774,7 +1884,9 @@ void blur_planes(float* p, float* tmp, int width, int height, int r,
         constexpr int kBlockFloats = CH == 4 ? 512 : 16;
         constexpr int kBlockCols = kBlockFloats / CH > 0 ? kBlockFloats / CH : 1;
         const size_t stride = static_cast<size_t>(width) * CH;
-        for (int x0 = 0; x0 < width; x0 += kBlockCols) {
+        const int strips = (width + kBlockCols - 1) / kBlockCols;
+        parallel_ranges(strips, 1, pass_work, kParallelFloats, [&](int strip_begin, int strip_end) {
+        for (int x0 = strip_begin * kBlockCols; x0 < std::min(width, strip_end * kBlockCols); x0 += kBlockCols) {
             const int cols = std::min(kBlockCols, width - x0);
             const int lanes = cols * CH;
             const float* base = in + static_cast<size_t>(x0) * CH;
@@ -1816,6 +1928,7 @@ void blur_planes(float* p, float* tmp, int width, int height, int r,
                 }
             }
         }
+        });
     };
     for (int i = 0; i < 3; ++i) {
         const auto start = horizontal_ms ? std::chrono::steady_clock::now()
@@ -1857,17 +1970,29 @@ void blur_impl(std::vector<uint8_t>* rgba, int width, int height, double sigma, 
     // then each horizontal pass fills tmp before the vertical pass reads it.
     // Value-initialized vectors clear both large buffers unnecessarily.
     std::unique_ptr<float[]> p(new float[n * ch]);
-    if (flat) {
-        for (size_t i = 0; i < n; ++i) p[i] = (*rgba)[i * 4 + 3] / 255.0f;
-    } else {
-        for (size_t i = 0; i < n; ++i) {
-            const float a = (*rgba)[i * 4 + 3] / 255.0f;
-            p[i * 4 + 0] = (*rgba)[i * 4 + 0] / 255.0f * a;
-            p[i * 4 + 1] = (*rgba)[i * 4 + 1] / 255.0f * a;
-            p[i * 4 + 2] = (*rgba)[i * 4 + 2] / 255.0f * a;
-            p[i * 4 + 3] = a;
+    // Per texel, so the conversions split by rows like the passes.
+    const long long texels = static_cast<long long>(n) * ch;
+    constexpr long long kParallelTexels = 1 << 17;
+    uint8_t* bytes = rgba->data();
+    float* planes = p.get();
+    const auto rows_of = [width](int row_begin, int row_end) {
+        return std::pair<size_t, size_t>(static_cast<size_t>(row_begin) * width,
+                                         static_cast<size_t>(row_end) * width);
+    };
+    parallel_ranges(height, 1, texels, kParallelTexels, [&](int row_begin, int row_end) {
+        const auto [first, last] = rows_of(row_begin, row_end);
+        if (flat) {
+            for (size_t i = first; i < last; ++i) planes[i] = bytes[i * 4 + 3] / 255.0f;
+        } else {
+            for (size_t i = first; i < last; ++i) {
+                const float a = bytes[i * 4 + 3] / 255.0f;
+                planes[i * 4 + 0] = bytes[i * 4 + 0] / 255.0f * a;
+                planes[i * 4 + 1] = bytes[i * 4 + 1] / 255.0f * a;
+                planes[i * 4 + 2] = bytes[i * 4 + 2] / 255.0f * a;
+                planes[i * 4 + 3] = a;
+            }
         }
-    }
+    });
     // Three box blurs of width w approximate a Gaussian of sigma:
     // w = sqrt(12 sigma^2 / 3 + 1).
     const int box = std::max(1, static_cast<int>(std::sqrt(12.0 * sigma * sigma / 3.0 + 1.0)));
@@ -1902,28 +2027,34 @@ void blur_impl(std::vector<uint8_t>* rgba, int width, int height, double sigma, 
         // The same shape the four-channel tail has: a texel the blur left with
         // no coverage at all keeps black, so bilinear filtering across the
         // texture's transparent edge behaves exactly as it did before.
-        for (size_t i = 0; i < n; ++i) {
-            const float a = p[i];
-            const bool covered = a > 0;
-            (*rgba)[i * 4 + 0] = covered ? fr : 0;
-            (*rgba)[i * 4 + 1] = covered ? fg : 0;
-            (*rgba)[i * 4 + 2] = covered ? fb : 0;
-            (*rgba)[i * 4 + 3] = byte(a);
-        }
+        parallel_ranges(height, 1, texels, kParallelTexels, [&](int row_begin, int row_end) {
+            const auto [first, last] = rows_of(row_begin, row_end);
+            for (size_t i = first; i < last; ++i) {
+                const float a = planes[i];
+                const bool covered = a > 0;
+                bytes[i * 4 + 0] = covered ? fr : 0;
+                bytes[i * 4 + 1] = covered ? fg : 0;
+                bytes[i * 4 + 2] = covered ? fb : 0;
+                bytes[i * 4 + 3] = byte(a);
+            }
+        });
         report();
         return;
     }
-    for (size_t i = 0; i < n; ++i) {
-        const float a = p[i * 4 + 3];
-        if (a > 0) {
-            (*rgba)[i * 4 + 0] = byte(p[i * 4 + 0] / a);
-            (*rgba)[i * 4 + 1] = byte(p[i * 4 + 1] / a);
-            (*rgba)[i * 4 + 2] = byte(p[i * 4 + 2] / a);
-        } else {
-            (*rgba)[i * 4 + 0] = (*rgba)[i * 4 + 1] = (*rgba)[i * 4 + 2] = 0;
+    parallel_ranges(height, 1, texels, kParallelTexels, [&](int row_begin, int row_end) {
+        const auto [first, last] = rows_of(row_begin, row_end);
+        for (size_t i = first; i < last; ++i) {
+            const float a = planes[i * 4 + 3];
+            if (a > 0) {
+                bytes[i * 4 + 0] = byte(planes[i * 4 + 0] / a);
+                bytes[i * 4 + 1] = byte(planes[i * 4 + 1] / a);
+                bytes[i * 4 + 2] = byte(planes[i * 4 + 2] / a);
+            } else {
+                bytes[i * 4 + 0] = bytes[i * 4 + 1] = bytes[i * 4 + 2] = 0;
+            }
+            bytes[i * 4 + 3] = byte(a);
         }
-        (*rgba)[i * 4 + 3] = byte(a);
-    }
+    });
     report();
 }
 
@@ -1933,6 +2064,86 @@ void blur_flat_rgba(std::vector<uint8_t>* rgba, int width, int height, double si
 
 void blur_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma) {
     blur_impl(rgba, width, height, sigma, false);
+}
+
+double ReducedBlur::sigma() const {
+    return std::sqrt(static_cast<double>(kReducedBlurRadius) * (kReducedBlurRadius + 1));
+}
+
+ReducedBlur reduced_blur_grid(int inner_w, int inner_h, double sigma) {
+    ReducedBlur grid;
+    const double coarse_sigma = grid.sigma();
+    // Half the resolution per axis at least, or the resampling costs more
+    // than it saves.
+    if (!(sigma >= 2 * coarse_sigma) || inner_w <= 0 || inner_h <= 0) return grid;
+    const double shrink = coarse_sigma / sigma;
+    grid.reduced = true;
+    grid.inner_w = std::max(1, static_cast<int>(std::lround(inner_w * shrink)));
+    grid.inner_h = std::max(1, static_cast<int>(std::lround(inner_h * shrink)));
+    // Three sigma, as the full-resolution pad, and a texel for the filter.
+    grid.pad = static_cast<int>(std::ceil(3 * coarse_sigma)) + 1;
+    return grid;
+}
+
+void upsample_blurred(const std::vector<uint8_t>& coarse, const ReducedBlur& grid, int tex_w,
+                      int tex_h, int pad, std::vector<uint8_t>* out_rgba) {
+    out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
+    const int cw = grid.width(), ch = grid.height();
+    if (cw <= 0 || ch <= 0 || coarse.size() < static_cast<size_t>(cw) * ch * 4) return;
+    const int inner_w = std::max(1, tex_w - 2 * pad), inner_h = std::max(1, tex_h - 2 * pad);
+    // Where a texel's centre falls on the coarse grid, measured through the
+    // box both grids share: a texel `pad` in is the box's left edge on each.
+    const double kx = static_cast<double>(grid.inner_w) / inner_w;
+    const double ky = static_cast<double>(grid.inner_h) / inner_h;
+    struct Tap { int i0, i1; float f; };
+    const auto taps = [&](int n, int full_pad, double k, int coarse_pad, int coarse_n) {
+        std::vector<Tap> out(static_cast<size_t>(n));
+        for (int i = 0; i < n; ++i) {
+            const double u = (i - full_pad + 0.5) * k + coarse_pad - 0.5;
+            const double c = std::clamp(u, 0.0, static_cast<double>(coarse_n - 1));
+            const int i0 = static_cast<int>(c);
+            const int i1 = std::min(i0 + 1, coarse_n - 1);
+            out[static_cast<size_t>(i)] = {i0, i1, static_cast<float>(c - i0)};
+        }
+        return out;
+    };
+    const std::vector<Tap> xs = taps(tex_w, pad, kx, grid.pad, cw);
+    const std::vector<Tap> ys = taps(tex_h, pad, ky, grid.pad, ch);
+    const uint8_t* src = coarse.data();
+    uint8_t* dst = out_rgba->data();
+    parallel_ranges(tex_h, 1, static_cast<long long>(tex_w) * tex_h, 1 << 17,
+                    [&](int row_begin, int row_end) {
+        for (int y = row_begin; y < row_end; ++y) {
+            const Tap& ty = ys[static_cast<size_t>(y)];
+            const uint8_t* r0 = src + static_cast<size_t>(ty.i0) * cw * 4;
+            const uint8_t* r1 = src + static_cast<size_t>(ty.i1) * cw * 4;
+            uint8_t* o = dst + static_cast<size_t>(y) * tex_w * 4;
+            for (int x = 0; x < tex_w; ++x, o += 4) {
+                const Tap& tx = xs[static_cast<size_t>(x)];
+                const uint8_t* q[4] = {r0 + tx.i0 * 4, r0 + tx.i1 * 4, r1 + tx.i0 * 4, r1 + tx.i1 * 4};
+                const float w[4] = {(1 - tx.f) * (1 - ty.f), tx.f * (1 - ty.f),
+                                    (1 - tx.f) * ty.f, tx.f * ty.f};
+                // Premultiplied, so a colour does not bleed out of texels
+                // with no coverage: a GPU filtering straight alpha would.
+                float a = 0, r = 0, g = 0, b = 0;
+                for (int k = 0; k < 4; ++k) {
+                    const float wa = w[k] * q[k][3];
+                    a += wa;
+                    r += wa * q[k][0];
+                    g += wa * q[k][1];
+                    b += wa * q[k][2];
+                }
+                if (a <= 0) continue;
+                const auto byte = [](float v) {
+                    return static_cast<uint8_t>((v < 0 ? 0.0f : v > 255 ? 255.0f : v) + 0.5f);
+                };
+                o[0] = byte(r / a);
+                o[1] = byte(g / a);
+                o[2] = byte(b / a);
+                o[3] = byte(a);
+            }
+        }
+    });
 }
 
 } // namespace weva

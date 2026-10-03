@@ -5,6 +5,19 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Documents open faster. A paint pass rasterizes its gradients, shadows and
+  blurs side by side, and wide blurs are drawn at the resolution they need,
+  within 4 of 255 levels. Core first opens measured up to 2.5x faster.
+- Re-enabling a `WevaDocument` reuses the textures the previous document
+  rasterized. `OnDisable` destroys the native document, so this was a full
+  cold open before. Up to 8x faster on paint-heavy screens. The cache is
+  process-wide, 32 MiB by default, and set with the core's
+  `weva_set_raster_cache_limit` (ABI minor 45). Rebuild the native plugin: the
+  generated bindings expect minor 45.
+
 ## [1.0.0] - 2026-09-13
 
 One engine. The C# HTML/CSS engine that 0.1.x shipped is deleted; the

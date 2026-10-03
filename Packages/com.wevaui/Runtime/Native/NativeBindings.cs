@@ -85,12 +85,24 @@ namespace Weva.Native
             return changed;
         }
 
+        // The [data-model] controls, re-queried only when the element set
+        // changes: a refresh runs every frame for a controller without
+        // IBindingVersion, and the selector walk was most of its cost.
+        private uint[] _modelElements = Array.Empty<uint>();
+        private ulong _modelStructure = ulong.MaxValue;
+
         // Data -> control, only where they disagree: writing a field's own
         // value back into it would move the caret while someone types.
         private int ApplyModels()
         {
             int changed = 0;
-            foreach (uint element in _doc.QueryAll("[data-model]"))
+            ulong structure = _doc.StructureVersion;
+            if (structure != _modelStructure)
+            {
+                _modelElements = _doc.QueryAll("[data-model]");
+                _modelStructure = structure;
+            }
+            foreach (uint element in _modelElements)
             {
                 string path = ModelPathOf(element);
                 if (path.Length == 0) continue;
@@ -153,11 +165,24 @@ namespace Weva.Native
                 if (resolved != null) return resolved;
             }
             object current = Data;
-            foreach (string part in path.Split('.'))
+            foreach (string part in SegmentsOf(path))
             {
                 if (!Step(current, part, out current)) return null;
             }
             return current;
+        }
+
+        // A path's segments, split once: every bound path is resolved on
+        // every refresh, and Split allocated an array per binding per frame.
+        private readonly Dictionary<string, string[]> _segments = new Dictionary<string, string[]>(StringComparer.Ordinal);
+
+        private string[] SegmentsOf(string path)
+        {
+            if (_segments.TryGetValue(path, out string[] known)) return known;
+            if (_segments.Count >= 4096) _segments.Clear();
+            string[] parts = path.Split('.');
+            _segments[path] = parts;
+            return parts;
         }
 
         private static bool Step(object current, string part, out object next)
@@ -235,7 +260,7 @@ namespace Weva.Native
 
         private bool WritePath(string path, string text)
         {
-            string[] parts = path.Split('.');
+            string[] parts = SegmentsOf(path);
             if (parts.Length == 0) return false;
             object current = Data;
             for (int i = 0; i < parts.Length - 1; i++)
@@ -280,11 +305,34 @@ namespace Weva.Native
         private static readonly ValueFn s_value = Value;
         private static readonly CountFn s_count = CountCallback;
 
-        private static string PathOf(byte* path)
+        // The core asks for the same paths every refresh. An ASCII path that
+        // was decoded before is found by its bytes, without a new string.
+        private readonly Dictionary<int, string> _paths = new Dictionary<int, string>();
+
+        private string PathOf(byte* path)
         {
             int n = 0;
-            while (path[n] != 0) n++;
-            return Encoding.UTF8.GetString(path, n);
+            int hash = 17;
+            while (path[n] != 0)
+            {
+                hash = unchecked(hash * 31 + path[n]);
+                n++;
+            }
+            if (_paths.TryGetValue(hash, out string known) && SameAscii(known, path, n)) return known;
+            string decoded = Encoding.UTF8.GetString(path, n);
+            if (_paths.Count >= 4096) _paths.Clear();
+            _paths[hash] = decoded;
+            return decoded;
+        }
+
+        private static bool SameAscii(string text, byte* bytes, int length)
+        {
+            if (text.Length != length) return false;
+            for (int i = 0; i < length; i++)
+            {
+                if (bytes[i] >= 0x80 || text[i] != bytes[i]) return false;
+            }
+            return true;
         }
 
         [MonoPInvokeCallback(typeof(ValueFn))]
@@ -299,7 +347,7 @@ namespace Weva.Native
             string text;
             try
             {
-                if (!self.TryResolve(PathOf(path), out text))
+                if (!self.TryResolve(self.PathOf(path), out text))
                 {
                     if (found != null) *found = 0;
                     return 0;
@@ -311,14 +359,28 @@ namespace Weva.Native
                 return 0;
             }
             if (found != null) *found = 1;
-            byte[] utf8 = Encoding.UTF8.GetBytes(text);
+            int length = Encoding.UTF8.GetByteCount(text);
             if (buffer != null && capacity > 0)
             {
-                int n = Math.Min(utf8.Length, (int)capacity - 1);
-                if (n > 0) Marshal.Copy(utf8, 0, (IntPtr)buffer, n);
-                buffer[n] = 0;
+                if ((nuint)length < capacity)
+                {
+                    // Straight into the core's buffer: the common case, and no
+                    // intermediate array per binding per frame.
+                    fixed (char* chars = text)
+                    {
+                        Encoding.UTF8.GetBytes(chars, text.Length, buffer, length);
+                    }
+                    buffer[length] = 0;
+                }
+                else
+                {
+                    byte[] utf8 = Encoding.UTF8.GetBytes(text);
+                    int n = (int)Math.Min((ulong)utf8.Length, (ulong)capacity - 1);
+                    if (n > 0) Marshal.Copy(utf8, 0, (IntPtr)buffer, n);
+                    buffer[n] = 0;
+                }
             }
-            return (nuint)utf8.Length;
+            return (nuint)length;
         }
 
         [MonoPInvokeCallback(typeof(CountFn))]
@@ -328,7 +390,7 @@ namespace Weva.Native
             if (self == null || path == null) return -1;
             try
             {
-                return self.Count(PathOf(path));
+                return self.Count(self.PathOf(path));
             }
             catch (Exception)
             {

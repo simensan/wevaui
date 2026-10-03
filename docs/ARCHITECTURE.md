@@ -9,6 +9,63 @@ This is an engineering reference. Start with [input parity](INPUT_PARITY.md),
 or the ABI section. The port-design sections retain the rationale for the
 shared engine; dated implementation receipts describe their own checkpoints.
 
+## Bounds on hostile input, and raster threads
+
+The core treats markup and stylesheets as untrusted: a mod, a save file or a
+server can supply them. Each limit below is pinned by
+`libweva/tests/test_hostile_input.cpp`, and the
+[technical audit](verification/tech-audit-20260925.md) records what each one
+prevented.
+
+| Input | Bound |
+|---|---|
+| HTML nesting | 512 open elements, Chrome's `kMaximumHTMLParserDOMTreeDepth`; deeper nodes attach to the current node's parent |
+| Rendered nesting | Boxes are generated at most 64 elements deep (`BoxBuilder::kMaxBoxDepth`); a nested inline-block is two frames of paint recursion (1.7 KB each with GCC, 2.7 KB with Clang), and hosts may run on a 1 MB main thread |
+| Selector nesting | 64 levels of `:is`/`:not`/`:where`/`:has`/`of S` |
+| Value nesting | 64 levels of functions and parentheses; 512 binary `calc()` operators |
+| `var()` substitution | 2 MiB per value, Chrome's `kMaxVariableBytes` |
+| `@import` | Depth 8, and 256 loads per document |
+| PNG inflate | Output stops at the header's scanline size |
+| Host lengths | Binding values 64 MiB, assets 512 MiB |
+
+Shrink-to-fit probes are remembered per `(element, style)` for one layout pass,
+and a stretched grid item is not re-laid out at the height it already has
+unless its subtree reads a definite height. Without either, nested
+inline-blocks cost 3^depth layouts, and nested grids cost 2^depth.
+
+Cold paint runs its independent rows on up to four threads: gradient and image
+backgrounds, both blur passes and their conversions, rounded-corner coverage
+and the shadow punch-out (`libweva/src/parallel.h`). Threads are started and
+joined inside the call, so no thread outlives it. Jobs under about a
+millisecond stay on the calling thread. Every texel is computed with the
+serial arithmetic, so output is byte-identical. Set `WEVA_RASTER_THREADS=1`
+to keep all work on the caller.
+
+Whole textures run side by side as well. Paint does not rasterize a
+background, shadow or blur where it meets it: it resolves everything that
+needs CSS parsing on the paint thread (`prepare_background`), takes the
+texture's id from `RenderInterface::reserve_texture`, and queues the pixel
+work (`RasterQueue` in `paint.cpp`). `paint_tree` runs the queue before it
+returns. A job larger than a thread's share of the remaining work runs alone
+and splits its rows; the rest share the threads, one job per thread. The CSS
+parser keeps single-threaded scratch state, which is why jobs never parse.
+Only the collecting backend reserves ids, since hosts read its pixels after
+the update; a registered render backend still receives pixels as each
+texture is made. `WEVA_RASTER_JOB_LOG` prints each job's cost estimate beside
+its time.
+
+A box shadow or `filter: blur()` whose sigma is at least 17 texels is
+rasterized and blurred on a coarser grid, then resampled bilinearly, in
+premultiplied alpha, to the texture's full size (`ReducedBlur` in
+`background.h`). The grid is scaled so the coarse blur is exactly three box
+passes of radius 8, a Gaussian of sigma sqrt(72), so the blur keeps its
+requested width. The texture keeps its size and every texel, which matters
+because the Godot host samples with nearest filtering. An outer shadow's
+punch-out still runs at full resolution. Against the texel-for-texel blur the
+result is within 4 levels (`test_reduced_blur_matches_full`); across the
+sample renders the largest change is 3 levels, and the distance to Chrome's
+screenshots is unchanged.
+
 ## Positioned content in collapsed tables
 
 The table paint pass retains ordinary content, cell backgrounds and shared borders
@@ -1076,3 +1133,14 @@ unnamed inspector/inline CSS continues to use the document base. The existing
 `add_css` is the same operation with no source URL. Core ABI regressions and
 `check_stylesheet_asset_origins_chrome.cjs` cover nested imports, image/font
 sources, variable use sites, viewport recompilation, and URL reference forms.
+
+ABI minor 45 adds `weva_set_raster_cache_limit(bytes)` and
+`weva_raster_cache_bytes()`, process-wide. Rasterized shadows, and gradient and
+blurred backgrounds without images or font-relative units, are kept after
+their document is destroyed, keyed on everything that decides their pixels
+plus the viewport, root font size and resolution. A document created again
+takes those pixels instead of rasterizing: Unity destroys the native document
+in `OnDisable`, so re-enabling a menu is otherwise a cold open. The cache is
+bounded by bytes (32 MiB by default, 0 disables it), least recently used
+first, and guarded by a mutex. Tested in `test_background.cpp`
+(`test_shared_raster_cache`); neither host changes its default yet.

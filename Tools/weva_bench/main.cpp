@@ -239,6 +239,11 @@ void* operator new(size_t size) {
 // share our allocator and counter, including in an AddressSanitizer build.
 void* operator new[](size_t size) { return ::operator new(size); }
 void* operator new[](size_t size, const std::nothrow_t&) noexcept { return ::operator new(size, std::nothrow); }
+// GCC 13 warns that free() does not match `new`: it cannot see that this
+// program replaces operator new with malloc above. The pairing is right.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wmismatched-new-delete"
+#endif
 void operator delete(void* p) noexcept { std::free(p); }
 void operator delete(void* p, size_t) noexcept { std::free(p); }
 void operator delete[](void* p) noexcept { std::free(p); }
@@ -324,11 +329,17 @@ int main(int argc, char** argv) {
     bool full = false;
     bool sample = false;
     bool cold = false;
+    bool reopen = false;
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--full") full = true;
         if (std::string(argv[i]) == "--cold") cold = true;
+        if (std::string(argv[i]) == "--reopen") cold = reopen = true;
         if (std::string(argv[i]) == "--sample") sample = true;
     }
+    // Rasterized textures outlive their document (weva_set_raster_cache_limit),
+    // so every cold pass after the first would be a reopen. --cold measures the
+    // first opening; --reopen measures a screen created again.
+    if (cold && !reopen) weva_set_raster_cache_limit(0);
     if (sample && g_profile) {
         std::fprintf(stderr, "weva_bench: --sample and --profile must run separately\n");
         return 2;
@@ -458,7 +469,7 @@ int main(int argc, char** argv) {
         }
         stop_sampling();
         std::printf("%-20s %-7s %-10s best %8.3f ms  mean %8.3f ms"
-                    "  cold allocations %zu (%zu bytes)\n", argv[1], "cold", "-", best,
+                    "  cold allocations %zu (%zu bytes)\n", argv[1], reopen ? "reopen" : "cold", "-", best,
                     total / passes, g_allocations, g_bytes);
         if (sample) report_sites("time samples", g_samples, 16);
         if (g_profile) report_sites("allocation sites", g_allocations, 12, true);

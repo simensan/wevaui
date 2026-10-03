@@ -9,8 +9,16 @@
 #define apply_background_attachment portable_apply_background_attachment
 #define rasterize_background portable_rasterize_background
 #define rasterize_background_padded portable_rasterize_background_padded
+#define prepare_background portable_prepare_background
+#define raster_cost portable_raster_cost
+#define prepare_background_padded portable_prepare_background_padded
+#define BackgroundPlan portable_BackgroundPlan
+#define PreparedBackground portable_PreparedBackground
 #define rounded_rect_coverage portable_rounded_rect_coverage
 #define blur_rgba portable_blur_rgba
+#define reduced_blur_grid portable_reduced_blur_grid
+#define upsample_blurred portable_upsample_blurred
+#define ReducedBlur portable_ReducedBlur
 #define blur_flat_rgba portable_blur_flat_rgba
 #define sample_gradient portable_sample_gradient
 #define sample_image portable_sample_image
