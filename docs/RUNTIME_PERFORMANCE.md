@@ -1,5 +1,12 @@
 # In-game UI performance
 
+The [October runtime geometry optimization](verification/runtime-geometry-20261011.md)
+reduces paired Godot inventory scrolling API CPU p95 from 1.245 to 1.097 ms
+(11.9%) and core-only scrolling mean from 0.636 to 0.540 ms (15.1%). It removes
+repeated rounded-geometry work without adding workers; 24 paired screenshots
+are identical. Active and bound HUD timing is effectively unchanged in the
+final repeat. These remain standalone fixture measurements, not whole-game FPS.
+
 The [October 11 performance audit](verification/performance-audit-20261011.md)
 repeats all 27 native workload runs: active HUD CPU p95 is 0.627 ms, bound HUD
 0.670 ms and inventory scrolling 1.219 ms. Selected cold-core creation means

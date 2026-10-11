@@ -59,6 +59,9 @@ and browser-level visual/text fidelity remain incomplete.
   The [October audit](verification/performance-audit-20261011.md) repeats the
   runtime workloads and identifies cold paint preparation and scrolling as the
   leading investigation targets; it adds no whole-game performance qualification.
+  The [runtime geometry change](verification/runtime-geometry-20261011.md)
+  lowers paired inventory scrolling API CPU p95 by 11.9% to 1.097 ms with
+  identical pixels; whole-game and lower-end testing remain outstanding.
 
 ## Evidence behind this status
 

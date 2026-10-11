@@ -124,6 +124,10 @@ The [parallel raster follow-up](docs/verification/cold-raster-20261011.md)
 reduces paired GCC cold HUD creation by 35.5% using additional CPU cores.
 Its 24 raster equivalence checks supplement the 192 blur checks. Public engine
 calls remain single-caller; only prepared pixel rows execute on workers.
+The [runtime geometry follow-up](docs/verification/runtime-geometry-20261011.md)
+reduces paired Godot inventory scrolling API CPU p95 by 11.9%, without adding
+workers. Its geometry suite now has 176 checks, including 36 scalar-reference
+AA comparisons and the thin-border allocation budget.
 
 ## 4. Workflow recipes
 

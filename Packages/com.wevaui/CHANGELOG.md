@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Performance
+- Rounded fills reuse corner directions and AA displacements; thin borders
+  avoid temporary outline copies and redundant color selection. Paired Godot
+  inventory scrolling API CPU p95 improves 11.9% with identical screenshots.
 - Expensive background rasterization uses the caller and up to three temporary
   workers on machines reporting at least four hardware threads. Pixel output is
   unchanged. Paired GCC cold HUD creation is 35.5% faster; this uses additional

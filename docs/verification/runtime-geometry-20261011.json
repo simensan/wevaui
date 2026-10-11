@@ -1,0 +1,353 @@
+{
+  "date": "2026-10-11",
+  "baseline_revision": "a282a0ca",
+  "abi": "0.44 unchanged",
+  "change": "Reuse default arc directions and AA displacements; avoid border copies and repeated uniform color selection",
+  "native": {
+    "frames": 600,
+    "warmups": 120,
+    "engine_sha256": "a54a92298c1084987f3ac42fef0231c02ddc53906b9efc118a7c84e258cf4aed",
+    "script_sha256": "d9e00afacf24c80b393539301429baa90329925e97eb0a32c031316bc7ecfca0",
+    "libraries": {
+      "baseline": {
+        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\runtime-opt-20261011\\weva_godot-before.dll",
+        "sha256": "eb21a4da64b3146ea3a9edf41d47a6ced46376d387abb737b1e72e4f9490eabf"
+      },
+      "candidate": {
+        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\hosts\\godot\\project\\addons\\weva\\bin\\weva_godot.dll",
+        "sha256": "aadd89bfc2881abb4f5b8ae4ef627e5e0bd49e96e0873e4b9e81a28e207b4924"
+      }
+    },
+    "medians": {
+      "baseline": {
+        "empty": {
+          "api_cpu_p95_ms": 0.001,
+          "core_update_p95_ms": 0.0,
+          "sixth_frame_api_cpu_p95_ms": 0.001
+        },
+        "hud_idle": {
+          "api_cpu_p95_ms": 0.01,
+          "core_update_p95_ms": 0.0011,
+          "sixth_frame_api_cpu_p95_ms": 0.01
+        },
+        "hud_active": {
+          "api_cpu_p95_ms": 0.596,
+          "core_update_p95_ms": 0.5702,
+          "sixth_frame_api_cpu_p95_ms": 0.69
+        },
+        "hud_redundant": {
+          "api_cpu_p95_ms": 0.026,
+          "core_update_p95_ms": 0.0009,
+          "sixth_frame_api_cpu_p95_ms": 0.026
+        },
+        "hud_bound": {
+          "api_cpu_p95_ms": 0.669,
+          "core_update_p95_ms": 0.6341,
+          "sixth_frame_api_cpu_p95_ms": 0.681
+        },
+        "menu_hover": {
+          "api_cpu_p95_ms": 0.125,
+          "core_update_p95_ms": 0.1099,
+          "sixth_frame_api_cpu_p95_ms": 0.148
+        },
+        "menu_animation": {
+          "api_cpu_p95_ms": 0.143,
+          "core_update_p95_ms": 0.133,
+          "sixth_frame_api_cpu_p95_ms": 0.222
+        },
+        "inventory_scroll": {
+          "api_cpu_p95_ms": 1.245,
+          "core_update_p95_ms": 1.2277,
+          "sixth_frame_api_cpu_p95_ms": 1.25
+        },
+        "chat_typing": {
+          "api_cpu_p95_ms": 0.092,
+          "core_update_p95_ms": 0.069,
+          "sixth_frame_api_cpu_p95_ms": 0.11
+        }
+      },
+      "candidate": {
+        "empty": {
+          "api_cpu_p95_ms": 0.001,
+          "core_update_p95_ms": 0.0,
+          "sixth_frame_api_cpu_p95_ms": 0.001
+        },
+        "hud_idle": {
+          "api_cpu_p95_ms": 0.009,
+          "core_update_p95_ms": 0.0011,
+          "sixth_frame_api_cpu_p95_ms": 0.009
+        },
+        "hud_active": {
+          "api_cpu_p95_ms": 0.604,
+          "core_update_p95_ms": 0.5779,
+          "sixth_frame_api_cpu_p95_ms": 0.68
+        },
+        "hud_redundant": {
+          "api_cpu_p95_ms": 0.026,
+          "core_update_p95_ms": 0.0009,
+          "sixth_frame_api_cpu_p95_ms": 0.026
+        },
+        "hud_bound": {
+          "api_cpu_p95_ms": 0.663,
+          "core_update_p95_ms": 0.6265,
+          "sixth_frame_api_cpu_p95_ms": 0.697
+        },
+        "menu_hover": {
+          "api_cpu_p95_ms": 0.122,
+          "core_update_p95_ms": 0.1063,
+          "sixth_frame_api_cpu_p95_ms": 0.137
+        },
+        "menu_animation": {
+          "api_cpu_p95_ms": 0.139,
+          "core_update_p95_ms": 0.1275,
+          "sixth_frame_api_cpu_p95_ms": 0.194
+        },
+        "inventory_scroll": {
+          "api_cpu_p95_ms": 1.097,
+          "core_update_p95_ms": 1.0764,
+          "sixth_frame_api_cpu_p95_ms": 1.15
+        },
+        "chat_typing": {
+          "api_cpu_p95_ms": 0.086,
+          "core_update_p95_ms": 0.0627,
+          "sixth_frame_api_cpu_p95_ms": 0.106
+        }
+      }
+    },
+    "api_p95_runs": {
+      "baseline": {
+        "empty": [
+          0.001,
+          0.001,
+          0.001
+        ],
+        "hud_idle": [
+          0.01,
+          0.009,
+          0.01
+        ],
+        "hud_active": [
+          0.596,
+          0.588,
+          0.621
+        ],
+        "hud_redundant": [
+          0.026,
+          0.027,
+          0.026
+        ],
+        "hud_bound": [
+          0.669,
+          0.658,
+          0.694
+        ],
+        "menu_hover": [
+          0.125,
+          0.093,
+          0.125
+        ],
+        "menu_animation": [
+          0.14,
+          0.143,
+          0.144
+        ],
+        "inventory_scroll": [
+          1.223,
+          1.264,
+          1.245
+        ],
+        "chat_typing": [
+          0.092,
+          0.09,
+          0.095
+        ]
+      },
+      "candidate": {
+        "empty": [
+          0.001,
+          0.001,
+          0.001
+        ],
+        "hud_idle": [
+          0.009,
+          0.009,
+          0.009
+        ],
+        "hud_active": [
+          0.552,
+          0.606,
+          0.604
+        ],
+        "hud_redundant": [
+          0.026,
+          0.026,
+          0.026
+        ],
+        "hud_bound": [
+          0.655,
+          0.663,
+          0.664
+        ],
+        "menu_hover": [
+          0.127,
+          0.122,
+          0.121
+        ],
+        "menu_animation": [
+          0.136,
+          0.14,
+          0.139
+        ],
+        "inventory_scroll": [
+          1.129,
+          1.097,
+          1.074
+        ],
+        "chat_typing": [
+          0.088,
+          0.086,
+          0.084
+        ]
+      }
+    },
+    "passed_workload_runs": 54,
+    "identical_capture_pairs": 24
+  },
+  "core_scroll": {
+    "before": {
+      "runs": [
+        {
+          "best_ms": 0.522,
+          "mean_ms": 0.643,
+          "allocations": 3039,
+          "allocated_bytes": 1795328
+        },
+        {
+          "best_ms": 0.518,
+          "mean_ms": 0.634,
+          "allocations": 3039,
+          "allocated_bytes": 1795328
+        },
+        {
+          "best_ms": 0.518,
+          "mean_ms": 0.636,
+          "allocations": 3039,
+          "allocated_bytes": 1795328
+        }
+      ],
+      "median_mean_ms": 0.636
+    },
+    "after": {
+      "runs": [
+        {
+          "best_ms": 0.443,
+          "mean_ms": 0.576,
+          "allocations": 2941,
+          "allocated_bytes": 1738880
+        },
+        {
+          "best_ms": 0.441,
+          "mean_ms": 0.54,
+          "allocations": 2941,
+          "allocated_bytes": 1738880
+        },
+        {
+          "best_ms": 0.444,
+          "mean_ms": 0.54,
+          "allocations": 2941,
+          "allocated_bytes": 1738880
+        }
+      ],
+      "median_mean_ms": 0.54
+    },
+    "reduction_percent": 15.094339622641506
+  },
+  "verification": {
+    "full_release_gate_exit": 0,
+    "gcc_suites": 14,
+    "clang_sanitizer_suites": 16,
+    "geometry_allocation_checks": 176,
+    "scalar_reference_cases": 36,
+    "geometry_digest_matches": true,
+    "paint_cases": 56,
+    "paint_checks": 36031,
+    "paint_digest_matches": true,
+    "chrome_layout_captures": 334,
+    "chrome_behavior": {
+      "total": 67,
+      "passed": 66,
+      "unexpected_failed": 0,
+      "known_failed": 1
+    },
+    "unity_native": {
+      "id": "2",
+      "testcasecount": "244",
+      "result": "Passed",
+      "total": "244",
+      "passed": "242",
+      "failed": "0",
+      "inconclusive": "2",
+      "skipped": "0",
+      "asserts": "0",
+      "engine-version": "3.5.0.0",
+      "clr-version": "4.0.30319.42000",
+      "start-time": "2026-10-11 18:22:34Z",
+      "end-time": "2026-10-11 18:23:07Z",
+      "duration": "33.0034882"
+    }
+  },
+  "sha256": {
+    ".utmp/runtime-opt-20261011/bench-build.log": "29524e4d83d2d41265fcaf95552184df132b6e917f86aafa6fd9a6f4293c5905",
+    ".utmp/runtime-opt-20261011/build-1.log": "9313494fefd18e50f38a96946462e2e4b411bb7a4b1d3875fed84c972abd93e7",
+    ".utmp/runtime-opt-20261011/build-2.log": "9313494fefd18e50f38a96946462e2e4b411bb7a4b1d3875fed84c972abd93e7",
+    ".utmp/runtime-opt-20261011/cli-recheck.log": "9719040bfd73ea2eaf1b742f929958b1cdd45783f6caafbfb1b9a305116e6e9e",
+    ".utmp/runtime-opt-20261011/draw-after.log": "8d20ace39fc1b8db1f547f9f95e87c6cd2861d1fb16aa4111e05a8bc8471553f",
+    ".utmp/runtime-opt-20261011/draw-before.log": "8d20ace39fc1b8db1f547f9f95e87c6cd2861d1fb16aa4111e05a8bc8471553f",
+    ".utmp/runtime-opt-20261011/draw-final.log": "8d20ace39fc1b8db1f547f9f95e87c6cd2861d1fb16aa4111e05a8bc8471553f",
+    ".utmp/runtime-opt-20261011/full-gate.log": "5300c95dba9876d02a908739fbadd29add2ac01b6a35efd54ecc460f0b41813a",
+    ".utmp/runtime-opt-20261011/gcc-build.log": "8f55af283a22a9f034fed8ed4e51dd4ab4a0e1f1d44149e36378918809e43af2",
+    ".utmp/runtime-opt-20261011/gcc-final-build.log": "d8678fdea5dde85fdd16a3f606b5a5b6d3c4d21be5bd1f30d36f64fb3d6e9fc7",
+    ".utmp/runtime-opt-20261011/gcc-tests.log": "1a42a9cdcd36a272308878986d0df680aca3e4366146af1fb9e7ba9754f4f62a",
+    ".utmp/runtime-opt-20261011/geometry-after.log": "275ddbbb48d787573c5b52df8a613bc9eccad60aedaa248ef09b984c62c0a55e",
+    ".utmp/runtime-opt-20261011/geometry-before.log": "6b37ed226b45af81e68c8f00b11fcb4ed83ed006f2f2e72b0f5b4621ad31eb12",
+    ".utmp/runtime-opt-20261011/geometry-final.log": "275ddbbb48d787573c5b52df8a613bc9eccad60aedaa248ef09b984c62c0a55e",
+    ".utmp/runtime-opt-20261011/godot-build.log": "89a5f970b4f16a5058400aee553906c241995c17d6f5a862ae73ceaeeb497995",
+    ".utmp/runtime-opt-20261011/godot-final-build.log": "89a5f970b4f16a5058400aee553906c241995c17d6f5a862ae73ceaeeb497995",
+    ".utmp/runtime-opt-20261011/scroll-1-after.log": "7ceb125749bf50b9392abd6eabd060f5ac06eea3162465ad175f4adfdf5cf6e6",
+    ".utmp/runtime-opt-20261011/scroll-1-before.log": "5108130171b1d18415181bdb52c70433560bc2f75d0f86ea1c9a9d8f40388973",
+    ".utmp/runtime-opt-20261011/scroll-2-after.log": "610d05f25c89b0d5167cc82a66406594783c4abbec8f026099e0484f32584519",
+    ".utmp/runtime-opt-20261011/scroll-2-before.log": "a90ccc6f25717e254e0ddcdbdf34378b3b79601fe3930eb5597cce7da9a82c04",
+    ".utmp/runtime-opt-20261011/scroll-cpu.log": "15c3f7abfd196344366910467da6adccc44172d9c678e3b709f52974603dac6e",
+    ".utmp/runtime-opt-20261011/scroll-final-0-after.log": "9eb0748669f6dcc24a50df8fa0574e0c6b39158c4ac1b634ed66adba0eec5033",
+    ".utmp/runtime-opt-20261011/scroll-final-0-before.log": "90db4ea2c5bd97eb88330c4291f467c428e493c65758bfd99e060652b1c0a266",
+    ".utmp/runtime-opt-20261011/scroll-final-1-after.log": "a25fa0f3b678041c25562aa02e65a6e008517b6ddd5b0d2b086bf9ab37d28d8f",
+    ".utmp/runtime-opt-20261011/scroll-final-1-before.log": "3ce821e5162a7b559f001d63632419ce747d959fb0d634b7b4ab256a76cb9a97",
+    ".utmp/runtime-opt-20261011/scroll-final-2-after.log": "c5de8ca3cde949372b1f0c13c2af394a0f8b92a72900e850f32301a27c190592",
+    ".utmp/runtime-opt-20261011/scroll-final-2-before.log": "d23c73958a0d30e4e44fb1064b02b848ae1aaa0b43cd4b2c48dc580cc51a2609",
+    ".utmp/runtime-opt-20261011/scroll-stage.log": "e6abd22fe01d45b909192107ca558eecff709d2779ea3ffa982f075823e86ca5",
+    ".utmp/runtime-opt-20261011/unity-build.log": "b86e9a081b191ec805b61dc36d79ab892af3582bc65bb7a48fc5572d49b1e5ed",
+    ".utmp/runtime-opt-20261011/unity-final-build.log": "b86e9a081b191ec805b61dc36d79ab892af3582bc65bb7a48fc5572d49b1e5ed",
+    ".utmp/runtime-opt-20261011/unity.log": "8c9c25a7eacc4b9c21824a7543761f2417ad44b5ef10ae2888de1d77a40fee49",
+    ".utmp/runtime-opt-20261011/weva-chrome-checks.log": "753b31de99d4d59b950309b47a12fb5694ccd6068360235f59364ce1b6593d0b",
+    ".utmp/runtime-opt-20261011/weva-chrome-hand.log": "4c1c1dfa4b45d6a9529553241c34b4c469e481c973e11aed8163332d09bf2d01",
+    ".utmp/runtime-opt-20261011/weva-chrome-harvest.log": "fa18f8c89321e9c0cee1ced9a8d728586ce1befd55d8b2631e5880e70c0d4447",
+    ".utmp/runtime-opt-20261011/weva-chrome-samples.log": "7ada9f967343f9fe3712394eda90a7131d9e67a91a2e8be9df3d6ed14af6f90a",
+    ".utmp/runtime-opt-20261011/weva-core.log": "891aa03e71c25ed8384be54a3f8df4727229d2ce8bbe33c942ed002cdf0e682c",
+    ".utmp/runtime-opt-20261011/weva-san-build.log": "6d406ca53b8850061ae6770f6dfacd574d55209d1e74e821931e6419321f7329",
+    ".utmp/runtime-opt-20261011/weva-sanitizers.log": "7a5bf21fb16fd469cdbfc015af164e153c188d3db33d635919a1ca802c08959f",
+    ".utmp/runtime-opt-20261011/native/summary.json": "cefab9fca8105cd9d07a013cce58957edaaa7f56b28fe6b5337a85812f443797",
+    ".utmp/runtime-opt-20261011/native-final/summary.json": "0b25f81b2cf81d5d9df7a8e1726f97c769b0cc22f925c28f1e86fcd5ebb8c538",
+    ".utmp/runtime-opt-20261011/weva_core-before.dll": "be299bc8db2934ea0190e3f11f445901e37e67eff93714faf1eafd4c016edcbc",
+    ".utmp/runtime-opt-20261011/weva_godot-before.dll": "eb21a4da64b3146ea3a9edf41d47a6ced46376d387abb737b1e72e4f9490eabf",
+    ".utmp/runtime-opt-20261011/bench-scroll-before": "5d0f3e71a67dbbb1b7304779062bd911e69c3742b584ad6f230a5d3fd7ff91e1",
+    ".utmp/runtime-opt-20261011/unity.xml": "fed05a91feea81749fb71f8f2a8b242b54cceb6f509f461d33ad3b9cfd07450e",
+    ".utmp/runtime-opt-20261011/run-gate.sh": "0bbfc5681b37931a49169f2a67162a9c874ff5f2f3328d790ae6141b0bb5cf62",
+    "libweva/src/tessellate.cpp": "49eabe9cbd2d6c615f7c02079566f98256fe39097ea4106285a29f981c8d1946",
+    "libweva/tests/test_geometry_allocations.cpp": "b85955a10635df73fc2a5c532bedf859e2844337f7a47974cbcf37ddc5c4f1f1",
+    "Tools/weva_bench/main.cpp": "68f3fd9e485bbcd9efb653a9cbf4fcde7df374b7bed3e13df55d091f0bae7d57",
+    "Tools/weva_bench/check_cli.cmake": "2813ddd96d9ee3872082090eabad23973e10263a1d25b396921daa6ff387aa45",
+    "Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll": "b4364c6054fd7fc7124e2d73b595aae85dd5e4ce1462b4f08b228582120ad041",
+    "hosts/godot/project/addons/weva/bin/weva_godot.dll": "aadd89bfc2881abb4f5b8ae4ef627e5e0bd49e96e0873e4b9e81a28e207b4924"
+  },
+  "candidate_bench_sha256": "48d035352ea9209e7ecbd39775a8851d698bf0795885d89cb78b138d056cfe98"
+}

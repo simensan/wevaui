@@ -519,6 +519,15 @@ int main(int argc, char** argv) {
         const char* const paint_values[2] = {"background-color:#123456",
                                              "background-color:#123457"};
         const char* const layout_values[2] = {"padding-left:11px", "padding-left:12px"};
+        double scroll_max_y = 0;
+        if (mutate == "scroll") {
+            weva_element_scroll(d, target, nullptr, nullptr, nullptr, &scroll_max_y);
+            if (scroll_max_y <= 0) {
+                std::fprintf(stderr, "weva_bench: scroll target has no vertical range\n");
+                weva_document_destroy(d);
+                return 1;
+            }
+        }
 
         if (!focus_selector.empty() || mutate == "caret") {
             const auto focus = focus_selector.empty() ? target : weva_document_query(d, focus_selector.c_str());
@@ -551,6 +560,8 @@ int main(int argc, char** argv) {
                 const int x = (i & 1) ? 320 : 960;
                 const int y = (i & 1) ? 180 : 540;
                 weva_document_set_pointer(d, x, y, 0);
+            } else if (mutate == "scroll") {
+                weva_element_set_scroll(d, target, 0, scroll_max_y * ((i % 60) + 1) / 61.0);
             } else if (target != WEVA_ELEMENT_NONE) {
                 const char* const* values = mutate == "paint" ? paint_values : layout_values;
                 weva_element_set_attribute(d, target, "style", values[i & 1]);

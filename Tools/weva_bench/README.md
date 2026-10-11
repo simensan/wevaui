@@ -33,6 +33,12 @@ $css = 'Tools/oracle/corpus/samples/layout-stress.css'
 & $bench $html $css 500 --full --mutate=paint --target=last
 ```
 
+For a scrolling list, use `--full --mutate=scroll --target='#items'` with its
+HTML/CSS fixture. The target must have a nonzero vertical scroll range. Each
+pass moves to a different offset inside that range, then measures the update;
+the scroll setter is outside the timing, like other mutation modes. The
+60-step sweep repeats so long runs do not settle into a clamped no-op.
+
 | Mode | Timed and counted work |
 |---|---|
 | Default | Box construction, layout and positioning; parsed DOM and cascade are prepared beforehand. |

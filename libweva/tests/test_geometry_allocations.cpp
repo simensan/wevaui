@@ -6,6 +6,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cmath>
 #include <new>
 #include <string>
 
@@ -36,6 +37,52 @@ template<class F> size_t measure(F call) {
     counting = false;
     return allocations;
 }
+// Independent scalar reference for the pre-optimization AA ring construction.
+using Point = std::pair<double, double>;
+Point reference_offset(const std::vector<Point>& pts, size_t i, double d) {
+    const size_t n = pts.size();
+    size_t prev = i, next = i;
+    for (size_t k = 1; k <= n; ++k) { prev = (i + n - k) % n; if (pts[prev] != pts[i]) break; }
+    for (size_t k = 1; k <= n; ++k) { next = (i + k) % n; if (pts[next] != pts[i]) break; }
+    const double ax = pts[i].first - pts[prev].first, ay = pts[i].second - pts[prev].second;
+    const double bx = pts[next].first - pts[i].first, by = pts[next].second - pts[i].second;
+    const double la = std::sqrt(ax*ax + ay*ay), lb = std::sqrt(bx*bx + by*by);
+    if (la <= 0 || lb <= 0) return pts[i];
+    const double n1x = ay/la, n1y = -ax/la, n2x = by/lb, n2y = -bx/lb;
+    double mx = n1x+n2x, my = n1y+n2y;
+    const double lm = std::sqrt(mx*mx + my*my);
+    if (lm <= 1e-9) return pts[i];
+    mx /= lm; my /= lm;
+    const double c = mx*n1x + my*n1y;
+    const double scale = c > .2 ? d/c : d*5;
+    return {pts[i].first + mx*scale, pts[i].second + my*scale};
+}
+bool scalar_rounding_matches(const weva::Rect& r, const weva::BorderRadii& radii, int segments) {
+    const auto c = weva::clamp_radii_to_rect(radii, r.width, r.height);
+    std::vector<Point> pts;
+    const double pi = 3.14159265358979323846;
+    const auto arc = [&](double x, double y, const weva::CornerRadius& radius, double start) {
+        if (radius.x_radius <= 0 || radius.y_radius <= 0) { pts.emplace_back(x,y); return; }
+        for (int i=0; i<=segments; ++i) {
+            const double t = start + (pi*.5)*(static_cast<double>(i)/segments);
+            pts.emplace_back(x+radius.x_radius*std::cos(t), y+radius.y_radius*std::sin(t));
+        }
+    };
+    arc(r.x+c.top_left.x_radius,r.y+c.top_left.y_radius,c.top_left,pi);
+    arc(r.right()-c.top_right.x_radius,r.y+c.top_right.y_radius,c.top_right,-pi*.5);
+    arc(r.right()-c.bottom_right.x_radius,r.bottom()-c.bottom_right.y_radius,c.bottom_right,0);
+    arc(r.x+c.bottom_left.x_radius,r.bottom()-c.bottom_left.y_radius,c.bottom_left,pi*.5);
+    weva::Mesh actual;
+    weva::tessellate_rounded_rect(r,radii,weva::LinearColor::white(),&actual,segments,true);
+    if (actual.vertices.size()!=1+2*pts.size()) return false;
+    for (size_t i=0; i<pts.size(); ++i) for (int ring=0; ring<2; ++ring) {
+        const auto expected=reference_offset(pts,i,ring ? .5 : -.5);
+        const auto& v=actual.vertices[1+ring*pts.size()+i];
+        if (v.position.x!=static_cast<float>(expected.first) || v.position.y!=static_cast<float>(expected.second) ||
+            v.color.a!=(ring ? 0.f : 1.f)) return false;
+    }
+    return true;
+}
 }
 
 void* operator new(size_t size) {
@@ -58,6 +105,22 @@ int main() {
     };
     const Rect rect(2.125, -3.75, 103.5, 41.25);
     const LinearColor colors[] = {{1,.5f,0,1}, {0,1,.2f,.8f}, {0,0,1,.4f}, {1,0,1,0}};
+    for (int segments : {1, 4, 8, 31}) for (double radius : {.25, 8., 100.})
+    for (double y : {-1000.125, 0., 97.375}) {
+        auto corners = BorderRadii::uniform(radius);
+        corners.top_right = {radius*.3, radius*.7};
+        corners.bottom_left = {0,0};
+        check(scalar_rounding_matches(Rect(2.125,y,103.5,41.25),corners,segments),
+              "AA vertices exactly match scalar reference",0,0);
+    }
+    {
+        Mesh border;
+        const LinearColor uniform[4] = {colors[0],colors[0],colors[0],colors[0]};
+        const size_t n = measure([&] {
+            tessellate_border(rect,BorderRadii::uniform(8),1,1,1,1,uniform,&border);
+        });
+        check(n==4 && !border.empty(),"thin border owns only two outlines and two mesh buffers",n,4);
+    }
     for (int segments : {1, 4, 8, 31}) {
         for (bool aa : {false, true}) {
             for (double radius : {0., .25, 8., 100.}) {

@@ -9,6 +9,21 @@ This is an engineering reference. Start with [input parity](INPUT_PARITY.md),
 or the ABI section. The port-design sections retain the rationale for the
 shared engine; dated implementation receipts describe their own checkpoints.
 
+## Rounded geometry execution
+
+Default eight-segment rounded corners reuse an immutable table of the original
+libm directions. Custom subdivision counts keep the general arc path. The AA
+fill calculates each corner's displacement once for both coverage rings, with
+unchanged vertex order and color coverage. Thin borders reference their two
+existing outlines instead of copying them. When every drawn border side has
+the same color, vertices use that color directly; differently colored sides
+retain their mitre partitioning.
+
+These changes reduce repeated tessellation work during scrolling without
+retaining per-document geometry or adding workers. The geometry suite checks
+36 scalar-reference AA cases and a four-allocation thin-border budget; its
+total is 176 checks. See the [runtime follow-up](verification/runtime-geometry-20261011.md).
+
 ## Background raster and blur execution
 
 Expensive background rasterization partitions prepared pixel rows between the

@@ -47,6 +47,26 @@ void arc_points(double cx, double cy, double rx, double ry, double start_angle, 
         for (int i = 0; i <= segments; ++i) emit(cx, cy);
         return;
     }
+    // The default eight-segment corners repeat the same angles on every box.
+    // Keep the original arithmetic and libm results, but evaluate them once.
+    // Other subdivision counts retain the general path below.
+    if (segments == 8) {
+        static const auto directions = [] {
+            std::array<std::array<std::pair<double, double>, 9>, 4> table{};
+            const double starts[] = {kPi, -kPi * 0.5, 0, kPi * 0.5};
+            for (size_t corner = 0; corner < 4; ++corner) {
+                for (int i = 0; i <= 8; ++i) {
+                    const double t = starts[corner] + (kPi * 0.5) * (static_cast<double>(i) / 8);
+                    table[corner][i] = {std::cos(t), std::sin(t)};
+                }
+            }
+            return table;
+        }();
+        const size_t corner = start_angle == kPi ? 0 : start_angle == -kPi * 0.5 ? 1 :
+                              start_angle == 0 ? 2 : 3;
+        for (const auto& p : directions[corner]) emit(cx + rx * p.first, cy + ry * p.second);
+        return;
+    }
     for (int i = 0; i <= segments; ++i) {
         const double t = start_angle + (kPi * 0.5) * (static_cast<double>(i) / segments);
         emit(cx + rx * std::cos(t), cy + ry * std::sin(t));
@@ -78,41 +98,6 @@ std::vector<std::pair<double, double>> rounded_outline(const Rect& r, const Bord
     pts.reserve(static_cast<size_t>(4 * (segments + 1)));
     rounded_points(r, c, segments, [&](double x, double y) { pts.emplace_back(x, y); }, uniform_corner_points);
     return pts;
-}
-
-// Which of the four edges a point belongs to, for picking a border colour.
-// Corners fall to whichever side they are nearer, which is a simple stand-in
-// for a proper mitre and is invisible when adjacent colours match.
-int edge_of(double x, double y, const Rect& r, const double widths[4]) {
-    const double dt = y - r.y, db = r.bottom() - y, dl = x - r.x, dr = r.right() - x;
-    // A side that is not DRAWN cannot own a corner.
-    //
-    // Only the sides with width contribute geometry, so a corner assigned to a
-    // zero-width side hands its colour to the strip a drawn side is making --
-    // and an unset side's colour is `currentColor`, the text colour. A table
-    // cell with nothing but `border-bottom: 1px solid <faint>` therefore drew
-    // its rule fading into the text colour along its length: dark at one end
-    // and bright at the other, with a visible step at every cell boundary.
-    const double d[4] = {dt, dr, db, dl};
-    double m = 0;
-    int best = -1;
-    for (int i = 0; i < 4; ++i) {
-        if (widths[i] <= 0) continue;
-        if (best < 0 || d[i] < m) {
-            m = d[i];
-            best = i;
-        }
-    }
-    // Every side zero is not a border at all, but the caller decides that; fall
-    // back to the old nearest-edge answer rather than reading past the array.
-    if (best < 0) {
-        const double n = std::min(std::min(dt, db), std::min(dl, dr));
-        if (n == dt) return 0;
-        if (n == dr) return 1;
-        if (n == db) return 2;
-        return 3;
-    }
-    return best;
 }
 
 struct BorderPoint { double x, y; float coverage; };
@@ -273,7 +258,7 @@ constexpr double kAaHalfWidth = 0.5;
 // outward for positive. The displacement at a corner is longer than `d` (it
 // runs along the mitre), which is what keeps both of that corner's edges
 // exactly `d` away rather than only the corner point.
-std::pair<double, double> offset_outline_point(
+std::pair<double, double> outline_displacement(
     const std::vector<std::pair<double, double>>& pts, size_t i, double d) {
     const size_t n = pts.size();
         // The neighbours have to be DISTINCT points: a square corner walked
@@ -293,7 +278,7 @@ std::pair<double, double> offset_outline_point(
         const double bx = pts[next].first - pts[i].first, by = pts[next].second - pts[i].second;
         const double la = std::sqrt(ax * ax + ay * ay), lb = std::sqrt(bx * bx + by * by);
         if (la <= 0 || lb <= 0) {
-            return pts[i];
+            return {0, 0};
         }
         // Outward normal of each edge, for an outline wound so that the
         // interior is to the left.
@@ -302,7 +287,7 @@ std::pair<double, double> offset_outline_point(
         double mx = n1x + n2x, my = n1y + n2y;
         const double lm = std::sqrt(mx * mx + my * my);
         if (lm <= 1e-9) {
-            return pts[i];
+            return {0, 0};
         }
         mx /= lm;
         my /= lm;
@@ -310,8 +295,13 @@ std::pair<double, double> offset_outline_point(
         // because a very sharp corner sends the mitre off to infinity.
         const double cos_half = mx * n1x + my * n1y;
         const double scale = cos_half > 0.2 ? d / cos_half : d * 5.0;
-        return {pts[i].first + mx * scale, pts[i].second + my * scale};
+        return {mx * scale, my * scale};
 
+}
+std::pair<double, double> offset_outline_point(
+    const std::vector<std::pair<double, double>>& pts, size_t i, double d) {
+    const auto delta = outline_displacement(pts, i, d);
+    return {pts[i].first + delta.first, pts[i].second + delta.second};
 }
 std::vector<std::pair<double, double>> offset_outline(
     const std::vector<std::pair<double, double>>& pts, double d) {
@@ -345,13 +335,13 @@ void fill_outline_aa(const std::vector<std::pair<double, double>>& pts, double c
     // Centre, then the inset ring, then the expanded ring.
     const uint32_t base = static_cast<uint32_t>(out->vertices.size());
     out->vertices.push_back(vert(cx, cy, color));
+    out->vertices.resize(out->vertices.size() + 2 * pts.size());
     for (size_t i = 0; i < pts.size(); ++i) {
-        const auto p = offset_outline_point(pts, i, -kAaHalfWidth);
-        out->vertices.push_back(vert(p.first, p.second, color));
-    }
-    for (size_t i = 0; i < pts.size(); ++i) {
-        const auto p = offset_outline_point(pts, i, kAaHalfWidth);
-        out->vertices.push_back(vert(p.first, p.second, clear));
+        // Both coverage rings share the same edge normals and mitre. Reuse
+        // the displacement rather than repeating three roots and divisions.
+        const auto delta = outline_displacement(pts, i, kAaHalfWidth);
+        out->vertices[base + 1 + i] = vert(pts[i].first - delta.first, pts[i].second - delta.second, color);
+        out->vertices[base + 1 + n + i] = vert(pts[i].first + delta.first, pts[i].second + delta.second, clear);
     }
 
     const uint32_t inner = base + 1;
@@ -475,10 +465,12 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
     // it exactly. Only a radius puts a curve in the outline.
     const bool feather = antialias && !outer_radii.is_zero() && !too_thin_to_feather(outer) &&
                          std::min(std::min(top, right), std::min(bottom, left)) > 2 * kAaHalfWidth;
-    const std::vector<std::pair<double, double>> o_solid =
-        feather ? offset_outline(o, -kAaHalfWidth) : o;
-    const std::vector<std::pair<double, double>> i_solid =
-        feather ? offset_outline(i2, kAaHalfWidth) : i2;
+    // Ordinary thin borders use their existing outlines directly. Copying
+    // both vectors here allocated twice per visible item on every scroll.
+    const auto o_offset = feather ? offset_outline(o, -kAaHalfWidth) : std::vector<std::pair<double, double>>{};
+    const auto i_offset = feather ? offset_outline(i2, kAaHalfWidth) : std::vector<std::pair<double, double>>{};
+    const auto& o_solid = feather ? o_offset : o;
+    const auto& i_solid = feather ? i_offset : i2;
 
     bool different_colors=false;
     int first=-1;
@@ -509,8 +501,11 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
     }
     out->reserve_append(o.size() * (feather ? 4 : 2), o.size() * (feather ? 18 : 6));
     const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+    // Every drawn side has the same color on this path. Finding the nearest
+    // edge again for every arc vertex cannot change the chosen color.
+    const LinearColor uniform_color = colors[first >= 0 ? first : 0];
     for (uint32_t k = 0; k < n; ++k) {
-        const LinearColor& c = colors[edge_of(o[k].first, o[k].second, outer, widths)];
+        const LinearColor& c = uniform_color;
         out->vertices.push_back(vert(o_solid[k].first, o_solid[k].second, c));
         out->vertices.push_back(vert(i_solid[k].first, i_solid[k].second, c));
     }
@@ -528,7 +523,7 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
     const std::vector<std::pair<double, double>> i_edge = offset_outline(i2, -kAaHalfWidth);
     const uint32_t ramp = static_cast<uint32_t>(out->vertices.size());
     for (uint32_t k = 0; k < n; ++k) {
-        LinearColor c = colors[edge_of(o[k].first, o[k].second, outer, widths)];
+        LinearColor c = uniform_color;
         c.a = 0;
         out->vertices.push_back(vert(o_edge[k].first, o_edge[k].second, c));
         out->vertices.push_back(vert(i_edge[k].first, i_edge[k].second, c));
