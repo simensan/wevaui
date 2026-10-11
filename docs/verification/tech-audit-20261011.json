@@ -1,0 +1,162 @@
+{
+  "baseline_revision": "52bb1f68",
+  "date": "2026-10-11",
+  "abi": "0.44",
+  "artifacts": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\audit-20261011",
+  "tests": {
+    "bindings_before": {
+      "total": "9",
+      "passed": "6",
+      "failed": "3",
+      "inconclusive": "0",
+      "result": "Failed(Child)",
+      "failures": [
+        {
+          "name": "DestroyingDocument_DetachesItsBindingAdapter",
+          "message": "System.ObjectDisposedException : Cannot access a disposed object.\nObject name: 'NativeDocument'."
+        },
+        {
+          "name": "MovingAdapter_DetachesThePreviousDocument",
+          "message": "  Expected string length 6 but was 5. Strings differ at index 2.\n  Expected: \"Morgan\"\n  But was:  \"Moved\"\n  -------------^\n"
+        },
+        {
+          "name": "ReplacedAdapter_DisposeDoesNotDisconnectItsReplacement",
+          "message": "  Expected string length 11 but was 6. Strings differ at index 0.\n  Expected: \"Replacement\"\n  But was:  \"Morgan\"\n  -----------^\n"
+        }
+      ]
+    },
+    "renderer_before": {
+      "total": "242",
+      "passed": "239",
+      "failed": "1",
+      "inconclusive": "2",
+      "result": "Failed(Child)",
+      "failures": [
+        {
+          "name": "ReusingRendererAcrossDocuments_RefreshesGeometryAndTextures",
+          "message": "  document switch must replace cached textures\n  Expected: True\n  But was:  False\n"
+        }
+      ]
+    },
+    "editmode_after": {
+      "total": "245",
+      "passed": "243",
+      "failed": "0",
+      "inconclusive": "2",
+      "result": "Passed",
+      "failures": []
+    },
+    "playmode_after": {
+      "total": "5",
+      "passed": "5",
+      "failed": "0",
+      "inconclusive": "0",
+      "result": "Passed",
+      "failures": []
+    },
+    "npm_before": {
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 11,
+        "critical": 0,
+        "total": 11
+      },
+      "dependencies": {
+        "prod": 95,
+        "dev": 0,
+        "optional": 4,
+        "peer": 1,
+        "peerOptional": 0,
+        "total": 99
+      }
+    },
+    "npm_after": {
+      "vulnerabilities": {
+        "info": 0,
+        "low": 0,
+        "moderate": 0,
+        "high": 0,
+        "critical": 0,
+        "total": 0
+      },
+      "dependencies": {
+        "prod": 1,
+        "dev": 27,
+        "optional": 0,
+        "peer": 1,
+        "peerOptional": 0,
+        "total": 27
+      }
+    },
+    "native_after": {
+      "passed": 242,
+      "failed": 0,
+      "inconclusive": 2
+    }
+  },
+  "full_gate": {
+    "initial_exit": 1,
+    "initial_failure": "Chrome autoscroll five-second deadline",
+    "corrected_status": "passed",
+    "corrected_exit": 0,
+    "corrected_log": ".utmp/audit-20261011/full-gate-final.log",
+    "skipped_gates": 0,
+    "chrome_scripts": {
+      "passed": 66,
+      "unexpected_failures": 0,
+      "documented_ime_failure": 1
+    },
+    "chrome_layout_captures": 334,
+    "core_suites": 14,
+    "sanitizer_suites": 16
+  },
+  "tooling": {
+    "linux_passed": 55,
+    "windows_passed": 46,
+    "windows_linux_only_skips": 9,
+    "text_safety_checks": 9,
+    "frontier_runner_checks": 32
+  },
+  "browser": {
+    "chrome": "152.0.7977.82",
+    "puppeteer": "25.13.0",
+    "node_minimum": "22.12.0"
+  },
+  "artifacts_sha256": {
+    "full-gate.log": "52191673144208fa9ed61f509af12ee046bb67383b8dab7dfebbbc4126a663d4",
+    "full-gate-final.log": "1e0ce57fbc20a881b065e31895e4ef2eee08fec8832c8e23275d831996f32fe0",
+    "bindings-before.xml": "9c08fca78671fe51acc38148b88fad7e30e0c39d92fa2f447089ea4f7c4dee1c",
+    "native-before-render-fix.xml": "46205d97bc2d9ffdf736e1d173b6f5ae999e461eeb6c80949ea89cb36601888e",
+    "editmode-after.xml": "f4d1f124bcc2566bf5d6545d580697d085ea4d9d744a4e95b609ff19b38033a3",
+    "playmode-after.xml": "f1435673d5be52baa2530a8192d9ca14fb9e59e8b3135649004c033c88cbb20e",
+    "npm-audit.json": "f11f3e2f243735399433b4934bf0a9699129643683e848f8cb7054525efecc22",
+    "npm-audit-after.json": "c05e9a50353df3b6f674766de5680927d35023bb5852f2be4fd9e06c4772e1cf",
+    "npm-clean-install.log": "5b54669a9d40ae69943f461554be1f7ee4f5d3d8a119db14d28e3bf867a38e57",
+    "autoscroll-diagnostic.log": "bb8a91dd40cda3ad35ec64448048bd48b9d5ff22c7e2912e553196c3717b6f12",
+    "renders-after/first.png": "dae4419a36f52942c88494eeb9bb22d3d921fe9ce8fce174a7cd4ef91ffdf8cb",
+    "renders-after/second.png": "81b479a09da72f88b1d3546fdede0ebc07576f6f0aaead09d745a1df969cae01"
+  },
+  "fix_commits": [
+    "1f778d99",
+    "1e21fce7"
+  ],
+  "committed_files_sha256": {
+    ".gitignore": "94832f7cc092efddf7b352ed011e69bc466a19398ee2fb11bb9b8938772a7a92",
+    "Packages/com.wevaui/CHANGELOG.md": "c7aaf87fe37183d251232c330502f6fc2ff26873b248240f600dd6d95f660123",
+    "Packages/com.wevaui/Runtime/Native/NativeBindings.cs": "f056850f637c7335fc415235c9539139df4d08b454e0c0ea0572ac10265a9dc0",
+    "Packages/com.wevaui/Runtime/Native/NativeDocument.cs": "7c5a25d6ddfc7354a34f4af89267e934096ffc014fed06db0bdc1b07db825e39",
+    "Packages/com.wevaui/Runtime/Native/NativeDocumentRenderer.cs": "715b2ccb95253651496a1107ee7ad84a77f5c3f4f8508e0d5699a55b7f3d52d6",
+    "Packages/com.wevaui/Tests/Editor/Native/NativeBindingTests.cs": "79146111ee52c3fc9b12d8424ad69afb575137f6c6f98bc2e9f715f542ecb75b",
+    "Packages/com.wevaui/Tests/Editor/Native/NativeDocumentRenderTests.cs": "84ccaeda076fec41b8066130ed9e12695679cde937d4d868cb132ffe4c8dcc9d",
+    "Packages/com.wevaui/Tests/Editor/Native/NativeDocumentRoundTripTests.cs": "a47b906501d6e78c9db1c52c5a7eccaff08e7ca35a6b95ecea6b0845f8d08642",
+    "Tools/oracle/README.md": "189e8d256476964d7c0dc1a5e043431eb52ac4ba5d60d7ef16cff6e7d6be6f34",
+    "Tools/oracle/check_text_autoscroll_chrome.cjs": "f670fe94fcd8df7140fdeefa7b5e1676b5b539fbb3a4149687d847a7b89d6625",
+    "Tools/oracle/harvest_corpus.py": "15aec93cb9bdede4c3a9cdb33a1249298d4197d9011d3b00735b5708913d4700",
+    "Tools/tests/test_harvest_corpus.py": "b0f5216cc6da760ede9f17356679f1cf23f305bc3a3e6184445584a4cd56a8d8",
+    "libweva/CMakeLists.txt": "9079e66d9b94f282a831ab66466ab1b44c4702d532dc73e7672b71cff5c39635",
+    "package-lock.json": "171513a373cbb6efd6b1c9e0f974104c0cf00fc8f785108ef18af1bc21da09e3",
+    "package.json": "db393983731c2576a5298d814a818c5e3d134652f8b9f60b3281e548d976891d"
+  }
+}

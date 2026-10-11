@@ -104,6 +104,13 @@ Unicode/reference failures; use the qualified configuration in the
 [review audit](docs/verification/review-three-days-20260915.md), which records
 coverage, exact runtime hashes and the passing full-gate evidence.
 
+The [October 11 technical audit](docs/verification/tech-audit-20261011.md)
+adds callback/renderer ownership regressions: Unity Native EditMode now passes
+242 tests with the same 2 environment-gated inconclusive; full EditMode passes
+243 with 2 inconclusive; PlayMode rendering remains 5/5. Release/oracle tooling
+now passes 55 tests on Linux (46 pass and 9 Linux-only skips on Windows).
+Use the audit receipt for the newer full-gate result and browser-driver version.
+
 ## 4. Workflow recipes
 
 ### A CSS feature or fix

@@ -1,6 +1,6 @@
 # Product readiness
 
-Updated September 16, 2026 · Verification through September 15.
+Updated October 11, 2026 · Verification through October 11.
 
 **Weva is a development preview** for building game UI with HTML/CSS in Unity
 and Godot. HUDs, menus, settings screens and data-bound lists are ready to try.
@@ -54,9 +54,10 @@ and browser-level visual/text fidelity remain incomplete.
 
 ## Evidence behind this status
 
-The September 15 full verification run passed with the specified patched Godot
-builds and Windows Chrome reference. Unity editor and render tests also passed,
-with two environment-dependent editor tests inconclusive. Exact configurations,
-counts and remaining exceptions are in the
-[verification report](verification/review-three-days-20260915.md).
+The October 11 technical audit fixed Unity callback ownership and renderer reuse,
+repaired browser tooling and passed the complete local release gate with the
+specified patched Godot builds and Windows Chrome reference. Unity full EditMode
+passes 243 tests with two environment-dependent tests inconclusive; five PlayMode
+rendering tests pass. Exact findings, coverage and remaining exceptions are in the
+[technical audit](verification/tech-audit-20261011.md).
 These are local checkout results, not certification of a published release.
