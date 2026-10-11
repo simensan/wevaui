@@ -9,7 +9,27 @@ This is an engineering reference. Start with [input parity](INPUT_PARITY.md),
 or the ABI section. The port-design sections retain the rationale for the
 shared engine; dated implementation receipts describe their own checkpoints.
 
-## Background blur execution
+## Background raster and blur execution
+
+Expensive background rasterization partitions prepared pixel rows between the
+caller and three temporary workers on machines reporting at least four hardware
+threads. Preparation, CSS parsing and host callbacks stay on the caller; the
+public core remains single-caller. Workers only read prepared tiles and write
+disjoint output rows, then join before the raster call returns. There is no
+persistent pool or retained document work.
+
+The parallel path requires at least 16 rows and an estimated 262,144
+pixel-sample-layer operations. Flat-axis and cross-row copy paths stay serial.
+A permit bounds concurrent raster worker groups to one per loaded core library.
+Set `WEVA_RASTER_SERIAL` before the first raster call to disable workers; its
+presence is cached, regardless of value. POSIX benchmark CPU sampling does this
+automatically because its attribution table is single-threaded. Ordinary timing
+runs use the default path. Parallel rasterization lowers wall latency by using
+more CPU cores; it does not promise lower aggregate CPU work.
+
+The raster regression compares 24 serial/production outputs byte for byte,
+including odd dimensions, repeated calls, masks, blending and tile boundaries.
+See the [cold raster measurements](verification/cold-raster-20261011.md).
 
 The four-channel SSE2 background blur interleaves two independent rows during
 its horizontal pass. Per-channel float differences, double running sums,

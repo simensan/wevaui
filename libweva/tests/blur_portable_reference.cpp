@@ -2,6 +2,7 @@
 // machines exercise it too. Rename external definitions, including the
 // kernel template, to avoid linking either implementation into the other.
 #define WEVA_BLUR_FORCE_PORTABLE
+#define WEVA_RASTER_FORCE_SERIAL
 #define parse_gradient portable_parse_gradient
 #define resolve_background_layers portable_resolve_background_layers
 #define background_texture_detail portable_background_texture_detail

@@ -48,8 +48,11 @@ and browser-level visual/text fidelity remain incomplete.
   gamepad, touch and IME composition. Physical gamepad, touchscreen and system
   IME acceptance, plus accessibility, remain incomplete.
 - **Performance:** measure screen opening as well as steady gameplay. Across the
-  latest runs, the slowest core-only cold-creation samples averaged 52–56 ms,
-  before host rendering or asset loading. Preparing and reusing screens may help.
+  earlier runs, the slowest core-only cold-creation samples averaged 52–56 ms.
+  [Parallel rasterization](verification/cold-raster-20261011.md) lowers paired
+  GCC cold HUD creation by 35.5% to 33.368 ms, using additional CPU cores. This
+  still exceeds a 60 Hz frame budget before host rendering or asset loading.
+  Preparing and reusing screens may help.
   The [two performance passes](verification/performance-20260915-pass2.md) cover
   standalone Godot fixtures on a Ryzen 7 9800X3D/RTX 5080; they do not establish
   Unity performance, full-game FPS or lower-end hardware suitability.

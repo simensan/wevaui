@@ -333,6 +333,14 @@ int main(int argc, char** argv) {
         std::fprintf(stderr, "weva_bench: --sample and --profile must run separately\n");
         return 2;
     }
+#ifndef _WIN32
+    // The SIGPROF site table is intentionally single-threaded. Attribution
+    // runs use the serial raster path; ordinary latency runs keep workers.
+    if (sample) {
+        setenv("WEVA_RASTER_SERIAL", "1", 1);
+        std::fprintf(stderr, "weva_bench: CPU sampling uses serial rasterization\n");
+    }
+#endif
 #ifdef _WIN32
     if (sample) {
         std::fprintf(stderr, "weva_bench: --sample requires POSIX SIGPROF; use --profile for Windows allocation stacks\n");

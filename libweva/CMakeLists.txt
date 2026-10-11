@@ -91,3 +91,6 @@ option(WEVA_PROFILE_FRAMES "Keep frame pointers so allocation profiling can walk
 if(WEVA_PROFILE_FRAMES)
     target_compile_options(weva PRIVATE -fno-omit-frame-pointer)
 endif()
+
+find_package(Threads REQUIRED)
+target_link_libraries(weva PUBLIC Threads::Threads)

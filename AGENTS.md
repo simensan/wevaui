@@ -120,6 +120,10 @@ It changes no engine behavior and makes no optimization claim.
 The [cold blur follow-up](docs/verification/cold-blur-20261011.md) interleaves
 independent SSE2 blur rows with exact-byte portable-kernel coverage; its paired
 HUD cold-core result is a modest 2.5% reduction, not a host frame-time claim.
+The [parallel raster follow-up](docs/verification/cold-raster-20261011.md)
+reduces paired GCC cold HUD creation by 35.5% using additional CPU cores.
+Its 24 raster equivalence checks supplement the 192 blur checks. Public engine
+calls remain single-caller; only prepared pixel rows execute on workers.
 
 ## 4. Workflow recipes
 

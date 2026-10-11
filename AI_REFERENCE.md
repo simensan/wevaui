@@ -20,6 +20,10 @@ records 27 passing native workload runs, selected cold-creation profiles and
 prioritized investigations. It does not establish Unity or whole-game timing.
 The subsequent [cold blur change](docs/verification/cold-blur-20261011.md)
 preserves exact blur pixels and records a modest paired core-only improvement.
+The [parallel raster follow-up](docs/verification/cold-raster-20261011.md)
+reduces paired GCC cold HUD creation by 35.5% with identical pixels. It adds 24
+serial/parallel raster comparisons to the 192 blur checks, uses additional CPU
+cores, and does not make the public core safe for concurrent callers.
 
 ---
 

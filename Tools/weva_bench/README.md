@@ -42,7 +42,9 @@ $css = 'Tools/oracle/corpus/samples/layout-stress.css'
 Allocation counts cover the final measured pass and report C++ `operator new`
 calls and requested bytes. They are not total process memory. Earlier passes
 warm reusable storage in default/full mode; every cold pass creates a new
-document. An idle full update can correctly report zero work.
+document. An idle full update can correctly report zero work. Raster worker
+control allocations are included; OS thread stacks are not C++ allocations and
+are excluded. Wall latency can decrease while aggregate CPU work increases.
 
 ## Allocation attribution
 
@@ -65,6 +67,10 @@ and resolves local symbols after measurement with DbgHelp. Without symbols,
 it prints instruction addresses. POSIX builds use `backtrace`.
 
 The optional `--sample` CPU-time profiler uses POSIX `SIGPROF`; Windows rejects
-that option explicitly. It cannot be combined with allocation profiling, and
+that option explicitly. It forces serial background rasterization because its
+attribution table is single-threaded. These instrumented timings do not measure
+normal parallel execution. For an uninstrumented serial comparison, set
+`WEVA_RASTER_SERIAL` before launching the process (any value disables workers).
+It cannot be combined with allocation profiling, and
 `--sample-depth` must be 1–6. Missing inputs and nonpositive pass counts also
 exit with an error instead of reporting a measurement.

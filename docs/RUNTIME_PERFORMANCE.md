@@ -9,6 +9,13 @@ The [subsequent blur optimization](verification/cold-blur-20261011.md) reduces
 the paired HUD cold-core median run mean from 51.952 to 50.653 ms with exact
 blur bytes. It does not eliminate the screen-opening hitch or qualify host FPS.
 
+The [parallel raster follow-up](verification/cold-raster-20261011.md) reduces
+paired GCC cold HUD creation from 51.755 to 33.368 ms (**35.5%**), with identical
+pixels. Glass improves 18.2% and menu 25.0% in the same experiment. The Windows
+core DLL HUD cross-check improves 31.3%, with 12.0% more process CPU time. This uses
+additional CPU cores for expensive backgrounds; it does not establish a 30%
+improvement for all UI, aggregate CPU cost or normal in-game frame time.
+
 The September 15 [performance baseline](verification/performance-20260915.md)
 measures the September 15 core and a freshly rebuilt Windows Godot extension. All
 47 core samples and 27 native workload runs complete. Median run CPU p95 is

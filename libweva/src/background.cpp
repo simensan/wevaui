@@ -5,6 +5,8 @@
 #include "weva/css_value.h"
 
 #include <algorithm>
+#include <atomic>
+#include <thread>
 #include <chrono>
 #include <cmath>
 #include <cstdio>
@@ -23,6 +25,35 @@
 namespace weva {
 
 namespace {
+
+// Only independent, expensive raster rows enter this helper. All workers join
+// before return: no document/font callbacks, retained jobs or background lifetime.
+// A process-local permit bounds worker use. This does not change the core's
+// single-caller contract: preparation/parsing still happens on the caller.
+// Small surfaces and competing raster jobs keep the serial path.
+template <typename F>
+void raster_rows(int rows, size_t work, bool independent, F&& run) {
+#if !defined(WEVA_RASTER_FORCE_SERIAL)
+    static std::atomic_flag busy = ATOMIC_FLAG_INIT;
+    static const unsigned cores = std::thread::hardware_concurrency();
+    static const bool serial = std::getenv("WEVA_RASTER_SERIAL") != nullptr;
+    if (!serial && independent && rows >= 16 && work >= 262144 && cores >= 4 &&
+        !busy.test_and_set(std::memory_order_acquire)) {
+        std::thread workers[3];
+        for (int i = 0; i < 3; ++i) {
+            workers[i] = std::thread([&, i] { run(rows * i / 4, rows * (i + 1) / 4); });
+        }
+        run(rows * 3 / 4, rows);
+        for (auto& worker : workers) worker.join();
+        busy.clear(std::memory_order_release);
+        return;
+    }
+#else
+    (void)work;
+    (void)independent;
+#endif
+    run(0, rows);
+}
 
 constexpr double kPi = 3.14159265358979323846;
 
@@ -1350,13 +1381,15 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
 
     // How much of the adaptive path actually pays off, which the sample count
     // alone does not say: `3^2 samples` is the ceiling, not the bill.
-    long supersampled = 0;
+    std::atomic<long> supersampled{0};
     if (gradient_log) {
         std::fprintf(stderr, "  [grad] %dx%d tex, %zu tiles, %d^2 samples, flat_x %d flat_y %d\n",
                      tex_w, tex_h, tiles.size(), samples, flat_x ? 1 : 0, flat_y ? 1 : 0);
     }
     const double sx = width / tex_w, sy = height / tex_h;
-    for (int py = 0; py < tex_h; ++py) {
+    raster_rows(tex_h, static_cast<size_t>(tex_w) * tex_h * samples * samples * tiles.size(),
+                !flat_y && period_y == 0 && !flat_x, [&](int first_row, int last_row) {
+    for (int py = first_row; py < last_row; ++py) {
         if (flat_y && py > 0) {
             // Every row is the row above it.
             std::memcpy(out_rgba->data() + static_cast<size_t>(py) * tex_w * 4, out_rgba->data(),
@@ -1401,7 +1434,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
                     }
                 }
             }
-            if (gradient_log && texel_samples > 1) ++supersampled;
+            if (gradient_log && texel_samples > 1) supersampled.fetch_add(1, std::memory_order_relaxed);
             const double tinv = 1.0 / texel_samples;
             for (int oy = 0; oy < texel_samples; ++oy) {
                 const double y = (py + (oy + 0.5) * tinv) * sy;
@@ -1481,6 +1514,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
             o[3] = byte(a);
         }
     }
+    });
     if (gradient_log && (period_x > 0 || period_y > 0)) {
         std::fprintf(stderr, "  [grad]   period %d x %d of %d x %d texels\n",
                      period_x ? period_x : tex_w, period_y ? period_y : tex_h, tex_w, tex_h);
@@ -1488,7 +1522,7 @@ void rasterize_background(const std::vector<BackgroundLayer>& layers, const Line
     if (gradient_log && samples > 1) {
         const long texels = static_cast<long>(tex_w) * tex_h;
         std::fprintf(stderr, "  [grad]   adaptive: %ld of %ld texels supersampled (%.1f%%)\n",
-                     supersampled, texels, texels ? 100.0 * supersampled / texels : 0.0);
+                     supersampled.load(std::memory_order_relaxed), texels, texels ? 100.0 * supersampled.load(std::memory_order_relaxed) / texels : 0.0);
     }
     if (gradient_log) {
         const double elapsed = std::chrono::duration<double, std::milli>(

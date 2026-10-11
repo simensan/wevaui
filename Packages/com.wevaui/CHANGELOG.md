@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Performance
+- Expensive background rasterization uses the caller and up to three temporary
+  workers on machines reporting at least four hardware threads. Pixel output is
+  unchanged. Paired GCC cold HUD creation is 35.5% faster; this uses additional
+  CPU cores and does not establish host frame-time or aggregate CPU savings.
 - The shared core interleaves independent rows in four-channel SSE2 background
   blur, preserving exact pixel output and allocation counts. Paired GCC core
   benchmarks show a modest reduction in blur-heavy HUD cold creation; host
