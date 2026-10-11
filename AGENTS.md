@@ -114,6 +114,9 @@ The [Unity player follow-up](docs/verification/unity-player-20261011.md) passes
 6/6 rendering/asset/binding checks in a Windows x64 Mono development player.
 Repeat it with `Tools/run_unity_player_tests.py`; IL2CPP/release stripping are
 outside that result.
+The [October performance audit](docs/verification/performance-audit-20261011.md)
+repeats 27 native workload runs and profiles selected cold-core creation.
+It changes no engine behavior and makes no optimization claim.
 
 ## 4. Workflow recipes
 

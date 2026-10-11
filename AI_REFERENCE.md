@@ -15,6 +15,10 @@ _Unity verified: 2026-10-11 (1.0.0 plus unreleased fixes); Native EditMode
 inconclusive. See the [technical audit](docs/verification/tech-audit-20261011.md)
 for verification scope and remaining adoption limits._
 
+The [October runtime performance audit](docs/verification/performance-audit-20261011.md)
+records 27 passing native workload runs, selected cold-creation profiles and
+prioritized investigations. It does not establish Unity or whole-game timing.
+
 ---
 
 ## 1. What it is

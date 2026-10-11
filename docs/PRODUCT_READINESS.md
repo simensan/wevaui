@@ -53,6 +53,9 @@ and browser-level visual/text fidelity remain incomplete.
   The [two performance passes](verification/performance-20260915-pass2.md) cover
   standalone Godot fixtures on a Ryzen 7 9800X3D/RTX 5080; they do not establish
   Unity performance, full-game FPS or lower-end hardware suitability.
+  The [October audit](verification/performance-audit-20261011.md) repeats the
+  runtime workloads and identifies cold paint preparation and scrolling as the
+  leading investigation targets; it adds no whole-game performance qualification.
 
 ## Evidence behind this status
 

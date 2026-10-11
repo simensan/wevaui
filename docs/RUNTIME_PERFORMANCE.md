@@ -1,5 +1,11 @@
 # In-game UI performance
 
+The [October 11 performance audit](verification/performance-audit-20261011.md)
+repeats all 27 native workload runs: active HUD CPU p95 is 0.627 ms, bound HUD
+0.670 ms and inventory scrolling 1.219 ms. Selected cold-core creation means
+remain 18.850–55.056 ms. It adds CPU/allocation profiles and ranks the next
+investigations; these are unchanged-binary measurements, not speedup claims.
+
 The September 15 [performance baseline](verification/performance-20260915.md)
 measures the September 15 core and a freshly rebuilt Windows Godot extension. All
 47 core samples and 27 native workload runs complete. Median run CPU p95 is
