@@ -1616,33 +1616,50 @@ void blur_planes(float* p, float* tmp, int width, int height, int r,
     // clamped its index, so the divisor stays 2r+1 everywhere.
     const auto pass_h = [&](const float* in, float* out) {
         if constexpr (CH == 4) {
-            for (int y = 0; y < height; ++y) {
-                const float* row = in + static_cast<size_t>(y) * width * CH;
-                float* orow = out + static_cast<size_t>(y) * width * CH;
 #if WEVA_BLUR_SSE2
-                // Preserve the scalar float differences and double running
-                // sums. SSE2 groups independent channels, without reassociating
-                // samples or using approximate reciprocals/conversions.
-                __m128d low = _mm_setzero_pd(), high = _mm_setzero_pd();
+            // Interleave independent rows to hide the sliding sum's latency.
+            // Each channel retains its original sample/rounding order.
+            const size_t stride = static_cast<size_t>(width) * CH;
+            const auto rows = [&](auto row_count, int y) {
+                constexpr int count = decltype(row_count)::value;
+                __m128d low[count], high[count];
+                for (int j = 0; j < count; ++j) {
+                    low[j] = _mm_setzero_pd();
+                    high[j] = _mm_setzero_pd();
+                }
                 const __m128d scale = _mm_set1_pd(inv_taps);
                 for (int k = -r; k <= r; ++k) {
                     const int xx = std::clamp(k, 0, width - 1);
-                    const __m128 sample = _mm_loadu_ps(row + xx * CH);
-                    low = _mm_add_pd(low, _mm_cvtps_pd(sample));
-                    high = _mm_add_pd(high, _mm_cvtps_pd(_mm_movehl_ps(sample, sample)));
+                    for (int j = 0; j < count; ++j) {
+                        const float* row = in + static_cast<size_t>(y + j) * stride;
+                        const __m128 sample = _mm_loadu_ps(row + xx * CH);
+                        low[j] = _mm_add_pd(low[j], _mm_cvtps_pd(sample));
+                        high[j] = _mm_add_pd(high[j], _mm_cvtps_pd(_mm_movehl_ps(sample, sample)));
+                    }
                 }
                 for (int x = 0; x < width; ++x) {
-                    const __m128 lo = _mm_cvtpd_ps(_mm_mul_pd(low, scale));
-                    const __m128 hi = _mm_cvtpd_ps(_mm_mul_pd(high, scale));
-                    _mm_storeu_ps(orow + x * CH, _mm_movelh_ps(lo, hi));
                     const int add = std::clamp(x + r + 1, 0, width - 1);
                     const int drop = std::clamp(x - r, 0, width - 1);
-                    const __m128 difference = _mm_sub_ps(_mm_loadu_ps(row + add * CH),
-                                                        _mm_loadu_ps(row + drop * CH));
-                    low = _mm_add_pd(low, _mm_cvtps_pd(difference));
-                    high = _mm_add_pd(high, _mm_cvtps_pd(_mm_movehl_ps(difference, difference)));
+                    for (int j = 0; j < count; ++j) {
+                        const float* row = in + static_cast<size_t>(y + j) * stride;
+                        float* orow = out + static_cast<size_t>(y + j) * stride;
+                        const __m128 lo = _mm_cvtpd_ps(_mm_mul_pd(low[j], scale));
+                        const __m128 hi = _mm_cvtpd_ps(_mm_mul_pd(high[j], scale));
+                        _mm_storeu_ps(orow + x * CH, _mm_movelh_ps(lo, hi));
+                        const __m128 difference = _mm_sub_ps(_mm_loadu_ps(row + add * CH),
+                                                            _mm_loadu_ps(row + drop * CH));
+                        low[j] = _mm_add_pd(low[j], _mm_cvtps_pd(difference));
+                        high[j] = _mm_add_pd(high[j], _mm_cvtps_pd(_mm_movehl_ps(difference, difference)));
+                    }
                 }
+            };
+            int y = 0;
+            for (; y + 2 <= height; y += 2) rows(std::integral_constant<int, 2>{}, y);
+            if (y < height) rows(std::integral_constant<int, 1>{}, y);
 #else
+            for (int y = 0; y < height; ++y) {
+                const float* row = in + static_cast<size_t>(y) * width * CH;
+                float* orow = out + static_cast<size_t>(y) * width * CH;
                 double acc[CH] = {};
                 for (int k = -r; k <= r; ++k) {
                     const int xx = std::clamp(k, 0, width - 1);
@@ -1654,8 +1671,8 @@ void blur_planes(float* p, float* tmp, int width, int height, int r,
                     const int drop = std::clamp(x - r, 0, width - 1);
                     for (int c = 0; c < CH; ++c) acc[c] += row[add * CH + c] - row[drop * CH + c];
                 }
-#endif
             }
+#endif
             return;
         }
         // Independent row sums hide the running sum's dependency latency and

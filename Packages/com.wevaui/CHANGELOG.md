@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Performance
+- The shared core interleaves independent rows in four-channel SSE2 background
+  blur, preserving exact pixel output and allocation counts. Paired GCC core
+  benchmarks show a modest reduction in blur-heavy HUD cold creation; host
+  frame-time improvements are not established.
+
 ### Fixed
 - Binding adapters detach from their previous document when moved or replaced.
   Disposing an old adapter cannot disconnect its replacement; document disposal

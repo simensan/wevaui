@@ -9,6 +9,15 @@ This is an engineering reference. Start with [input parity](INPUT_PARITY.md),
 or the ABI section. The port-design sections retain the rationale for the
 shared engine; dated implementation receipts describe their own checkpoints.
 
+## Background blur execution
+
+The four-channel SSE2 background blur interleaves two independent rows during
+its horizontal pass. Per-channel float differences, double running sums,
+rounding and edge clamping retain the portable kernel's order; odd heights
+finish with one row. This uses fixed stack storage and changes neither the
+blur radius nor sampling quality. `weva_blur_variants` checks exact output bytes
+against the portable implementation across 192 cases.
+
 ## Positioned content in collapsed tables
 
 The table paint pass retains ordinary content, cell backgrounds and shared borders

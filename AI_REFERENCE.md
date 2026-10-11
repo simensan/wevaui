@@ -18,6 +18,8 @@ for verification scope and remaining adoption limits._
 The [October runtime performance audit](docs/verification/performance-audit-20261011.md)
 records 27 passing native workload runs, selected cold-creation profiles and
 prioritized investigations. It does not establish Unity or whole-game timing.
+The subsequent [cold blur change](docs/verification/cold-blur-20261011.md)
+preserves exact blur pixels and records a modest paired core-only improvement.
 
 ---
 

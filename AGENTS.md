@@ -117,6 +117,9 @@ outside that result.
 The [October performance audit](docs/verification/performance-audit-20261011.md)
 repeats 27 native workload runs and profiles selected cold-core creation.
 It changes no engine behavior and makes no optimization claim.
+The [cold blur follow-up](docs/verification/cold-blur-20261011.md) interleaves
+independent SSE2 blur rows with exact-byte portable-kernel coverage; its paired
+HUD cold-core result is a modest 2.5% reduction, not a host frame-time claim.
 
 ## 4. Workflow recipes
 

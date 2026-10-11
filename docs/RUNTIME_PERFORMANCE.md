@@ -5,6 +5,9 @@ repeats all 27 native workload runs: active HUD CPU p95 is 0.627 ms, bound HUD
 0.670 ms and inventory scrolling 1.219 ms. Selected cold-core creation means
 remain 18.850–55.056 ms. It adds CPU/allocation profiles and ranks the next
 investigations; these are unchanged-binary measurements, not speedup claims.
+The [subsequent blur optimization](verification/cold-blur-20261011.md) reduces
+the paired HUD cold-core median run mean from 51.952 to 50.653 ms with exact
+blur bytes. It does not eliminate the screen-opening hitch or qualify host FPS.
 
 The September 15 [performance baseline](verification/performance-20260915.md)
 measures the September 15 core and a freshly rebuilt Windows Godot extension. All

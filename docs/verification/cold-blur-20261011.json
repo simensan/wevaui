@@ -1,0 +1,200 @@
+{
+  "date": "2026-10-11",
+  "baseline_revision": "e701cb07",
+  "abi": "0.44 unchanged",
+  "change": "Interleave two SSE2 horizontal RGBA blur rows; preserve per-channel arithmetic order",
+  "paired_core": {
+    "hud": {
+      "before": {
+        "runs": [
+          {
+            "best_ms": 48.452,
+            "mean_ms": 52.174,
+            "allocations": 20920,
+            "allocated_bytes": 46604942
+          },
+          {
+            "best_ms": 47.969,
+            "mean_ms": 51.952,
+            "allocations": 20920,
+            "allocated_bytes": 46604942
+          },
+          {
+            "best_ms": 48.497,
+            "mean_ms": 50.786,
+            "allocations": 20920,
+            "allocated_bytes": 46604942
+          }
+        ],
+        "median_mean_ms": 51.952,
+        "median_best_ms": 48.452
+      },
+      "after": {
+        "runs": [
+          {
+            "best_ms": 47.231,
+            "mean_ms": 50.653,
+            "allocations": 20920,
+            "allocated_bytes": 46604942
+          },
+          {
+            "best_ms": 46.678,
+            "mean_ms": 48.721,
+            "allocations": 20920,
+            "allocated_bytes": 46604942
+          },
+          {
+            "best_ms": 47.948,
+            "mean_ms": 51.059,
+            "allocations": 20920,
+            "allocated_bytes": 46604942
+          }
+        ],
+        "median_mean_ms": 50.653,
+        "median_best_ms": 47.231
+      }
+    },
+    "glass": {
+      "before": {
+        "runs": [
+          {
+            "best_ms": 48.989,
+            "mean_ms": 51.869,
+            "allocations": 26267,
+            "allocated_bytes": 61552080
+          },
+          {
+            "best_ms": 49.522,
+            "mean_ms": 51.612,
+            "allocations": 26267,
+            "allocated_bytes": 61552080
+          },
+          {
+            "best_ms": 50.056,
+            "mean_ms": 52.867,
+            "allocations": 26267,
+            "allocated_bytes": 61552080
+          }
+        ],
+        "median_mean_ms": 51.869,
+        "median_best_ms": 49.522
+      },
+      "after": {
+        "runs": [
+          {
+            "best_ms": 48.807,
+            "mean_ms": 50.541,
+            "allocations": 26267,
+            "allocated_bytes": 61552080
+          },
+          {
+            "best_ms": 49.717,
+            "mean_ms": 51.719,
+            "allocations": 26267,
+            "allocated_bytes": 61552080
+          },
+          {
+            "best_ms": 49.877,
+            "mean_ms": 51.906,
+            "allocations": 26267,
+            "allocated_bytes": 61552080
+          }
+        ],
+        "median_mean_ms": 51.719,
+        "median_best_ms": 49.717
+      }
+    },
+    "menu": {
+      "before": {
+        "runs": [
+          {
+            "best_ms": 16.463,
+            "mean_ms": 17.291,
+            "allocations": 23353,
+            "allocated_bytes": 17078465
+          },
+          {
+            "best_ms": 16.436,
+            "mean_ms": 17.502,
+            "allocations": 23353,
+            "allocated_bytes": 17078465
+          },
+          {
+            "best_ms": 16.729,
+            "mean_ms": 17.869,
+            "allocations": 23353,
+            "allocated_bytes": 17078465
+          }
+        ],
+        "median_mean_ms": 17.502,
+        "median_best_ms": 16.463
+      },
+      "after": {
+        "runs": [
+          {
+            "best_ms": 16.472,
+            "mean_ms": 17.047,
+            "allocations": 23353,
+            "allocated_bytes": 17078465
+          },
+          {
+            "best_ms": 16.571,
+            "mean_ms": 17.407,
+            "allocations": 23353,
+            "allocated_bytes": 17078465
+          },
+          {
+            "best_ms": 16.792,
+            "mean_ms": 17.532,
+            "allocations": 23353,
+            "allocated_bytes": 17078465
+          }
+        ],
+        "median_mean_ms": 17.407,
+        "median_best_ms": 16.571
+      }
+    }
+  },
+  "verification": {
+    "full_release_gate_exit": 0,
+    "gcc_suites": 14,
+    "clang_sanitizer_suites": 16,
+    "blur_exact_byte_cases": 192,
+    "chrome_layout_captures": 334,
+    "chrome_behavior": {
+      "total": 67,
+      "passed": 66,
+      "unexpected_failed": 0,
+      "known_failed": 1
+    },
+    "unity_native": {
+      "id": "2",
+      "testcasecount": "244",
+      "result": "Passed",
+      "total": "244",
+      "passed": "242",
+      "failed": "0",
+      "inconclusive": "2",
+      "skipped": "0",
+      "asserts": "0",
+      "engine-version": "3.5.0.0",
+      "clr-version": "4.0.30319.42000",
+      "start-time": "2026-10-11 13:47:33Z",
+      "end-time": "2026-10-11 13:48:06Z",
+      "duration": "33.4165302"
+    }
+  },
+  "sha256": {
+    ".utmp\\cold-opt-20261011\\bench-before": "f4c0c96e3366fc6ff1ed957e32f6b46126eac52a9fcdb6672ff9f72ff44b08a0",
+    ".utmp\\cold-opt-20261011\\full-gate.log": "29b809c7db16eeb22d484a23757781865b764ccd09f399b4118c287212d35435",
+    ".utmp\\cold-opt-20261011\\unity.xml": "6cac0f044cbd444dc72ae807d78a918f0dca287b6c99d679b2604c3bed1c065a",
+    ".utmp\\cold-opt-20261011\\unity-build.log": "3c9621ac8f398fe80a7f25d05d1c0e3d76f0852f7607f93dd376fdd3622b3318",
+    ".utmp\\cold-opt-20261011\\godot-build.log": "e945d492ec0cfd050f3cbb8fec93e73ddc34141c91520cc6b032c01fed5fc920",
+    ".utmp\\cold-opt-20261011\\hud.png": "2990fd3ee30439c19ce27393b94e0b0a0525f6ec6b78281e84f391860074d466",
+    ".utmp\\cold-opt-20261011\\weva-chrome-checks.log": "1bfaf13af66cbbb93bcf302fae379fff4c60d1270a1ccd40f96b84290e2659dc",
+    "libweva\\src\\background.cpp": "3ebe7017ccef80d360f3b074ae86582dc0a701f5c97a344ce27c223fac51adba",
+    "Packages\\com.wevaui\\Runtime\\Native\\Plugins\\x86_64\\weva_core.dll": "42523392510e8867811f48144f529d12478c6d955e01fed7ea9e2ad14de1ab97",
+    "hosts\\godot\\project\\addons\\weva\\bin\\weva_godot.dll": "9a59c135c1e47b3f10aa302d79df911a3cbb293d5658a4287e78e48e6f5d21fc"
+  },
+  "candidate_bench_sha256": "f9c311b1c7fddda5bade3b1e60b521b0ff876e92ff9f9cb604b024d78617b5e6"
+}
