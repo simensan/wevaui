@@ -189,8 +189,24 @@ survive. From code, `doc.Reload()` also refreshes images and `@font-face` URL da
 
 ## Player builds
 
-An actual Unity player build remains unverified. Check asset loading and UI
-behavior in your exported game before relying on editor results.
+A Windows x64 Mono development player has passed the six automated UI render
+checks, including packaged PNG bytes supplied through `AssetReader`, the default
+font with system fallback disabled, controller actions and binding updates.
+IL2CPP and release stripping still need verification in your exported game.
+
+From the repository, repeat the player smoke run with a licensed Unity editor
+and Windows build support (a graphics device is required):
+
+```powershell
+python Tools/run_unity_player_tests.py --unity "C:/Program Files/Unity/Hub/Editor/6000.4.1f1/Editor/Unity.exe" --out .utmp/player-smoke-new
+```
+
+Use a new output directory for each run. It contains the executable, XML results,
+screenshots, build log and pass/fail receipt. The runner builds only Unity's
+generated test scene and uses the project's configured scripting backend.
+For projects migrated from 0.1, remove missing legacy `UIRendererFeature`
+entries from URP renderer assets; retain `UIBatchedRendererFeature`. A missing
+feature can crash Unity's player shader build even when editor rendering works.
 
 Linked stylesheets and their nested imports are baked into scene documents
 and prefab assets automatically before a build. Imports from `<style>`,

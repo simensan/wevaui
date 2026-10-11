@@ -1,0 +1,56 @@
+{
+  "date": "2026-10-11",
+  "baseline_revision": "73bc6b64",
+  "unity": "6000.4.1f1",
+  "platform": "Windows x64",
+  "backend": "Mono",
+  "configuration": "Development test player",
+  "abi": "0.44",
+  "evidence_directory": ".utmp\\player-audit-20261011",
+  "tests": {
+    "player": {
+      "id": "2",
+      "testcasecount": "6",
+      "result": "Passed",
+      "total": "6",
+      "passed": "6",
+      "failed": "0",
+      "inconclusive": "0",
+      "skipped": "0",
+      "asserts": "0",
+      "engine-version": "3.5.0.0",
+      "clr-version": "4.0.30319.42000",
+      "start-time": "0001-01-01 00:00:00Z",
+      "end-time": "0001-01-01 00:00:00Z",
+      "duration": "1.2916868"
+    },
+    "editor": {
+      "id": "2",
+      "testcasecount": "245",
+      "result": "Passed",
+      "total": "245",
+      "passed": "243",
+      "failed": "0",
+      "inconclusive": "2",
+      "skipped": "0",
+      "asserts": "0",
+      "engine-version": "3.5.0.0",
+      "clr-version": "4.0.30319.42000",
+      "start-time": "2026-10-11 13:10:27Z",
+      "end-time": "2026-10-11 13:10:59Z",
+      "duration": "32.8063195"
+    }
+  },
+  "sha256": {
+    ".utmp\\player-audit-20261011\\build.log": "6931117c31282e658f0e857688f890fba65a00c1d5d82a8047c0f85121ff870b",
+    ".utmp\\player-audit-20261011\\retry\\results.xml": "794bb9903659afc907fdc4beb7b0c1b024d6f3b2c51fce114a5caeb6d918bd15",
+    ".utmp\\player-audit-20261011\\final\\results.xml": "dd55e7f721d5c8dbbc2dd15a62263a723b83235f2677d28e02d1ca871c92997b",
+    ".utmp\\player-audit-20261011\\final\\build.log": "432b8b12db976acb57f9318b4f73904f4fc0ff0a8b001bc8918cb12299233d9c",
+    ".utmp\\player-audit-20261011\\final\\receipt.json": "4d949006842dd61d6cf78be7222f81eb452559d0fbfaaa2f6fe1ef7b63c40596",
+    ".utmp\\player-audit-20261011\\editmode.xml": "ab8f91a0c37e0d128afd3eaa56d317aae95a666527d5fb52e6d0b5a498a4689c",
+    ".utmp\\player-audit-20261011\\editmode.log": "6effc7d940aa50335f9a74c19cee7d2256fccbfe99b3d65623078a1eeacd62c6",
+    ".utmp\\player-audit-20261011\\final\\renders\\Pass_LoadsPackagedImageAndFonts_AndUpdatesBindings-11.png": "ddf16ccc5bcf6aa8e4ff0df92dd9523a6cb7767a691fe89d98224846aac858e0",
+    "Packages\\com.wevaui\\Runtime\\Native\\Plugins\\x86_64\\weva_core.dll": "c2e9d530c0e74434df26f261d8f888b3de51a291ee13caa1eba715869bfa4325",
+    ".utmp\\player-audit-20261011\\final\\player\\PlayerWithTests\\PlayerWithTests_Data\\Plugins\\x86_64\\weva_core.dll": "c2e9d530c0e74434df26f261d8f888b3de51a291ee13caa1eba715869bfa4325"
+  }
+}

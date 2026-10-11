@@ -169,7 +169,10 @@ check.sh                          the gate
 - **`NativeRenderPassTests`** (PlayMode, automated) — renders documents
   through the real URP pass into a RenderTexture and asserts the pixels:
   drawn, stacked by `SortingOrder`, gone when disabled, repainted on a
-  change, text present. **`NativeGameViewCaptureTests`** (PlayMode,
+  change, text present, packaged image/font loading and binding updates.
+  `Tools/run_unity_player_tests.py` also runs all six checks in a Windows x64
+  standalone test player; see [player verification](docs/verification/unity-player-20261011.md).
+  **`NativeGameViewCaptureTests`** (PlayMode,
   `[Explicit]`) renders a page to `.utmp/native-gameview/*.png` for a person
   to look at.
 

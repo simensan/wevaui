@@ -110,6 +110,10 @@ adds callback/renderer ownership regressions: Unity Native EditMode now passes
 243 with 2 inconclusive; PlayMode rendering remains 5/5. Release/oracle tooling
 now passes 55 tests on Linux (46 pass and 9 Linux-only skips on Windows).
 Use the audit receipt for the newer full-gate result and browser-driver version.
+The [Unity player follow-up](docs/verification/unity-player-20261011.md) passes
+6/6 rendering/asset/binding checks in a Windows x64 Mono development player.
+Repeat it with `Tools/run_unity_player_tests.py`; IL2CPP/release stripping are
+outside that result.
 
 ## 4. Workflow recipes
 

@@ -10,6 +10,7 @@
 // RIGHT halves, never top and bottom.
 #if WEVA_URP
 using System.Collections;
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -227,6 +228,55 @@ namespace Weva.Tests.Rendering {
 
         static bool IsColour(Color got, float r, float g, float b) =>
             Mathf.Abs(got.r - r) < 0.12f && Mathf.Abs(got.g - g) < 0.12f && Mathf.Abs(got.b - b) < 0.12f;
+
+        [UnityTest]
+        public IEnumerator Pass_LoadsPackagedImageAndFonts_AndUpdatesBindings() {
+            // Resources returns bytes from the player data, never a checkout path.
+            var asset = Resources.Load<TextAsset>("WevaTests/player-image");
+            Assert.That(asset, Is.Not.Null, "the image fixture is included in the player");
+            Assert.That(Resources.Load<Font>("Fonts/Weva-Default"), Is.Not.Null, "the default font is packaged");
+            var go = new GameObject("doc-packaged");
+            go.SetActive(false);
+            try {
+                var doc = go.AddComponent<WevaDocument>();
+                doc.AutoInput = false;
+                doc.SystemFontFallback = false;
+                doc.AssetReader = path => path.EndsWith("player-image.png", System.StringComparison.Ordinal) ? asset.bytes : null;
+                doc.InlineHtml = "<body><img src='player-image.png'><p id=label>{{ Name }}</p><button id=go on-click=Go>Go</button></body>";
+                doc.InlineCss = "html,body{margin:0;background:transparent}img{position:absolute;left:0;top:0;width:150px;height:200px}p{position:absolute;left:170px;top:0;margin:0;color:white;font-size:32px}button{position:absolute;left:170px;top:100px;background:transparent;border:0;color:black}";
+                go.SetActive(true);
+                Assert.That(doc.Document, Is.Not.Null, doc.LastError);
+                var controller = new PlayerController();
+                var data = new Dictionary<string, object> { ["Name"] = "Camp" };
+                doc.Bind(data, controller);
+                doc.PrepareForRenderViewport(Width, Height);
+                for (int i = 0; i < SettleFrames; i++) yield return null;
+                Capture();
+                AssertColour(Band(20, 140), 0f, 1f, 0f, "packaged PNG is decoded and drawn");
+                Assert.That(Band(170, 300).r, Is.GreaterThan(0.01f), "packaged font draws text without system fallback");
+                Assert.That(doc.Query("#label").Text, Is.EqualTo("Camp"));
+                Assert.That(doc.Query("#go").Focus(), Is.True);
+                doc.Document.Key(Weva.Native.weva_key.WEVA_KEY_ENTER, true);
+                doc.Document.Key(Weva.Native.weva_key.WEVA_KEY_ENTER, false);
+                doc.PumpEvents();
+                Assert.That(controller.Clicks, Is.EqualTo(1), "player dispatches the controller handler");
+                data["Name"] = "Trail";
+                doc.RequestRefresh();
+                for (int i = 0; i < SettleFrames; i++) yield return null;
+                Assert.That(doc.Query("#label").Text, Is.EqualTo("Trail"));
+            } finally {
+                Object.Destroy(go);
+                Resources.UnloadAsset(asset);
+            }
+            yield return null;
+        }
+
+        [UnityEngine.Scripting.Preserve]
+        public sealed class PlayerController {
+            public int Clicks;
+            [UnityEngine.Scripting.Preserve]
+            public void Go() { Clicks++; }
+        }
 
         [UnityTest]
         public IEnumerator Pass_DrawsText() {

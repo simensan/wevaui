@@ -10,10 +10,12 @@ Production adoption still needs validation in your game, on your target devices.
 
 | Host | Requirements and tested scope | Start here |
 |---|---|---|
-| **Unity** — package 1.0.0 | Unity 6000.3+, URP 17 and Input System 1.7. Windows x64 editor and rendering tests pass. An actual player build, including image/font loading, remains unverified. | [Unity setup](../Packages/com.wevaui/Documentation~/getting-started.md) |
+| **Unity** — package 1.0.0 | Unity 6000.3+, URP 17 and Input System 1.7. Windows x64 editor tests and a Mono development player pass, including packaged PNG bytes, default fonts, bindings and URP rendering. | [Unity setup](../Packages/com.wevaui/Documentation~/getting-started.md) |
 | **Godot** | Godot 4.7, Windows/Linux x64. Sample projects, rendering and desktop exports have been tested with specific editor/template builds; see the text caveat below. Check the addon's `build.json` for included platforms. | [Godot setup and example](../hosts/godot/ADDON_README.md#install-and-run) |
 
 Other Unity platforms and Godot macOS, mobile and console builds are unverified.
+Unity IL2CPP, release stripping and consumer asset-bundle/Addressables loading
+remain unverified; see the [player smoke audit](verification/unity-player-20261011.md).
 Unity 0.1.x users should follow the [1.0 migration notes](../Packages/com.wevaui/CHANGELOG.md#migrating-from-01x):
 there are breaking API changes, and migration of an existing consumer project
 has not yet been verified.
@@ -60,4 +62,7 @@ specified patched Godot builds and Windows Chrome reference. Unity full EditMode
 passes 243 tests with two environment-dependent tests inconclusive; five PlayMode
 rendering tests pass. Exact findings, coverage and remaining exceptions are in the
 [technical audit](verification/tech-audit-20261011.md).
+The subsequent [Windows player audit](verification/unity-player-20261011.md)
+removed a stale legacy renderer reference that blocked builds and passed six
+rendering/asset/binding checks in an actual standalone player.
 These are local checkout results, not certification of a published release.
