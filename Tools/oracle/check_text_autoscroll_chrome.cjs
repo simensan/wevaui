@@ -6,6 +6,10 @@ const assert=require('node:assert/strict');
  let checks=0;
  const check=(got,want)=>{assert.deepEqual(got,want);++checks;};
  const wait=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+ // This checks eventual selection and event behavior, not scroll throughput.
+ // The mixed-script line can be nearly 4,000px wide with installed fallback
+ // fonts; native autoscroll still makes progress when a 5s deadline expires.
+ const selectionDeadline=15000;
  try{
   const page=await browser.newPage();await page.setViewport({width:640,height:480});
   async function setup(kind,readonly=false,wrap=false){
@@ -17,10 +21,10 @@ const assert=require('node:assert/strict');
   for(const kind of ['text','password','textarea']){
    await setup(kind);const area=kind==='textarea';
    await start(300,area?240:116);const initial=await state();check(initial.events,[]);
-   await page.waitForFunction(()=>f.selectionEnd===f.value.length,{timeout:5000});
+   await page.waitForFunction(()=>f.selectionEnd===f.value.length,{timeout:selectionDeadline});
    const end=await state();check(end.a,initial.a);check(end.x>0,true);check(end.events,[]);if(area)check(end.y>0,true);
    await page.mouse.move(60,area?60:116);
-   await page.waitForFunction(()=>f.selectionStart===0,{timeout:5000});
+   await page.waitForFunction(()=>f.selectionStart===0,{timeout:selectionDeadline});
    const back=await state();check(back.b,initial.a);check(back.d,'backward');check(back.events,[]);
    await page.mouse.up();const released=await state();await wait(200);check(await state(),released);
   }

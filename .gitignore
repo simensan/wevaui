@@ -44,14 +44,11 @@ Tools/*/obj/
 # Force-track .csproj inside Tools/ despite the global *.csproj rule above
 !Tools/**/*.csproj
 
-# Node tooling (puppeteer / chrome-coords scripts) — never ship.
-# IMPORTANT: scope the package.json ignore to the Node tool roots only. A bare
-# `package.json` also matches the Unity package manifests under Packages/
-# (com.wevaui/package.json, ...), which MUST be
-# tracked or the packages won't install for anyone who clones / adds by URL.
+# Browser tooling is reproducible from the root manifest and lockfile.
+# Installed dependencies and nested scratch manifests are local artifacts.
 node_modules/
 package-lock.json
-/package.json
+!/package-lock.json
 /Tools/Layout/package.json
 
 # Screenshot dumps — regenerated each session

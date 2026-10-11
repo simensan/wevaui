@@ -39,7 +39,6 @@ add_library(weva STATIC
     src/components.cpp
     src/component_scoping.cpp
     src/bidi.cpp
-    src/bidi.cpp
     src/variable_resolver.cpp
     src/media.cpp
     src/container_query.cpp

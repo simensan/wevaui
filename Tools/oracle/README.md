@@ -33,6 +33,15 @@ checks. The [verification report](../../docs/verification/review-three-days-2026
 records the counts;
 [ORACLE.md](../../docs/ORACLE.md) preserves the historical design and findings.
 
+## Browser tooling installation
+
+Use Node **22.12 or newer** and `npm ci` at the repository root. Puppeteer is a
+pinned development dependency; it is not part of either shipped UI runtime.
+`npm test` runs the live Chrome behavior suite through Python. Set `WEVA_CHROME`
+to the qualified Chrome 152 executable when reproducing the retained reference;
+upgrading Puppeteer does not qualify its default downloaded browser as a new
+reference. CI installs Chrome 152 explicitly.
+
 ## Live browser reference from WSL
 
 The retained numeric-editing fixture and CI use Windows Chrome 152. Linux

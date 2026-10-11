@@ -1,28 +1,12 @@
 #!/usr/bin/env python3
-"""Harvests HTML+CSS pairs from the C# test suite into oracle corpus cases.
+"""Harvest C# verbatim HTML/CSS fixtures into Chrome oracle corpus inputs.
 
-ORACLE.md names this as the first corpus source: "Harvest every inline HTML/CSS
-string from the C# test suite. 291 test files across Layout and Css contain
-them; extraction is a scripted pass, not manual work."
+Classify strings by content and pair each HTML fixture with the nearest
+preceding stylesheet. Reuse that stylesheet for subsequent HTML fixtures until
+another stylesheet appears. Output is UTF-8 with LF line endings.
 
-It is worth doing for a specific reason. The hand-built 47-case corpus now
-passes completely, and that is a weaker statement than it sounds: a green corpus
-means the cases do not distinguish the implementations, not that they agree
-everywhere. Multicol proved it — a wrong balancing algorithm passed the corpus
-because its one multicol case happened not to separate the two answers.
-
-The tests embed their fixtures as C# verbatim strings:
-
-    const string css = @"...";
-    const string html = @"...";
-
-Pairing is by position within a file: each `html` takes the nearest preceding
-`css` that no other `html` has already claimed, which is how the tests are
-written. A file's fixtures are emitted as `<file>-<n>.html` / `.css`.
-
-Cases are NOT filtered by whether the port supports them. A case exercising an
-unported feature fails loudly, which is correct — the harness reports it and the
-plan already lists what is unported.
+Capture these inputs with Chrome before using them as reference evidence;
+harvesting alone establishes no layout correctness.
 """
 
 import argparse
@@ -46,7 +30,7 @@ def unescape(text):
 # block's `syntax: "<length>"` has brackets and is a stylesheet, and matching
 # on brackets alone harvested it as markup (two bogus cases whose "elements"
 # were <length> tags).
-HTML_MARK = re.compile(r"</[a-zA-Z]|<(?:img|input|br|hr|meta|link|source|col|wbr)", re.I)
+HTML_MARK = re.compile(r"</[a-zA-Z]|<(?:img|input|br|hr|meta|link|source|col|wbr)\b", re.I)
 
 
 def looks_like_html(text):
@@ -110,12 +94,10 @@ def main():
                     if html.count("<") < args.min_elements:
                         continue
                     base = os.path.join(args.out, f"{stem}-{index:02d}")
-                    with open(base + ".html", 'w', newline='
-') as f:
+                    with open(base + ".html", 'w', encoding='utf-8', newline='\n') as f:
                         f.write(html)
                     if css:
-                        with open(base + ".css", 'w', newline='
-') as f:
+                        with open(base + ".css", 'w', encoding='utf-8', newline='\n') as f:
                             f.write(css)
                     written += 1
 

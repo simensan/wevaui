@@ -1,0 +1,27 @@
+{
+  "name": "unityui",
+  "version": "1.0.0",
+  "description": "Development tooling for the shared Weva HTML/CSS engine and Unity/Godot hosts.",
+  "scripts": {
+    "test": "python Tools/oracle/run_chrome_checks.py"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/simensan/unityui.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/simensan/unityui/issues"
+  },
+  "homepage": "https://github.com/simensan/unityui#readme",
+  "devDependencies": {
+    "puppeteer": "25.13.0"
+  },
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}
