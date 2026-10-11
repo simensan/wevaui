@@ -5,6 +5,16 @@ All notable changes to this package are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+- Binding adapters detach from their previous document when moved or replaced.
+  Disposing an old adapter cannot disconnect its replacement; document disposal
+  also releases its adapter's callback root.
+- Disposed documents reject asset-reader changes before retaining a callback.
+- Reusing a native renderer across documents refreshes geometry and textures,
+  even when the documents publish identical draw serials and texture IDs.
+
 ## [1.0.0] - 2026-09-13
 
 One engine. The C# HTML/CSS engine that 0.1.x shipped is deleted; the

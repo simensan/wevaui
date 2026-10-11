@@ -60,6 +60,52 @@ namespace Weva.Tests.EditorTests.Native
         private string Value(string selector) => _doc.ElementValue(_doc.Query(selector));
 
         [Test]
+        public void InstallingDisposedDocument_PreservesTheCurrentBinding()
+        {
+            using var disposed = new NativeDocument(100, 100);
+            disposed.Dispose();
+            Assert.Throws<System.ObjectDisposedException>(() => _bindings.Install(disposed));
+            ((Dictionary<string, object>)_model["Player"])["Name"] = "Still connected";
+            _bindings.Refresh();
+            Assert.That(Text("#title"), Is.EqualTo("Still connected"));
+        }
+
+        [Test]
+        public void ReplacedAdapter_DisposeDoesNotDisconnectItsReplacement()
+        {
+            using var replacement = new NativeBindings(Model());
+            replacement.Install(_doc);
+            _bindings.Dispose();
+            ((Dictionary<string, object>)replacement.Data["Player"])["Name"] = "Replacement";
+            replacement.Refresh();
+            Assert.That(Text("#title"), Is.EqualTo("Replacement"));
+        }
+
+        [Test]
+        public unsafe void MovingAdapter_DetachesThePreviousDocument()
+        {
+            using var other = new NativeDocument(400, 400);
+            other.LoadHtml(Html);
+            try
+            {
+                _bindings.Install(other);
+                ((Dictionary<string, object>)_model["Player"])["Name"] = "Moved";
+                WevaNative.weva_document_refresh_bindings(_doc.NativeHandle);
+                Assert.That(Text("#title"), Is.EqualTo("Morgan"));
+                _bindings.Refresh();
+                Assert.That(other.ElementText(other.Query("#title")), Is.EqualTo("Moved"));
+            }
+            finally { _bindings.Install(_doc); }
+        }
+
+        [Test]
+        public void DestroyingDocument_DetachesItsBindingAdapter()
+        {
+            _doc.Dispose();
+            Assert.That(_bindings.Refresh(), Is.Zero);
+        }
+
+        [Test]
         public void Text_Attributes_AndClasses_FillFromTheModel()
         {
             Assert.That(Text("#title"), Is.EqualTo("Morgan"));

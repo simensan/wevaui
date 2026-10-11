@@ -17,6 +17,17 @@ namespace Weva.Tests.EditorTests.Native
         private const string Css = "#box{width:120px;height:40px;background:#3a5f8a;margin:10px}button{margin:10px}";
 
         [Test]
+        public void DisposedDocument_RejectsAssetReaderBeforeChangingCallbackState()
+        {
+            using var doc = new NativeDocument(100, 100);
+            byte[] expected = { 1, 2, 3 };
+            doc.AssetReader = _ => expected;
+            doc.Dispose();
+            Assert.Throws<ObjectDisposedException>(() => doc.AssetReader = _ => new byte[] { 9 });
+            Assert.That(doc.AssetReader("probe"), Is.SameAs(expected));
+        }
+
+        [Test]
         public void Plugin_ReportsHeaderAbiVersion()
         {
             var (major, minor) = NativeDocument.AbiVersion();

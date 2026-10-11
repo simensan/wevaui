@@ -1,8 +1,8 @@
 // A document hosted by libweva (the shared C++ core) through the weva_core
 // plugin. This is the hand-written edge over the generated P/Invoke surface
 // in WevaNative.g.cs: UTF-8 marshalling, status checks and ownership. It
-// does not touch the C# engine; the two coexist while the Unity host over
-// the core is built up (fonts, rendering, input come in later steps).
+// delegates engine behavior to the shared core; Unity owns input, fonts,
+// assets and rendering.
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -118,6 +118,8 @@ namespace Weva.Native
         }
 
         public bool IsAlive => _handle != IntPtr.Zero;
+
+        internal NativeBindings BindingOwner { get; set; }
 
         public void LoadHtml(string html)
         {
@@ -431,11 +433,12 @@ namespace Weva.Native
             get => _trackedAssetReader ?? (_trackedAssetReader = TrackReader(_assetReader));
             set
             {
+                IntPtr handle = Handle; // Reject disposed documents before rooting callbacks.
                 _assetReader = value;
                 _trackedAssetReader = TrackReader(value);
                 if (!_self.IsAllocated) _self = GCHandle.Alloc(this);
                 var reader = (delegate* unmanaged[Cdecl]<void*, byte*, byte*, nuint, nuint>)Marshal.GetFunctionPointerForDelegate(s_readAsset);
-                Check(WevaNative.weva_document_set_asset_reader(Handle, reader, (void*)GCHandle.ToIntPtr(_self)), "weva_document_set_asset_reader");
+                Check(WevaNative.weva_document_set_asset_reader(handle, reader, (void*)GCHandle.ToIntPtr(_self)), "weva_document_set_asset_reader");
             }
         }
 
@@ -566,6 +569,7 @@ namespace Weva.Native
 
         public void Dispose()
         {
+            BindingOwner?.Dispose();
             if (_handle != IntPtr.Zero)
             {
                 WevaNative.weva_document_destroy(_handle);

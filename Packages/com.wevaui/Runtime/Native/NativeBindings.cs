@@ -6,7 +6,7 @@
 // The core asks for a path and is handed text (weva_binding_source); it
 // never sees the objects. Values resolve through nested
 // IDictionary<string, object> / IList segments, a bool reads "true"/"false"
-// (what the C# engine's bindings and data-class already understand),
+// (the core's binding and data-class representation),
 // numbers read invariant. Writing back keeps the type already at the path,
 // so a script that put an int in Settings.Volume gets an int back.
 using System;
@@ -58,7 +58,13 @@ namespace Weva.Native
         /// <summary>Installs this as the document's binding source and refreshes.</summary>
         public int Install(NativeDocument doc)
         {
-            _doc = doc ?? throw new ArgumentNullException(nameof(doc));
+            if (doc == null) throw new ArgumentNullException(nameof(doc));
+            // Validate before allocating a callback root or detaching a live source.
+            IntPtr handle = doc.NativeHandle;
+            if (_doc != doc) Dispose();
+            if (doc.BindingOwner != this) doc.BindingOwner?.Dispose();
+            _doc = doc;
+            doc.BindingOwner = this;
             if (!_self.IsAllocated) _self = GCHandle.Alloc(this);
             var source = new weva_binding_source
             {
@@ -66,7 +72,7 @@ namespace Weva.Native
                 value = (delegate* unmanaged[Cdecl]<void*, byte*, byte*, nuint, int*, nuint>)Marshal.GetFunctionPointerForDelegate(s_value),
                 count = (delegate* unmanaged[Cdecl]<void*, byte*, int>)Marshal.GetFunctionPointerForDelegate(s_count),
             };
-            WevaNative.weva_document_set_binding_source(doc.NativeHandle, &source);
+            WevaNative.weva_document_set_binding_source(handle, &source);
             return Refresh();
         }
 
@@ -338,7 +344,11 @@ namespace Weva.Native
 
         public void Dispose()
         {
-            if (_doc != null && _doc.IsAlive) WevaNative.weva_document_set_binding_source(_doc.NativeHandle, null);
+            if (_doc != null && _doc.BindingOwner == this)
+            {
+                _doc.BindingOwner = null;
+                if (_doc.IsAlive) WevaNative.weva_document_set_binding_source(_doc.NativeHandle, null);
+            }
             _doc = null;
             if (_self.IsAllocated) _self.Free();
         }

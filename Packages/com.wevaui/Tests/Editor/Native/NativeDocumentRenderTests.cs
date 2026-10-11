@@ -22,6 +22,39 @@ namespace Weva.Tests.EditorTests.Native
         }
 
         [Test]
+        public void ReusingRendererAcrossDocuments_RefreshesGeometryAndTextures()
+        {
+            Assume.That(HasGraphics, "a graphics device is required");
+            using var first = new NativeDocument(40, 40);
+            using var second = new NativeDocument(40, 40);
+            using var renderer = new NativeDocumentRenderer();
+            first.LoadHtml("<div></div>");
+            second.LoadHtml("<div></div>");
+            first.SetCss("body{margin:0}div{width:40px;height:40px;background:linear-gradient(red,red)}");
+            second.SetCss("body{margin:0}div{width:40px;height:40px;background:linear-gradient(blue,blue)}");
+            first.Update(0);
+            second.Update(0);
+            Assert.That(first.DrawSerial, Is.EqualTo(second.DrawSerial), "serials are document-local");
+            foreach (var doc in new[] { first, second, first })
+            {
+                Texture2D image = renderer.RenderToTexture(doc, 40, 40, Color.white);
+                try
+                {
+                    Color32 expected = doc == first ? new Color32(255, 0, 0, 255) : new Color32(0, 0, 255, 255);
+                    string directory = System.Environment.GetEnvironmentVariable("WEVA_AUDIT_RENDER_OUT");
+                    if (!string.IsNullOrEmpty(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                        File.WriteAllBytes(Path.Combine(directory, doc == first ? "first.png" : "second.png"), image.EncodeToPNG());
+                    }
+                    Assert.That(Near(PageTopDown(image, 20, 20), expected), "document switch must replace cached textures");
+                    Assert.That(renderer.Sync(doc), Is.False, "same-document idle reuse remains cached");
+                }
+                finally { Object.DestroyImmediate(image); }
+            }
+        }
+
+        [Test]
         public void Shader_IsAvailable()
         {
             using (var renderer = new NativeDocumentRenderer())

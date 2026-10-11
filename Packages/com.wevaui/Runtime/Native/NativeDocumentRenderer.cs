@@ -93,6 +93,7 @@ namespace Weva.Native
         private readonly List<Vector2> _uvs = new List<Vector2>(1024);
         private readonly List<int> _indices = new List<int>(2048);
         private ulong _serial;
+        private NativeDocument _document;
         private bool _synced;
 
         /// <summary>The draw serial the meshes were built from.</summary>
@@ -126,11 +127,16 @@ namespace Weva.Native
         {
             if (doc == null) throw new ArgumentNullException(nameof(doc));
             ulong serial = doc.DrawSerial;
-            if (_synced && serial == _serial) return false;
-            _serial = serial;
-            _synced = true;
+            if (_synced && _document == doc && serial == _serial) return false;
+            // Draw serials and texture IDs are scoped to their owning document.
+            // A different document may publish the same IDs with different pixels.
+            if (_document != null && _document != doc) Dispose();
+            _document = doc;
+            _synced = false;
             SyncTextures(doc);
             BuildBatches(doc);
+            _serial = serial;
+            _synced = true;
             return true;
         }
 
@@ -465,6 +471,7 @@ namespace Weva.Native
             if (_backdrop != null) Destroy(_backdrop);
             _backdrop = null;
             _synced = false;
+            _document = null;
         }
 
         private static void Destroy(UnityEngine.Object o)
