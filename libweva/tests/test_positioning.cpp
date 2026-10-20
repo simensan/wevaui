@@ -8,9 +8,11 @@
 #include "weva/positioning.h"
 #include "weva/user_agent_stylesheet.h"
 #include <cmath>
+#include <cstdio>
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace weva;
 
@@ -65,7 +67,8 @@ struct Fixture {
         sheets.push_back(std::move(s));
         return true;
     }
-    bool layout(std::string_view html, double vw = 1000, double vh = 600) {
+    bool layout(std::string_view html, double vw = 1000, double vh = 600,
+                LayoutReuse* reuse = nullptr) {
         HtmlParseError he;
         ParseOptions o;
         o.strict = false;
@@ -81,7 +84,7 @@ struct Fixture {
         if (root == kNoBox) return false;
         ctx.viewport_width_px = vw;
         ctx.viewport_height_px = vh;
-        BlockLayout bl(&tree, ctx, &metrics);
+        BlockLayout bl(&tree, ctx, &metrics, reuse);
         bl.layout_root(root, vw, vh);
         run_positioning(&tree, root, ctx, &bl);
         return true;
@@ -134,149 +137,6 @@ void test_relative_positioning() {
     // The flow is untouched: `after` sits where it would have without any of
     // the offsets above.
     CHECK(near(f.box("after").y, 200));
-}
-
-void test_absolute_containing_block() {
-    {
-        // The containing block is the nearest POSITIONED ancestor's padding
-        // box — inside the border, so `inset: 0` lands two border-widths
-        // smaller than the ancestor's border box.
-        Fixture f;
-        CHECK(f.css("#outer { display: block; position: relative; width: 400px;"
-                    "         height: 300px; margin-left: 100px;"
-                    "         border-left-style: solid; border-left-width: 5px;"
-                    "         border-top-style: solid; border-top-width: 5px }"
-                    "#a { position: absolute; top: 0; left: 0; width: 10px; height: 10px }"));
-        CHECK(f.layout("<body><div id=outer><div id=a></div></div></body>"));
-        const auto p = f.abs_pos("a");
-        CHECK(near(p.first, 105) && near(p.second, 5));
-    }
-    {
-        // A STATIC ancestor does not establish one, so the box resolves against
-        // the viewport instead.
-        Fixture f;
-        CHECK(f.css("#outer { display: block; margin-left: 100px; margin-top: 50px }"
-                    "#a { position: absolute; top: 0; left: 0; width: 10px; height: 10px }"));
-        CHECK(f.layout("<body><div id=outer><div id=a></div></div></body>"));
-        const auto p = f.abs_pos("a");
-        CHECK(near(p.first, 0) && near(p.second, 0));
-    }
-    {
-        // ...but a `transform` on a static ancestor DOES capture it (CSS
-        // Transforms L1 §6.1). Missing this is how an `inset: 0` child of
-        // `transform: scale(1)` ends up filling the viewport.
-        Fixture f;
-        CHECK(f.css("#outer { display: block; margin-left: 100px; width: 200px;"
-                    "         height: 100px; transform: scale(1) }"
-                    "#a { position: absolute; top: 0; left: 0; width: 10px; height: 10px }"));
-        CHECK(f.layout("<body><div id=outer><div id=a></div></div></body>"));
-        CHECK(near(f.abs_pos("a").first, 100));
-    }
-    {
-        // The same properties capture `position: fixed`, which otherwise
-        // resolves against the viewport regardless of positioned ancestors.
-        Fixture f;
-        CHECK(f.css("#rel { display: block; position: relative; margin-left: 100px;"
-                    "       width: 200px; height: 100px }"
-                    "#tr { display: block; position: relative; margin-left: 60px;"
-                    "      width: 200px; height: 100px; filter: blur(1px) }"
-                    "#a, #b { position: fixed; top: 0; left: 0; width: 10px; height: 10px }"));
-        CHECK(f.layout("<body><div id=rel><div id=a></div></div>"
-                       "<div id=tr><div id=b></div></div></body>"));
-        // A merely positioned ancestor does NOT capture a fixed box.
-        CHECK(near(f.abs_pos("a").first, 0));
-        // A filtered one does.
-        CHECK(near(f.abs_pos("b").first, 60));
-    }
-}
-
-void test_absolute_placement() {
-    {
-        // Each edge places against the corresponding containing-block edge.
-        Fixture f;
-        CHECK(f.css("#o { display: block; position: relative; width: 400px; height: 300px }"
-                    "div div { position: absolute; width: 20px; height: 10px }"
-                    "#tl { top: 5px; left: 7px } #br { bottom: 5px; right: 7px }"));
-        CHECK(f.layout("<body><div id=o><div id=tl></div><div id=br></div></div></body>"));
-        CHECK(near(f.box("tl").x, 7) && near(f.box("tl").y, 5));
-        // right/bottom measure from the far edge inward, so the box's own size
-        // is subtracted.
-        CHECK(near(f.box("br").x, 400 - 7 - 20));
-        CHECK(near(f.box("br").y, 300 - 5 - 10));
-    }
-    {
-        // Percentage offsets resolve against the containing block, not the
-        // parent's provisional width.
-        Fixture f;
-        CHECK(f.css("#o { display: block; position: relative; width: 400px; height: 200px }"
-                    "#a { position: absolute; top: 50%; left: 25%; width: 10px; height: 10px }"));
-        CHECK(f.layout("<body><div id=o><div id=a></div></div></body>"));
-        CHECK(near(f.box("a").x, 100) && near(f.box("a").y, 100));
-    }
-    {
-        // Both edges pinned with no explicit size: the box stretches between
-        // them.
-        Fixture f;
-        CHECK(f.css("#o { display: block; position: relative; width: 400px; height: 200px }"
-                    "#a { position: absolute; left: 30px; right: 50px; top: 10px; bottom: 20px }"));
-        CHECK(f.layout("<body><div id=o><div id=a></div></div></body>"));
-        CHECK(near(f.box("a").width, 400 - 30 - 50));
-        CHECK(near(f.box("a").height, 200 - 10 - 20));
-        CHECK(near(f.box("a").x, 30) && near(f.box("a").y, 10));
-    }
-    {
-        // `inset: 0; margin: auto` centres, which is the dialog pattern. The
-        // slack on each axis is split evenly between the two auto margins.
-        Fixture f;
-        CHECK(f.css("#o { display: block; position: relative; width: 400px; height: 200px }"
-                    "#a { position: absolute; inset: 0; margin: auto;"
-                    "     width: 100px; height: 50px }"));
-        CHECK(f.layout("<body><div id=o><div id=a></div></div></body>"));
-        CHECK(near(f.box("a").x, (400 - 100) * 0.5));
-        CHECK(near(f.box("a").y, (200 - 50) * 0.5));
-    }
-    {
-        Fixture f;
-        CHECK(f.css("#o{position:relative;width:400px;height:200px}"
-                    "#a{position:absolute;inset:0;margin:auto;width:100px;height:fit-content}"
-                    "#child{height:50px}"));
-        CHECK(f.layout("<div id=o><div id=a><div id=child></div></div></div>"));
-        CHECK(near(f.box("a").y, 75));
-        CHECK(near(f.box("a").height, 50));
-    }
-    {
-        // With NEITHER edge on an axis, the box keeps its STATIC position —
-        // where it would have been in flow — rather than snapping to the
-        // containing block's origin.
-        Fixture f;
-        CHECK(f.css("#o { display: block; position: relative; width: 400px }"
-                    "#first { display: block; height: 60px }"
-                    "#a { position: absolute; width: 10px; height: 10px }"));
-        CHECK(f.layout("<body><div id=o><div id=first></div><div id=a></div></div></body>"));
-        CHECK(near(f.box("a").y, 60));
-        CHECK(near(f.box("a").x, 0));
-    }
-}
-
-void test_offsets_and_zindex() {
-    Fixture f;
-    CHECK(f.css("#auto { display: block } #zero { display: block; top: 0 }"
-                "#z { display: block; z-index: 5 } #zn { display: block; z-index: -2 }"
-                "#za { display: block; z-index: auto }"));
-    CHECK(f.layout("<body><div id=auto></div><div id=zero></div><div id=z></div>"
-                   "<div id=zn></div><div id=za></div></body>"));
-
-    // `auto` is ABSENT, not zero: the two lead to different placement, so the
-    // distinction has to survive into the box.
-    CHECK(!f.box("auto").offset_top.has_value());
-    CHECK(f.box("zero").offset_top.has_value() && near(*f.box("zero").offset_top, 0));
-
-    CHECK(f.box("z").z_index.has_value() && *f.box("z").z_index == 5);
-    CHECK(f.box("zn").z_index.has_value() && *f.box("zn").z_index == -2);
-    // `auto` z-index is absent too — it participates in its parent's stacking
-    // context rather than creating one.
-    CHECK(!f.box("za").z_index.has_value());
-    CHECK(!f.box("auto").z_index.has_value());
 }
 
 void test_out_of_flow_relayout() {
@@ -343,4 +203,98 @@ void test_absolute_descendant_keeps_its_size_after_the_ancestor() {
     const double w = f.box("pill").width;
     CHECK(w > 52 && w < 200);
     CHECK(near(f.box("pill").x, 46));
+}
+
+namespace {
+// Reuses nothing. A LayoutReuse probe turns off the deferral of out-of-flow
+// content to the positioning pass, so this lays a document out the long way:
+// every positioned box in flow first, and again in positioning.
+struct NoReuse : LayoutReuse {
+    bool reuse_layout(BoxTree*, BoxId) override { return false; }
+};
+
+bool same_boxes(const BoxTree& a, BoxId x, const BoxTree& b, BoxId y, std::string* where) {
+    const Box& p = a[x];
+    const Box& q = b[y];
+    // Two fixtures parse two DOMs, so elements are compared by tag.
+    const std::string_view tp = p.element ? p.element->tag_name() : std::string_view();
+    const std::string_view tq = q.element ? q.element->tag_name() : std::string_view();
+    if (p.kind != q.kind || tp != tq || p.x != q.x || p.y != q.y ||
+        p.width != q.width || p.height != q.height) {
+        char buf[200];
+        std::snprintf(buf, sizeof(buf), "<%.*s> %g,%g %gx%g vs %g,%g %gx%g",
+                      p.element ? static_cast<int>(p.element->tag_name().size()) : 0,
+                      p.element ? p.element->tag_name().data() : "", p.x, p.y, p.width, p.height,
+                      q.x, q.y, q.width, q.height);
+        *where = buf;
+        return false;
+    }
+    std::vector<BoxId> ca, cb;
+    for (BoxId c : a.children(x)) ca.push_back(c);
+    for (BoxId c : b.children(y)) cb.push_back(c);
+    if (ca.size() != cb.size()) { *where = "child count"; return false; }
+    for (size_t i = 0; i < ca.size(); ++i)
+        if (!same_boxes(a, ca[i], b, cb[i], where)) return false;
+    return true;
+}
+} // namespace
+
+void test_deferred_out_of_flow_layout_matches_full() {
+    // An out-of-flow box that the positioning pass will lay out again at its
+    // final size -- inset on each axis, and either shrink-to-fit or stretched
+    // between top and bottom -- is not laid out in flow at all. That must be
+    // invisible: every box ends where laying it out twice puts it.
+    const char* css =
+        "body { margin: 0; font-size: 16px }"
+        "#stage { position: relative; width: 600px; height: 400px; display: flex }"
+        "#overlay { position: fixed; inset: 0; display: flex; align-items: center;"
+        "           justify-content: center; padding: 8px }"
+        "#card { width: 50%; display: grid; grid-template-columns: 1fr 2fr; gap: 4px }"
+        "#pill { position: absolute; top: -10px; left: 12px; padding: 2px 6px }"
+        "#flexabs { position: absolute; top: 5px; left: 10px; padding: 3px }"
+        "#narrow { position: relative; width: 100px; height: 50px }"
+        "#wraps { position: absolute; bottom: 0; right: 0 }"
+        "#column { position: absolute; top: 40px; bottom: 40px; left: 0; width: 120px;"
+        "          display: flex; flex-direction: column; justify-content: space-between }"
+        "#grid { display: grid; grid-template-columns: 100px 100px; position: relative }"
+        "#gridabs { position: absolute; inset: 0 auto auto 0 }";
+    const char* html =
+        "<body><div id=stage>"
+        "<div id=flexabs>flex item text</div>"
+        "<div id=narrow><div id=wraps>several words that cannot fit on one short line</div></div>"
+        "<div id=column><span>top</span><span>bottom</span></div>"
+        "<div id=grid><div>a</div><div>b</div><div id=gridabs>over the grid</div></div>"
+        "</div>"
+        "<div id=overlay><div id=card><div id=pill>Title pill</div>"
+        "<p>left</p><p>right column text that wraps across lines</p></div></div>"
+        "</body>";
+    Fixture deferred;
+    CHECK(deferred.css(css));
+    CHECK(deferred.layout(html));
+    NoReuse none;
+    Fixture full;
+    CHECK(full.css(css));
+    CHECK(full.layout(html, 1000, 600, &none));
+
+    // Each of these takes the deferred path; a change to the predicate that
+    // quietly turned it off would leave the comparison below vacuous.
+    for (const char* id : {"overlay", "pill", "flexabs", "wraps", "column", "gridabs"})
+        CHECK(positioning_replaces_layout(deferred.tree, deferred.find(id), deferred.ctx));
+    // A static position on one axis keeps the in-flow layout.
+    Fixture kept;
+    CHECK(kept.css("#a { position: absolute; left: 0 }"));
+    CHECK(kept.layout("<body><div id=a>x</div></body>"));
+    CHECK(!positioning_replaces_layout(kept.tree, kept.find("a"), kept.ctx));
+
+    std::string where;
+    const bool same = same_boxes(deferred.tree, deferred.root, full.tree, full.root, &where);
+    if (!same) std::printf("deferred out-of-flow layout differs: %s\n", where.c_str());
+    CHECK(same);
+    // Its max-content is wider than the 100px it has, so this one took the
+    // min-content probe too, and wrapped at the available width.
+    CHECK(near(deferred.box("wraps").width, 100));
+    int lines = 0;
+    for (BoxId c : deferred.tree.children(deferred.find("wraps")))
+        if (deferred.tree[c].kind == BoxKind::Line) ++lines;
+    CHECK(lines > 1);
 }

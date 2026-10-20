@@ -2,6 +2,7 @@
 #include "weva/html.h"
 
 #include <algorithm>
+#include <unordered_map>
 #include <unordered_set>
 
 // Ports Runtime/Parsing/HtmlParser.cs.
@@ -250,13 +251,43 @@ std::vector<HtmlToken> normalize_fragment(const std::vector<HtmlToken>& tokens,
 
 // ----------------------------------------------------------------- tree build
 
-using Stack = std::vector<Node*>;
+// The open elements, with a count of how often each is open so membership is
+// a lookup. Every push and pop in this file goes through here.
+struct Stack : std::vector<Node*> {
+    void push_back(Node* n) {
+        std::vector<Node*>::push_back(n);
+        ++open_[n];
+    }
+    void pop_back() {
+        const auto it = open_.find(back());
+        if (it != open_.end() && --it->second == 0) open_.erase(it);
+        std::vector<Node*>::pop_back();
+    }
+    bool contains(const Node* n) const { return open_.count(n) != 0; }
+
+private:
+    std::unordered_map<const Node*, int> open_;
+};
+
+// Chrome's kMaximumHTMLParserDOMTreeDepth. Past it an element is still OPEN
+// -- it is pushed, and its end tag still closes it -- but it is attached to
+// the current node's parent rather than to the current node, so markup
+// nested a million deep builds a tree 512 deep. Everything that walks the
+// DOM recursively (destruction, component expansion, the cascade, layout)
+// relies on that bound; `<div>` repeated 200,000 times overflowed the
+// stack in the document's destructor alone.
+constexpr std::size_t kMaxTreeDepth = 512;
+
+// Where the next node goes. stack[0] is the document, which Chrome's count of
+// open elements does not include.
+Node* insertion_parent(const Stack& stack) {
+    Node* parent = stack.back();
+    if (stack.size() - 1 > kMaxTreeDepth && parent->parent()) return parent->parent();
+    return parent;
+}
 
 bool is_on_stack(const Stack& stack, const Element* target) {
-    for (auto it = stack.rbegin(); it != stack.rend(); ++it) {
-        if (*it == target) return true;
-    }
-    return false;
+    return stack.contains(target);
 }
 
 bool is_on_stack_named(const Stack& stack, std::string_view tag) {
@@ -264,6 +295,41 @@ bool is_on_stack_named(const Stack& stack, std::string_view tag) {
         if ((*it)->is_element() && static_cast<Element*>(*it)->tag_name() == tag) return true;
     }
     return false;
+}
+
+// HTML §13.2.4.3's "Noah's Ark" clause, as Chrome applies it: before a
+// formatting element joins the list, if three entries already share its tag
+// name and attributes, the earliest of them leaves. Without it, text after
+// `<b><b><b><b>x</div>` reopened four <b>s where Chrome reopens three.
+void push_to_afl(std::vector<Element*>* afl, Element* element) {
+    const auto same = [element](const Element* other) {
+        if (other->tag_name() != element->tag_name()) return false;
+        const AttributeMap& a = other->attributes();
+        const AttributeMap& b = element->attributes();
+        if (a.size() != b.size()) return false;
+        for (size_t i = 0; i < a.size(); ++i) {
+            if (!b.contains(a.name_at(i)) || b.get(a.name_at(i)) != a.value_at(i)) return false;
+        }
+        return true;
+    };
+    int matches = 0;
+    size_t earliest = afl->size();
+    for (size_t i = afl->size(); i-- > 0;) {
+        if (!same((*afl)[i])) continue;
+        ++matches;
+        earliest = i;
+    }
+    if (matches >= 3) afl->erase(afl->begin() + static_cast<long>(earliest));
+    afl->push_back(element);
+}
+
+// The elements that bound "button scope" (§13.2.4.2), which is where a </p>
+// looks for its <p>. Phrasing and formatting elements in between do not stop
+// it: `<p>a<b>b</p>c` closes the paragraph and the <b> reopens around `c`.
+bool bounds_button_scope(std::string_view tag) {
+    return tag == "button" || tag == "applet" || tag == "caption" || tag == "html" ||
+           tag == "table" || tag == "td" || tag == "th" || tag == "marquee" ||
+           tag == "object" || tag == "template";
 }
 
 bool remove_from_afl(std::vector<Element*>* afl, std::string_view tag) {
@@ -280,6 +346,11 @@ bool remove_from_afl(std::vector<Element*>* afl, std::string_view tag) {
 // entry not currently on the stack, clone it (with attributes) into the
 // insertion point and replace the AFL entry with the clone, so a later end tag
 // matches the live element.
+//
+// Runs before every text token and formatting start tag, and asks, for every
+// AFL entry, whether it is open. That was a scan of the stack per entry, and
+// `<b>` repeated ten thousand times made the parse cubic; the stack now
+// answers it with a lookup.
 void reconstruct_afl(Stack* stack, std::vector<Element*>* afl) {
     for (std::size_t i = 0; i < afl->size(); ++i) {
         Element* fe = (*afl)[i];
@@ -288,7 +359,7 @@ void reconstruct_afl(Stack* stack, std::vector<Element*>* afl) {
         for (std::size_t a = 0; a < fe->attributes().size(); ++a) {
             clone->set_attribute(fe->attributes().name_at(a), fe->attributes().value_at(a));
         }
-        stack->back()->append_child(clone.get());
+        insertion_parent(*stack)->append_child(clone.get());
         stack->push_back(clone.get());
         (*afl)[i] = clone.get();
     }
@@ -371,7 +442,7 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                 if (t.text.empty()) break;
                 reconstruct_afl(&stack, &afl);
                 auto text = make_ref<TextNode>(t.text);
-                stack.back()->append_child(text.get());
+                insertion_parent(stack)->append_child(text.get());
                 break;
             }
 
@@ -398,11 +469,11 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                     const std::string_view attribute = symbols->text(a.name);
                     if (!elem->has_attribute(attribute)) elem->set_attribute(attribute, a.value);
                 }
-                stack.back()->append_child(elem.get());
+                insertion_parent(stack)->append_child(elem.get());
 
                 if (!html_elements::is_void(name) && !t.self_closing) {
                     stack.push_back(elem.get());
-                    if (is_formatting) afl.push_back(elem.get());
+                    if (is_formatting) push_to_afl(&afl, elem.get());
                 }
                 break;
             }
@@ -428,7 +499,7 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                     // empty <p>. Needed so the trailing </p> in
                     // `<p>...<div>...</p>` produces the sibling Chrome emits.
                     if (name == "p") {
-                        stack.back()->append_child(make_ref<Element>(name).get());
+                        insertion_parent(stack)->append_child(make_ref<Element>(name).get());
                         break;
                     }
                     if (options.strict && !html_elements::is_optional_close(name)) {
@@ -447,12 +518,17 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                 // `<li><ul><span></span></li></ul>` mis-attributes the </li> to
                 // the outer <li> and trips a fatal error in the pop loop below.
                 bool optional_target = html_elements::is_optional_close(name);
+                const bool paragraph = name == "p" && !options.strict;
                 int match_depth = -1;
                 int idx = 0;
                 for (auto it = stack.rbegin(); it != stack.rend(); ++it, ++idx) {
                     if (!(*it)->is_element()) continue;
                     auto* el = static_cast<Element*>(*it);
                     if (el->tag_name() == name) { match_depth = idx; break; }
+                    if (paragraph) {
+                        if (bounds_button_scope(el->tag_name())) break;
+                        continue;
+                    }
                     if (optional_target &&
                         !html_elements::is_optional_close(el->tag_name())) {
                         break;   // scope boundary: the end tag is stray
@@ -465,7 +541,7 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                     // mirrors Chrome's DOM after the AAA fixup on
                     // `<p>...<div>...</p>`, so LayoutDiff lines up exactly.
                     if (name == "p") {
-                        stack.back()->append_child(make_ref<Element>(name).get());
+                        insertion_parent(stack)->append_child(make_ref<Element>(name).get());
                         break;
                     }
                     if (options.strict && !optional_target) {

@@ -46,6 +46,7 @@
 #include <cctype>
 #include <memory>
 #include <unordered_map>
+#include <unordered_set>
 
 #include <cstring>
 #include <chrono>
@@ -372,7 +373,35 @@ public:
         textures[h.id] = {rgba, size};
         return h;
     }
-    void release_texture(TextureHandle t) override { textures.erase(t.id); }
+    // The host reads pixels only after the update returns, so an id can be
+    // issued before its pixels exist. See RenderInterface::reserve_texture.
+    TextureHandle reserve_texture(Vec2i size) override {
+        if (size.x <= 0 || size.y <= 0) return {};
+        const TextureHandle h{next_texture_++};
+        textures[h.id] = {std::vector<uint8_t>(), size};
+        return h;
+    }
+    void fill_texture(TextureHandle t, std::vector<uint8_t>&& rgba) override {
+        const auto it = textures.find(t.id);
+        if (it == textures.end()) return;
+        // The host reads width * height texels whatever the job produced.
+        const Vec2i size = it->second.second;
+        rgba.resize(static_cast<size_t>(size.x) * size.y * 4, 0);
+        it->second.first = std::move(rgba);
+    }
+    void release_texture(TextureHandle t) override {
+        if (defer_releases) {
+            // Published pixels stay readable until the next update. Held
+            // like the texture a backend swap retires, freed at begin_frame.
+            auto node = textures.extract(t.id);
+            if (!node.empty()) retired_textures_.insert(std::move(node));
+            return;
+        }
+        textures.erase(t.id);
+    }
+    // Set around releases made BETWEEN updates, by entry points the host
+    // may call while still reading the last frame's weva_texture views.
+    bool defer_releases = false;
     // C ABI pixel views remain valid until the next update, including across
     // repeated renderer registrations. Transfer nodes without copying pixels
     // before the old renderer releases its handles; begin_frame retires them.
@@ -460,7 +489,7 @@ std::string input_type_of(const Element& e) {
 // new text goes back WHERE THE OLD TEXT WAS, not at the end: for
 // `<div>label<span>*</span></div>` appending would put the label after the
 // icon and quietly reorder the row.
-bool replace_text(Element& e, std::string_view text) {
+bool replace_text(Element& e, std::string_view text, std::vector<Ref<Node>>* retired) {
     // Games often push a HUD model every frame, including unchanged labels.
     // Match the direct text this API replaces, not descendant text (icons and
     // other element children must stay intact). A binding source is different
@@ -487,7 +516,12 @@ bool replace_text(Element& e, std::string_view text) {
             anchor = c.get();
         }
     }
-    for (Node* n : stale) e.remove_child(n);
+    for (Node* n : stale) {
+        // Text boxes view these nodes' strings until the next update rebuilds
+        // them, and weva_document_boxes hands those views to the host.
+        if (retired) retired->push_back(Ref<Node>::retain(n));
+        e.remove_child(n);
+    }
     if (text.empty()) return true;
     Ref<TextNode> node = make_ref<TextNode>(text);
     if (anchor) e.insert_before(node.get(), anchor);
@@ -795,7 +829,13 @@ struct StyleMap : StyleProvider {
     Invalidation pending = Invalidation::Boxes;
     int visited = 0;
     std::vector<std::pair<const ComputedStyle*, Invalidation>> changes;
+    // Set while walk() merges an element under a `display: none` ancestor.
+    // That element has no box before the change and none after it, so its
+    // style diff cannot reach layout or paint. The ancestor's own display
+    // change is noted as usual when it happens, and rebuilds the subtree then.
+    bool inert_subtree = false;
     void note_change(const ComputedStyle* style, Invalidation kind) {
+        if (inert_subtree) return;
         pending = worst(pending, kind);
         for (auto& change : changes) {
             if (change.first == style) { change.second = worst(change.second, kind); return; }
@@ -1443,6 +1483,10 @@ struct StyleMap : StyleProvider {
             // Before the diff, not after: see unwind_animated.
             unwind_animated(e, raw);
             engine.compute(e, state, parent, &scratch);
+            // A binding that keeps a closed panel's contents current restyled
+            // the whole page: the demo's hidden `.rotate` leaf cost a full box
+            // rebuild, layout and repaint (8.4 ms) for no visible change.
+            inert_subtree = transition_ancestor_hidden(e);
             merge(raw, &scratch, &e);
         }
         if (raw->get("display") == "none" || transition_ancestor_hidden(e))
@@ -1506,6 +1550,7 @@ struct StyleMap : StyleProvider {
             }
             merge(pit->second, &scratch);
         }
+        inert_subtree = false;
         for (const Ref<Node>& c : e.children()) {
             if (c->node_type() == NodeType::Element) {
                 walk(static_cast<const Element&>(*c), raw);
@@ -1940,6 +1985,11 @@ struct weva_document {
     StyleMap styles;
     ContainerQueryState container_queries;
     BoxTree tree;
+    // Nodes removed from the document -- text set_text replaced, subtrees
+    // set_html or remove took out -- kept until the update that rebuilds the
+    // boxes viewing them: Box::text is a view into a text node, and the ABI
+    // promises weva_box.text until the next update.
+    std::vector<Ref<Node>> retired_nodes;
     IncrementalLayout incremental_layout;
     LayoutContext ctx;
     MonoFontMetrics metrics;
@@ -3534,28 +3584,57 @@ uint32_t weva_abi_version(void) {
     return (static_cast<uint32_t>(WEVA_ABI_VERSION_MAJOR) << 16) | WEVA_ABI_VERSION_MINOR;
 }
 
+// ---- Rasterized textures shared across documents (ABI minor 45) ------------
+
+void weva_set_raster_cache_limit(uint64_t bytes) {
+    set_shared_raster_limit(static_cast<size_t>(std::min<uint64_t>(bytes, SIZE_MAX)));
+}
+
+uint64_t weva_raster_cache_bytes(void) { return shared_raster_bytes(); }
+
 // ---- Unicode facts for a host's shaper (ABI minor 40) ----------------------
 //
 // The same ICU tables bidi.cpp resolves levels with, so a host that asks
 // here agrees with the core about what is right-to-left. The Godot host's
 // strong_direction() is this rule verbatim.
 
-int32_t weva_text_direction(const char* utf8, size_t length) {
-    if (!utf8) return 0;
-    const int32_t n = static_cast<int32_t>(length);
-    int32_t i = 0;
-    while (i < n) {
-        UChar32 c;
-        U8_NEXT(utf8, i, n, c);
-        if (c < 0) continue;   // malformed byte: no direction
-        switch (u_charDirection(c)) {
-            case U_LEFT_TO_RIGHT: return 0;
-            case U_RIGHT_TO_LEFT:
-            case U_RIGHT_TO_LEFT_ARABIC: return 1;
-            default: break;
+// ICU walks UTF-8 with int32_t offsets. Casting a longer length made it
+// negative (no scan at all) or wrapped it (a scan of the low bits' worth), so
+// the text goes through in chunks that end on a character boundary. Exposed
+// with the chunk size as a parameter for the test that covers the seams.
+extern "C++" int32_t weva_internal_text_direction(const char* utf8, size_t length,
+                                                   size_t chunk_limit) {
+    if (!utf8 || chunk_limit < 4) return 0;
+    size_t base = 0;
+    while (base < length) {
+        size_t chunk = std::min(length - base, chunk_limit);
+        if (base + chunk < length) {
+            // Back up to the lead byte of the character the cut would split.
+            size_t cut = chunk;
+            while (cut > chunk - 3 &&
+                   (static_cast<unsigned char>(utf8[base + cut]) & 0xC0) == 0x80) --cut;
+            if ((static_cast<unsigned char>(utf8[base + cut]) & 0xC0) != 0x80) chunk = cut;
         }
+        const int32_t n = static_cast<int32_t>(chunk);
+        int32_t i = 0;
+        while (i < n) {
+            UChar32 c;
+            U8_NEXT(utf8 + base, i, n, c);
+            if (c < 0) continue;   // malformed byte: no direction
+            switch (u_charDirection(c)) {
+                case U_LEFT_TO_RIGHT: return 0;
+                case U_RIGHT_TO_LEFT:
+                case U_RIGHT_TO_LEFT_ARABIC: return 1;
+                default: break;
+            }
+        }
+        base += chunk;
     }
     return 0;
+}
+
+int32_t weva_text_direction(const char* utf8, size_t length) {
+    return weva_internal_text_direction(utf8, length, static_cast<size_t>(INT32_MAX));
 }
 
 uint32_t weva_char_mirror(uint32_t codepoint) {
@@ -3814,8 +3893,23 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     opts.strict = false;
     doc->html_diagnostics.clear();
     opts.diagnostics = &doc->html_diagnostics;
-    doc->doc = parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
-    if (!doc->doc) return WEVA_ERR_PARSE;
+    // Parsed into a fresh tree first. Assigning straight to doc->doc freed the
+    // live document before the null check, so a rejected string returned with
+    // every handle, focus pointer and box still aimed at the freed tree.
+    Ref<Document> fresh = parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
+    if (!fresh) return WEVA_ERR_PARSE;
+    // The replaced tree is kept alive until everything below has let go of it.
+    const Ref<Document> replaced = std::move(doc->doc);
+    doc->doc = std::move(fresh);
+    // The box tree points at the replaced elements and at styles the clear
+    // below frees. Hit testing and tooling read it before the next update
+    // rebuilds it, so it goes now; the published draws do not depend on it.
+    doc->tree.reset();
+    doc->root = kNoBox;
+    doc->retired_nodes.clear();
+    doc->incremental_layout.index(doc->tree, kNoBox, doc->ctx, true);
+    doc->snap_settle = weva_document::SnapSettle{};
+    doc->snap_animation = weva_document::SnapAnimation{};
     doc->doc->set_popover_attribute_close_handler([doc](Element& element) {
         return doc->popover_request_events &&
             request_popover_hide(doc, doc->handle_of(&element), true, true) == WEVA_OK;
@@ -4146,7 +4240,9 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height) {
     // capture a viewport unit INSIDE a gradient -- a `50vw` stop on a
     // fixed-width box would survive a resize it should not. Dropping the cache
     // on a resize is exact and costs one pass.
+    doc->backend.defer_releases = true;
     doc->textures.release_all(doc->render_backend());
+    doc->backend.defer_releases = false;
     // Computed styles do not mention the viewport -- percentages and viewport
     // units are resolved at layout -- so the cascade would report no change at
     // all while every size on the page may be different.
@@ -4193,7 +4289,9 @@ void weva_document_set_color_scheme(weva_document_t doc, int dark) {
     // A scheme change is a restyle: light-dark() values move without any rule
     // changing, and a cached gradient texture keyed by style text would not
     // see a colour that changed underneath it.
+    doc->backend.defer_releases = true;
     doc->textures.release_all(doc->render_backend());
+    doc->backend.defer_releases = false;
     doc->pending = worst(doc->pending, Invalidation::Boxes);
 }
 
@@ -4269,14 +4367,18 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
                                    double input_seconds, bool publish_paint);
 
 weva_status weva_document_update_geometry(weva_document_t doc) {
-    return update_document(doc, 0, 0, false);
+    const weva_status status = update_document(doc, 0, 0, false);
+    if (doc && status == WEVA_OK) doc->retired_nodes.clear();
+    return status;
 }
 
 weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     return weva_document_update_with_input_time(doc,dt_seconds,dt_seconds);
 }
 weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_seconds, double input_seconds) {
-    return update_document(doc, dt_seconds, input_seconds, true);
+    const weva_status status = update_document(doc, dt_seconds, input_seconds, true);
+    if (doc && status == WEVA_OK) doc->retired_nodes.clear();
+    return status;
 }
 
 namespace {
@@ -7039,6 +7141,13 @@ private:
     const char* data_ = stack_;
 };
 
+// The largest value a binding callback may report. A bound value is text for
+// a label or a field; anything near this is a host bug, not content.
+constexpr size_t kMaxBindingValueBytes = size_t{64} << 20;
+// The largest asset the reader may report. The image decoder caps its output
+// at 64M pixels, and a stylesheet or image file is far smaller than that.
+constexpr size_t kMaxAssetBytes = size_t{512} << 20;
+
 // The host's callback, wearing the interface the substitution wants.
 class AbiBindingResolver : public BindingResolver {
 public:
@@ -7063,7 +7172,10 @@ public:
         for (;;) {
             // Include the terminator without allowing a callback's length to
             // wrap. Invalid lengths use the unavailable-value behavior.
-            if (required >= heap.max_size()) {
+            // Capped well below max_size(): with exceptions disabled, a
+            // resize the allocator cannot satisfy aborts the host process,
+            // and a callback reporting 2^62 bytes passed the old check.
+            if (required >= kMaxBindingValueBytes) {
                 std::fprintf(stderr, "weva: binding callback returned an unrepresentable value length.\n");
                 return false;
             }
@@ -7114,7 +7226,10 @@ int weva_document_select_word_at(weva_document_t doc, double x, double y) {
     if (!doc) return 0;
     const Element* hit = input_element_at(doc, x, y);
     if (!hit || !is_text_field(*hit)) return 0;
-    weva_document_set_focus(doc, doc->handle_of(hit));
+    // A disabled field refuses focus, and the selection written below would
+    // then land in whatever field kept it.
+    if (weva_document_set_focus(doc, doc->handle_of(hit)) != WEVA_OK ||
+        doc->styles.state.focused != hit) return 0;
     const std::string value = field_value(*hit);
     if (value.empty()) return 0;
     size_t from = 0, to = 0;
@@ -7204,6 +7319,8 @@ int weva_document_select_all(weva_document_t doc) {
 }
 
 size_t weva_document_selected_text(weva_document_t doc, char* buffer, size_t capacity) {
+    // Empty, not the caller's previous contents, on every early return.
+    if (buffer && capacity > 0) buffer[0] = '\0';
     if (!doc) return 0;
     const InteractionState& st = doc->styles.state;
     if (!st.focused || !is_text_field(*st.focused)) return 0;
@@ -7277,6 +7394,8 @@ weva_status weva_element_set_selection_without_focus(weva_document_t doc,
 
 size_t weva_element_value(weva_document_t doc, weva_element_t element, char* buffer,
                           size_t capacity) {
+    // Empty, not the caller's previous contents, on every early return.
+    if (buffer && capacity > 0) buffer[0] = '\0';
     if (!doc) return 0;
     const Element* e = doc->element_at(element);
     if (!e) return 0;
@@ -7696,6 +7815,8 @@ int weva_document_poll_event(weva_document_t doc, weva_event* out) {
 }
 
 size_t weva_document_event_text(weva_document_t doc, char* buffer, size_t capacity) {
+    // Empty, not the caller's previous contents, on every early return.
+    if (buffer && capacity > 0) buffer[0] = '\0';
     if (!doc) return 0;
     const auto& text = doc->polled_event_text;
     if (buffer && capacity > 0) {
@@ -7974,6 +8095,10 @@ static void forget_element(weva_document* doc, const Element* e) {
     doc->styles.forget(e);
     doc->scroll.erase(e);
     cancel_smooth_scroll(doc, e);
+    // A settling or animating snap names its container, and snap_advance
+    // raises a scroll event on it -- which walks a freed element's parents.
+    if (doc->snap_settle.element == e) doc->snap_settle = weva_document::SnapSettle{};
+    if (doc->snap_animation.element == e) doc->snap_animation = weva_document::SnapAnimation{};
     if (doc->press_target == e) doc->press_target = nullptr;
     if (doc->popover_press_target == e) { doc->popover_press_target = nullptr; doc->popover_press_active = false; }
     if (doc->space_press_target == e) doc->space_press_target = nullptr;
@@ -8025,13 +8150,41 @@ static void forget_element(weva_document* doc, const Element* e) {
     }
 }
 
-void weva_internal_forget_subtree(weva_document* doc, const Element& e) {
+static void forget_elements_below(weva_document* doc, const Element& e,
+                                  std::unordered_set<const Element*>* gone) {
     for (const Ref<Node>& c : e.children()) {
         if (c->node_type() == NodeType::Element) {
-            weva_internal_forget_subtree(doc, static_cast<const Element&>(*c));
+            forget_elements_below(doc, static_cast<const Element&>(*c), gone);
         }
     }
+    gone->insert(&e);
     forget_element(doc, &e);
+}
+
+// The boxes of a subtree about to be freed. The tree is rebuilt at the next
+// update (removal asks for Boxes), but hit testing, the pointer and tooling
+// read it before then: a click handler that removes its own row, followed by
+// the next mouse move, handed the freed element to hover and event dispatch.
+// Unlinked rather than rebuilt, so every other box keeps its geometry until
+// that update, as the ABI promises.
+static void detach_boxes(weva_document* doc, const std::unordered_set<const Element*>& gone) {
+    if (gone.empty() || !doc->tree.valid(doc->root)) return;
+    for (BoxId id = 0; id < doc->tree.size(); ++id) {
+        Box& b = doc->tree[id];
+        if (!b.element || !gone.count(b.element)) continue;
+        doc->tree.remove_child(id);
+        b.element = nullptr;
+        if (b.kind == BoxKind::Text) b.text = {};
+    }
+}
+
+void weva_internal_forget_subtree(weva_document* doc, const Element& e) {
+    // Every removal comes through here. The subtree outlives its removal
+    // until the next update, so text views taken from the box tree stay valid.
+    doc->retired_nodes.push_back(Ref<Node>::retain(const_cast<Element*>(&e)));
+    std::unordered_set<const Element*> gone;
+    forget_elements_below(doc, e, &gone);
+    detach_boxes(doc, gone);
 }
 
 // Parses a fragment and hands back the nodes to put in the document. The
@@ -8298,6 +8451,9 @@ weva_status weva_element_set_html(weva_document_t doc, weva_element_t element, c
     for (const Ref<Node>& c : old) {
         if (c->node_type() == NodeType::Element) {
             weva_internal_forget_subtree(doc, static_cast<const Element&>(*c));
+        } else {
+            // The element's own text boxes still view this until the update.
+            doc->retired_nodes.push_back(c);
         }
         e->remove_child(c.get());
     }
@@ -8392,7 +8548,7 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     Element* e = doc->element_at(element);
     if (!e) return WEVA_ERR_NOT_FOUND;
-    if (!replace_text(*e, text ? text : "")) {
+    if (!replace_text(*e, text ? text : "", &doc->retired_nodes)) {
         // Setting textarea default text replaces its selection even when the
         // text is equal. Keep ordinary HUD text no-ops allocation-free.
         if (e->tag_name() == "textarea") form_children_changed(*e);
@@ -8726,6 +8882,12 @@ weva_status weva_document_set_asset_reader(weva_document_t doc, weva_asset_reade
         // first returns 0 and the image is a miss, cached as one.
         const size_t size = reader(user_data, path.c_str(), nullptr, 0);
         if (size == 0) return false;
+        // An impossible size is a miss, not an allocation that aborts.
+        if (size > kMaxAssetBytes) {
+            std::fprintf(stderr, "weva: asset reader reported %zu bytes for %s; treated as missing.\n",
+                         size, path.c_str());
+            return false;
+        }
         out->resize(size);
         return reader(user_data, path.c_str(), out->data(), out->size()) == size;
     });
@@ -8763,6 +8925,35 @@ static std::vector<std::string> split_declarations(std::string_view style) {
     }
     out.emplace_back(style.substr(start));
     return out;
+}
+
+// Whether `value` is the value of exactly ONE declaration, with any trailing
+// semicolons and whitespace removed into `*clean`. The value is spliced into
+// the style attribute as text, so `red; display: none` wrote two
+// declarations, and an unclosed quote, parenthesis or a brace swallowed or
+// broke every declaration after it.
+static bool single_declaration_value(std::string_view value, std::string* clean) {
+    while (!value.empty() && (value.back() == ';' || value.back() == ' ' || value.back() == '\t' ||
+                              value.back() == '\n' || value.back() == '\r'))
+        value.remove_suffix(1);
+    int depth = 0;
+    char quote = 0;
+    for (size_t i = 0; i < value.size(); ++i) {
+        const char c = value[i];
+        if (quote) {
+            if (c == '\\' && i + 1 < value.size()) ++i;
+            else if (c == quote) quote = 0;
+            continue;
+        }
+        if (c == '"' || c == '\'') { quote = c; continue; }
+        if (c == '{' || c == '}') return false;
+        if (c == '(') ++depth;
+        else if (c == ')') { if (--depth < 0) return false; }
+        else if (c == ';' && depth == 0) return false;
+    }
+    if (quote || depth != 0) return false;
+    clean->assign(value);
+    return true;
 }
 }  // extern "C++"
 
@@ -8803,8 +8994,17 @@ weva_status weva_element_set_style(weva_document_t doc, weva_element_t element,
     std::string wanted(property);
     for (char& c : wanted) {
         if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
+        // A name is one identifier; these would start or end a declaration.
+        if (c == ':' || c == ';' || c == '{' || c == '}' || c == ' ' || c == '\t' ||
+            c == '\n' || c == '\r' || c == '"' || c == '\'') return WEVA_ERR_INVALID_ARGUMENT;
     }
-    const bool removing = !value || !*value;
+    bool removing = !value || !*value;
+    std::string single;
+    if (!removing) {
+        if (!single_declaration_value(value, &single)) return WEVA_ERR_INVALID_ARGUMENT;
+        removing = single.empty();
+        value = single.c_str();
+    }
 
     std::string rebuilt;
     bool replaced = false;
@@ -8859,10 +9059,12 @@ size_t weva_element_style(weva_document_t doc, weva_element_t element, const cha
     for (char& c : wanted) {
         if (c >= 'A' && c <= 'Z') c = static_cast<char>(c - 'A' + 'a');
     }
+    if (wanted.empty()) return 0;
     for (const std::string& decl : split_declarations(e->get_attribute("style"))) {
         const std::string_view trimmed = trim_decl(decl);
-        if (declaration_property(trimmed) != wanted) continue;
-        const std::string_view v = trim_decl(trimmed.substr(trimmed.find(':') + 1));
+        const size_t colon = trimmed.find(':');
+        if (colon == std::string_view::npos || declaration_property(trimmed) != wanted) continue;
+        const std::string_view v = trim_decl(trimmed.substr(colon + 1));
         if (buffer && capacity > 0) {
             const size_t n = v.size() < capacity - 1 ? v.size() : capacity - 1;
             if (n > 0) std::memcpy(buffer, v.data(), n);
@@ -8993,6 +9195,8 @@ size_t weva_element_tag_name(weva_document_t doc, weva_element_t element, char* 
 
 size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const char* name,
                               char* buffer, size_t capacity) {
+    // Empty, not the caller's previous contents, on every early return.
+    if (buffer && capacity > 0) buffer[0] = '\0';
     if (!doc || !name) return 0;
     const Element* e = doc->element_at(element);
     if (!e) return 0;
@@ -9009,6 +9213,8 @@ size_t weva_element_attribute(weva_document_t doc, weva_element_t element, const
 
 size_t weva_element_text(weva_document_t doc, weva_element_t element, char* buffer,
                          size_t capacity) {
+    // Empty, not the caller's previous contents, on every early return.
+    if (buffer && capacity > 0) buffer[0] = '\0';
     if (!doc) return 0;
     const Element* e = doc->element_at(element);
     if (!e) return 0;

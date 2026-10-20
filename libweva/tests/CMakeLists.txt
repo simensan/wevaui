@@ -60,6 +60,8 @@ add_executable(weva_tests
     test_c_abi_dom.cpp
     test_c_abi_binding.cpp
     test_c_abi_scroll.cpp
+    test_c_abi_lifetime.cpp
+    test_hostile_input.cpp
     test_c_abi_incremental.cpp
     test_c_abi_keyboard.cpp
     test_c_abi_input_repeat.cpp
@@ -74,6 +76,9 @@ add_executable(weva_tests
     test_backdrop_filter.cpp
 )
 target_link_libraries(weva_tests PRIVATE weva)
+# test_hostile_input runs one document on a thread with a small stack.
+find_package(Threads REQUIRED)
+target_link_libraries(weva_tests PRIVATE Threads::Threads)
 add_test(NAME weva_tests COMMAND weva_tests)
 
 add_executable(weva_style_lookup_allocations test_style_lookup_allocations.cpp)

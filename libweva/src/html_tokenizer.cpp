@@ -362,6 +362,10 @@ bool HtmlTokenizer::try_consume_entity(std::string* out) {
         }
         if (digits == 0 || at_end() || peek() != ';') { restore(); return false; }
         advance();
+        // HTML §13.2.5.80: a null reference is U+FFFD, as in Chrome. A real
+        // NUL in text or an attribute truncated it wherever the ABI handed
+        // the value out as a C string.
+        if (code == 0) code = 0xFFFD;
         if (!append_utf8(static_cast<uint32_t>(code), out)) { restore(); return false; }
         return true;
     }

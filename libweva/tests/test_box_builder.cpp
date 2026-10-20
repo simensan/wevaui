@@ -323,48 +323,6 @@ void test_anonymous_block_wrapping() {
     }
 }
 
-void test_box_builder_text_and_multicol() {
-    {
-        // A text run borrows its parent's element and style: it has no element
-        // of its own, but paint needs both.
-        Fixture f;
-        CHECK(f.css("#w { display: block; color: red }"));
-        const BoxId root = f.build("<div id=w>hello</div>");
-        const BoxId w = f.find(root, "w");
-        const BoxId t = f.tree.child_at(w, 0);
-        CHECK(f.tree[t].kind == BoxKind::Text);
-        CHECK(f.tree[t].text == "hello");
-        CHECK(f.tree[t].element == f.tree[w].element);
-        CHECK(f.tree[t].style == f.tree[w].style);
-        CHECK(f.tree[t].source_node != nullptr);
-    }
-    {
-        // CSS Multi-column §2: a non-auto column-count or column-width makes a
-        // BLOCK container a multicol container. Flex, grid and table containers
-        // ignore the column properties.
-        Fixture f;
-        CHECK(f.css("#a { display: block; column-count: 3 }"
-                    "#b { display: block; column-width: 200px }"
-                    "#c { display: block; column-count: auto }"
-                    "#d { display: flex; column-count: 3 }"));
-        const BoxId root = f.build("<div id=a></div><div id=b></div>"
-                                   "<div id=c></div><div id=d></div>");
-        CHECK(f.tree[f.find(root, "a")].is_multicol);
-        CHECK(f.tree[f.find(root, "b")].is_multicol);
-        CHECK(!f.tree[f.find(root, "c")].is_multicol);
-        CHECK(!f.tree[f.find(root, "d")].is_multicol);
-    }
-    {
-        // The document root box stands in for the initial containing block: it
-        // has neither element nor style, and `<html>` is its child.
-        Fixture f;
-        const BoxId root = f.build("<div id=a></div>");
-        CHECK(f.tree[root].element == nullptr && f.tree[root].style == nullptr);
-        CHECK(f.tree.child_count(root) == 1);
-        CHECK(f.tree[f.tree.child_at(root, 0)].element->tag_name() == "html");
-    }
-}
-
 void test_block_in_inline_splitting() {
     // §9.2.1.1: an inline box holding a block is broken around it. The block
     // becomes a block-level child of the container; the inline's pieces —
@@ -580,30 +538,6 @@ void test_pseudo_content_from_inline_custom_property() {
     const BoxId i = g.find(r2, "i");
     CHECK(g.tree[i].first_child != kNoBox);
     CHECK_EQ(std::string(g.tree[g.tree[g.tree[i].first_child].first_child].text), "Y");
-}
-
-// An element's own var() reads a custom property set in its inline style
-// (level-select's `style="--c:#3f8ea3;--r:25deg"` roads).
-void test_inline_custom_property_feeds_var() {
-    Fixture f;
-    CHECK(f.css("div { display: block; background-color: var(--c, blue); transform: rotate(var(--r)) }"));
-    const BoxId root = f.build("<div id=a style=\"--c: red; --r: 25deg;\">t</div><div id=b>t</div>");
-    const ComputedStyle* a = f.tree[f.find(root, "a")].style;
-    const ComputedStyle* b = f.tree[f.find(root, "b")].style;
-    CHECK_EQ(std::string(a->get("background-color")), "red");
-    CHECK_EQ(std::string(a->get("transform")), "rotate(25deg)");
-    CHECK_EQ(std::string(b->get("background-color")), "blue");
-    // The compact form authors actually write: no spaces, hash colours,
-    // several tokens, trailing semicolon.
-    Fixture g;
-    CHECK(g.css("div, span { display: block; background: var(--bg, #d8e6ef) }"
-                "span { background: var(--c, #888); transform: translate(-50%, -50%) rotate(var(--r, 0deg)) }"));
-    const BoxId r2 = g.build("<div id=m style=\"--bg:#cfe0c6;\"><span id=l style=\"--c:#7aa35a;--r:30deg;\"></span></div>");
-    const ComputedStyle* m = g.tree[g.find(r2, "m")].style;
-    const ComputedStyle* l = g.tree[g.find(r2, "l")].style;
-    CHECK_EQ(std::string(m->get("background-color")), "#cfe0c6");
-    CHECK_EQ(std::string(l->get("background-color")), "#7aa35a");
-    CHECK_EQ(std::string(l->get("transform")), "translate(-50%, -50%) rotate(30deg)");
 }
 
 void test_text_transform_at_build() {

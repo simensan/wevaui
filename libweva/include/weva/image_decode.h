@@ -34,10 +34,15 @@ struct DecodedImage {
 
 // RFC 1951 DEFLATE. Exposed on its own because it is the half worth testing
 // on its own -- a PNG that decodes wrongly is nearly always inflate.
-bool inflate_deflate(const uint8_t* data, size_t size, std::vector<uint8_t>* out);
+// `limit` bounds the inflated size: decoding stops, successfully, once the
+// output holds that many bytes -- as libpng ignores data past the last row --
+// so a few kilobytes of repeated matches cannot expand into gigabytes.
+bool inflate_deflate(const uint8_t* data, size_t size, std::vector<uint8_t>* out,
+                     size_t limit = SIZE_MAX);
 
 // RFC 1950 zlib wrapper (a two-byte header, then DEFLATE, then a checksum).
-bool inflate_zlib(const uint8_t* data, size_t size, std::vector<uint8_t>* out);
+bool inflate_zlib(const uint8_t* data, size_t size, std::vector<uint8_t>* out,
+                  size_t limit = SIZE_MAX);
 
 // A PNG's bytes to RGBA8. Returns an invalid image on anything unsupported.
 DecodedImage decode_png(const uint8_t* data, size_t size);

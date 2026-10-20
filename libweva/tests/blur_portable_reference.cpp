@@ -2,7 +2,16 @@
 // machines exercise it too. Rename external definitions, including the
 // kernel template, to avoid linking either implementation into the other.
 #define WEVA_BLUR_FORCE_PORTABLE
-#define WEVA_RASTER_FORCE_SERIAL
+// Include the shared scheduler before renaming calls in the reference TU.
+// This avoids giving inline scheduler definitions different bodies across TUs.
+#include "../src/parallel.h"
+namespace weva {
+template <typename Fn>
+void portable_parallel_ranges(int count, int, long long, long long, Fn&& fn) {
+    if (count > 0) fn(0, count);
+}
+}
+#define parallel_ranges portable_parallel_ranges
 #define parse_gradient portable_parse_gradient
 #define resolve_background_layers portable_resolve_background_layers
 #define background_texture_detail portable_background_texture_detail
@@ -10,8 +19,16 @@
 #define apply_background_attachment portable_apply_background_attachment
 #define rasterize_background portable_rasterize_background
 #define rasterize_background_padded portable_rasterize_background_padded
+#define prepare_background portable_prepare_background
+#define raster_cost portable_raster_cost
+#define prepare_background_padded portable_prepare_background_padded
+#define BackgroundPlan portable_BackgroundPlan
+#define PreparedBackground portable_PreparedBackground
 #define rounded_rect_coverage portable_rounded_rect_coverage
 #define blur_rgba portable_blur_rgba
+#define reduced_blur_grid portable_reduced_blur_grid
+#define upsample_blurred portable_upsample_blurred
+#define ReducedBlur portable_ReducedBlur
 #define blur_flat_rgba portable_blur_flat_rgba
 #define sample_gradient portable_sample_gradient
 #define sample_image portable_sample_image

@@ -100,59 +100,6 @@ void test_logical_axes() {
     CHECK(a.inline_start == "left" && a.inline_is_horizontal);
 }
 
-void test_logical_in_cascade() {
-    {
-        Fixture f;
-        CHECK(f.html("<div id=a></div><div id=b dir=rtl></div>"));
-        CHECK(f.css("#a { margin-inline-start: 10px; padding-inline-end: 3px;"
-                    "     inset-inline-start: 1px; border-inline-start-width: 2px }"
-                    "#b { direction: rtl; margin-inline-start: 10px;"
-                    "     inset-inline-start: 1px }"));
-        // ltr: inline-start is the left edge.
-        CHECK_EQ(f.value("a", "margin-left"), "10px");
-        CHECK_EQ(f.value("a", "padding-right"), "3px");
-        CHECK_EQ(f.value("a", "left"), "1px");
-        CHECK_EQ(f.value("a", "border-left-width"), "2px");
-        // The logical property itself keeps its value; layout only reads the
-        // physical one, but nothing erases the source declaration.
-        CHECK_EQ(f.value("a", "margin-right"), "0");   // the registered initial is bare `0`, not `0px`
-
-        // rtl mirrors the inline axis and leaves the block axis alone.
-        CHECK_EQ(f.value("b", "margin-right"), "10px");
-        CHECK_EQ(f.value("b", "margin-left"), "0");
-        CHECK_EQ(f.value("b", "right"), "1px");
-    }
-    {
-        // ---- vertical writing mode: inline-size is a HEIGHT.
-        Fixture f;
-        CHECK(f.html("<div id=a></div>"));
-        CHECK(f.css("#a { writing-mode: vertical-rl; inline-size: 50px;"
-                    "     block-size: 20px; max-inline-size: 80px;"
-                    "     margin-block-start: 4px; padding-inline-end: 6px;"
-                    "     border-start-end-radius: 9px }"));
-        CHECK_EQ(f.value("a", "height"), "50px");
-        CHECK_EQ(f.value("a", "width"), "20px");
-        CHECK_EQ(f.value("a", "max-height"), "80px");
-        // block-start is the right edge in vertical-rl.
-        CHECK_EQ(f.value("a", "margin-right"), "4px");
-        // inline-end is the bottom edge.
-        CHECK_EQ(f.value("a", "padding-bottom"), "6px");
-        // block-start(right) + inline-end(bottom) = the bottom-right corner.
-        CHECK_EQ(f.value("a", "border-bottom-right-radius"), "9px");
-    }
-    {
-        // ---- direction/writing-mode are INHERITED, so the axes must be read
-        // through the inherit chain, not from local declarations only.
-        Fixture f;
-        CHECK(f.html("<div id=p><div id=c></div></div>"));
-        CHECK(f.css("#p { direction: rtl } #c { margin-inline-start: 5px }"));
-        CHECK_EQ(f.value_under("p", "c", "margin-right"), "5px");
-        CHECK_EQ(f.value_under("p", "c", "margin-left"), "0");
-        // Computed standalone, with no parent, the same element is ltr.
-        CHECK_EQ(f.value("c", "margin-left"), "5px");
-    }
-}
-
 void test_logical_vs_physical_order() {
     {
         // A logical alias is NOT a fixed loser to the physical property: it

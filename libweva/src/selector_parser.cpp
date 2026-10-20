@@ -258,13 +258,29 @@ private:
     bool parse_compound(CompoundSelector* compound);
     bool parse_attribute(CompoundSelector* compound);
     bool parse_pseudo_class(CompoundSelector* compound);
+    bool parse_pseudo_class_body(CompoundSelector* compound);
     bool parse_nth(NthExpression* out, std::vector<std::unique_ptr<CompoundSequence>>* of_filter);
 
     std::string_view src_;
     SelectorParseError* err_;
     std::size_t pos_ = 0;
     bool failed_ = false;
+    int nesting_ = 0;
 };
+
+// :is(), :not(), :where(), :has() and `of S` take selector lists, which parse
+// back through here. Unbounded, `:is(` a hundred thousand deep overflowed the
+// stack in the parser, and in the recursive destruction, specificity and
+// matching of whatever it built. Real selectors nest a handful deep.
+constexpr int kMaxSelectorNesting = 64;
+
+bool Parser::parse_pseudo_class(CompoundSelector* compound) {
+    if (nesting_ >= kMaxSelectorNesting) return fail("Selector nesting too deep");
+    ++nesting_;
+    const bool ok = parse_pseudo_class_body(compound);
+    --nesting_;
+    return ok;
+}
 
 bool Parser::parse_compound(CompoundSelector* compound) {
     bool any = false;
@@ -451,6 +467,19 @@ bool Parser::parse_attribute(CompoundSelector* compound) {
     return true;
 }
 
+// An nth coefficient, saturated to int as Chrome clamps it. std::atoi on a
+// digit run past INT_MAX is undefined, and so is negating the result.
+int nth_integer(const std::string& digits, int sign) {
+    long long v = 0;
+    for (char c : digits) {
+        v = v * 10 + (c - '0');
+        if (v > 2147483648LL) { v = 2147483648LL; break; }
+    }
+    v *= sign;
+    if (v > 2147483647LL) v = 2147483647LL;
+    return static_cast<int>(v);
+}
+
 bool Parser::parse_nth(NthExpression* out, std::vector<std::unique_ptr<CompoundSequence>>* of_filter) {
     skip_ws();
     // odd / even
@@ -475,7 +504,7 @@ numeric: {
         if (peek() == 'n' || peek() == 'N') {
             advance();
             has_n = true;
-            a = digits.empty() ? sign : sign * std::atoi(digits.c_str());
+            a = digits.empty() ? sign : nth_integer(digits, sign);
             skip_ws();
             int bsign = 0;
             if (peek() == '+') { bsign = 1; advance(); }
@@ -485,11 +514,11 @@ numeric: {
                 std::string bd;
                 while (is_digit(peek())) { bd.push_back(peek()); advance(); }
                 if (bd.empty()) return fail("Expected number after sign in nth expression");
-                b = bsign * std::atoi(bd.c_str());
+                b = nth_integer(bd, bsign);
             }
         } else {
             if (digits.empty()) return fail("Expected nth expression");
-            b = sign * std::atoi(digits.c_str());
+            b = nth_integer(digits, sign);
         }
         (void)has_n;
         *out = NthExpression{a, b};
@@ -508,7 +537,7 @@ of_clause:
     return true;
 }
 
-bool Parser::parse_pseudo_class(CompoundSelector* compound) {
+bool Parser::parse_pseudo_class_body(CompoundSelector* compound) {
     advance();   // ':'
     std::string name = read_ident();
     if (name.empty()) return fail("Expected pseudo-class name");

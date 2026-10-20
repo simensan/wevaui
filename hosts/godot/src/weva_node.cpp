@@ -791,7 +791,7 @@ WevaDocument::~WevaDocument() {
     if (rounded_shader_.is_valid()) rs_->free_rid(rounded_shader_);
 }
 
-RID WevaDocument::blend_item(int32_t blend_mode) {
+RID WevaDocument::blend_material(int32_t blend_mode) {
     CanvasItemMaterial::BlendMode godot_mode = CanvasItemMaterial::BLEND_MODE_MIX;
     switch (blend_mode) {
         case WEVA_BLEND_MULTIPLY: godot_mode = CanvasItemMaterial::BLEND_MODE_MUL; break;
@@ -804,25 +804,50 @@ RID WevaDocument::blend_item(int32_t blend_mode) {
         material.instantiate();
         material->set_blend_mode(godot_mode);
     }
+    return material->get_rid();
+}
+
+RID WevaDocument::acquire_item(const RID& parent) {
     RenderingServer* rs = RenderingServer::get_singleton();
-    const RID item = rs->canvas_item_create();
-    rs->canvas_item_set_parent(item, get_canvas_item());
-    rs->canvas_item_set_material(item, material->get_rid());
-    rs->canvas_item_set_draw_index(item, static_cast<int32_t>(layer_items_.size()));
-    layer_items_.push_back(item);
+    RID item;
+    if (items_used_ < layer_items_.size()) {
+        // Back to a blank item: no commands, material, back-buffer copy or
+        // ordering left from the frame that used it before.
+        item = layer_items_[items_used_];
+        rs->canvas_item_clear(item);
+        rs->canvas_item_set_material(item, RID());
+        rs->canvas_item_set_copy_to_backbuffer(item, false, Rect2());
+        rs->canvas_item_set_z_index(item, 0);
+    } else {
+        item = rs->canvas_item_create();
+        layer_items_.push_back(item);
+    }
+    rs->canvas_item_set_parent(item, parent);
+    rs->canvas_item_set_draw_index(item, static_cast<int32_t>(items_used_));
+    ++items_used_;
     return item;
 }
 
-void WevaDocument::release_layers() {
+void WevaDocument::begin_items() {
+    items_used_ = 0;
+    backdrops_used_ = 0;
+}
+
+void WevaDocument::end_items() {
     RenderingServer* rs = RenderingServer::get_singleton();
-    for (const RID& r : layer_items_) {
-        if (r.is_valid()) rs->free_rid(r);
+    for (size_t i = items_used_; i < layer_items_.size(); ++i) {
+        if (layer_items_[i].is_valid()) rs->free_rid(layer_items_[i]);
     }
-    layer_items_.clear();
-    for (const RID& r : layer_materials_) {
-        if (r.is_valid()) rs->free_rid(r);
+    layer_items_.resize(items_used_);
+    for (size_t i = backdrops_used_; i < layer_materials_.size(); ++i) {
+        if (layer_materials_[i].is_valid()) rs->free_rid(layer_materials_[i]);
     }
-    layer_materials_.clear();
+    layer_materials_.resize(backdrops_used_);
+}
+
+void WevaDocument::release_layers() {
+    begin_items();
+    end_items();
 }
 
 void WevaDocument::_bind_methods() {
@@ -1111,6 +1136,7 @@ void WevaDocument::set_html(const String& html) {
     html_ = html;
     if (!doc_) return;
     const CharString utf8 = html.utf8();
+    ++document_generation_;
     weva_document_load_html(doc_, utf8.get_data(), static_cast<size_t>(utf8.length()));
     // Reload creates new controls and repeat rows. Existing data must fill
     // their models just as it does when data is assigned after the markup.
@@ -2888,6 +2914,14 @@ void WevaDocument::pump_events() {
     pumping_events_ = true;
     weva_event e{};
     while (weva_document_poll_event(doc_, &e)) {
+        // True once a handler has replaced the document while this event is
+        // being delivered: its target names an element of the tree that is
+        // gone, and the handle now indexes some unrelated element of the new
+        // one. Signals still fire (they carry values copied out already);
+        // nothing reads through the handle. Events polled afterwards come
+        // from the new document, with its own handles.
+        const uint64_t generation = document_generation_;
+        const auto replaced = [&] { return !doc_ || document_generation_ != generation; };
         String event_text;
         if (e.kind == WEVA_EVENT_TEXT_INPUT || e.kind == WEVA_EVENT_COMPOSITION_START ||
             e.kind == WEVA_EVENT_COMPOSITION_UPDATE || e.kind == WEVA_EVENT_COMPOSITION_END) {
@@ -2898,6 +2932,10 @@ void WevaDocument::pump_events() {
         }
         const String id = id_of(e.target);
         if (e.kind == WEVA_EVENT_RESET) write_back_form_models(e.target);
+        // What a value signal reports if a handler replaces the document
+        // before it is emitted.
+        String value_before;
+        if (e.kind == WEVA_EVENT_VALUE_CHANGED || e.kind == WEVA_EVENT_CHANGE) value_before = value_of(e.target);
         // What the MARKUP called it, before what the element is called. A
         // controller with that method gets it, and `handler_invoked` carries
         // it either way -- so a script can dispatch by the name the designer
@@ -2915,7 +2953,7 @@ void WevaDocument::pump_events() {
             // handler actually wants.
             int row_index = 0;
             char row_key[128] = {0};
-            if (weva_element_row(doc_, e.target, &row_index, row_key, sizeof(row_key))) {
+            if (!replaced() && weva_element_row(doc_, e.target, &row_index, row_key, sizeof(row_key))) {
                 emit_signal("row_activated", handler, row_index, String::utf8(row_key));
             }
         }
@@ -2938,15 +2976,15 @@ void WevaDocument::pump_events() {
                 // Read from the HANDLE, not from "#" + id: a row a `data-each`
                 // produced has no id, and a selector built from an empty one
                 // matches nothing and reports an empty value.
-                emit_signal("value_changed", id, value_of(e.target));
-                write_back_model(e.target);
+                emit_signal("value_changed", id, replaced() ? value_before : value_of(e.target));
+                if (!replaced()) write_back_model(e.target);
                 break;
             case WEVA_EVENT_CHANGE:
                 // The value the user settled on, once. A search field that
                 // hits the disk on every keystroke wants this and not
                 // `value_changed`.
-                emit_signal("value_committed", id, value_of(e.target));
-                write_back_model(e.target);
+                emit_signal("value_committed", id, replaced() ? value_before : value_of(e.target));
+                if (!replaced()) write_back_model(e.target);
                 break;
             case WEVA_EVENT_SUBMIT: emit_signal("form_submitted", id); break;
             case WEVA_EVENT_INVALID:
@@ -3356,11 +3394,8 @@ bool WevaDocument::draw_rounded_rect(const RID& item, const weva_draw& d) {
     // Its own canvas item, because a material is per item and the document is
     // otherwise one item. That is the cost of this path and what the
     // measurement has to weigh against the triangles it saves.
-    const RID quad = rs->canvas_item_create();
-    rs->canvas_item_set_parent(quad, item);
+    const RID quad = acquire_item(item);
     rs->canvas_item_set_material(quad, m);
-    rs->canvas_item_set_draw_index(quad, static_cast<int32_t>(layer_items_.size()));
-    layer_items_.push_back(quad);
     rs->canvas_item_add_triangle_array(quad, idx, points, colors, uvs, PackedInt32Array(),
                                        PackedFloat32Array(), RID());
     return true;
@@ -3640,37 +3675,53 @@ RID WevaDocument::backdrop_material() {
         backdrop_shader_ = rs->shader_create();
         rs->shader_set_code(backdrop_shader_, String(kBackdropShader));
     }
+    // Pooled across frames like the items; every parameter is set per draw.
+    if (backdrops_used_ < layer_materials_.size()) return layer_materials_[backdrops_used_++];
     const RID m = rs->material_create();
     rs->material_set_shader(m, backdrop_shader_);
     layer_materials_.push_back(m);
+    ++backdrops_used_;
     return m;
 }
 
 void WevaDocument::draw_layered(const weva_draw* draws, size_t count, const uint64_t* versions) {
     RenderingServer* rs = RenderingServer::get_singleton();
-    release_layers();
 
-    // One item per run of ordinary geometry, and one per backdrop filter, in z
-    // order. The node's own item draws nothing: children render after their
-    // parent's commands, so anything left on it would land under everything.
-    const auto new_layer = [&](bool backdrop) {
-        const RID item = rs->canvas_item_create();
-        rs->canvas_item_set_parent(item, get_canvas_item());
-        rs->canvas_item_set_z_index(item, static_cast<int32_t>(layer_items_.size()));
-        rs->canvas_item_set_draw_index(item, static_cast<int32_t>(layer_items_.size()));
-        (void)backdrop;
-        layer_items_.push_back(item);
+    // One item per run of ordinary geometry, and one per backdrop filter,
+    // blended run or SDF rounded rect, in z order. The node's own item draws
+    // nothing: children render after their parent's commands, so anything
+    // left on it would land under everything. A blended run or rounded rect
+    // on a child of the node's item painted over whatever came after it.
+    int32_t z = 0;
+    const auto new_layer = [&]() {
+        const RID item = acquire_item(get_canvas_item());
+        rs->canvas_item_set_z_index(item, z++);
         return item;
     };
 
-    RID current = new_layer(false);
+    RID current = new_layer();
     for (size_t i = 0; i < count; ++i) {
         const weva_draw& d = draws[i];
         if (d.vertex_count == 0 || d.index_count == 0) continue;
 
+        if (d.kind == WEVA_DRAW_ROUNDED_RECT && use_sdf_rects_) {
+            // The quad is a child of the current layer, so it paints after
+            // that layer's commands; what follows goes on a new layer above.
+            if (draw_rounded_rect(current, d)) {
+                current = new_layer();
+                continue;
+            }
+        }
         if (d.kind != WEVA_DRAW_BACKDROP_FILTER) {
-            const size_t run = triangle_run(draws+i, count-i, false);
-            add_triangles(current, draws+i, run, versions ? versions+i : nullptr);
+            const size_t run = triangle_run(draws+i, count-i, use_sdf_rects_);
+            if (d.blend_mode != WEVA_BLEND_NORMAL) {
+                const RID item = new_layer();
+                rs->canvas_item_set_material(item, blend_material(d.blend_mode));
+                add_triangles(item, draws+i, run, versions ? versions+i : nullptr);
+                current = new_layer();
+            } else {
+                add_triangles(current, draws+i, run, versions ? versions+i : nullptr);
+            }
             i += run-1;
             continue;
         }
@@ -3693,7 +3744,7 @@ void WevaDocument::draw_layered(const weva_draw* draws, size_t count, const uint
                            static_cast<real_t>(hi_x - lo_x + 2 * pad),
                            static_cast<real_t>(hi_y - lo_y + 2 * pad));
 
-        const RID item = new_layer(true);
+        const RID item = new_layer();
         rs->canvas_item_set_copy_to_backbuffer(item, true, region);
         const RID mat = backdrop_material();
         rs->material_set_param(mat, "sigma", sigma);
@@ -3713,7 +3764,7 @@ void WevaDocument::draw_layered(const weva_draw* draws, size_t count, const uint
         rs->canvas_item_set_material(item, mat);
         add_triangles(item, &d, 1, versions ? versions+i : nullptr);
 
-        current = new_layer(false);
+        current = new_layer();
     }
 }
 
@@ -3730,17 +3781,24 @@ void WevaDocument::_draw() {
     packed_used_ = 0;
 
     rounded_used_ = 0;
-    bool any_backdrop = false;
-    for (size_t i = 0; i < count && !any_backdrop; ++i) {
-        any_backdrop = draws[i].kind == WEVA_DRAW_BACKDROP_FILTER;
+    begin_items();
+    // Anything that needs its own canvas item -- a backdrop filter, a blend
+    // mode's material, an SDF rect's shader -- goes through the ordered
+    // layer path; only a document of plain geometry draws on the node's item.
+    bool layered = false;
+    for (size_t i = 0; i < count && !layered; ++i) {
+        layered = draws[i].kind == WEVA_DRAW_BACKDROP_FILTER ||
+                  draws[i].blend_mode != WEVA_BLEND_NORMAL ||
+                  (use_sdf_rects_ && draws[i].kind == WEVA_DRAW_ROUNDED_RECT);
     }
-    if (any_backdrop) {
+    if (layered) {
         release_retained_batches();
         draw_layered(draws, count, versions);
+        end_items();
         packed_batches_.resize(packed_used_);
         return;
     }
-    release_layers();
+    end_items();
     // Diagnostic prototype only. Child CanvasItems require further validation
     // of root self_modulate and other inherited rendering properties.
     static const bool retain_requested = std::getenv("WEVA_GODOT_RETAIN_BATCHES") != nullptr;
@@ -3755,13 +3813,8 @@ void WevaDocument::_draw() {
     for (size_t i = 0; i < count; ++i) {
         const weva_draw& d = draws[i];
         if (d.vertex_count == 0 || d.index_count == 0) continue;
-        if (d.kind == WEVA_DRAW_ROUNDED_RECT && draw_rounded_rect(get_canvas_item(), d)) continue;
         const size_t run = triangle_run(draws+i, count-i, use_sdf_rects_);
-        // A blended run gets its own item and material; the retained-batch
-        // prototype keeps to normal draws.
-        const bool blended = d.blend_mode != WEVA_BLEND_NORMAL;
-        add_triangles(blended ? blend_item(d.blend_mode) : get_canvas_item(), draws+i, run,
-                      versions ? versions+i : nullptr, retain && !blended);
+        add_triangles(get_canvas_item(), draws+i, run, versions ? versions+i : nullptr, retain);
         i += run-1;
     }
     release_retained_batches(packed_used_);

@@ -43,7 +43,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 44
+#define WEVA_ABI_VERSION_MINOR 45
 
 uint32_t weva_abi_version(void);
 
@@ -961,7 +961,8 @@ typedef struct weva_binding_source {
      * host having to invent a value for it. The callback may be called again
      * with a larger buffer. Each return length must describe the value written
      * by that call; changing values are retried until one fits. An impossible
-     * buffer length is diagnosed and treated as an unavailable value. */
+     * buffer length -- 64 MiB or more -- is diagnosed and treated as an
+     * unavailable value. */
     size_t (*value)(void* user, const char* path, char* buffer, size_t capacity, int* found);
     /* How many items are in the list at `path`, or -1 when it is not a list.
      * Only `data-each` asks; a host with no lists can leave this null.
@@ -1086,7 +1087,10 @@ weva_status weva_element_scroll_into_view(weva_document_t doc, weva_element_t el
  * property back under the stylesheet's control rather than having to guess
  * what the stylesheet said. The declaration list is split at top level, so a
  * semicolon inside `url(...)` or a quoted string does not cut a value in
- * half. */
+ * half. A value that is not exactly one declaration's -- a top-level
+ * semicolon before other text, a brace, an unclosed quote or parenthesis --
+ * and a property name holding a separator return WEVA_ERR_INVALID_ARGUMENT
+ * and change nothing; trailing semicolons are ignored. */
 weva_status weva_element_set_style(weva_document_t doc, weva_element_t element,
                                    const char* property, const char* value);
 
@@ -1456,7 +1460,8 @@ size_t weva_element_computed_style_all(weva_document_t doc, weva_element_t eleme
 
 /* How the core obtains an asset's bytes. Returns the number of bytes the asset
  * HAS, writing up to `capacity` of them -- the two-call convention the rest of
- * the ABI uses -- or 0 when there is no such asset. Passing a null function
+ * the ABI uses -- or 0 when there is no such asset. A size above 512 MiB is
+ * diagnosed and treated as a missing asset. Passing a null function
  * restores the built-in filesystem reader. Changing it drops every decoded
  * image. */
 typedef size_t (*weva_asset_reader)(void* user_data, const char* path, uint8_t* buffer,
@@ -1575,6 +1580,19 @@ int32_t weva_char_decompose(uint32_t codepoint, uint32_t* out, int32_t capacity)
  * @font-face rule or the game already claimed alone. Two-call convention.
  * Available since ABI minor 41. */
 size_t weva_document_font_family_names(weva_document_t doc, char* buffer, size_t capacity);
+
+/* Rasterized textures shared across documents: shadows, and gradient and
+ * blurred backgrounds that use no images or font-relative units. A document
+ * created again -- a menu re-enabled after being destroyed -- takes the
+ * pixels an earlier one rasterized instead of rasterizing them anew. The
+ * cache is process-wide, thread-safe, and holds at most `bytes`, least
+ * recently used first; 0 disables it and frees what it held. The default is
+ * 32 MiB. Textures a live document holds are its own copies, so the limit
+ * bounds only the memory spent on documents that are gone.
+ * weva_raster_cache_bytes reports what the cache holds now.
+ * Available since ABI minor 45. */
+void weva_set_raster_cache_limit(uint64_t bytes);
+uint64_t weva_raster_cache_bytes(void);
 
 #ifdef __cplusplus
 }

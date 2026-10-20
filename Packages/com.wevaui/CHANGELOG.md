@@ -7,14 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Documents open faster. A paint pass rasterizes its gradients, shadows and
+  blurs side by side, and wide blurs are drawn at the resolution they need,
+  within 4 of 255 levels. Core first opens measured up to 2.5x faster.
+- Re-enabling a `WevaDocument` reuses the textures the previous document
+  rasterized. `OnDisable` destroys the native document, so this was a full
+  cold open before. Up to 8x faster on paint-heavy screens. The cache is
+  process-wide, 32 MiB by default, and set with the core's
+  `weva_set_raster_cache_limit` (ABI minor 45). Rebuild the native plugin: the
+  generated bindings expect minor 45.
+
 ### Performance
 - Rounded fills reuse corner directions and AA displacements; thin borders
   avoid temporary outline copies and redundant color selection. Paired Godot
   inventory scrolling API CPU p95 improves 11.9% with identical screenshots.
-- Expensive background rasterization uses the caller and up to three temporary
-  workers on machines reporting at least four hardware threads. Pixel output is
-  unchanged. Paired GCC cold HUD creation is 35.5% faster; this uses additional
-  CPU cores and does not establish host frame-time or aggregate CPU savings.
 - The shared core interleaves independent rows in four-channel SSE2 background
   blur, preserving exact pixel output and allocation counts. Paired GCC core
   benchmarks show a modest reduction in blur-heavy HUD cold creation; host

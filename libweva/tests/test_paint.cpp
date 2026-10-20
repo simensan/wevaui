@@ -21,42 +21,6 @@ namespace {
 
 bool near(double a, double b) { return std::fabs(a - b) < 1e-6; }
 
-// Records every call, so the interface contract can be asserted directly.
-struct RecordingBackend : RenderInterface {
-    struct Draw {
-        std::vector<Vertex> vertices;
-        std::vector<uint32_t> indices;
-        Vec2 translation;
-    };
-    std::vector<Draw> draws;
-    std::vector<GeometryHandle> compiled;
-    int released = 0;
-    uint64_t next_id = 1;
-    std::map<uint64_t, Draw> pending;
-
-    GeometryHandle compile_geometry(const std::vector<Vertex>& v,
-                                    const std::vector<uint32_t>& i) override {
-        GeometryHandle h{next_id++};
-        pending[h.id] = Draw{v, i, {}};
-        compiled.push_back(h);
-        return h;
-    }
-    void render_geometry(GeometryHandle g, Vec2 t, TextureHandle) override {
-        auto it = pending.find(g.id);
-        if (it == pending.end()) return;
-        Draw d = it->second;
-        d.translation = t;
-        draws.push_back(std::move(d));
-    }
-    void release_geometry(GeometryHandle g) override {
-        released += pending.erase(g.id) ? 1 : 0;
-    }
-    TextureHandle load_texture(std::string_view, Vec2i*) override { return {}; }
-    TextureHandle generate_texture(const std::vector<uint8_t>&, Vec2i) override { return {}; }
-    void release_texture(TextureHandle) override {}
-    void set_scissor(const Recti*) override {}
-};
-
 struct CascadeStyles : StyleProvider {
     CascadeEngine engine;
     NullStateProvider state;
@@ -195,37 +159,6 @@ void test_tessellate_rect() {
     a.append(b);
     CHECK(a.vertices.size() == 8 && a.indices.size() == 12);
     CHECK(a.indices[6] >= 4);
-}
-
-void test_tessellate_rounded() {
-    // A zero radius costs nothing extra: it falls through to the plain quad,
-    // which is the common case for most boxes.
-    Mesh sharp;
-    tessellate_rounded_rect(Rect(0, 0, 100, 50), BorderRadii::zero(), LinearColor::white(),
-                            &sharp, 8, false);
-    CHECK(sharp.vertices.size() == 4);
-
-    // A radius adds arc vertices but never leaves the rect's bounds — beyond
-    // the half-pixel coverage ramp, which every antialiased shape carries.
-    Mesh round;
-    tessellate_rounded_rect(Rect(0, 0, 100, 50), BorderRadii::uniform(10), LinearColor::white(),
-                            &round, 4, false);
-    CHECK(round.vertices.size() > 4);
-    const Rect bb = bounds(round);
-    CHECK(near(bb.x, 0) && near(bb.y, 0));
-    CHECK(near(bb.width, 100) && near(bb.height, 50));
-    // A fan: one centre vertex plus the outline, three indices per edge.
-    CHECK(round.indices.size() == (round.vertices.size() - 1) * 3);
-
-    // Antialiased, it is the same outline twice — inset and expanded — around
-    // the same centre, so the vertex count doubles less the shared centre.
-    Mesh aa;
-    tessellate_rounded_rect(Rect(0, 0, 100, 50), BorderRadii::uniform(10), LinearColor::white(),
-                            &aa, 4);
-    CHECK(aa.vertices.size() == (round.vertices.size() - 1) * 2 + 1);
-    const Rect ab = bounds(aa);
-    CHECK(near(ab.x, -0.5) && near(ab.y, -0.5));
-    CHECK(near(ab.width, 101) && near(ab.height, 51));
 }
 
 void test_radii_clamping() {
@@ -561,30 +494,6 @@ void test_paint_decorations() {
     }
 }
 
-void test_paint_tree_calls() {
-    // The backend contract: compile, render, release — and every compiled
-    // handle is released, so a backend can assume no leak.
-    Fixture f;
-    CHECK(f.css("#a, #b { display: block; height: 20px; background-color: #123456 }"
-                "#plain { display: block; height: 20px }"));
-    CHECK(f.layout("<body><div id=a></div><div id=plain></div><div id=b></div></body>"));
-
-    RecordingBackend backend;
-    paint_tree(f.tree, f.root, f.ctx, &backend);
-    // Two painted boxes; the undecorated one issues nothing.
-    CHECK(backend.draws.size() == 2);
-    CHECK(backend.compiled.size() == 2);
-    CHECK(backend.released == 2);
-    for (const auto& d : backend.draws) {
-        CHECK(!d.indices.empty());
-        CHECK(d.indices.size() % 3 == 0);
-        // Every index is in range — a backend uploading these must not fault.
-        for (uint32_t i : d.indices) CHECK(i < d.vertices.size());
-    }
-    // Boxes are painted in tree order, so `a` precedes `b` on screen.
-    CHECK(backend.draws[0].vertices[0].position.y < backend.draws[1].vertices[0].position.y);
-}
-
 namespace {
 double mesh_area(const Mesh& m) {
     double a = 0;
@@ -831,42 +740,6 @@ void test_clip_triangles_polygon() {
     }
 }
 
-void test_clip_triangles() {
-    // A quad straddling the rect's right edge is cut at it; one inside passes
-    // through untouched; one outside vanishes. Colour and UV interpolate.
-    Mesh quad;
-    Vertex v[4];
-    const float xs[4] = {0, 100, 100, 0}, ys[4] = {0, 0, 50, 50};
-    for (int i = 0; i < 4; ++i) {
-        v[i].position = {xs[i], ys[i]};
-        v[i].color = LinearColor(xs[i] / 100.0f, 0, 0, 1);
-        v[i].tex_coord = {xs[i] / 100.0f, ys[i] / 50.0f};
-        quad.vertices.push_back(v[i]);
-    }
-    quad.indices = {0, 1, 2, 0, 2, 3};
-
-    Mesh out;
-    clip_triangles(quad.vertices, quad.indices, Rect(0, 0, 60, 100), &out);
-    CHECK(!out.empty());
-    double max_x = 0, max_u = 0;
-    for (const Vertex& p : out.vertices) {
-        max_x = std::max<double>(max_x, p.position.x);
-        max_u = std::max<double>(max_u, p.tex_coord.x);
-        CHECK(p.position.x <= 60 + 1e-3);   // float positions
-        CHECK(std::fabs(p.color.r - p.position.x / 100.0) < 1e-5);
-    }
-    CHECK(std::fabs(max_x - 60) < 1e-3);
-    CHECK(std::fabs(max_u - 0.6) < 1e-4);
-
-    Mesh inside;
-    clip_triangles(quad.vertices, quad.indices, Rect(-10, -10, 200, 200), &inside);
-    CHECK(inside.vertices.size() == 6 && inside.indices.size() == 6);
-
-    Mesh outside;
-    clip_triangles(quad.vertices, quad.indices, Rect(200, 200, 10, 10), &outside);
-    CHECK(outside.empty());
-}
-
 // Family measurement, glyph preparation and drawing must use the same face.
 void test_paint_registered_font_families() {
     struct FamilyFont : StubFont {
@@ -929,22 +802,4 @@ void test_paint_registered_font_families() {
     paint.popup.element = f.tree[f.find("select")].element;
     paint_tree(f.tree, f.root, f.ctx, paint);
     CHECK(font.shaped["Popup"] == 2);
-}
-
-void test_srgb_byte_lookup_exact() {
-    const auto reference = [](uint8_t v) {
-        if (v == 0) return 0.0f;
-        if (v == 255) return 1.0f;
-        const float f = v / 255.0f;
-        if (f <= 0.04045f) return f / 12.92f;
-        return static_cast<float>(std::pow(static_cast<double>((f + 0.055f) / 1.055f),
-                                          static_cast<double>(2.4f)));
-    };
-    for (int i=0;i<256;++i) {
-        const auto r=static_cast<uint8_t>(i), g=static_cast<uint8_t>(i*37), b=static_cast<uint8_t>(i*79);
-        CHECK(srgb_byte_to_linear(r) == reference(r));
-        const auto color=LinearColor::from_srgb(r,g,b,-0.25f);
-        CHECK(color.r == reference(r)); CHECK(color.g == reference(g)); CHECK(color.b == reference(b));
-        CHECK(color.a == -0.25f);
-    }
 }

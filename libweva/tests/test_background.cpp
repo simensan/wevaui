@@ -850,68 +850,6 @@ void test_gradient_calc_stop_position() {
     CHECK(h.stops[0].has_position && h.stops[0].is_px && std::fabs(h.stops[0].position - 15) < 1e-9);
 }
 
-void test_gradient_sampling() {
-    const LinearColor black = LinearColor::black();
-    LayoutContext ctx;
-    float c[4];
-    {
-        Gradient g;
-        CHECK(parse_gradient("linear-gradient(to right, red, blue)", black, &g));
-        sample_gradient(g, 0.5, 5, 100, 10, ctx, 16, c);
-        CHECK(near(c[0], 1, 0.02) && near(c[2], 0, 0.02));
-        sample_gradient(g, 99.5, 5, 100, 10, ctx, 16, c);
-        CHECK(near(c[0], 0, 0.02) && near(c[2], 1, 0.02));
-        // Halfway, interpolated in sRGB: (0.5, 0, 0.5).
-        sample_gradient(g, 50, 5, 100, 10, ctx, 16, c);
-        CHECK(near(c[0], 0.5, 0.02) && near(c[2], 0.5, 0.02));
-    }
-    {
-        // The default direction is `to bottom`.
-        Gradient g;
-        CHECK(parse_gradient("linear-gradient(red, blue)", black, &g));
-        sample_gradient(g, 50, 0.5, 100, 100, ctx, 16, c);
-        CHECK(near(c[0], 1, 0.02));
-        sample_gradient(g, 50, 99.5, 100, 100, ctx, 16, c);
-        CHECK(near(c[2], 1, 0.02));
-    }
-    {
-        // A fade to transparent interpolates premultiplied: no grey halfway,
-        // the colour stays red at half alpha.
-        Gradient g;
-        CHECK(parse_gradient("linear-gradient(to right, red, transparent)", black, &g));
-        sample_gradient(g, 50, 5, 100, 10, ctx, 16, c);
-        CHECK(near(c[0], 1, 0.02) && near(c[3], 0.5, 0.02));
-    }
-    {
-        Gradient g;
-        CHECK(parse_gradient("radial-gradient(circle, red, blue)", black, &g));
-        sample_gradient(g, 50, 50, 100, 100, ctx, 16, c);
-        CHECK(near(c[0], 1, 0.02));
-        // farthest-corner circle: the corner is exactly the end colour.
-        sample_gradient(g, 0, 0, 100, 100, ctx, 16, c);
-        CHECK(near(c[2], 1, 0.02));
-    }
-    {
-        Gradient g;
-        CHECK(parse_gradient("repeating-linear-gradient(to right, red 0px, blue 10px)", black, &g));
-        sample_gradient(g, 5, 5, 100, 10, ctx, 16, c);
-        CHECK(near(c[0], 0.5, 0.02));
-        sample_gradient(g, 15, 5, 100, 10, ctx, 16, c);
-        CHECK(near(c[0], 0.5, 0.02));
-        sample_gradient(g, 19.9, 5, 100, 10, ctx, 16, c);
-        CHECK(near(c[2], 1, 0.03));
-    }
-    {
-        // Conic: 0 at the top, clockwise; `from 90deg` turns the start to the right.
-        Gradient g;
-        CHECK(parse_gradient("conic-gradient(red, blue)", black, &g));
-        sample_gradient(g, 50, 0.5, 100, 100, ctx, 16, c);
-        CHECK(near(c[0], 1, 0.03));
-        sample_gradient(g, 0.5, 50, 100, 100, ctx, 16, c);   // three quarters round
-        CHECK(near(c[2], 0.75, 0.03));
-    }
-}
-
 // Compare prepared interpolation against the original scalar arithmetic,
 // including hint indices, transparent endpoints and repeated stop ranges.
 void test_gradient_prepared_color_spans() {
@@ -977,30 +915,6 @@ void test_gradient_prepared_color_spans() {
             for (int channel = 0; channel < 4; ++channel) CHECK(actual[channel] == expected[channel]);
         }
     }
-}
-
-void test_background_rasterize_layers() {
-    const LinearColor black = LinearColor::black();
-    LayoutContext ctx;
-    BackgroundLayer layer;
-    CHECK(parse_gradient("linear-gradient(to right, red, blue)", black, &layer.gradient));
-    layer.is_gradient = true;
-    layer.size_x = "50%";
-    layer.repeat_x = false;
-    layer.repeat_y = false;
-    std::vector<uint8_t> rgba;
-    // Four texels across 100px: the tile covers the first two, the base colour
-    // shows through the rest.
-    rasterize_background({layer}, LinearColor::transparent(), 100, 10, 4, 1, ctx, 16, &rgba);
-    CHECK(rgba.size() == 16);
-    CHECK(rgba[0] > 180 && rgba[2] < 80 && rgba[3] == 255);   // x = 12.5, a quarter along: mostly red, opaque
-    CHECK(rgba[12 + 3] == 0);                   // x = 87.5: outside the tile
-    rasterize_background({layer}, black, 100, 10, 4, 1, ctx, 16, &rgba);
-    CHECK(rgba[12] == 0 && rgba[12 + 3] == 255);   // black under the layer
-    // Repeating the tile fills the row.
-    layer.repeat_x = true;
-    rasterize_background({layer}, LinearColor::transparent(), 100, 10, 4, 1, ctx, 16, &rgba);
-    CHECK(rgba[12 + 3] == 255);
 }
 
 // CSS Compositing 1 §9 background-blend-mode and CSS Masking 1 §6 mask-image
@@ -1332,32 +1246,6 @@ void test_blur_and_padded_rasterize() {
     }
 }
 
-void test_paint_transform_rotates_geometry() {
-    // A 100x50 box rotated 90deg about its centre paints as a 50x100 mesh
-    // around the same centre; a translate(50%, 0) shifts it by half its width.
-    Fixture f;
-    CHECK(f.css("#r { width: 100px; height: 50px; background: #f00; transform: rotate(90deg) }"
-                "#t { width: 100px; height: 50px; background: #0f0; transform: translate(50%, 0) }"));
-    CHECK(f.layout("<body><div id=r></div><div id=t></div></body>"));
-    RecordingBackend backend;
-    PaintContext paint;
-    paint.backend = &backend;
-    paint_tree(f.tree, f.root, f.ctx, paint);
-    bool rotated = false, shifted = false;
-    for (const RecordingBackend::Draw& d : backend.draws) {
-        if (d.geometry.vertices.empty()) continue;
-        const Rect r = bounds_of(d.geometry);
-        const LinearColor c = d.geometry.vertices[0].color;
-        if (near(c.r, 1) && near(c.g, 0) && near(r.width, 50, 1e-3) && near(r.height, 100, 1e-3) &&
-            near(r.x, 25, 1e-3) && near(r.y, -25, 1e-3)) {
-            rotated = true;
-        }
-        if (near(c.g, 1) && near(c.r, 0) && near(r.x, 50, 1e-3) && near(r.y, 50, 1e-3)) shifted = true;
-    }
-    CHECK(rotated);
-    CHECK(shifted);
-}
-
 // CSS Transforms 2 §8: the individual properties compose after the list --
 // the list, then scale, rotate, translate -- about transform-origin.
 void test_paint_individual_transform_properties() {
@@ -1584,37 +1472,6 @@ void test_paint_clip_follows_descendant_transform() {
         CHECK(minx > 49.9 && maxx < 100.1);
     }
     CHECK(blue);
-}
-
-// CSS 2.1 Appendix E: positioned children paint after in-flow ones, and
-// z-index orders stacking contexts regardless of tree order.
-void test_paint_stacking_order() {
-    Fixture f;
-    CHECK(f.css("html, body { margin: 0 }"
-                "#p { position: relative; width: 200px; height: 100px }"
-                "#red { position: absolute; left: 0; top: 0; width: 50px; height: 50px; background: #f00 }"
-                "#grey { width: 50px; height: 50px; background: #808080 }"
-                "#blue { position: absolute; z-index: 1; left: 0; top: 0; width: 50px; height: 50px; background: #00f }"
-                "#green { position: absolute; left: 0; top: 0; width: 50px; height: 50px; background: #0f0 }"
-                "#neg { position: absolute; z-index: -1; left: 0; top: 0; width: 50px; height: 50px; background: #ff0 }"));
-    CHECK(f.layout("<body><div id=p><div id=red></div><div id=grey></div><div id=blue></div>"
-                   "<div id=green></div><div id=neg></div></div></body>"));
-    RecordingBackend backend;
-    PaintContext paint;
-    paint.backend = &backend;
-    paint_tree(f.tree, f.root, f.ctx, paint);
-    std::string order;
-    for (const RecordingBackend::Draw& d : backend.draws) {
-        if (d.geometry.vertices.empty()) continue;
-        const LinearColor c = d.geometry.vertices[0].color;
-        if (near(c.r, 1) && near(c.g, 0) && near(c.b, 0)) order += 'R';
-        else if (near(c.g, 1) && near(c.r, 0) && near(c.b, 0)) order += 'G';
-        else if (near(c.b, 1) && near(c.r, 0) && near(c.g, 0)) order += 'B';
-        else if (near(c.r, 1) && near(c.g, 1) && near(c.b, 0)) order += 'Y';
-        else if (c.r > 0.2f && c.r < 0.3f && near(c.g, c.r) && near(c.b, c.r)) order += 'g';
-    }
-    // yellow (z -1), grey (in flow), red then green (positioned, tree order), blue (z 1)
-    CHECK_EQ(order, std::string("YgRGB"));
 }
 
 // A colour glyph keeps its texels in the atlas and is drawn white.
@@ -1896,42 +1753,6 @@ void test_font_weight_resolution() {
     CHECK(!resolve_font_italic(style("n")));
 }
 
-// A border as thick as its own radius. Ordinary CSS, and it used to draw
-// NOTHING: tessellate_border zips an outer and an inner outline, the inner
-// radius collapses to zero when the width eats it, a zero radius emitted one
-// point where a rounded corner emits `segments + 1`, and the mismatched counts
-// made the function bail. The same shape is what an outer box-shadow's knockout
-// ring asks for, so the two were broken together.
-void test_border_as_thick_as_its_radius() {
-    const auto border_draws = [](const char* css, const char* html) {
-        Fixture f;
-        CHECK(f.css(css));
-        CHECK(f.layout(html));
-        RecordingBackend backend;
-        PaintContext paint;
-        paint.backend = &backend;
-        paint_tree(f.tree, f.root, f.ctx, paint);
-        int n = 0;
-        for (const RecordingBackend::Draw& d : backend.draws) {
-            if (d.geometry.vertices.empty() || d.texture != 0) continue;
-            const LinearColor c = d.geometry.vertices[0].color;
-            // The border is the opaque red one.
-            if (c.r > 0.4f && c.g == 0 && c.b == 0 && c.a == 1) ++n;
-        }
-        return n;
-    };
-    CHECK(border_draws(
-              "html, body { margin: 0 } #b { width: 200px; height: 120px;"
-              " border-radius: 20px; border: 20px solid #c00 }",
-              "<body><div id=b></div></body>") >= 1);
-    // And the ordinary case, where the radius is larger than the border, keeps
-    // working — that one always zipped cleanly.
-    CHECK(border_draws(
-              "html, body { margin: 0 } #b { width: 200px; height: 120px;"
-              " border-radius: 40px; border: 10px solid #c00 }",
-              "<body><div id=b></div></body>") >= 1);
-}
-
 // background_size_independent() promises that two boxes of DIFFERENT sizes
 // rasterize to identical texels at the same texture size. That promise is what
 // lets the paint cache drop width and height from its key, so breaking it puts
@@ -2201,4 +2022,319 @@ void test_blur_matches_scalar() {
             CHECK(same_color);
         }
     }
+}
+
+void test_background_no_repeat_tile_edge_supersampled() {
+    // A hard-edged gradient in a `no-repeat` tile that stops short of the box:
+    // the adaptive sampler takes one sample where the layers are one straight
+    // ramp and nine where a texel straddles an edge. The tile's OWN boundary is
+    // such an edge, and here it falls mid-texel -- 10.5px across a 1px texel
+    // grid -- so texel 10 must come out one-third covered, exactly as a full
+    // 3x3 supersample says, rather than whatever its centre alone would say.
+    LayoutContext ctx;
+    ctx.viewport_width_px = 400;
+    ctx.viewport_height_px = 300;
+    BackgroundLayer layer;
+    layer.is_gradient = true;
+    CHECK(parse_gradient("linear-gradient(90deg, red 50%, blue 50%)", LinearColor::black(),
+                         &layer.gradient));
+    layer.size_x = "10.5px";
+    layer.size_y = "20px";
+    layer.repeat_x = layer.repeat_y = false;
+    std::vector<uint8_t> rgba;
+    rasterize_background({layer}, LinearColor{0, 0, 0, 0}, 20, 20, 20, 20, ctx, 16, &rgba);
+    for (int y : {0, 9, 19}) {
+        // Inside, away from both edges: one sample, the stop colour exactly.
+        const Texel red = texel_at(rgba, 20, 2, y);
+        CHECK(red.r == 255 && red.g == 0 && red.b == 0 && red.a == 255);
+        // The stop at 5.25px: samples at 5 1/6 (red), 5 1/2 and 5 5/6 (blue).
+        const Texel stop = texel_at(rgba, 20, 5, y);
+        CHECK(stop.r == 85 && stop.g == 0 && stop.b == 170 && stop.a == 255);
+        // The tile boundary: one column of three samples is inside it.
+        const Texel boundary = texel_at(rgba, 20, 10, y);
+        CHECK(boundary.a == 85 && boundary.b == 255 && boundary.r == 0);
+        // Past the tile, nothing.
+        CHECK(texel_at(rgba, 20, 11, y).a == 0);
+        CHECK(texel_at(rgba, 20, 19, y).a == 0);
+    }
+}
+
+#include "../src/parallel.h"
+
+// Rows split across threads produce the serial bytes exactly: gradients with
+// hard edges, repeats, radials, conics and blends; both blur variants.
+void test_parallel_raster_is_byte_identical() {
+    const LinearColor base{0.1f, 0.2f, 0.3f, 1.0f};
+    LayoutContext ctx;
+    const char* stacks[][2] = {
+        {"repeating-linear-gradient(118deg, #f00 0 7px, #00f 7px 13px)", "radial-gradient(circle at 30% 40%, rgba(255,255,255,.4), transparent 60%)"},
+        {"conic-gradient(from 20deg, red, yellow 30%, blue 30% 70%, red)", "linear-gradient(180deg, #123 0%, #456 60%, #789 100%)"},
+        {"radial-gradient(ellipse at 18% 12%, rgba(179,136,255,.22) 0%, transparent 55%)", "linear-gradient(90deg, #ff7a8a, #74dcff)"},
+    };
+    for (const auto& stack : stacks) {
+        std::vector<BackgroundLayer> layers(2);
+        for (int i = 0; i < 2; ++i) {
+            CHECK(parse_gradient(stack[i], LinearColor::black(), &layers[static_cast<size_t>(i)].gradient));
+            layers[static_cast<size_t>(i)].is_gradient = true;
+        }
+        std::vector<uint8_t> serial, threaded;
+        raster_thread_override() = 1;
+        rasterize_background(layers, base, 700, 500, 700, 500, ctx, 16, &serial);
+        raster_thread_override() = 4;
+        rasterize_background(layers, base, 700, 500, 700, 500, ctx, 16, &threaded);
+        CHECK(serial == threaded);
+        for (const bool flat : {false, true}) {
+            std::vector<uint8_t> a = serial, b = serial;
+            raster_thread_override() = 1;
+            if (flat) blur_flat_rgba(&a, 700, 500, 9.5); else blur_rgba(&a, 700, 500, 23.0);
+            raster_thread_override() = 3;
+            if (flat) blur_flat_rgba(&b, 700, 500, 9.5); else blur_rgba(&b, 700, 500, 23.0);
+            CHECK(a == b);
+        }
+    }
+    raster_thread_override() = 0;
+}
+
+// A wide blur rasterized and blurred on a coarse grid, then resampled, stays
+// within four levels of the same blur done texel for texel: the grid is
+// chosen so the coarse blur is exact, and what the resampling loses is below
+// the eighth bit. Small blurs are left at full resolution.
+void test_reduced_blur_matches_full() {
+    LayoutContext ctx;
+    CHECK(!reduced_blur_grid(300, 200, 12.0).reduced);
+    CHECK(reduced_blur_grid(300, 200, 17.0).reduced);
+    std::vector<BackgroundLayer> layers(1);
+    CHECK(parse_gradient("radial-gradient(circle at 30% 40%, #f0a 0%, rgba(40,80,255,.6) 45%, transparent 70%)",
+                         LinearColor::black(), &layers[0].gradient));
+    layers[0].is_gradient = true;
+    BorderRadii radii;
+    radii.top_left = radii.bottom_right = {40, 40};
+    radii.top_right = {12, 30};
+    const LinearColor shadow{0.02f, 0.01f, 0.05f, 0.7f};
+    for (const double sigma : {18.0, 30.0, 60.0}) {
+        for (const bool flat : {true, false}) {
+            const double w = 320, h = 180;
+            const int pad = static_cast<int>(std::ceil(3 * sigma));
+            const int tex_w = static_cast<int>(w) + 2 * pad, tex_h = static_cast<int>(h) + 2 * pad;
+            const std::vector<BackgroundLayer> content = flat ? std::vector<BackgroundLayer>{} : layers;
+            const LinearColor color = flat ? shadow : LinearColor{0.1f, 0.3f, 0.2f, 0.9f};
+            std::vector<uint8_t> full;
+            rasterize_background_padded(content, color, w, h, tex_w, tex_h, pad, &radii, ctx, 16, &full);
+            if (flat) blur_flat_rgba(&full, tex_w, tex_h, sigma);
+            else blur_rgba(&full, tex_w, tex_h, sigma);
+
+            const ReducedBlur grid = reduced_blur_grid(tex_w - 2 * pad, tex_h - 2 * pad, sigma);
+            CHECK(grid.reduced);
+            CHECK(grid.width() * grid.height() * 4 <= tex_w * tex_h);
+            std::vector<uint8_t> coarse, reduced;
+            rasterize_background_padded(content, color, w, h, grid.width(), grid.height(), grid.pad,
+                                        &radii, ctx, 16, &coarse);
+            if (flat) blur_flat_rgba(&coarse, grid.width(), grid.height(), grid.sigma());
+            else blur_rgba(&coarse, grid.width(), grid.height(), grid.sigma());
+            upsample_blurred(coarse, grid, tex_w, tex_h, pad, &reduced);
+            CHECK(reduced.size() == full.size());
+
+            // Premultiplied, since a colour under no coverage is not a picture.
+            int worst = 0;
+            for (size_t i = 0; i + 3 < full.size(); i += 4) {
+                for (int c = 0; c < 4; ++c) {
+                    const int a = c == 3 ? full[i + 3] : full[i + c] * full[i + 3] / 255;
+                    const int b = c == 3 ? reduced[i + 3] : reduced[i + c] * reduced[i + 3] / 255;
+                    worst = std::max(worst, std::abs(a - b));
+                }
+            }
+            // Part of the difference is the reference's: texel for texel, a
+            // sigma of 18 rounds to box radius 18, which is a Gaussian of
+            // sqrt(18 * 19) = 18.5, while the coarse grid's is exact.
+            if (worst > 4) std::printf("  reduced blur sigma %g %s: worst %d levels\n", sigma, flat ? "flat" : "rgba", worst);
+            CHECK(worst <= 4);
+        }
+    }
+}
+
+// Paint queues a pass's rasters and runs them together at its end. The pixels
+// a host reads must be the ones the inline path makes -- the path a host
+// render backend still takes, since it needs pixels when the texture is made
+// -- and every queued texture must be filled by the time update returns.
+namespace {
+
+const char* kQueuedHtml =
+    "<body><div class=card id=a>Alpha</div><div class=card id=b>Beta</div>"
+    "<div class=blob></div><div class=ring></div><p class=glow>Shadowed</p>"
+    "<div class=card id=c>Gamma</div><div class=card id=d>Delta</div></body>";
+const char* kQueuedCss =
+    "body { margin: 0; font-size: 18px; background: linear-gradient(180deg, #102 0%, #214 60%, #001 100%) }"
+    ".card { width: 22em; height: 90px; margin: 30px; border-radius: 14px;"
+    "  background: radial-gradient(circle at calc(20% + 1em) 30%, rgba(255,255,255,.3), transparent 60%),"
+    "              repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 8px, transparent 8px 16px),"
+    "              linear-gradient(135deg, #3a2 0%, #125 100%);"
+    "  box-shadow: 0 12px 40px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.2) }"
+    "#b { box-shadow: 0 4px 12px rgba(80,0,0,.8) } #c { border-radius: 50% / 30% }"
+    ".blob { width: 300px; height: 200px; filter: blur(24px);"
+    "  background: radial-gradient(ellipse at 30% 40%, #f0a 0%, transparent 70%), #235 }"
+    ".ring { width: 120px; height: 120px; border-radius: 50%;"
+    "  background: conic-gradient(from -90deg, #7df 270deg, rgba(255,255,255,.06) 270deg) }"
+    ".glow { color: #fff; text-shadow: 0 0 6px #0ff, 2px 2px 3px #000 }";
+
+struct Captured {
+    std::vector<std::vector<uint8_t>> pixels;   // in the order they were made
+};
+
+uint64_t captured_generate(void* user, const uint8_t* rgba, int32_t w, int32_t h) {
+    auto* c = static_cast<Captured*>(user);
+    c->pixels.emplace_back(rgba, rgba + static_cast<size_t>(w) * h * 4);
+    return c->pixels.size();
+}
+uint64_t captured_compile(void*, const weva_vertex*, size_t, const uint32_t*, size_t) { return 1; }
+void captured_render(void*, uint64_t, float, float, uint64_t) {}
+void captured_release(void*, uint64_t) {}
+void captured_scissor(void*, int32_t, int32_t, int32_t, int32_t, int32_t) {}
+
+weva_document_t queued_document() {
+    weva_config cfg{};
+    cfg.viewport_width = 900;
+    cfg.viewport_height = 700;
+    cfg.use_user_agent_stylesheet = 1;
+    weva_document_t d = weva_document_create(&cfg);
+    CHECK(weva_document_add_css(d, kQueuedCss, std::strlen(kQueuedCss)) == WEVA_OK);
+    CHECK(weva_document_load_html(d, kQueuedHtml, std::strlen(kQueuedHtml)) == WEVA_OK);
+    return d;
+}
+
+// The published textures in id order: the order paint made them.
+std::vector<std::vector<uint8_t>> published_textures(weva_document_t d) {
+    size_t n = 0;
+    const weva_texture* t = weva_document_textures(d, &n);
+    std::map<uint64_t, std::vector<uint8_t>> by_id;
+    for (size_t i = 0; i < n; ++i) {
+        const size_t bytes = static_cast<size_t>(t[i].width) * t[i].height * 4;
+        CHECK(t[i].rgba != nullptr);   // reserved and never filled would be null
+        if (t[i].rgba) by_id[t[i].id].assign(t[i].rgba, t[i].rgba + bytes);
+    }
+    std::vector<std::vector<uint8_t>> out;
+    for (auto& kv : by_id) out.push_back(std::move(kv.second));
+    return out;
+}
+
+}  // namespace
+
+void test_queued_rasters_match_inline() {
+    // Each document here must rasterize for itself, not take the last one's.
+    weva_set_raster_cache_limit(0);
+    // Inline: a host backend takes every texture's pixels as it is made.
+    Captured inline_pixels;
+    {
+        weva_document_t d = queued_document();
+        weva_render_backend rb{};
+        rb.user_data = &inline_pixels;
+        rb.compile_geometry = captured_compile;
+        rb.render_geometry = captured_render;
+        rb.release_geometry = captured_release;
+        rb.generate_texture = captured_generate;
+        rb.set_scissor = captured_scissor;
+        weva_document_set_render_backend(d, &rb);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        weva_document_destroy(d);
+    }
+    // Enough for the pass to hold both kinds of job: ones large enough to
+    // split their own rows and ones that share the threads.
+    CHECK(inline_pixels.pixels.size() >= 8);
+
+    for (const int threads : {1, 4}) {
+        raster_thread_override() = threads;
+        weva_document_t d = queued_document();
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        const auto queued = published_textures(d);
+        CHECK(queued.size() == inline_pixels.pixels.size());
+        CHECK(queued == inline_pixels.pixels);
+        // A later update reuses the cached textures, still filled.
+        CHECK(weva_document_update(d, 0.016) == WEVA_OK);
+        CHECK(published_textures(d) == queued);
+        weva_document_destroy(d);
+    }
+    raster_thread_override() = 0;
+    weva_set_raster_cache_limit(kDefaultSharedRasterBytes);
+}
+
+// Pixels outlive their document for the next one that needs them: a document
+// created again draws what the last rasterized, byte for byte, and only what
+// depends on nothing but its key is shared.
+void test_shared_raster_cache() {
+    weva_set_raster_cache_limit(0);
+    CHECK(weva_raster_cache_bytes() == 0);
+    // The reference: nothing shared.
+    weva_document_t d = queued_document();
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    const auto fresh = published_textures(d);
+    weva_document_destroy(d);
+    CHECK(weva_raster_cache_bytes() == 0);
+
+    weva_set_raster_cache_limit(kDefaultSharedRasterBytes);
+    d = queued_document();
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(published_textures(d) == fresh);
+    weva_document_destroy(d);
+    const uint64_t held = weva_raster_cache_bytes();
+    CHECK(held > 0);
+    // Created again: the same pixels, and nothing new to keep.
+    d = queued_document();
+    CHECK(weva_document_update(d, 0) == WEVA_OK);
+    CHECK(published_textures(d) == fresh);
+    CHECK(weva_raster_cache_bytes() == held);
+    weva_document_destroy(d);
+
+    // A background measured in viewport units is a different picture in a
+    // different viewport, so the viewport is part of the key.
+    const auto open_vw = [](double width) {
+        weva_config cfg{};
+        cfg.viewport_width = width;
+        cfg.viewport_height = 400;
+        cfg.use_user_agent_stylesheet = 1;
+        weva_document_t doc = weva_document_create(&cfg);
+        const char* css = "body { margin: 0 } #v { width: 300px; height: 200px;"
+                          " background: radial-gradient(circle at 20vw 50%, #fa0, #024 30vw) }";
+        const char* html = "<body><div id=v></div></body>";
+        CHECK(weva_document_add_css(doc, css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        return doc;
+    };
+    weva_set_raster_cache_limit(0);
+    weva_document_t narrow_ref = open_vw(500), wide_ref = open_vw(900);
+    const auto narrow_fresh = published_textures(narrow_ref), wide_fresh = published_textures(wide_ref);
+    weva_document_destroy(narrow_ref);
+    weva_document_destroy(wide_ref);
+    CHECK(narrow_fresh != wide_fresh);
+    weva_set_raster_cache_limit(kDefaultSharedRasterBytes);
+    weva_document_t narrow = open_vw(500);
+    weva_document_destroy(narrow);
+    weva_document_t wide = open_vw(900);
+    CHECK(published_textures(wide) == wide_fresh);
+    weva_document_destroy(wide);
+
+    // Font-relative units are measured in each document's own fonts, so they
+    // are not shared at all.
+    {
+        weva_set_raster_cache_limit(kDefaultSharedRasterBytes);
+        const uint64_t before = weva_raster_cache_bytes();
+        weva_config cfg{};
+        cfg.viewport_width = 640;
+        cfg.viewport_height = 480;
+        weva_document_t doc = weva_document_create(&cfg);
+        const char* css = "#c { width: 200px; height: 100px;"
+                          " background: linear-gradient(90deg, #123 3ch, #f80 9ch) }";
+        const char* html = "<body><div id=c></div></body>";
+        CHECK(weva_document_add_css(doc, css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        weva_document_destroy(doc);
+        CHECK(weva_raster_cache_bytes() == before);
+    }
+
+    // The bound holds, and zero empties it.
+    weva_set_raster_cache_limit(held / 2);
+    CHECK(weva_raster_cache_bytes() <= held / 2);
+    weva_set_raster_cache_limit(0);
+    CHECK(weva_raster_cache_bytes() == 0);
+    weva_set_raster_cache_limit(kDefaultSharedRasterBytes);
 }

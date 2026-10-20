@@ -373,6 +373,30 @@ namespace Weva.Tests.EditorTests.Native
         }
 
         [Test]
+        public void Composition_CaretOffsetsAreStringIndices()
+        {
+            // Each character here is one C# char and three UTF-8 bytes. The
+            // offsets were passed through as bytes, so "the end" (3) landed
+            // after the first character.
+            _doc.SetFocus("#name");
+            Pump();
+            double[] x = new double[4];
+            for (int i = 0; i <= 3; i++)
+            {
+                Assert.That(_doc.SetComposition("日本語", i, i), "a preedit is accepted");
+                Pump();
+                Assert.That(_doc.TryGetCaretBounds(out NativeBounds caret));
+                x[i] = caret.X;
+            }
+            // One character further at each index. As bytes, 1 and 2 both
+            // clamped to the start and 3 was after the first character.
+            Assert.That(x[1], Is.GreaterThan(x[0] + 1), "index 1 is after the first character");
+            Assert.That(x[2], Is.GreaterThan(x[1] + 1), "index 2 is after the second");
+            Assert.That(x[3], Is.GreaterThan(x[2] + 1), "index 3 is the end");
+            Assert.That(_doc.SetComposition("a😀b", 2, 2), "a surrogate-pair index is not split");
+        }
+
+        [Test]
         public void Focus_TabOrderWrapsOnlyWhenAsked()
         {
             uint first = _doc.FocusStep(false, false);

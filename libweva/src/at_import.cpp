@@ -13,6 +13,10 @@ namespace weva {
 namespace {
 
 constexpr int kMaxImportDepth = 8;
+// Depth and the ancestor check stop cycles, not fan-out: nine sheets that each
+// import the next twenty times are 20^8 loads, every one parsed and copied.
+// A document's whole import graph gets this many loads.
+constexpr int kMaxImports = 256;
 
 std::string_view trim(std::string_view s) {
     while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) s.remove_prefix(1);
@@ -200,6 +204,7 @@ void expand(Stylesheet* sheet, const StylesheetLoader& load, std::vector<std::st
         // twice.
         if (std::find(loading->begin(), loading->end(), spec.url) != loading->end()) continue;
         if (depth >= kMaxImportDepth) continue;
+        if (*resolved >= kMaxImports) continue;
         std::string css;
         if (!load(spec.url, &css)) {
             if (missing) missing->push_back(spec.url);

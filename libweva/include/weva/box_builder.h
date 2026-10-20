@@ -71,8 +71,22 @@ public:
     BoxId build_document(const Document& doc);
     // Populate an existing deferred root when its constraints miss the cache.
     void materialize_children(BoxId id) {
+        depth_base_ = element_depth_of(*(*tree_)[id].element) - 1;
         build_children(*(*tree_)[id].element, (*tree_)[id].style, id);
     }
+
+    // Boxes are generated for elements at most this deep. Layout, paint and
+    // hit testing recurse once or more per level: a nested inline-block is
+    // two painted boxes a level, and paint_recursive's frame is 1.7 KB with
+    // GCC and 2.7 KB with Clang, so 96 levels still needed over 512 KB. A
+    // host's main thread may have 1 MB, with its own frames below ours, and
+    // MSVC's frames are not measured here. The deepest corpus page nests 13
+    // elements. The parser keeps Chrome's 512-deep DOM; content nested past
+    // this is not rendered, as it would otherwise overflow the stack.
+    static constexpr int kMaxBoxDepth = 64;
+    // How many elements enclose `e`, counting itself. A build reaches an
+    // element's children with element_depth_ at one less than this.
+    static int element_depth_of(const Element& e);
 
 private:
     BoxId document_root_ = kNoBox;
@@ -119,6 +133,9 @@ private:
     bool resolve_content(const ComputedStyle* pseudo_style, const Element& host, std::string* out);
     std::vector<CounterScope> counters_;
     int element_depth_ = 0;
+    // Elements above the root this build started from, so the depth limit is
+    // the same for a full build and for an incremental subtree build.
+    int depth_base_ = 0;
     int quote_depth_ = 0;
     void finalize_block_children(BoxId parent);
     std::string_view transformed_text(std::string_view text, const ComputedStyle* style);

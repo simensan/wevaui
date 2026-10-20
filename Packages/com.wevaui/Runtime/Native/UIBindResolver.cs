@@ -47,14 +47,29 @@ namespace Weva.Native
         public object Resolve(string path)
         {
             if (string.IsNullOrEmpty(path)) return null;
-            string[] segments = path.Split('.');
-            if (!_roots.TryGetValue(segments[0].Trim(), out MemberInfo root)) return null;
+            string[] segments = SegmentsOf(path);
+            if (!_roots.TryGetValue(segments[0], out MemberInfo root)) return null;
             object current = Read(root, _controller);
             for (int i = 1; i < segments.Length && current != null; i++)
             {
-                current = Step(current, segments[i].Trim());
+                current = Step(current, segments[i]);
             }
             return current;
+        }
+
+        // Trimmed segments per path, split once. Resolve runs for every bound
+        // path on every refresh, and Split plus a Trim per segment allocated
+        // each time.
+        private readonly Dictionary<string, string[]> _segments = new Dictionary<string, string[]>(StringComparer.Ordinal);
+
+        private string[] SegmentsOf(string path)
+        {
+            if (_segments.TryGetValue(path, out string[] known)) return known;
+            if (_segments.Count >= 4096) _segments.Clear();
+            string[] parts = path.Split('.');
+            for (int i = 0; i < parts.Length; i++) parts[i] = parts[i].Trim();
+            _segments[path] = parts;
+            return parts;
         }
 
         /// <summary>
@@ -66,8 +81,8 @@ namespace Weva.Native
         public bool TryWrite(string path, string text)
         {
             if (string.IsNullOrEmpty(path)) return false;
-            string[] segments = path.Split('.');
-            if (!_roots.TryGetValue(segments[0].Trim(), out MemberInfo root)) return false;
+            string[] segments = SegmentsOf(path);
+            if (!_roots.TryGetValue(segments[0], out MemberInfo root)) return false;
             if (segments.Length == 1) return WriteMember(root, _controller, text);
 
             // Resolve the parent with the same walk used by reads. A collection
@@ -75,9 +90,9 @@ namespace Weva.Native
             // iteration (data-each paths commonly contain both kinds).
             object target = Read(root, _controller);
             for (int i = 1; i < segments.Length - 1 && target != null; i++)
-                target = Step(target, segments[i].Trim());
+                target = Step(target, segments[i]);
             if (target == null) return false;
-            string segment = segments[segments.Length - 1].Trim();
+            string segment = segments[segments.Length - 1];
             if (target is IDictionary dict)
             {
                 if (dict.IsReadOnly) return false;

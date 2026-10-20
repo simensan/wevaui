@@ -10,10 +10,11 @@ disagree, the code wins — tell the user.
 > - **Change the engine or a host** → [`AGENTS.md`](AGENTS.md) (the engineering contract) + [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (the core as built).
 > - **Check if something is supported** → [`supported-css.md`](Packages/com.wevaui/Documentation~/supported-css.md) / [`supported-html.md`](Packages/com.wevaui/Documentation~/supported-html.md), and `Tools/oracle/known-gaps/` for what the Chrome gate excuses.
 
-_Unity verified: 2026-10-11 (1.0.0 plus unreleased fixes); Native EditMode
-242 pass / 2 environment-gated inconclusive, full EditMode 243 pass / 2
-inconclusive. See the [technical audit](docs/verification/tech-audit-20261011.md)
-for verification scope and remaining adoption limits._
+_Unity verified: 2026-10-20 (1.0.0 plus unreleased fixes); Native EditMode
+243 pass / 2 environment-gated inconclusive, full EditMode 244 pass / 2
+inconclusive. See the [merge receipt](docs/verification/merge-20261020.md)
+for the combined build and the [technical audit](docs/verification/tech-audit-20261011.md)
+for remaining adoption limits._
 
 The [October runtime performance audit](docs/verification/performance-audit-20261011.md)
 records 27 passing native workload runs, selected cold-creation profiles and

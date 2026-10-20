@@ -6,6 +6,7 @@
 #include "weva/table_layout.h"
 #include "weva/multicol.h"
 #include "weva/positioning.h"
+#include "weva/anchor.h"
 
 #include "weva/css_properties.h"
 #include "weva/inline_layout.h"
@@ -100,6 +101,11 @@ const int kId_contain_intrinsic_width = CssPropertyRegistry::instance().id_of("c
 const int kId_content_visibility = CssPropertyRegistry::instance().id_of("content-visibility");
 const int kId_float = CssPropertyRegistry::instance().id_of("float");
 const int kId_height = CssPropertyRegistry::instance().id_of("height");
+const int kId_position = CssPropertyRegistry::instance().id_of("position");
+const int kId_left = CssPropertyRegistry::instance().id_of("left");
+const int kId_right = CssPropertyRegistry::instance().id_of("right");
+const int kId_top = CssPropertyRegistry::instance().id_of("top");
+const int kId_bottom = CssPropertyRegistry::instance().id_of("bottom");
 const int kId_overflow_x = CssPropertyRegistry::instance().id_of("overflow-x");
 const int kId_overflow_y = CssPropertyRegistry::instance().id_of("overflow-y");
 const int kId_border_top_style = CssPropertyRegistry::instance().id_of("border-top-style");
@@ -133,6 +139,49 @@ std::optional<double> definite_content_height(const BoxTree& tree, BoxId id) {
 }
 
 } // namespace
+
+// Whether laying out `id`'s subtree against a DEFINITE height could differ
+// from the layout it got with that height left auto, when the two heights
+// are equal. The auto layout already produced exactly that height, so only
+// content that reads the height as definite can move: a percentage (or
+// `fr`) against it, a column flex line, an aspect ratio, an out-of-flow
+// box. Conservative: anything it does not recognise as inert is sensitive.
+static std::string_view get_by_name(const ComputedStyle* st, std::string_view name) {
+    return st ? st->get(name) : std::string_view();
+}
+
+bool subtree_reads_definite_height(const BoxTree& tree, BoxId id) {
+    const auto container_sensitive = [](const ComputedStyle* st) {
+        const std::string_view rows = get_by_name(st, "grid-template-rows");
+        if (rows.find('%') != std::string_view::npos || rows.find("fr") != std::string_view::npos)
+            return true;
+        const std::string_view display = get_by_name(st, "display");
+        if (display.find("flex") != std::string_view::npos &&
+            get_by_name(st, "flex-direction").find("column") != std::string_view::npos) return true;
+        return false;
+    };
+    const Box& root = tree[id];
+    if (!root.style || container_sensitive(root.style)) return true;
+    std::vector<BoxId> stack;
+    for (BoxId c = root.first_child; c != kNoBox; c = tree[c].next_sibling) stack.push_back(c);
+    while (!stack.empty()) {
+        const Box& b = tree[stack.back()];
+        stack.pop_back();
+        if (b.style) {
+            if (container_sensitive(b.style)) return true;
+            if (b.position == PositionType::Absolute || b.position == PositionType::Fixed ||
+                b.position == PositionType::Sticky) return true;
+            for (const char* property : {"height", "min-height", "max-height", "top", "bottom",
+                                         "flex-basis", "row-gap", "inset"}) {
+                if (get_by_name(b.style, property).find('%') != std::string_view::npos) return true;
+            }
+            const std::string_view ratio = get_by_name(b.style, "aspect-ratio");
+            if (!ratio.empty() && ratio != "auto") return true;
+        }
+        for (BoxId c = b.first_child; c != kNoBox; c = tree[c].next_sibling) stack.push_back(c);
+    }
+    return false;
+}
 
 ResolvedSides resolve_box_sides_px(const ComputedStyle* style, std::string_view shorthand,
                                    const LayoutContext& ctx, double font_size,
@@ -1238,12 +1287,54 @@ double BlockLayout::shrink_to_fit(BoxId id, double available_width,
     double avail = available_width - margin_x;
     if (avail < 0) avail = 0;
 
-    relayout_content_at(id, 1e6, fs, parent_style);
-    double max_content = max_content_width(*tree_, id, &ctx_) + frame;
-    relayout_content_at(id, 1, fs, parent_style);
-    double min_content = min_content_width(*tree_, id, &ctx_) + frame;
+    const Element* element = b.element;
+    ProbeResult probe;
+    const ProbeResult* known = nullptr;
+    if (b.element) {
+        const auto found = probes_.find({b.element, style});
+        if (found != probes_.end() && found->second.font_size == fs &&
+            found->second.frame == frame && found->second.imposed == b.cross_size_imposed &&
+            (!found->second.reads_height || found->second.height == b.height))
+            known = &found->second;
+    }
+    if (known) {
+        probe = *known;
+    } else {
+        probe.font_size = fs;
+        probe.frame = frame;
+        probe.height = b.height;
+        probe.imposed = b.cross_size_imposed;
+        // definite_content_height reads ANY positive height as definite, a
+        // stale auto height included, so the probes depend on the height
+        // exactly when something in the subtree reads one.
+        probe.reads_height = b.element && subtree_reads_definite_height(*tree_, id);
+        relayout_content_at(id, 1e6, fs, parent_style);
+        probe.max_content = max_content_width(*tree_, id, &ctx_);
+    }
+    double max_content = probe.max_content + frame;
     if (max_content < frame) max_content = frame;
-    if (min_content < frame) min_content = frame;
+    // min(max-content, max(min-content, available)) is max-content whenever
+    // max-content fits, since min-content never exceeds it -- so the
+    // min-content probe, a whole layout of the subtree, is only needed when
+    // something reads min-content: a `min-content` or `fit-content()` width, a
+    // keyword min/max bound, or a fit whose max-content does not fit. Most
+    // labels, pills and panels fit. Where it is skipped, standing in
+    // max-content leaves every formula below with the same answer.
+    const bool reads_min = bound_keyword || pick == IntrinsicPick::Min ||
+                           pick == IntrinsicPick::FitArg ||
+                           (pick != IntrinsicPick::Max && max_content > avail);
+    double min_content = max_content;
+    if (reads_min) {
+        if (!probe.has_min_content) {
+            relayout_content_at(id, 1, fs, parent_style);
+            probe.min_content = min_content_width(*tree_, id, &ctx_);
+            probe.has_min_content = true;
+        }
+        min_content = probe.min_content + frame;
+        if (min_content < frame) min_content = frame;
+    }
+
+    if (element) probes_[{element, style}] = probe;
 
     const bool border_box = is_border_box(style);
     double fitted;
@@ -1464,6 +1555,11 @@ void BlockLayout::layout_block(BoxId id, double available_width,
 
     if (reuse_ && reuse_->reuse_layout(tree_, id)) return;
 
+    // Positioning lays this box out again at its final size and reads nothing
+    // this pass would produce. On the demo's HUD, whose panels are inset on
+    // every side, that was a second full layout of most of the page.
+    if (defers_to_positioning(id)) return;
+
     // A replaced element has no contents to lay out; its size comes from the
     // image. This is the path a FLEX ITEM takes -- flex measures its items
     // through layout_block, never through shrink_to_fit.
@@ -1491,6 +1587,51 @@ void BlockLayout::layout_block(BoxId id, double available_width,
         return;
     }
     layout_content(id, fs, available_width, parent_style);
+}
+
+bool BlockLayout::defers_to_positioning_before_box_model(BoxId id, double available_width,
+                                                         const ComputedStyle* parent_style) {
+    // Only called for a box whose style is absolute or fixed, which stamping
+    // the position cannot make in-flow; so the style test is the whole answer,
+    // cached where defers_to_positioning caches it.
+    if (reuse_) return false;
+    if (static_cast<size_t>(id) >= defers_.size()) defers_.resize(tree_->size(), -1);
+    int8_t& known = defers_[id];
+    if (known < 0) known = insets_replace_layout((*tree_)[id].style, ctx_) && !tree_has_anchored_boxes();
+    if (known != 1) return false;
+    apply_box_model(tree_, id, available_width, parent_style, ctx_);
+    return true;
+}
+
+bool BlockLayout::defers_to_positioning(BoxId id) {
+    // A retained-layout probe materializes children on a miss; deferring would
+    // ask it twice. Its callers are the incremental paths, not the full pass.
+    if (reuse_) return false;
+    const PositionType position = (*tree_)[id].position;
+    if (position != PositionType::Absolute && position != PositionType::Fixed) return false;
+    // The answer depends on the style alone, and a grid or flex container that
+    // measures its items asks it once per measurement: match3's tile markers
+    // are asked dozens of times a pass. Resolving the insets each time cost
+    // more than the deferral saved there.
+    if (static_cast<size_t>(id) >= defers_.size()) defers_.resize(tree_->size(), -1);
+    int8_t& known = defers_[id];
+    if (known < 0) known = positioning_replaces_layout(*tree_, id, ctx_) && !tree_has_anchored_boxes();
+    return known == 1;
+}
+
+bool BlockLayout::tree_has_anchored_boxes() {
+    if (anchored_ < 0) {
+        anchored_ = 0;
+        for (BoxId b = 0; b < tree_->size() && !anchored_; ++b) {
+            const ComputedStyle* style = (*tree_)[b].style;
+            if (!style || !(*tree_)[b].element) continue;
+            const PositionType pos = parse_position_type(get(style, kId_position));
+            if (pos != PositionType::Absolute && pos != PositionType::Fixed) continue;
+            for (const int property : {kId_left, kId_right, kId_top, kId_bottom, kId_width, kId_height})
+                if (looks_like_anchor_function(get(style, property))) anchored_ = 1;
+        }
+    }
+    return anchored_ == 1;
 }
 
 void BlockLayout::layout_content(BoxId id, double font_size, double containing_block_width,

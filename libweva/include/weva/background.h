@@ -7,6 +7,7 @@
 #include "weva/style_resolver.h"
 
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -178,6 +179,29 @@ void rasterize_background_padded(const std::vector<BackgroundLayer>& layers,
                                  const LayoutContext& ctx, double font_size,
                                  std::vector<uint8_t>* out_rgba);
 
+// The two halves of the above. prepare_background resolves every CSS value a
+// rasterization needs -- positions, sizes, gradient geometry -- and so parses,
+// which only the thread that owns the document may do; the CSS parser keeps
+// single-threaded scratch state. Rasterizing a prepared plan reads nothing
+// but the plan and the decoded images it names, so any thread may run it,
+// and several at once. Paint queues its rasters this way (RasterQueue).
+struct BackgroundPlan {
+    virtual ~BackgroundPlan() = default;
+};
+std::shared_ptr<const BackgroundPlan> prepare_background(
+    const std::vector<BackgroundLayer>& layers, const LinearColor& color, double width,
+    double height, int tex_w, int tex_h, const LayoutContext& ctx, double font_size);
+void rasterize_background(const BackgroundPlan& plan, std::vector<uint8_t>* out_rgba);
+// Roughly how long rasterizing `plan` takes, in nanoseconds on a desktop
+// core: enough to order a pass's jobs, not to predict a frame.
+long long raster_cost(const BackgroundPlan& plan);
+// `tex_w` x `tex_h` is the padded texture; the plan is its inside.
+std::shared_ptr<const BackgroundPlan> prepare_background_padded(
+    const std::vector<BackgroundLayer>& layers, const LinearColor& color, double width,
+    double height, int tex_w, int tex_h, int pad, const LayoutContext& ctx, double font_size);
+void rasterize_background_padded(const BackgroundPlan& plan, int tex_w, int tex_h, int pad,
+                                 const struct BorderRadii* radii, std::vector<uint8_t>* out_rgba);
+
 // Coverage of a rounded rectangle at a point, with the box's origin at (0,0)
 // and `radii` its corners. Antialiased: half a texel either side of the edge,
 // which is exact for a circular corner and within a percent for the
@@ -207,6 +231,41 @@ void blur_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma);
 // a straight-alpha texture wants at its transparent edge, since the bilinear
 // filter blends those texels into their neighbours.
 void blur_flat_rgba(std::vector<uint8_t>* rgba, int width, int height, double sigma);
+
+// A large blur, done at the resolution it needs rather than the one it is
+// drawn at.
+//
+// A Gaussian of sigma s passes nothing finer than about s, so a blur of 30
+// texels rasterized and blurred texel for texel spends ~12x the work on detail
+// the blur then removes -- and blurs are most of a cold open: hud's
+// `filter: blur(60px)` backdrop was 22 of its 50 ms, neon's glows more than
+// that. Skia shrinks large blurs the same way. The picture is rasterized on a
+// coarser grid, blurred there, and interpolated back up to the texture's own
+// size, so the texture a host samples -- with nearest filtering, in Godot --
+// keeps every texel it had.
+//
+// The coarse grid is chosen so the blur there is exactly kReducedBlurRadius
+// box passes: three boxes of radius r are a Gaussian of sigma sqrt(r(r+1)),
+// and the grid's scale makes that the requested sigma, per axis, to within
+// the rounding of the grid's size. At sigma 8.5 texels the interpolation
+// error is under a tenth of a level.
+inline constexpr int kReducedBlurRadius = 8;
+struct ReducedBlur {
+    bool reduced = false;        // false: blur at full resolution, as before
+    int inner_w = 0, inner_h = 0; // the box, in coarse texels
+    int pad = 0;                  // coarse texels around it
+    int width() const { return inner_w + 2 * pad; }
+    int height() const { return inner_h + 2 * pad; }
+    double sigma() const;         // in coarse texels
+};
+// For a box of `inner_w` x `inner_h` texels blurred by `sigma` texels.
+// Reduces only where it saves at least four times the texels.
+ReducedBlur reduced_blur_grid(int inner_w, int inner_h, double sigma);
+// Resamples a blurred coarse texture (`grid`, straight-alpha RGBA8) to the
+// `tex_w` x `tex_h` texture whose box sits `pad` texels in, bilinearly and in
+// premultiplied alpha, as a GPU's linear filter would sample it.
+void upsample_blurred(const std::vector<uint8_t>& coarse, const ReducedBlur& grid, int tex_w,
+                      int tex_h, int pad, std::vector<uint8_t>* out_rgba);
 
 // The colour of `g` at (x, y) inside a `width` x `height` gradient box, as
 // straight-alpha sRGB in [0, 1]. Exposed for tests.

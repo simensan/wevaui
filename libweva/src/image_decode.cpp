@@ -1,5 +1,6 @@
 #include "weva/image_decode.h"
 
+#include <algorithm>
 #include <cstring>
 
 namespace weva {
@@ -123,34 +124,39 @@ constexpr int kDistBase[30] = {1,    2,    3,    4,    5,    7,     9,     13,  
 constexpr int kDistExtra[30] = {0, 0, 0, 0, 1, 1, 2, 2,  3,  3,  4,  4,  5,  5,  6,
                                 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13};
 
-bool inflate_block(BitReader* in, const Huffman& lit, const Huffman& dist,
-                   std::vector<uint8_t>* out) {
+// What a block ended on. kFull is the output reaching the caller's limit.
+enum class BlockEnd { kError, kDone, kFull };
+
+BlockEnd inflate_block(BitReader* in, const Huffman& lit, const Huffman& dist,
+                       std::vector<uint8_t>* out, size_t limit) {
     for (;;) {
+        if (out->size() >= limit) return BlockEnd::kFull;
         int sym = 0;
-        if (!lit.decode(in, &sym)) return false;
+        if (!lit.decode(in, &sym)) return BlockEnd::kError;
         if (sym < 256) {
             out->push_back(static_cast<uint8_t>(sym));
             continue;
         }
-        if (sym == 256) return true;   // end of block
+        if (sym == 256) return BlockEnd::kDone;   // end of block
         sym -= 257;
-        if (sym >= 29) return false;
+        if (sym >= 29) return BlockEnd::kError;
         uint32_t extra = 0;
-        if (!in->bits(kLengthExtra[sym], &extra)) return false;
+        if (!in->bits(kLengthExtra[sym], &extra)) return BlockEnd::kError;
         const size_t length = static_cast<size_t>(kLengthBase[sym]) + extra;
 
         int dsym = 0;
-        if (!dist.decode(in, &dsym)) return false;
-        if (dsym >= 30) return false;
-        if (!in->bits(kDistExtra[dsym], &extra)) return false;
+        if (!dist.decode(in, &dsym)) return BlockEnd::kError;
+        if (dsym >= 30) return BlockEnd::kError;
+        if (!in->bits(kDistExtra[dsym], &extra)) return BlockEnd::kError;
         const size_t distance = static_cast<size_t>(kDistBase[dsym]) + extra;
-        if (distance > out->size()) return false;
+        if (distance > out->size()) return BlockEnd::kError;
 
         // Byte at a time, deliberately: the run may overlap its own output,
         // which is how DEFLATE expresses a repeat, and a memcpy would read
         // bytes that have not been written yet.
         const size_t from = out->size() - distance;
-        for (size_t i = 0; i < length; ++i) out->push_back((*out)[from + i]);
+        const size_t room = std::min(length, limit - out->size());
+        for (size_t i = 0; i < room; ++i) out->push_back((*out)[from + i]);
     }
 }
 
@@ -217,7 +223,7 @@ bool dynamic_tables(BitReader* in, Huffman* lit, Huffman* dist) {
 
 } // namespace
 
-bool inflate_deflate(const uint8_t* data, size_t size, std::vector<uint8_t>* out) {
+bool inflate_deflate(const uint8_t* data, size_t size, std::vector<uint8_t>* out, size_t limit) {
     if (!data || !out) return false;
     BitReader in(data, size);
     for (;;) {
@@ -233,13 +239,17 @@ bool inflate_deflate(const uint8_t* data, size_t size, std::vector<uint8_t>* out
             if ((len ^ 0xFFFFu) != nlen) return false;
             const uint8_t* body = nullptr;
             if (!in.take(len, &body)) return false;
-            out->insert(out->end(), body, body + len);
+            const size_t room = out->size() < limit ? limit - out->size() : 0;
+            out->insert(out->end(), body, body + std::min(len, room));
+            if (out->size() >= limit) return true;
         } else if (type == 1 || type == 2) {
             Huffman lit, dist;
             if (type == 1 ? !fixed_tables(&lit, &dist) : !dynamic_tables(&in, &lit, &dist)) {
                 return false;
             }
-            if (!inflate_block(&in, lit, dist, out)) return false;
+            const BlockEnd end = inflate_block(&in, lit, dist, out, limit);
+            if (end == BlockEnd::kError) return false;
+            if (end == BlockEnd::kFull) return true;
         } else {
             return false;   // reserved
         }
@@ -247,13 +257,13 @@ bool inflate_deflate(const uint8_t* data, size_t size, std::vector<uint8_t>* out
     }
 }
 
-bool inflate_zlib(const uint8_t* data, size_t size, std::vector<uint8_t>* out) {
+bool inflate_zlib(const uint8_t* data, size_t size, std::vector<uint8_t>* out, size_t limit) {
     if (!data || size < 2) return false;
     const uint8_t cmf = data[0], flg = data[1];
     if ((cmf & 0x0F) != 8) return false;             // not DEFLATE
     if (((cmf << 8) | flg) % 31 != 0) return false;  // header check
     if (flg & 0x20) return false;                    // a preset dictionary, which PNG never uses
-    return inflate_deflate(data + 2, size - 2, out);
+    return inflate_deflate(data + 2, size - 2, out, limit);
 }
 
 namespace {
@@ -348,9 +358,15 @@ DecodedImage decode_png(const uint8_t* data, size_t size) {
     if (static_cast<uint64_t>(width) * height > 64ull * 1024 * 1024) return image;
 
     const size_t channels = colour == 0 ? 1 : colour == 2 ? 3 : colour == 3 ? 1 : colour == 4 ? 2 : 4;
+    // Exactly the filtered scanlines, and no more: the header's claim bounds
+    // the inflate, so a small stream of long back-references cannot run it
+    // into gigabytes before the size check. The reservation waits for data
+    // that could plausibly fill it -- DEFLATE cannot beat 1032:1 -- so a
+    // 60-byte header claiming 8192x8192 does not reserve 256 MB up front.
+    const size_t expected = static_cast<size_t>(height) * (1 + static_cast<size_t>(width) * channels);
     std::vector<uint8_t> raw;
-    raw.reserve(static_cast<size_t>(height) * (1 + static_cast<size_t>(width) * channels));
-    if (!inflate_zlib(compressed.data(), compressed.size(), &raw)) return image;
+    raw.reserve(std::min(expected, compressed.size() * 1032));
+    if (!inflate_zlib(compressed.data(), compressed.size(), &raw, expected)) return image;
 
     const size_t stride = static_cast<size_t>(width) * channels;
     if (raw.size() < static_cast<size_t>(height) * (stride + 1)) return image;

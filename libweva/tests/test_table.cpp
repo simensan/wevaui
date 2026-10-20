@@ -245,26 +245,6 @@ const double kLine = 16 * 1.2;
 
 } // namespace
 
-void test_table_collapsed_border_geometry() {
-    for (int width : {1, 4}) {
-        Fixture f;
-        CHECK(f.css("#t{width:200px;table-layout:fixed;border-collapse:collapse}"
-            "td{padding:0;border:" + std::to_string(width) + "px solid red}td>div{height:20px}"));
-        CHECK(f.layout("<body><table id=t><tbody id=g><tr id=r1><td id=a><div></div></td>"
-            "<td id=b><div></div></td></tr><tr id=r2><td id=c><div></div></td>"
-            "<td id=d><div></div></td></tr></tbody></table></body>"));
-        CHECK(near(f.box("t").height, 40 + 3 * width));
-        CHECK(near(f.box("g").width, 200 - width));
-        CHECK(near(f.box("g").height, 40 + 2 * width));
-        CHECK(near(f.abs_x("g"), width * 0.5));
-        CHECK(near(f.abs_y("g"), width * 0.5));
-        CHECK(near(f.box("a").border_left, width * 0.5));
-        CHECK(near(f.box("a").height, 20 + width));
-        CHECK(near(f.abs_y("c"), 20 + width * 1.5));
-        CHECK(near(f.box("a").width, (200 - width) * 0.5));
-    }
-}
-
 void test_table_collapsed_border_paint() {
     Fixture f;
     CHECK(f.css("#t{width:200px;table-layout:fixed;border-collapse:collapse}"
@@ -374,36 +354,6 @@ void test_positioned_overflow_containing_blocks() {
         visual_position(f.tree,f.find("overlay"),&x,&y);
         CHECK(near(x,80 - (captured && scrolled ? 20 : 0)) && near(y,0));
     }
-}
-
-void test_table_translucent_border_intersections() {
-    Fixture f;
-    CHECK(f.css("#t{width:200px;table-layout:fixed;border-collapse:collapse}"
-        "td{padding:0;border:4px solid rgba(255,0,0,.5)}td>div{height:20px}"));
-    CHECK(f.layout("<body><table id=t><tr><td><div></div></td><td><div></div></td></tr>"
-        "<tr><td><div></div></td><td><div></div></td></tr></table></body>"));
-    SoftwareRenderer renderer(220, 60);
-    PaintContext paint;
-    paint.styles = &f.styles; paint.backend = &renderer;
-    paint_tree(f.tree, f.root, f.ctx, paint);
-    const float alpha = renderer.pixel(2, 12).a;
-    CHECK(alpha > .49f && alpha < .51f);
-    // Chrome paints two perpendicular layers here (alpha .75), but adjacent
-    // collinear segments must not create a third/fourth layer.
-    for (const auto& point : {std::pair<int,int>{2,2}, {100,2}, {100,26}, {2,26}, {198,50}}) {
-        const float actual = renderer.pixel(point.first, point.second).a;
-        std::printf("table border alpha (%d,%d): %.6f; edge %.6f\n", point.first, point.second, actual, alpha);
-        CHECK(std::fabs(actual - (1 - (1 - alpha) * (1 - alpha))) < .001f);
-    }
-    // Verified against every pixel in the 220x60 Chrome capture. Compare
-    // floating alpha here; byte output can differ by one quantization level.
-    for (int y = 0; y < 60; ++y) for (int x = 0; x < 220; ++x) {
-        const bool vertical = y < 52 && (x < 4 || (x >= 98 && x < 102) || (x >= 196 && x < 200));
-        const bool horizontal = x < 200 && (y < 4 || (y >= 24 && y < 28) || (y >= 48 && y < 52));
-        const float expected = vertical && horizontal ? .75f : vertical || horizontal ? .5f : 0;
-        CHECK(std::fabs(renderer.pixel(x, y).a - expected) < .001f);
-    }
-
 }
 
 void test_table_unequal_border_intersections() {

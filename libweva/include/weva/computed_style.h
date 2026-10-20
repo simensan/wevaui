@@ -74,6 +74,11 @@ public:
     // Only an explicitly owned px/number value can ignore both context and
     // parent size. Inherited values keep the ordinary dependency checks.
     mutable bool font_size_memo_absolute = false;
+    // insets_replace_layout's answer, tied to version() the same way. It reads
+    // only this style's own non-inherited insets and sizes, and is asked for
+    // every out-of-flow box on every layout pass.
+    mutable int64_t insets_memo_version = -1;
+    mutable bool insets_memo = false;
 
 
     void set_inherit_parent(const ComputedStyle* parent) { parent_ = parent; }

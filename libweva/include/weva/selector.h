@@ -43,12 +43,13 @@ struct Specificity {
 
 struct NthExpression {
     int a = 0, b = 0;
+    // In 64 bits: a and b span all of int, so index - b and -a can overflow.
     bool matches(int index) const {
         if (a == 0) return index == b;
-        int diff = index - b;
+        const long long diff = static_cast<long long>(index) - b;
         if (diff == 0) return true;
         if (a > 0) return diff > 0 && diff % a == 0;
-        return diff < 0 && (-diff) % (-a) == 0;
+        return diff < 0 && (-diff) % (-static_cast<long long>(a)) == 0;
     }
 };
 

@@ -227,6 +227,13 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             // at 0 and only shrink afterwards, in the positioning pass.
             const std::string_view w_raw = get(cb.style, kId_width);
             if (w_raw.empty() || iequals(w_raw, "auto")) {
+                // The shrink-to-fit is three layouts, and positioning repeats
+                // all of them when it replaces this one; layout_block applies
+                // the same box model and then defers.
+                if (block->defers_to_positioning_before_box_model(c, content_width, style)) {
+                    out_of_flow.push_back(c);
+                    continue;
+                }
                 block->shrink_to_fit(c, content_width, style);
             } else {
                 block->layout_block(c, content_width, style);

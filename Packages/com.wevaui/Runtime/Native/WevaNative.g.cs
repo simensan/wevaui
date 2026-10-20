@@ -343,7 +343,7 @@ namespace Weva.Native
         public const string Library = "weva_core";
 #endif
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 44;
+        public const int WEVA_ABI_VERSION_MINOR = 45;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
         public const uint WEVA_BOX_NONE = 0xFFFFFFFFu;
 
@@ -629,6 +629,10 @@ namespace Weva.Native
         public static extern int weva_char_decompose(uint codepoint, uint* @out, int capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_document_font_family_names(System.IntPtr doc, byte* buffer, nuint capacity);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern void weva_set_raster_cache_limit(ulong bytes);
+        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
+        public static extern ulong weva_raster_cache_bytes();
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_unity_sizeof(byte* struct_name);
     }

@@ -21,6 +21,7 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
 
+
 // The same lookup by id. A property id is resolved once for the
 // program below rather than hashed from its name on every call --
 // sampling put ComputedStyle::get and CssPropertyRegistry::id_of
@@ -1735,7 +1736,18 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             } else {
                 // At the inline size it already has, not the cell's: a `center`
                 // or explicit-width item must not be widened by the stretch.
-                block->relayout_at_size(p.box, before.width, stretch_size(before, h, true));
+                const double stretched = stretch_size(before, h, true);
+                if (stretched == before.height && !subtree_reads_definite_height(*tree, p.box)) {
+                    // The auto layout already has this height and nothing in
+                    // it reads the height as definite, so re-laying it out
+                    // would reproduce it. Doing so anyway re-measured every
+                    // nested grid at every level: 2^depth layouts, and twenty
+                    // nested grids took 2.2 s.
+                    Box& fixed = (*tree)[p.box];
+                    fixed.cross_size_imposed = true;
+                } else {
+                    block->relayout_at_size(p.box, before.width, stretched);
+                }
             }
         }
         Box& b = (*tree)[p.box];

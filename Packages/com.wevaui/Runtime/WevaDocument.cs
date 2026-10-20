@@ -822,18 +822,27 @@ namespace Weva
             return _doc != null && _doc.TryGetRow(element, out index, out key);
         }
 
+        // A handler's method per (controller type, name), with whether it takes
+        // the element id: found once, instead of two reflection searches and
+        // their argument arrays on every event.
+        private static readonly System.Collections.Generic.Dictionary<(Type, string), (System.Reflection.MethodInfo Method, bool TakesId)> s_handlers =
+            new System.Collections.Generic.Dictionary<(Type, string), (System.Reflection.MethodInfo, bool)>();
+        private static readonly Type[] s_idParameter = { typeof(string) };
+
         private void Dispatch(string handler, string id)
         {
             if (_controller == null) return;
-            System.Reflection.MethodInfo method = _controller.GetType().GetMethod(handler,
-                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, null, new[] { typeof(string) }, null);
-            if (method != null)
+            Type type = _controller.GetType();
+            if (!s_handlers.TryGetValue((type, handler), out var found))
             {
-                method.Invoke(_controller, new object[] { id });
-                return;
+                const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance;
+                System.Reflection.MethodInfo method = type.GetMethod(handler, flags, null, s_idParameter, null);
+                found = method != null ? (method, true) : (type.GetMethod(handler, flags, null, Type.EmptyTypes, null), false);
+                s_handlers[(type, handler)] = found;
             }
-            method = _controller.GetType().GetMethod(handler, System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, null, Type.EmptyTypes, null);
-            method?.Invoke(_controller, null);
+            if (found.Method == null) return;
+            if (found.TakesId) found.Method.Invoke(_controller, new object[] { id });
+            else found.Method.Invoke(_controller, null);
         }
 
 #if WEVA_URP

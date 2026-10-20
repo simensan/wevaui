@@ -93,6 +93,13 @@ Numbers to expect are in `docs/verification/review-three-days-20260915.md`;
 any red is new.
 The 2026-09-15 review passes 14 gcc suites (507,328 core checks),
 16 sanitizer suites, and all 334 Chrome layout captures at the 1.5px ceiling.
+The 2026-09-25 [technical audit](docs/verification/tech-audit-20260925.md)
+and its follow-up add lifetime, hostile-input, nested-layout and threaded-raster
+regressions, and the [screen-opening pass](docs/verification/screen-open-20260925.md)
+adds raster-job, coarse-blur and shared-texture tests: 507,885 core checks on
+gcc, clang and ThreadSanitizer, 507,879 under the 16 sanitizer suites (the
+small-stack test skips there).
+Its Unity changes still need the editor suites; see the report.
 Unity Native EditMode passes 236 tests with 2 environment-gated inconclusive;
 the full EditMode suite passes 237 with the same 2 inconclusive.
 Tooling suites pass 54 release/oracle checks, 9 text-safety runner checks, and
@@ -128,6 +135,12 @@ The [runtime geometry follow-up](docs/verification/runtime-geometry-20261011.md)
 reduces paired Godot inventory scrolling API CPU p95 by 11.9%, without adding
 workers. Its geometry suite now has 176 checks, including 36 scalar-reference
 AA comparisons and the thin-border allocation budget.
+
+The [October 20 merge integration](docs/verification/merge-20261020.md)
+combines the raster scheduler/cache work with the October optimizations.
+Full Unity EditMode passes 244 tests with two environment-gated inconclusive;
+its Native subset passes 243 with the same two inconclusive. Earlier
+performance receipts apply to their pre-merge builds, not this combination.
 
 ## 4. Workflow recipes
 

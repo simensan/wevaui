@@ -46,6 +46,7 @@ namespace Weva.Rendering.URP {
             // pass stays at the end and draws straight to the target.
             bool backdrop = AnyDocumentNeedsBackdropCopy();
             pass.requiresIntermediateTexture = backdrop;
+            pass.NeedsBackdropCopy = backdrop;
             pass.renderPassEvent = backdrop ? RenderPassEvent.AfterRenderingPostProcessing : UIRenderGraphPass.OverlayRenderPassEvent;
             renderer.EnqueuePass(pass);
         }

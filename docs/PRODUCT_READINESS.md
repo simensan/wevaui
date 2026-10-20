@@ -1,6 +1,10 @@
 # Product readiness
 
-Updated October 11, 2026 · Verification through October 11.
+Updated October 20, 2026 · Integration verification through October 20.
+
+The [merge integration receipt](verification/merge-20261020.md) records
+validation of the combined engine and host changes. Performance measurements
+remain specific to the earlier builds identified in their reports.
 
 **Weva is a development preview** for building game UI with HTML/CSS in Unity
 and Godot. HUDs, menus, settings screens and data-bound lists are ready to try.
@@ -53,6 +57,14 @@ and browser-level visual/text fidelity remain incomplete.
   GCC cold HUD creation by 35.5% to 33.368 ms, using additional CPU cores. This
   still exceeds a 60 Hz frame budget before host rendering or asset loading.
   Preparing and reusing screens may help.
+  Since the [September 25 audit](verification/tech-audit-20260925.md), cold paint
+  uses up to four threads, and wide blurs are drawn at the resolution they need.
+  The [screen-opening pass](verification/screen-open-20260925.md) measured
+  first opens up to 2.5× faster. A screen created again, such as a Unity menu
+  re-enabled, was up to 8× faster on paint-heavy pages, because rasterized
+  textures are kept across documents. `weva_set_raster_cache_limit` bounds
+  that cache (32 MiB by default). `WEVA_RASTER_THREADS=1` keeps everything on
+  the calling thread.
   The [two performance passes](verification/performance-20260915-pass2.md) cover
   standalone Godot fixtures on a Ryzen 7 9800X3D/RTX 5080; they do not establish
   Unity performance, full-game FPS or lower-end hardware suitability.
@@ -62,6 +74,11 @@ and browser-level visual/text fidelity remain incomplete.
   The [runtime geometry change](verification/runtime-geometry-20261011.md)
   lowers paired inventory scrolling API CPU p95 by 11.9% to 1.097 ms with
   identical pixels; whole-game and lower-end testing remain outstanding.
+  These performance reports describe separate pre-merge builds; combined
+  performance has not been remeasured.
+
+- **Deep markup:** content nested more than 64 elements deep is not rendered,
+  so layout stays within a 1 MB thread stack.
 
 ## Evidence behind this status
 

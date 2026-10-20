@@ -139,6 +139,19 @@ public:
     virtual TextureHandle generate_texture(const std::vector<uint8_t>& rgba, Vec2i size) = 0;
     virtual void release_texture(TextureHandle texture) = 0;
 
+    // A texture whose pixels arrive later in the same paint pass. A backend
+    // that only records draws for the host to read after the update can hand
+    // out the id first, which lets paint rasterize every texture a pass needs
+    // together, across threads, instead of one at a time in tree order.
+    // Returns the null handle when the backend needs pixels up front; paint
+    // then calls generate_texture as before. Every reserved texture is filled
+    // before paint_tree returns.
+    virtual TextureHandle reserve_texture(Vec2i size) { (void)size; return {}; }
+    virtual void fill_texture(TextureHandle texture, std::vector<uint8_t>&& rgba) {
+        (void)texture;
+        (void)rgba;
+    }
+
     // Null disables clipping.
     virtual void set_scissor(const Recti* rect) = 0;
 

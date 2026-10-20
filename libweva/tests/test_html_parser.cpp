@@ -2,6 +2,7 @@
 #include "weva/dom.h"
 #include "weva/html.h"
 #include <string>
+#include <utility>
 
 using namespace weva;
 
@@ -230,5 +231,70 @@ void test_html_parser() {
         CHECK(root != nullptr);
         CHECK(root->get_attribute("data-n") == "3");
         CHECK(p.doc->get_element_by_id("inner") != nullptr);
+    }
+}
+
+namespace {
+std::string chrome_shape(const Node& n) {
+    if (n.node_type() == NodeType::Text) return "\"" + std::string(static_cast<const TextNode&>(n).data()) + "\"";
+    if (!n.is_element()) return "";
+    const auto& e = static_cast<const Element&>(n);
+    std::string s(e.tag_name());
+    for (size_t i = 0; i < e.attributes().size(); ++i)
+        s += "[" + std::string(e.attributes().name_at(i)) + "=" + std::string(e.attributes().value_at(i)) + "]";
+    s += "(";
+    bool first = true;
+    for (const auto& c : n.children()) {
+        const std::string w = chrome_shape(*c);
+        if (w.empty()) continue;
+        if (!first) s += ",";
+        s += w;
+        first = false;
+    }
+    return s + ")";
+}
+const Node* body_of(const Node& n) {
+    if (n.is_element() && static_cast<const Element&>(n).tag_name() == "body") return &n;
+    for (const auto& c : n.children()) if (const Node* b = body_of(*c)) return b;
+    return nullptr;
+}
+} // namespace
+
+// Formatting elements across a closed paragraph, and the "Noah's Ark" limit
+// of three identical entries. Expected trees are Chromium's, serialized the
+// same way (Playwright, headless Chromium 1194, document.body's children).
+void test_html_formatting_reconstruction_matches_chrome() {
+    const std::pair<const char*, const char*> cases[] = {
+        {"<p><b><b><b><b>x</p>y",
+         "p(b(b(b(b(\"x\"))))),b(b(b(\"y\")))"},
+        {"<div><b class=a><b class=a><b class=a><b class=a>x</div>y",
+         "div(b[class=a](b[class=a](b[class=a](b[class=a](\"x\"))))),b[class=a](b[class=a](b[class=a](\"y\")))"},
+        {"<p><i><i><i><i><i>x</p>y",
+         "p(i(i(i(i(i(\"x\")))))),i(i(i(\"y\")))"},
+        {"<p><b id=1><b id=2><b id=3><b id=4>x</p>y",
+         "p(b[id=1](b[id=2](b[id=3](b[id=4](\"x\"))))),b[id=1](b[id=2](b[id=3](b[id=4](\"y\"))))"},
+        {"<p><b><i><b><i><b><i><b>x</p>y",
+         "p(b(i(b(i(b(i(b(\"x\")))))))),i(b(i(b(i(b(\"y\"))))))"},
+        {"<b><b><b><b>x</b></b></b></b>y",
+         "b(b(b(b(\"x\")))),\"y\""},
+        {"<p>a<b>b</p>c",
+         "p(\"a\",b(\"b\")),b(\"c\")"},
+        {"<a href=x><div>t</div></a>",
+         "a[href=x](div(\"t\"))"},
+    };
+    for (const auto& [html, expected] : cases) {
+        P p;
+        CHECK(p.run(html, false));
+        const Node* body = p.doc ? body_of(*p.doc) : nullptr;
+        std::string got;
+        if (body) {
+            for (const auto& c : body->children()) {
+                const std::string w = chrome_shape(*c);
+                if (w.empty()) continue;
+                if (!got.empty()) got += ",";
+                got += w;
+            }
+        }
+        CHECK_EQ(got, expected);
     }
 }
