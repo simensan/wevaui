@@ -60,7 +60,7 @@ if [ -n "$AB_A" ]; then binaries=("$AB_A" "$AB_B"); fi
 for binary in "${binaries[@]}"; do
     [ -x "$binary" ] || { echo "no executable benchmark at $binary" >&2; exit 1; }
 done
-tmp="$(mktemp -d)"
+tmp="$(mktemp -d "${TMPDIR:-/tmp}/weva-bench.XXXXXX")"
 trap 'status=$?; if [ "$status" -eq 0 ]; then rm -rf "$tmp"; else printf "benchmark failed; evidence in %s\n" "$tmp" >&2; fi' EXIT
 
 # One flip mode through one binary, in milliseconds. `best` rather than mean:
