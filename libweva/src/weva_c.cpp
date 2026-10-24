@@ -7890,7 +7890,7 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     // holds has moved. Nothing else can tell an edit from a visit.
     if (previous_focus && is_text_field(*previous_focus) && doc->user_edited_since_focus &&
         field_value(*previous_focus) != doc->value_at_focus) {
-        doc->queue_event(WEVA_EVENT_CHANGE, previous_focus, 0, 0, 0);
+        note_value_change(doc, *const_cast<Element*>(previous_focus), field_value(*previous_focus), false);
     }
     doc->value_at_focus = target && is_text_field(*target) ? field_value(*target) : std::string();
     doc->user_edited_since_focus = false;
@@ -8266,6 +8266,8 @@ extern "C++" {
 static std::string key_of(const Element& e) {
     const std::string_view id = e.get_attribute("id");
     if (!id.empty()) return "#" + std::string(id);
+    const std::string_view row_key = e.get_attribute("data-weva-key");
+    if (!row_key.empty()) return "row:" + std::string(e.get_attribute("data-weva-row")) + ":" + std::string(row_key);
     const std::string_view key = e.get_attribute("data-key");
     if (!key.empty()) return "k:" + std::string(key);
     return std::string();
@@ -8283,10 +8285,25 @@ static bool same_kind(const Node& live, const Node& fresh) {
     return live.node_type() == NodeType::Text && fresh.node_type() == NodeType::Text;
 }
 
-static bool diff_children(weva_document* doc, Node* live_parent, Node* fresh_parent, std::vector<Ref<Node>>* adopted);
+struct ReloadBindings {
+    BindingTemplates templates;
+    BindingRepeats repeats;
+};
 
-static bool diff_element(weva_document* doc, Element* live, Element* fresh, std::vector<Ref<Node>>* adopted) {
+static bool diff_children(weva_document* doc, Node* live_parent, Node* fresh_parent, std::vector<Ref<Node>>* adopted,
+                          const ReloadBindings& bindings);
+
+static bool diff_element(weva_document* doc, Element* live, Element* fresh, std::vector<Ref<Node>>* adopted,
+                         const ReloadBindings& bindings) {
     bool mutated = false;
+    // A matched element keeps its form/focus/scroll state, but the new source
+    // owns its binding expressions. Never retain templates from the old file.
+    doc->binding_templates.erase(live);
+    const auto attrs = bindings.templates.find(fresh);
+    if (attrs != bindings.templates.end()) doc->binding_templates[live] = attrs->second;
+    doc->binding_repeats.erase(live);
+    const auto rows = bindings.repeats.find(fresh);
+    if (rows != bindings.repeats.end()) doc->binding_repeats[live] = rows->second;
     const AttributeMap& fa = fresh->attributes();
     std::vector<std::string> fresh_names;
     for (size_t i = 0; i < fa.size(); ++i) {
@@ -8306,11 +8323,12 @@ static bool diff_element(weva_document* doc, Element* live, Element* fresh, std:
         live->remove_attribute(name);
         mutated = true;
     }
-    if (diff_children(doc, live, fresh, adopted)) mutated = true;
+    if (diff_children(doc, live, fresh, adopted, bindings)) mutated = true;
     return mutated;
 }
 
-static bool diff_children(weva_document* doc, Node* live_parent, Node* fresh_parent, std::vector<Ref<Node>>* adopted) {
+static bool diff_children(weva_document* doc, Node* live_parent, Node* fresh_parent, std::vector<Ref<Node>>* adopted,
+                          const ReloadBindings& bindings) {
     bool mutated = false;
     const std::vector<Ref<Node>> live_children(live_parent->children().begin(), live_parent->children().end());
     const std::vector<Ref<Node>> fresh_children(fresh_parent->children().begin(), fresh_parent->children().end());
@@ -8368,10 +8386,11 @@ static bool diff_children(weva_document* doc, Node* live_parent, Node* fresh_par
             continue;
         }
         if (target->node_type() == NodeType::Element) {
-            if (diff_element(doc, static_cast<Element*>(target), static_cast<Element*>(fc), adopted)) mutated = true;
+            if (diff_element(doc, static_cast<Element*>(target), static_cast<Element*>(fc), adopted, bindings)) mutated = true;
         } else {
             auto* lt = static_cast<TextNode*>(target);
             const auto* ft = static_cast<const TextNode*>(fc);
+            lt->set_source(ft->source());
             if (lt->data() != ft->data()) {
                 lt->set_data(ft->data());
                 mutated = true;
@@ -8424,11 +8443,26 @@ weva_status weva_document_reload_html(weva_document_t doc, const char* html, siz
     // would put every host's light-dom back in place of its rendering.
     std::vector<ComponentStylesheet> component_css;
     expand_components(fresh.get(), &component_css);
+    // The live tree also contains data-each instances. Expand the replacement
+    // with the same data before diffing, so keyed controls remain the same
+    // controls instead of disappearing when the unexpanded template arrives.
+    ReloadBindings bindings;
+    if (doc->has_binding_source) {
+        const AbiBindingResolver resolver(doc->binding_source);
+        apply_bindings(*fresh, resolver, &bindings.templates, &bindings.repeats);
+    }
     std::vector<Ref<Node>> adopted;
-    diff_children(doc, doc->doc.get(), fresh.get(), &adopted);
+    diff_children(doc, doc->doc.get(), fresh.get(), &adopted, bindings);
     // Elements that came over from the fresh tree need handles, styles and
     // boxes; adopt indexes their subtrees and asks for the rebuild.
     adopt(doc, adopted);
+    // New subtrees retain their own nodes. Matched nodes were rebound above.
+    for (const auto& entry : bindings.templates) {
+        if (doc->handle_of(entry.first) != WEVA_ELEMENT_NONE) doc->binding_templates[entry.first] = entry.second;
+    }
+    for (const auto& entry : bindings.repeats) {
+        if (doc->handle_of(entry.first) != WEVA_ELEMENT_NONE) doc->binding_repeats[entry.first] = entry.second;
+    }
     // The sheets the markup carries follow the markup: `<style>` blocks are
     // read again from the live tree, component sheets replaced from the fresh.
     doc->component_sheets.clear();

@@ -132,6 +132,8 @@ public:
     // Parse-time raw text. Survives set_data so the binding scanner can still
     // find `{{ }}` markers after the rendered value has replaced them.
     const std::string& source() const { return source_; }
+    // A source reload changes the template as well as its rendered text.
+    void set_source(std::string_view value) { source_.assign(value); }
 
 private:
     std::string data_;

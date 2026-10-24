@@ -336,6 +336,7 @@ void test_abi_incremental_selector_reach();
 void test_abi_events();
 void test_abi_caret();
 void test_abi_binding_text();
+void test_abi_binding_reload();
 void test_abi_binding_attributes();
 void test_c_abi_binding_boolean_attributes();
 void test_abi_binding_classes();
@@ -811,6 +812,7 @@ int main() {
     test_abi_events();
     test_abi_caret();
     test_abi_binding_text();
+    test_abi_binding_reload();
     test_abi_binding_attributes();
     test_c_abi_binding_boolean_attributes();
     test_abi_binding_classes();

@@ -237,85 +237,97 @@ int expand_repeat(Element& tmpl, const BindingResolver& resolver, BindingTemplat
         if (e.get_attribute(kCloneMark) == tmpl.get_attribute("data-each")) rows.push_back(&e);
     }
 
+    // One row factory serves both initial expansion and keyed insertion.
+    const auto make_row = [&](int i) {
+        Ref<Element> row = make_ref<Element>(tmpl.tag_name() == "template" ? "div"
+                                                      : tmpl.tag_name());
+        // A single element in the template body IS the row; anything else
+        // is wrapped, which is the only way to keep the count right.
+        const Element* only = nullptr;
+        int elements = 0;
+        for (const Ref<Node>& c : tmpl.children()) {
+            if (c->node_type() != NodeType::Element) continue;
+            only = static_cast<const Element*>(c.get());
+            ++elements;
+        }
+        Ref<Node> made;
+        if (elements == 1 && only) {
+            made = clone_node(*only);
+        } else {
+            clone_children(tmpl, row.get());
+            made = Ref<Node>::retain(row.get());
+        }
+        Element& made_row = static_cast<Element&>(*made);
+        made_row.set_attribute(kCloneMark, tmpl.get_attribute("data-each"));
+        // Its position and its identity, stamped on the row itself.
+        //
+        // A repeated row usually has no id -- the template wrote one
+        // element and the data decides how many there are -- so a click on
+        // one arrived at a script with nothing to say WHICH row it was.
+        // These make the row addressable without the author having to
+        // thread an id through the data, and a stylesheet can select on
+        // them too.
+        made_row.set_attribute(kRowIndex, std::to_string(i));
+        made_row.set_attribute(kRowKey, keys[static_cast<size_t>(i)]);
+        return made;
+    };
     int changed = 0;
-    // A permutation of unique explicit keys moves the existing DOM rows.
-    // Preserve live controls, handles and binding templates; duplicate/missing
-    // identities and membership changes keep the ordinary reconstruction path.
-    bool reordered = false;
-    if (!same && previous && explicit_keys && rows.size() == keys.size() &&
-        previous->size() == keys.size() && !rows.empty()) {
+    bool reconciled = false;
+    if (!same && previous && explicit_keys && previous->size() == rows.size()) {
         std::map<std::string, Element*> keyed;
+        std::map<std::string, bool> incoming;
         bool unique = true;
         for (size_t i = 0; i < rows.size(); ++i)
             unique = keyed.emplace((*previous)[i], rows[i]).second && unique;
-        std::vector<Element*> ordered;
-        for (const auto& key : keys) {
-            const auto found = keyed.find(key);
-            if (found == keyed.end()) { unique = false; break; }
-            ordered.push_back(found->second);
-            keyed.erase(found);
-        }
-        // Leave unrelated siblings in place. Generated rows are contiguous;
-        // externally interleaved rows use the conservative path below.
-        size_t first = 0;
-        while (first < parent->children().size() && parent->children()[first].get() != rows.front()) ++first;
-        for (size_t i = 0; i < rows.size(); ++i)
-            if (first + i >= parent->children().size() || parent->children()[first + i].get() != rows[i]) unique = false;
+        for (const auto& key : keys) unique = incoming.emplace(key, true).second && unique;
         if (unique) {
-            for (size_t i = 0; i < ordered.size(); ++i) {
-                Node* at = parent->children()[first + i].get();
-                if (at != ordered[i]) {
-                    parent->insert_before(ordered[i], at);
-                    ++changed;
+            // Retain reused and new rows while removing/reordering siblings.
+            // A search changing its results must not replace its focused field.
+            std::vector<Ref<Node>> ordered;
+            for (size_t i = 0; i < keys.size(); ++i) {
+                const auto found = keyed.find(keys[i]);
+                if (found != keyed.end()) {
+                    ordered.push_back(Ref<Node>::retain(found->second));
+                    keyed.erase(found);
+                } else {
+                    ordered.push_back(make_row(static_cast<int>(i)));
                 }
-                ordered[i]->set_attribute(kRowIndex, std::to_string(i));
             }
-            rows = std::move(ordered);
+            for (const auto& entry : keyed) {
+                if (templates) templates->erase(entry.second);
+                parent->remove_child(entry.second);
+                ++changed;
+            }
+            rows.clear();
+            for (size_t i = 0; i < ordered.size(); ++i) {
+                auto* row = static_cast<Element*>(ordered[i].get());
+                row->set_attribute(kRowIndex, std::to_string(i));
+                rows.push_back(row);
+            }
+            // The nodes may already follow the template. Walking forward and
+            // using the next sibling avoids detach/reinsert for unchanged rows.
+            Node* after = &tmpl;
+            for (Element* row : rows) {
+                Node* next = nullptr;
+                const auto& children = parent->children();
+                for (size_t j = 0; j + 1 < children.size(); ++j)
+                    if (children[j].get() == after) { next = children[j + 1].get(); break; }
+                if (next != row) { parent->insert_before(row, next); ++changed; }
+                after = row;
+            }
             *previous = keys;
-            reordered = true;
+            reconciled = true;
         }
     }
-    if (!same && !reordered) {
+    if (!same && !reconciled) {
         for (Element* row : rows) {
             if (templates) templates->erase(row);
             parent->remove_child(row);
             ++changed;
         }
         rows.clear();
-        // Appended after the template, in order, so the rows read in the
-        // document the way they read in the data.
         for (int i = 0; i < n; ++i) {
-            Ref<Element> row = make_ref<Element>(tmpl.tag_name() == "template" ? "div"
-                                                                              : tmpl.tag_name());
-            // A single element in the template body IS the row; anything else
-            // is wrapped, which is the only way to keep the count right.
-            const Element* only = nullptr;
-            int elements = 0;
-            for (const Ref<Node>& c : tmpl.children()) {
-                if (c->node_type() != NodeType::Element) continue;
-                only = static_cast<const Element*>(c.get());
-                ++elements;
-            }
-            Ref<Node> made;
-            if (elements == 1 && only) {
-                made = clone_node(*only);
-            } else {
-                clone_children(tmpl, row.get());
-                made = Ref<Node>::retain(row.get());
-            }
-            if (!made) continue;
-            Element& made_row = static_cast<Element&>(*made);
-            made_row.set_attribute(kCloneMark, tmpl.get_attribute("data-each"));
-            // Its position and its identity, stamped on the row itself.
-            //
-            // A repeated row usually has no id -- the template wrote one
-            // element and the data decides how many there are -- so a click on
-            // one arrived at a script with nothing to say WHICH row it was.
-            // These make the row addressable without the author having to
-            // thread an id through the data, and a stylesheet can select on
-            // them too.
-            made_row.set_attribute(kRowIndex, std::to_string(i));
-            made_row.set_attribute(kRowKey, keys[static_cast<size_t>(i)]);
+            Ref<Node> made = make_row(i);
             parent->append_child(made.get());
             rows.push_back(&static_cast<Element&>(*made));
             ++changed;

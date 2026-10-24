@@ -167,6 +167,56 @@ void test_c_abi_binding_boolean_attributes() {
 // Text, and the thing that makes it a binding rather than one substitution:
 // the markup stays the template, so the same node fills again when the data
 // moves.
+void test_abi_binding_reload() {
+    const char* before = "<main><template data-each='Tools as tool' data-key='Id'><section id='{{tool.Id}}'><template data-each='tool.Rows as row' data-key='Key'><div id='row-{{row.Key}}'><input id='{{row.Key}}' value='{{row.Value}}'><span>{{row.Label}}</span></div></template></section></template></main>";
+    const char* after = "<main class='edited'><template data-each='Tools as tool' data-key='Id'><section id='{{tool.Id}}'><template data-each='tool.Rows as row' data-key='Key'><div id='row-{{row.Key}}'><input id='{{row.Key}}' value='{{row.Value}}' title='{{row.Help}}'><span>{{row.Help}}</span><b>new</b></div></template></section></template></main>";
+    Doc doc("input{width:200px;height:30px}", before);
+    doc.data.lists = {{"Tools", 1}, {"Tools.0.Rows", 1}};
+    doc.data.values = {{"Tools.0.Id", "search"}, {"Tools.0.Rows.0.Key", "query"},
+                       {"Tools.0.Rows.0.Value", "lasso"}, {"Tools.0.Rows.0.Label", "Old label"},
+                       {"Tools.0.Rows.0.Help", "New help"}};
+    doc.refresh();
+    const auto field = weva_document_query(doc.d, "#query");
+    CHECK(field != WEVA_ELEMENT_NONE);
+    CHECK(weva_document_set_focus(doc.d, field) == WEVA_OK);
+    CHECK(weva_element_set_value(doc.d, field, "rope") == WEVA_OK);
+    for (int edit = 0; edit < 3; ++edit) {
+        CHECK(weva_document_reload_html(doc.d, after, std::strlen(after)) == WEVA_OK);
+        doc.refresh();
+        CHECK(weva_document_query(doc.d, "#query") == field);
+        CHECK(weva_document_focus(doc.d) == field);
+        char value[32]{};
+        weva_element_value(doc.d, field, value, sizeof(value));
+        CHECK(std::strcmp(value, "rope") == 0);
+        CHECK(doc.text("#row-query span") == "New help");
+        CHECK(doc.text("#row-query b") == "new");
+    }
+    doc.data.values["Tools.0.Rows.0.Help"] = "Changed again";
+    doc.refresh();
+    CHECK(doc.text("#row-query span") == "Changed again");
+    doc.data.lists["Tools.0.Rows"] = 2;
+    doc.data.values["Tools.0.Rows.1.Key"] = "second";
+    doc.data.values["Tools.0.Rows.1.Help"] = "Another row";
+    doc.refresh();
+    CHECK(weva_document_query(doc.d, "#query") == field);
+    CHECK(doc.text("#row-second span") == "Another row");
+    // Reordering and removing siblings preserve the edited control as well.
+    doc.data.values["Tools.0.Rows.0.Key"] = "second";
+    doc.data.values["Tools.0.Rows.1.Key"] = "query";
+    doc.refresh();
+    CHECK(weva_document_query(doc.d, "#query") == field);
+    CHECK(weva_document_focus(doc.d) == field);
+    doc.data.lists["Tools.0.Rows"] = 1;
+    doc.data.values["Tools.0.Rows.0.Key"] = "query";
+    doc.refresh();
+    CHECK(weva_document_query(doc.d, "#query") == field);
+    CHECK(weva_document_query(doc.d, "#second") == WEVA_ELEMENT_NONE);
+    CHECK(weva_document_focus(doc.d) == field);
+    char edited[32]{};
+    weva_element_value(doc.d, field, edited, sizeof(edited));
+    CHECK(std::strcmp(edited, "rope") == 0);
+}
+
 void test_abi_binding_text() {
     Doc doc("html, body { margin: 0 }", "<p id=t>Gold: {{ Player.Gold }}</p>");
     doc.data.values["Player.Gold"] = "120";
