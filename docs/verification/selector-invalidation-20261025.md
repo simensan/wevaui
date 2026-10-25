@@ -93,3 +93,10 @@ alignment, overlapping copies and output limits across block boundaries. Both
 GCC and Clang pass 14/14 suites with warning-free final builds. No ABI or host
 API changes are required. First-use loading remains synchronous; the speedup
 does not establish a frame-budget guarantee for opening image-heavy panels.
+
+The final release runtime confirms 404.4 FPS with the Resources tooltip and
+399.0 FPS without it (2,400 frames each, no frames over 16.7 ms). Cold Resources
+opening falls from 439.5 to 199.1 ms; three warm openings take 29.6–30.3 ms.
+Worldgen's first opening takes 20.9 ms and its warm opening 13.6 ms, versus
+roughly 100 ms warm in the audit. Captures were inspected. Synchronous cold
+loading and the remaining 30 ms Resources mount are still above the frame budget.
