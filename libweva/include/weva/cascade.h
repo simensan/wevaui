@@ -187,6 +187,11 @@ public:
     // :has() lets it reach its ancestors, and then anything they select.
     bool has_sibling_selectors() const { return cache_unsafe_sibling_composition_; }
     bool has_has_selectors() const { return cache_unsafe_has_; }
+    bool has_hover_dependency() const { return has_hover_dependency_; }
+    bool has_active_dependency() const { return has_active_dependency_; }
+    bool sibling_hover_dependency() const { return sibling_hover_dependency_; }
+    bool sibling_active_dependency() const { return sibling_active_dependency_; }
+    bool has_style_attribute_selectors() const { return style_attribute_selectors_; }
     bool has_validity_selectors() const { return shape_key_folds_validity_; }
     bool has_range_selectors() const { return shape_key_folds_range_; }
     bool has_default_selectors() const { return shape_key_folds_default_; }
@@ -328,8 +333,8 @@ private:
                       const ElementStateProvider& state, bool pseudo, int* distance) const;
     mutable std::map<uint64_t, std::vector<MatchedDeclaration>> shape_cache_;
     // Where an UNCACHEABLE element's matches live: an element with an inline
-    // style, or any element at all when the sheets use sibling combinators or
-    // :has(). Reused rather than allocated per element.
+    // style, or a possible subject of a sibling-dependent or :has rule.
+    // Reused rather than allocated per element.
     mutable std::vector<MatchedDeclaration> uncached_matches_;
     mutable CacheStats stats_;
     mutable WorkProfile work_profile_;
@@ -338,6 +343,12 @@ private:
     bool cache_unsafe_has_ = false;                  // :has() depends on descendants
     bool cache_unsafe_scope_ = false;                // ancestor rank or owner identity
     StateReach has_subject_reach_; // Possible rightmost subjects of :has-dependent rules.
+    StateReach sibling_subject_reach_;
+    bool has_hover_dependency_ = false;
+    bool has_active_dependency_ = false;
+    bool sibling_hover_dependency_ = false;
+    bool sibling_active_dependency_ = false;
+    bool style_attribute_selectors_ = false;
     StateReach hover_reach_;                         // what :hover can match
     StateReach active_reach_;                        // what :active can match
     bool shape_key_folds_sibling_index_ = false;     // :nth-child, :first-child, :empty

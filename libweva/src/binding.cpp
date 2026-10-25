@@ -228,6 +228,10 @@ int expand_repeat(Element& tmpl, const BindingResolver& resolver, BindingTemplat
 
     std::vector<std::string>* previous = repeats ? &(*repeats)[&tmpl] : nullptr;
     const bool same = previous && *previous == keys;
+    // An empty, unchanged repeat owns no live rows. Conditional controls use
+    // zero/one repeats; searching every sibling for each absent control makes
+    // their refresh quadratic in the number of templates in a row.
+    if (same && n == 0) return 0;
 
     // The rows this template made last time, in order.
     std::vector<Element*> rows;

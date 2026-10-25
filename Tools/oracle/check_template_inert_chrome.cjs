@@ -25,7 +25,19 @@ const {launch} = require('./chrome_test_browser.cjs');
     }));
     const expected = {queryLi: true, queryAllRows: 0, queryTemplate: true, templateChildren: 0, contentChildren: 1, ulText: '', ulHeight: 0, afterTop: 0, templateDisplay: 'none'};
     const failures = Object.keys(expected).filter(k => JSON.stringify(r[k]) !== JSON.stringify(expected[k]));
-    fs.writeFileSync(process.argv[2], JSON.stringify({browser: await browser.version(), result: r, expected, failures}, null, 2));
+    await page.setContent('<style>@keyframes pulse { from { opacity:.2 } to { opacity:.8 } } .animated { animation:pulse 1s infinite }</style><template><div class=animated>Source</div></template>');
+    const animation = await page.evaluate(async () => {
+      await new Promise(requestAnimationFrame);
+      const inert = document.getAnimations().length;
+      const node = document.querySelector('template').content.firstElementChild.cloneNode(true);
+      document.body.append(node);
+      getComputedStyle(node).opacity;
+      const mounted = document.getAnimations().length;
+      node.remove();
+      return {inert, mounted, removed: document.getAnimations().length};
+    });
+    if (animation.inert !== 0 || animation.mounted !== 1 || animation.removed !== 0) failures.push('inert animation');
+    fs.writeFileSync(process.argv[2], JSON.stringify({browser: await browser.version(), result: r, expected, animation, failures}, null, 2));
     if (failures.length) { console.error('template inertness differs from the expectation:', failures); process.exit(1); }
     console.log('template content inert in Chrome: query null, no children, no text, no box');
   } finally { await browser.close(); }

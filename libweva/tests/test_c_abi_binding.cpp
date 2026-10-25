@@ -432,6 +432,52 @@ void test_abi_template_content_is_inert() {
     CHECK(doc.text("#list") == "AB");
     CHECK(weva_element_children(doc.d, tmpl, nullptr, 0) == 0);
     CHECK(doc.height("#list") == 20);
+
+    // Inert source must not start animations or carry computed styles. This
+    // matters for control kits whose unused alternatives live in templates.
+    Doc dormant("@keyframes pulse { from { opacity: .2 } to { opacity: .8 } }"
+                " .animated { animation: pulse 1s infinite }",
+                "<template data-each='Items'><div class=animated>Source</div></template>");
+    CHECK(!weva_document_is_animating(dormant.d));
+    dormant.data.lists["Items"] = 1;
+    dormant.refresh();
+    CHECK(weva_document_is_animating(dormant.d));
+    dormant.data.lists["Items"] = 0;
+    dormant.refresh();
+    CHECK(!weva_document_is_animating(dormant.d));
+    const auto serial = weva_document_draw_serial(dormant.d);
+    for (int i = 0; i < 10; ++i) CHECK(dormant.refresh() == 0);
+    CHECK(weva_document_draw_serial(dormant.d) == serial);
+
+    // Nested zero/one repeats retain the live field across unrelated refreshes
+    // and replace only the selected body on a kind change or reopen.
+    Doc controls("", "<template data-each='Rows as row' data-key='Id'><div>"
+        "<template data-each='row.Text'><input id='field-{{row.Id}}' value='{{row.Value}}'></template>"
+        "<template data-each='row.Button'><button id='button-{{row.Id}}'>{{row.Value}}</button></template>"
+        "</div></template>");
+    controls.data.lists = {{"Rows", 1}, {"Rows.0.Text", 1}};
+    controls.data.values = {{"Rows.0.Id", "a"}, {"Rows.0.Value", "First"}};
+    controls.refresh();
+    const auto field = weva_document_query(controls.d, "#field-a");
+    CHECK(field != WEVA_ELEMENT_NONE);
+    CHECK(weva_document_query(controls.d, "#button-a") == WEVA_ELEMENT_NONE);
+    CHECK(weva_document_set_focus(controls.d, field) == WEVA_OK);
+    for (int i = 0; i < 10; ++i) {
+        CHECK(controls.refresh() == 0);
+        CHECK(weva_document_query(controls.d, "#field-a") == field);
+        CHECK(weva_document_text_input_target(controls.d) == field);
+    }
+    controls.data.lists["Rows.0.Text"] = 0;
+    controls.data.lists["Rows.0.Button"] = 1;
+    controls.refresh();
+    CHECK(weva_document_query(controls.d, "#field-a") == WEVA_ELEMENT_NONE);
+    CHECK(controls.text("#button-a") == "First");
+    controls.data.lists["Rows"] = 0;
+    controls.refresh();
+    controls.data.lists["Rows"] = 1;
+    controls.data.values["Rows.0.Value"] = "Reopened";
+    controls.refresh();
+    CHECK(controls.text("#button-a") == "Reopened");
 }
 
 // `data-each` makes one row per item. Until this, a list bound to game state

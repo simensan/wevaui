@@ -322,6 +322,12 @@ void CascadeEngine::clear() {
     cache_unsafe_has_ = false;
     cache_unsafe_scope_ = false;
     has_subject_reach_ = StateReach{};
+    sibling_subject_reach_ = StateReach{};
+    has_hover_dependency_ = false;
+    has_active_dependency_ = false;
+    sibling_hover_dependency_ = false;
+    sibling_active_dependency_ = false;
+    style_attribute_selectors_ = false;
     hover_reach_ = StateReach{};
     active_reach_ = StateReach{};
     shape_key_folds_sibling_index_ = false;
@@ -537,6 +543,29 @@ bool uses_validity(const CompoundSequence& seq) {
     return false;
 }
 
+// A relational selector does not depend on every kind of input. In
+// particular body:has(#launcher[open]) must not turn button hover elsewhere
+// into a document-wide restyle. Inline styles cannot change a selector match
+// unless an attribute selector explicitly reads the style attribute.
+void mutation_dependencies(const CompoundSequence& seq, bool inside_has,
+                           bool* hover, bool* active, bool* style_attribute) {
+    for (const auto& compound : seq.compounds) for (const auto& part : compound.parts) {
+        if (part->tag() == SimpleSelector::Tag::Attribute) {
+            const auto& attr = static_cast<const AttributeSelector&>(*part);
+            if (attr.name == "style") *style_attribute = true;
+        }
+        if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
+        const auto& pc = static_cast<const PseudoClassSelector&>(*part);
+        if (inside_has && pc.kind == PseudoClassKind::Hover) *hover = true;
+        if (inside_has && pc.kind == PseudoClassKind::Active) *active = true;
+        const bool nested = inside_has || pc.kind == PseudoClassKind::Has;
+        for (const auto& inner : pc.inner_list)
+            mutation_dependencies(*inner, nested, hover, active, style_attribute);
+        for (const auto& inner : pc.nth_of_filter)
+            mutation_dependencies(*inner, nested, hover, active, style_attribute);
+    }
+}
+
 } // namespace
 
 uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
@@ -547,7 +576,7 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
     // Inline style is per-element and invisible to a tag/class/attribute key.
     if (e.has_attribute("style")) return 0;
     // Sibling composition and :has() are unrepresentable in a per-element key.
-    if (cache_unsafe_sibling_composition_) return 0;
+    if (cache_unsafe_sibling_composition_ && state_observable(sibling_subject_reach_, e)) return 0;
     if (cache_unsafe_scope_) return 0;
     // A :has-dependent rule can affect only its rightmost subject. Elements
     // excluded by every such subject's mandatory keys still use the ordinary
@@ -844,10 +873,18 @@ void CascadeEngine::compile_declarations(const Rule& rule,
         // Classify BEFORE moving: the shape cache's soundness depends
         // on spotting sibling-composition and :has() selectors anywhere
         // in the sheet.
-        bool selector_has = false;
-        classify_selector(cs.sequence, &cache_unsafe_sibling_composition_,
+        bool selector_has = false, selector_sibling = false;
+        classify_selector(cs.sequence, &selector_sibling,
                           &selector_has, &shape_key_folds_sibling_index_,
                           &hover_reach_, &active_reach_, false);
+        cache_unsafe_sibling_composition_ = cache_unsafe_sibling_composition_ || selector_sibling;
+        if (selector_sibling && !cs.sequence.compounds.empty())
+            collect_keys(cs.sequence.compounds.back(), &sibling_subject_reach_);
+        mutation_dependencies(cs.sequence, false, &has_hover_dependency_,
+                              &has_active_dependency_, &style_attribute_selectors_);
+        if (selector_sibling)
+            mutation_dependencies(cs.sequence, true, &sibling_hover_dependency_,
+                                  &sibling_active_dependency_, &style_attribute_selectors_);
         cache_unsafe_has_ = cache_unsafe_has_ || selector_has;
         if (selector_has && !cs.sequence.compounds.empty())
             collect_keys(cs.sequence.compounds.back(), &has_subject_reach_);
@@ -945,9 +982,16 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 spec->implicit_root = compiling_scope_root_;
                 if (spec->roots.empty() && spec->implicit_root) cache_unsafe_scope_ = true;
                 const auto classify_boundary = [&](const CompiledSelector& selector) {
-                    bool has = false, positional = false;
-                    classify_selector(selector.sequence, &cache_unsafe_sibling_composition_,
+                    bool has = false, positional = false, sibling = false;
+                    classify_selector(selector.sequence, &sibling,
                                       &has, &positional, &hover_reach_, &active_reach_, false);
+                    cache_unsafe_sibling_composition_ = cache_unsafe_sibling_composition_ || sibling;
+                    if (sibling) sibling_subject_reach_.everything = true;
+                    mutation_dependencies(selector.sequence, false, &has_hover_dependency_,
+                                          &has_active_dependency_, &style_attribute_selectors_);
+                    if (sibling)
+                        mutation_dependencies(selector.sequence, true, &sibling_hover_dependency_,
+                                              &sibling_active_dependency_, &style_attribute_selectors_);
                     // The subject key folds its own rank, not every ancestor's.
                     cache_unsafe_scope_ = cache_unsafe_scope_ || positional;
                     cache_unsafe_has_ = cache_unsafe_has_ || has;

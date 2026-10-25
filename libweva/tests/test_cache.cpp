@@ -90,17 +90,22 @@ void test_match_cache() {
         CHECK(c.colour("d") == "blue");
     }
 
-    // ---- sibling combinators disable sharing entirely: preceding-sibling
+    // ---- sibling combinators disable sharing for their possible subjects:
     // composition cannot be represented in a per-element key.
     {
         C c;
         CHECK(c.html("<div><p id=p1>1</p><p id=p2>2</p><span id=s>s</span><p id=p3>3</p></div>"));
-        CHECK(c.css("p { color: white } p + p { color: red }"));
+        CHECK(c.css("p { color: white } p + p { color: red } span { color: blue }"));
         CHECK(c.colour("p1") == "white");
         CHECK(c.colour("p2") == "red");
         CHECK(c.colour("p3") == "white");   // preceded by <span>, not <p>
         CHECK(c.engine.cache_stats().hits == 0);
         CHECK(c.engine.cache_stats().skipped > 0);
+        CHECK(c.colour("s") == "blue");
+        c.engine.reset_cache_stats();
+        CHECK(c.colour("s") == "blue");
+        CHECK(c.engine.cache_stats().hits == 1);
+        CHECK(c.engine.cache_stats().skipped == 0);
     }
 
     // ---- of-type pseudos also disable sharing

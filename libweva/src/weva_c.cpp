@@ -1551,6 +1551,10 @@ struct StyleMap : StyleProvider {
             merge(pit->second, &scratch);
         }
         inert_subtree = false;
+        // Template bodies are inert source (template.content in a browser),
+        // not descendants participating in the document's cascade. Their
+        // instantiated rows are styled normally when inserted beside them.
+        if (e.tag_name() == "template") return;
         for (const Ref<Node>& c : e.children()) {
             if (c->node_type() == NodeType::Element) {
                 walk(static_cast<const Element&>(*c), raw);
@@ -2229,6 +2233,8 @@ struct weva_document {
     // :has() is about, which lets a descendant decide an ancestor's match and
     // puts the whole document back in play.
     std::vector<Element*> touched;
+    bool has_inputs_dirty = true;
+    bool sibling_inputs_dirty = true;
     bool default_inputs_dirty = true;
     std::vector<Ref<Element>> default_buttons;
 
@@ -2566,7 +2572,8 @@ void note_binding_mutation(weva_document* doc, const DomMutation& mutation) {
         mutation.name == "data-popover-open") note_box_input(doc, e);
     doc->dom_touched = true;
     // Filtered nth-last-child ranks can affect preceding siblings too.
-    if (doc->styles.engine.has_sibling_selectors() && e->parent() && e->parent()->is_element())
+    const bool local_style = mutation.name == "style" && !doc->styles.engine.has_style_attribute_selectors();
+    if (!local_style && doc->styles.engine.has_sibling_selectors() && e->parent() && e->parent()->is_element())
         e = static_cast<Element*>(e->parent());
     if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), e) == doc->touched.end())
         doc->touched.push_back(e);
@@ -3915,6 +3922,11 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
             request_popover_hide(doc, doc->handle_of(&element), true, true) == WEVA_OK;
     });
     doc->doc->add_observer([doc](const DomMutation& mutation) {
+        const bool local_style = mutation.name == "style" && !doc->styles.engine.has_style_attribute_selectors();
+        if (!local_style) {
+            doc->has_inputs_dirty = true;
+            doc->sibling_inputs_dirty = true;
+        }
         if (mutation.kind == MutationKind::ChildAdded || mutation.kind == MutationKind::ChildRemoved ||
             mutation.name == "type" || mutation.name == "form" || mutation.name == "id" ||
             mutation.name == "command" || mutation.name == "commandfor") doc->default_inputs_dirty = true;
@@ -4649,10 +4661,11 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
     // the cascade already knows it: it works the same fact out to decide
     // whether its match cache is sound.
     const bool scoped = doc->pending <= Invalidation::Paint && !doc->touched.empty() &&
-                        doc->touched.size() < 64 && !doc->styles.engine.has_has_selectors() &&
+                        doc->touched.size() < 64 &&
+                        (!doc->styles.engine.has_has_selectors() || !doc->has_inputs_dirty) &&
                         !doc->styles.engine.has_validity_selectors();
     if (scoped) {
-        const bool siblings_matter = doc->styles.engine.has_sibling_selectors();
+        const bool siblings_matter = doc->styles.engine.has_sibling_selectors() && doc->sibling_inputs_dirty;
         // Fold overlapping selector scopes before walking. A parent's style
         // must be applied before its descendants, and a sibling combinator
         // also covers every following sibling's descendants.
@@ -4711,6 +4724,8 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
         }
     }
     doc->touched.clear();
+    doc->has_inputs_dirty = false;
+    doc->sibling_inputs_dirty = false;
     lap("cascade");
     if (stage_log) {
         const auto& stats = doc->styles.engine.cache_stats();
@@ -5267,6 +5282,17 @@ static void note_state_change(weva_document* doc, const std::vector<const Elemen
     // away every cached match set for no reason -- which is most of the cost
     // this is here to avoid.
     if (!any) return;
+    const auto& engine = doc->styles.engine;
+    if (reach == &engine.hover_reach()) {
+        doc->has_inputs_dirty |= engine.has_hover_dependency();
+        doc->sibling_inputs_dirty |= engine.sibling_hover_dependency();
+    } else if (reach == &engine.active_reach()) {
+        doc->has_inputs_dirty |= engine.has_active_dependency();
+        doc->sibling_inputs_dirty |= engine.sibling_active_dependency();
+    } else {
+        doc->has_inputs_dirty = true;
+        doc->sibling_inputs_dirty = true;
+    }
     ++doc->styles.state.version_;
     doc->dom_touched = true;
 }

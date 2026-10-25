@@ -221,3 +221,6 @@ Open select rows honor authored option/optgroup background colors; see
 Ordinary images/backgrounds filter downscaled pixels in premultiplied sRGB;
 thin uniform rounded borders retain antialiasing. See
 [the scoped rendering receipt](docs/verification/image-filtering-20261025.md).
+Relational selector dependencies now bound unrelated hover/active style work;
+template source bodies remain outside the cascade. See
+[the work-count and correctness receipt](docs/verification/selector-invalidation-20261025.md).

@@ -153,6 +153,9 @@ repeats those gates and checks a live dark dropdown.
 The [image and thin-border follow-up](docs/verification/image-filtering-20261025.md)
 passes both core suites and 64 Chrome hand cases, with inspected Chrome and
 Agentic renders of downscaled icons and rounded borders.
+The [selector invalidation follow-up](docs/verification/selector-invalidation-20261025.md)
+passes both core suites and 64 Chrome hand cases; its unrelated-hover regression
+restyles one of 610 elements with output equivalent to a full cascade.
 
 ### A CSS feature or fix
 

@@ -2239,6 +2239,70 @@ void test_abi_hidden_subtree_restyle() {
     weva_document_destroy(d);
 }
 
+void test_abi_incremental_selector_dependencies() {
+    std::string html = "<button id=hovered>Hover</button><section id=other>";
+    for (int i = 0; i < 300; ++i) html += "<div class=row><span>Unrelated</span></div>";
+    html += "</section><label><input id=switch type=checkbox><i class=light>Light</i></label>"
+            "<aside id=launcher></aside><div id=backdrop></div>";
+    const std::string base = "body{margin:0}button{display:block;width:100px;height:24px}"
+        "button:hover{color:blue}button:active{color:red}.row{height:1px}"
+        "input:checked~.light{color:red}body:has(#launcher[open]) #backdrop{color:green}";
+    const char* dependent[] = {"", "body:has(#hovered:hover) #other{color:red}",
+        "#hovered:hover~#other{color:red}", "#hovered[style]~#other{color:red}",
+        "body:has(#hovered[style]) #other{color:red}",
+        ":is(body:has(:is(#hovered:hover))) #other{color:red}",
+        "body:has(#hovered:active) #other{color:red}", "#hovered:active~#other{color:red}"};
+    for (size_t scenario = 0; scenario < sizeof(dependent) / sizeof(*dependent); ++scenario) {
+        const std::string css = base + dependent[scenario];
+        auto c = config();
+        auto d = weva_document_create(&c);
+        weva_document_set_css(d, css.data(), css.size());
+        weva_document_load_html(d, html.data(), html.size());
+        weva_document_update(d, 0);
+        const auto check_full = [&] {
+            const Frame incremental = capture(d);
+            // Recompile the same sheets: all styles/boxes are recomputed,
+            // retaining the input state and identical font atlas history.
+            CHECK(weva_document_set_css(d, css.data(), css.size()) == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            const Frame full = capture(d);
+            if (incremental != full) std::printf("selector dependency %zu: %s\n", scenario, incremental.diff(full).c_str());
+            CHECK(incremental == full);
+        };
+        weva_stats before{}, after{};
+        weva_document_stats(d, &before);
+        weva_document_set_pointer(d, 5, 5, 0);
+        weva_document_update(d, 0);
+        weva_document_stats(d, &after);
+        if (scenario == 0) CHECK(after.cascade_elements - before.cascade_elements <= 2);
+        check_full();
+        if (scenario == 0) {
+            weva_stats full{};
+            weva_document_stats(d, &full);
+            std::printf("relational stylesheet: hover restyled %llu elements; equivalent full cascade %llu\n",
+                static_cast<unsigned long long>(after.cascade_elements - before.cascade_elements),
+                static_cast<unsigned long long>(full.cascade_elements - after.cascade_elements));
+        }
+        weva_document_stats(d, &before);
+        weva_element_set_style(d, weva_document_query(d, "#hovered"), "padding-left", "2px");
+        weva_document_update(d, 0);
+        weva_document_stats(d, &after);
+        if (scenario == 0) CHECK(after.cascade_elements - before.cascade_elements <= 2);
+        check_full();
+        weva_document_set_pointer(d, 5, 5, 1);
+        weva_document_update(d, 0);
+        check_full();
+        weva_document_set_pointer(d, 399, 299, 0);
+        weva_document_update(d, 0);
+        check_full();
+        weva_element_set_attribute(d, weva_document_query(d, "#switch"), "checked", "");
+        weva_element_set_attribute(d, weva_document_query(d, "#launcher"), "open", "");
+        weva_document_update(d, 0);
+        check_full();
+        weva_document_destroy(d);
+    }
+}
+
 void test_abi_incremental_positioned_subtree() {
     // A relatively positioned card holding an absolutely positioned badge is
     // the everyday shape of a HUD slot. Incremental layout used to treat any

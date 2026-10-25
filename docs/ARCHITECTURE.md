@@ -519,6 +519,14 @@ with a scoped cascade; they do not require a full style walk. The stage log
 reports visited elements and match-cache hits/misses, and `WEVA_STYLE_LOG`
 reports the changed property IDs/values for diagnosis.
 
+Relational rules widen pointer-state invalidation only when their selectors
+depend on that state. A checkbox sibling rule or `:has([open])` does not widen
+an unrelated hover/active update. Inline-style writes preserve local scopes
+unless a selector reads `[style]`; DOM, focus and other attribute changes keep
+the conservative propagation paths. Sibling-dependent rules disable match
+sharing only for possible rightmost subjects; unkeyed subjects and sibling
+scope boundaries remain conservative.
+
 Text painting already reads `color` from the retained style. The unused box
 color snapshot has been removed, making color a paint-only property. Parent
 color changes invalidate descendant paint inputs through the existing tracker,
@@ -886,6 +894,9 @@ it) but is inert to the ABI's readers -- `query`, `query_all`, `element_text`,
 `element_children` -- the way Chrome keeps it in `template.content` where
 `querySelector` and `textContent` never look (2026-09-14, no ABI change;
 `test_abi_template_content_is_inert`, `check_template_inert_chrome.cjs`).
+The cascade also skips that source body, so its animations do not run until
+instantiation. An unchanged empty repeat returns without scanning siblings;
+zero/one control templates retain their normal keyed ownership and cleanup.
 
 The seam is `weva_binding_source` (ABI, `weva_c.h`): a callback table the host
 fills with "read this path", "count this collection". The core walks the
