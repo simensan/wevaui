@@ -1541,4 +1541,19 @@ void test_image_decode() {
     CHECK(!inflate_zlib(nullptr, 0, &round_trip));
     const uint8_t bad_header[] = {0x00, 0x00};
     CHECK(!inflate_zlib(bad_header, 2, &round_trip));
+
+    // zlib Z_FIXED fixtures: nine-bit literals leave a short final code;
+    // a Z_SYNC_FLUSH stored block follows prefetched compressed bits.
+    const uint8_t short_tail[] = {251, 255, 239, 239, 159, 223, 0};
+    round_trip.clear();
+    CHECK(inflate_deflate(short_tail, sizeof(short_tail), &round_trip));
+    CHECK((round_trip == std::vector<uint8_t>{255, 254, 253, 252, 251}));
+    const uint8_t mixed_blocks[] = {250, 255, 159, 50, 0, 0, 0, 0, 255, 255, 115, 116, 114, 118, 161, 4, 3, 0};
+    std::vector<uint8_t> expected(64, 255);
+    for (int i = 0; i < 16; ++i) for (const uint8_t b : {'A', 'B', 'C', 'D'}) expected.push_back(b);
+    for (const size_t limit : {size_t{1}, size_t{63}, size_t{64}, size_t{65}, size_t{127}, expected.size()}) {
+        round_trip.clear();
+        CHECK(inflate_deflate(mixed_blocks, sizeof(mixed_blocks), &round_trip, limit));
+        CHECK(round_trip == std::vector<uint8_t>(expected.begin(), expected.begin() + static_cast<std::ptrdiff_t>(limit)));
+    }
 }

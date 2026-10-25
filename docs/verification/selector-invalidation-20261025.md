@@ -72,3 +72,24 @@ Both GCC and Clang pass all 14 suites, including repeated removal/replacement,
 stale handles, surviving handles, hit testing and live element counts. Fixture
 and raw before/after CSVs are retained as `mount-*` in the evidence directory
 above. This does not remove first-use image decode costs.
+
+## PNG decode follow-up
+
+PNG inflation now uses a 9-bit prefix table with the canonical fallback for
+long codes and short input tails. Extra bits use a bounded reservoir; alignment
+returns prefetched whole bytes before stored blocks. Back-references copy only
+already-produced bytes in non-overlapping chunks, and RGBA rows copy directly.
+
+The 46 Convoy resource icons decode in 183–200 ms, versus 295–298 ms before,
+across three paired optimized GCC runs; dimensions and every pixel hash match.
+An independent Python-zlib corpus covers 1,080 valid, output-limited and truncated
+streams, including fixed/dynamic coding and stored blocks between compressed
+blocks. Valid outputs match zlib, and truncated acceptance/partial outputs match
+the previous decoder. The same corpus and icon files pass AddressSanitizer and
+UndefinedBehaviorSanitizer; sanitizer timings are excluded from performance claims.
+
+Permanent tests cover a short final Huffman code, prefetched stored-block
+alignment, overlapping copies and output limits across block boundaries. Both
+GCC and Clang pass 14/14 suites with warning-free final builds. No ABI or host
+API changes are required. First-use loading remains synchronous; the speedup
+does not establish a frame-budget guarantee for opening image-heavy panels.

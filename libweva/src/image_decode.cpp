@@ -18,30 +18,30 @@ public:
     BitReader(const uint8_t* data, size_t size) : data_(data), size_(size) {}
 
     bool bit(uint32_t* out) {
-        if (bits_ == 0) {
-            if (at_ >= size_) return false;
-            hold_ = data_[at_++];
-            bits_ = 8;
-        }
-        *out = hold_ & 1u;
-        hold_ >>= 1;
-        --bits_;
-        return true;
+        return bits(1, out);
     }
 
     bool bits(int n, uint32_t* out) {
-        uint32_t v = 0;
-        for (int i = 0; i < n; ++i) {
-            uint32_t b = 0;
-            if (!bit(&b)) return false;
-            v |= b << i;
-        }
-        *out = v;
+        if (!peek(n, out)) return false;
+        drop(n);
         return true;
     }
 
+    bool peek(int n, uint32_t* out) {
+        while (bits_ < n && at_ < size_) {
+            hold_ |= static_cast<uint32_t>(data_[at_++]) << bits_;
+            bits_ += 8;
+        }
+        if (bits_ < n) return false;
+        *out = hold_ & ((1u << n) - 1u);
+        return true;
+    }
+
+    void drop(int n) { hold_ >>= n; bits_ -= n; }
+
     // Drops to the next byte boundary; a stored block starts there.
-    void align() { bits_ = 0; hold_ = 0; }
+    // Lookahead may already have fetched complete bytes of its header.
+    void align() { at_ -= static_cast<size_t>(bits_ / 8); bits_ = 0; hold_ = 0; }
 
     bool take(size_t n, const uint8_t** out) {
         if (at_ + n > size_) return false;
@@ -62,14 +62,15 @@ private:
 
 // ---- canonical Huffman --------------------------------------------------
 //
-// Decoded by walking the code lengths, which is slower than a lookup table and
-// enormously easier to be sure of. An image decodes once and is cached; the
-// per-frame cost of this is zero.
+// Common short codes use a bounded prefix table. Long codes and a short tail
+// retain the canonical walk, without requiring input padding or overreading.
 struct Huffman {
     // counts[n] is how many codes have length n; symbols is every symbol in
     // canonical order.
     int counts[16] = {0};
     std::vector<int> symbols;
+    struct Prefix { uint16_t symbol = 0; uint8_t length = 0; };
+    Prefix prefixes[512]{};
 
     bool build(const std::vector<int>& lengths) {
         for (int& c : counts) c = 0;
@@ -91,10 +92,29 @@ struct Huffman {
         for (size_t sym = 0; sym < lengths.size(); ++sym) {
             if (lengths[sym] != 0) symbols[offsets[lengths[sym]]++] = static_cast<int>(sym);
         }
+        for (auto& prefix : prefixes) prefix = {};
+        int next[16] = {0};
+        for (int len = 1; len < 16; ++len) next[len] = (next[len - 1] + counts[len - 1]) << 1;
+        for (size_t sym = 0; sym < lengths.size(); ++sym) {
+            const int len = lengths[sym];
+            if (len == 0) continue;
+            unsigned code = static_cast<unsigned>(next[len]++);
+            if (len > 9) continue;
+            unsigned reversed = 0;
+            for (int bit = 0; bit < len; ++bit) { reversed = (reversed << 1) | (code & 1u); code >>= 1; }
+            for (unsigned index = reversed; index < 512; index += 1u << len)
+                prefixes[index] = {static_cast<uint16_t>(sym), static_cast<uint8_t>(len)};
+        }
         return true;
     }
 
     bool decode(BitReader* in, int* out) const {
+        uint32_t prefix = 0;
+        if (in->peek(9, &prefix) && prefixes[prefix].length != 0) {
+            in->drop(prefixes[prefix].length);
+            *out = prefixes[prefix].symbol;
+            return true;
+        }
         int code = 0, first = 0, index = 0;
         for (int len = 1; len < 16; ++len) {
             uint32_t b = 0;
@@ -151,12 +171,21 @@ BlockEnd inflate_block(BitReader* in, const Huffman& lit, const Huffman& dist,
         const size_t distance = static_cast<size_t>(kDistBase[dsym]) + extra;
         if (distance > out->size()) return BlockEnd::kError;
 
-        // Byte at a time, deliberately: the run may overlap its own output,
-        // which is how DEFLATE expresses a repeat, and a memcpy would read
-        // bytes that have not been written yet.
-        const size_t from = out->size() - distance;
+        // Copy only already-produced bytes. Overlapping matches repeat their
+        // own output, so each non-overlapping chunk is at most the distance.
+        const size_t start = out->size();
+        const size_t from = start - distance;
         const size_t room = std::min(length, limit - out->size());
-        for (size_t i = 0; i < room; ++i) out->push_back((*out)[from + i]);
+        out->resize(start + room);
+        if (distance == 1) {
+            std::memset(out->data() + start, (*out)[from], room);
+        } else {
+            for (size_t copied = 0; copied < room;) {
+                const size_t count = std::min(distance, room - copied);
+                std::memcpy(out->data() + start + copied, out->data() + from + copied, count);
+                copied += count;
+            }
+        }
     }
 }
 
@@ -380,6 +409,12 @@ DecodedImage decode_png(const uint8_t* data, size_t size) {
         std::memcpy(row.data(), raw.data() + read, stride);
         read += stride;
         unfilter_row(filter, row.data(), y == 0 ? nullptr : previous.data(), stride, channels);
+
+        if (colour == 6) {
+            std::memcpy(rgba.data() + static_cast<size_t>(y) * stride, row.data(), stride);
+            previous.swap(row);
+            continue;
+        }
 
         for (uint32_t x = 0; x < width; ++x) {
             const uint8_t* p = row.data() + static_cast<size_t>(x) * channels;
