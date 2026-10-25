@@ -17,7 +17,7 @@ class UnityVisualOracleTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.work = Path(temporary.name)
+        self.work = Path(temporary.name).resolve()
         self.corpus = self.work / 'corpus'
         self.corpus.mkdir()
         self.html = self.corpus / 'demo.html'
