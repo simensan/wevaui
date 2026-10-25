@@ -463,10 +463,32 @@ void test_abi_tooltip_dismissal() {
     weva_document_update(d, 0.7);
     CHECK(tooltip_text(d) == "Save the file");
 
-    // Moving within the SAME element keeps it up and moves it along.
+    // Hosts submit pointer state each frame. An unchanged pointer must not
+    // restyle, lay out or repaint the document just because a tooltip is up.
+    const weva_element_t resting_tip = tooltip_of(d);
+    const auto resting_serial = weva_document_draw_serial(d);
+    weva_stats resting_stats{};
+    weva_document_stats(d, &resting_stats);
+    for (int frame = 0; frame < 120; ++frame) {
+        weva_document_set_pointer(d, 20, 10, 0);
+        weva_document_update(d, 0.016);
+        weva_stats stats{};
+        weva_document_stats(d, &stats);
+        CHECK(tooltip_of(d) == resting_tip);
+        CHECK(stats.cascade_elements == resting_stats.cascade_elements);
+        CHECK(stats.cascade_pseudos == resting_stats.cascade_pseudos);
+        CHECK(weva_document_draw_serial(d) == resting_serial);
+    }
+
+    // Moving within the same element still moves the existing tooltip.
     weva_document_set_pointer(d, 60, 20, 0);
     weva_document_update(d, 0.016);
     CHECK(tooltip_text(d) == "Save the file");
+    double moved_x = 0, moved_y = 0, moved_w = 0, moved_h = 0;
+    CHECK(tooltip_of(d) == resting_tip);
+    CHECK(weva_element_bounds(d, resting_tip, &moved_x, &moved_y, &moved_w, &moved_h) == WEVA_OK);
+    CHECK(moved_x == 72 && moved_y == 38);
+    CHECK(weva_document_draw_serial(d) > resting_serial);
 
     // Pressing dismisses it: a tooltip over the button you are clicking is in
     // the way of what you came to do.

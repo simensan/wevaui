@@ -6097,6 +6097,7 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
     // wait rather than showing the old text at the new place.
     {
         weva_document::Tooltip& tip = doc->tooltip;
+        const bool moved = tip.x != x || tip.y != y;
         tip.x = x;
         tip.y = y;
         const Element* host = title_host_at(hit);
@@ -6104,7 +6105,7 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
             tip.host = host;
             tip.dwell = 0;
             tooltip_hide(doc);
-        } else if (tip.shown) {
+        } else if (tip.shown && moved) {
             tip.shown->set_attribute("style", tooltip_style(x, y));
             doc->pending = worst(doc->pending, Invalidation::Layout);
         }

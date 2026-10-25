@@ -36,3 +36,25 @@ This establishes bounded style work and rendering correctness for the selected
 cases. It does not establish game FPS. Live performance qualification is pending
 an uncontended run; the user was playing Dota during the investigation. No
 Unity/Godot host or macOS qualification is claimed by this scoped pass.
+
+## Stationary tooltip follow-up
+
+The pointer feed previously forced layout on every sample while a tooltip was
+visible, even with identical coordinates. Tooltip placement now updates only
+when the pointer moves. Host changes, dwell, button dismissal and hit testing
+still run on every sample. The interaction regression checks 120 stationary
+samples for unchanged cascade counters and draw serial, then verifies movement,
+the retained tooltip handle, dismissal and pass-through hit testing.
+
+Both GCC and Clang pass all 14 CTest suites; the final builds have no warnings.
+At 1920x1080, the release Agentic document profile with a stationary F1 tooltip
+falls from 2.516 ms to 0.0675 ms, with zero restyled elements after settling.
+The live Resources panel's two hovered runs measure 364.7 and 381.7 FPS,
+against 377.5 and 379.5 FPS with the pointer away. Hovered UI CPU averages
+0.4809 and 0.4681 ms; all four 2,400-frame runs remain below 16.7 ms.
+The earlier hovered baseline was 103–115 FPS and 7.2–7.9 ms UI CPU.
+
+Raw profiles and the inspected tooltip capture are retained under
+`E:/Convoy_Agentic/builds/test-evidence/weva-developer-ui/interaction-fixes-20261025/`.
+These results qualify this tooltip fix; graph refresh and panel mounting are
+separate remaining workloads.
