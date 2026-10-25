@@ -2117,6 +2117,29 @@ void test_abi_select_keys() {
 // What the document shows follows the choice, and options inside an
 // <optgroup> are part of the same list.
 void test_abi_select_reflects_choice() {
+    {
+        Doc styled("select{background:#20252b;color:white}option{background:red}"
+                   "optgroup{background:lime}",
+                   "<select id=s><option selected>A</option><optgroup label=Group>"
+                   "<option id=option>B</option></optgroup></select>");
+        CHECK(weva_document_open_select(styled.d, weva_document_query(styled.d, "#s")) == 1);
+        const auto has_color = [&](float r, float g, float b) {
+            weva_document_update(styled.d, 0);
+            size_t count = 0;
+            const weva_draw* draws = weva_document_draws(styled.d, &count);
+            for (size_t i = 0; i < count; ++i) {
+                if (draws[i].texture_id || draws[i].vertex_count < 4) continue;
+                const auto& v = draws[i].vertices[0];
+                if (v.r == r && v.g == g && v.b == b && v.a == 1) return true;
+            }
+            return false;
+        };
+        CHECK(has_color(1, 0, 0));
+        CHECK(has_color(0, 1, 0));
+        CHECK(weva_element_set_attribute(styled.d, weva_document_query(styled.d, "#option"),
+                                         "style", "background:yellow") == WEVA_OK);
+        CHECK(has_color(1, 1, 0));
+    }
     Doc doc(kSelectCss,
             "<select id=s>"
             "<optgroup label=Speed><option value=slow>Slow</option>"

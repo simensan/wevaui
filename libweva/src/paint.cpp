@@ -4742,6 +4742,17 @@ void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const Pai
         const bool disabled = group ? entry->has_attribute("disabled") : option_disabled(*entry);
         const bool active = entry == highlighted && !group && !disabled;
         const double row_y = g.box.y + row * g.row_height;
+        const auto row_text = popup_text_style(*entry, b, fs, ctx, paint);
+        // Options have styles even though they have no layout boxes in a
+        // collapsed select. Paint their authored background behind the label,
+        // otherwise a dark option's light text lands on the UA white panel.
+        const LinearColor row_background = resolve_color(row_text.style, "background-color");
+        if (row_background.a > 0) {
+            Mesh fill;
+            tessellate_rect(Rect(g.box.x + 1, row_y, g.box.width - 2, g.row_height),
+                            row_background, &fill, false);
+            draw_mesh(std::move(fill), paint.backend, {}, 1.0, nullptr, nullptr, nullptr);
+        }
         if (active) {
             Mesh band;
             tessellate_rect(Rect(g.box.x + 1, row_y, g.box.width - 2, g.row_height),
@@ -4750,7 +4761,6 @@ void paint_select_popup(const BoxTree& tree, const LayoutContext& ctx, const Pai
         }
         const std::string label = group ? std::string(entry->get_attribute("label")) : option_label(*entry);
         if (label.empty()) continue;
-        const auto row_text = popup_text_style(*entry, b, fs, ctx, paint);
         const FontMetrics* metrics = control_metrics(ctx, row_text.style);
         const double ascent = metrics ? metrics->ascent(row_text.size) : row_text.size * 0.8;
         LinearColor ink = active ? LinearColor::from_srgb(255, 255, 255, 1.f) : resolve_color(row_text.style, "color");

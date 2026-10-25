@@ -216,3 +216,5 @@ any red is new.
 
 Uniform scaled text and controls rasterize at their final pixel size; see
 [the scoped core/Agentic receipt](docs/verification/scaled-text-20261025.md).
+Open select rows honor authored option/optgroup background colors; see
+[the dropdown receipt](docs/verification/option-backgrounds-20261025.md).
