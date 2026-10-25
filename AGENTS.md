@@ -150,6 +150,9 @@ The [scaled-text follow-up](docs/verification/scaled-text-20261025.md) passes
 both core suites, 64 Chrome hand cases and the Agentic font/render gate.
 The [option-background follow-up](docs/verification/option-backgrounds-20261025.md)
 repeats those gates and checks a live dark dropdown.
+The [image and thin-border follow-up](docs/verification/image-filtering-20261025.md)
+passes both core suites and 64 Chrome hand cases, with inspected Chrome and
+Agentic renders of downscaled icons and rounded borders.
 
 ### A CSS feature or fix
 

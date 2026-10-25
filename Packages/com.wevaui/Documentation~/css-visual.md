@@ -31,6 +31,11 @@ by `background-size`, per CSS Images 3): `no-repeat` clips outside the tile,
 `repeat` wraps. These operations apply to linear, radial and conic gradients
 through the shared background rasterizer.
 
+Decoded image/background layers use area filtering when shrinking and bilinear
+filtering when enlarging, in premultiplied sRGB. Transparent source colors do
+not bleed into visible edges. `image-rendering` is not implemented; border-image
+slices still use nearest sampling.
+
 ## Borders
 
 `border-*` longhands and shorthand. Ordinary box borders currently paint as
@@ -40,6 +45,8 @@ tables, not ordinary boxes. Per-corner
 `border-radius`, including the elliptical slash form. URL-backed
 `border-image` uses CSS slice, width, outset, fill and repeat settings;
 slice numbers refer to source-image pixels, not Unity Sprite border metadata.
+Uniform rounded borders at or below 1 CSS pixel retain antialiased coverage,
+including fractional border widths.
 
 ## Effects
 

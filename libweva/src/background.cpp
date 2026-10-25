@@ -1073,24 +1073,38 @@ float mask_coverage(const Srgb& s, bool luminance) {
 
 } // namespace
 
-// One texel of a background image, nearest.
-//
-// Nearest and not bilinear, deliberately and to match the rest of the engine:
-// the software renderer samples its textures nearest and the Godot host sets
-// TEXTURE_FILTER_NEAREST for the glyph atlas, so smoothing here would be the
-// only smooth sampling in the pipeline -- and would put the two backends on
-// different footing the moment one of them changed. `image-rendering` is where
-// that choice belongs, and it is not implemented yet either.
-Srgb sample_image(const DecodedImage& image, double lx, double ly, double tw, double th) {
-    const int ix = std::clamp(static_cast<int>(lx / tw * image.width), 0, image.width - 1);
-    const int iy = std::clamp(static_cast<int>(ly / th * image.height), 0, image.height - 1);
-    const uint8_t* p = image.rgba.data() + (static_cast<size_t>(iy) * image.width + ix) * 4;
-    Srgb s;
-    s.r = p[0] / 255.0f;
-    s.g = p[1] / 255.0f;
-    s.b = p[2] / 255.0f;
-    s.a = p[3] / 255.0f;
-    return s;
+// CSS's default image sampling is smooth. Integrate the source footprint when
+// shrinking (a 1024px icon can occupy 27px), and interpolate texel centres when
+// enlarging. Work in premultiplied sRGB so invisible RGB cannot fringe edges.
+// This happens once per cached raster, before any host samples the texture.
+Srgb sample_image(const DecodedImage& image, double lx, double ly, double tw, double th,
+                  double pixel_width, double pixel_height) {
+    const double cx = lx / tw * image.width, cy = ly / th * image.height;
+    const double fw = pixel_width / tw * image.width, fh = pixel_height / th * image.height;
+    const bool shrink_x = fw > 1, shrink_y = fh > 1;
+    const double x0 = shrink_x ? cx - fw * .5 : cx - .5;
+    const double y0 = shrink_y ? cy - fh * .5 : cy - .5;
+    const int begin_x = static_cast<int>(std::floor(std::max(-1.0, x0)));
+    const int begin_y = static_cast<int>(std::floor(std::max(-1.0, y0)));
+    const int end_x = shrink_x ? static_cast<int>(std::ceil(std::min<double>(image.width, cx + fw * .5))) : begin_x + 2;
+    const int end_y = shrink_y ? static_cast<int>(std::ceil(std::min<double>(image.height, cy + fh * .5))) : begin_y + 2;
+    double r = 0, g = 0, b = 0, a = 0, weight = 0;
+    for (int y = begin_y; y < end_y; ++y) {
+        const double wy = shrink_y ? std::max(0.0, std::min(y + 1.0, cy + fh * .5) - std::max<double>(y, y0))
+                                   : std::max(0.0, 1.0 - std::abs(y - y0));
+        for (int x = begin_x; x < end_x; ++x) {
+            const double wx = shrink_x ? std::max(0.0, std::min(x + 1.0, cx + fw * .5) - std::max<double>(x, x0))
+                                       : std::max(0.0, 1.0 - std::abs(x - x0));
+            const double w = wx * wy;
+            const auto* p = image.rgba.data() + (static_cast<size_t>(std::clamp(y, 0, image.height - 1)) * image.width + std::clamp(x, 0, image.width - 1)) * 4;
+            const double alpha = p[3] * w;
+            r += p[0] * alpha; g += p[1] * alpha; b += p[2] * alpha;
+            a += alpha; weight += w;
+        }
+    }
+    if (a <= 0 || weight <= 0) return {};
+    return {static_cast<float>(r / (a * 255)), static_cast<float>(g / (a * 255)),
+            static_cast<float>(b / (a * 255)), static_cast<float>(a / (weight * 255))};
 }
 
 namespace {
@@ -1522,7 +1536,7 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
                             else if (!t.repeat_x && (lx < 0 || lx >= t.tw)) continue;
                             if (t.wrap_y) ly = wrap_positive(ly, t.th);
                             else if (!t.repeat_y && (ly < 0 || ly >= t.th)) continue;
-                            const Srgb s = t.image ? sample_image(*t.image, lx, ly, t.tw, t.th)
+                            const Srgb s = t.image ? sample_image(*t.image, lx, ly, t.tw, t.th, sx * tinv, sy * tinv)
                                                    : sample_prepared(t.prepared, lx, ly);
                             const float sa = s.a;
                             if (t.is_mask) {

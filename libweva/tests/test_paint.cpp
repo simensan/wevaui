@@ -267,6 +267,30 @@ void test_tessellate_border() {
     tessellate_border(Rect(0, 0, 100, 50), BorderRadii::zero(), 0, 0, 0, 0, c, &none);
     CHECK(none.empty());
 
+    // Fractional-position, one-pixel rounded strokes must have coverage, not
+    // binary staircase edges. Across a straight edge, total coverage remains
+    // the authored stroke width; the centre remains completely empty.
+    for (double width : {.25, .5, .75, 1.0}) for (double offset : {0., .25, .5, .75}) {
+        Mesh thin;
+        tessellate_border(Rect(10 + offset, 10 + offset, 80, 40), BorderRadii::uniform(8),
+                          width, width, width, width, c, &thin);
+        SoftwareRenderer renderer(110, 70);
+        renderer.clear(LinearColor::transparent());
+        const auto geometry = renderer.compile_geometry(thin.vertices, thin.indices);
+        renderer.render_geometry(geometry, {0, 0}, {});
+        renderer.release_geometry(geometry);
+        double coverage = 0;
+        for (int y = 8; y < 14; ++y) coverage += renderer.pixel(50, y).a;
+        CHECK(std::abs(coverage - width) < 1e-4);
+        CHECK(renderer.pixel(50, 30).a == 0);
+        bool partial = false;
+        for (int y = 8; y < 22; ++y) for (int x = 8; x < 22; ++x) {
+            const float a = renderer.pixel(x, y).a;
+            partial = partial || (a > 0 && a < 1);
+        }
+        CHECK(partial);
+    }
+
     // ONE side drawn takes ONE colour, all the way along.
     //
     // Corners are assigned to whichever side they are nearest, and a corner

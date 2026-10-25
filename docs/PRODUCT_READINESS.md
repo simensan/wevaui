@@ -2,6 +2,11 @@
 
 Updated October 20, 2026 · Integration verification through October 20.
 
+Scoped October 25 core/Agentic checks cover filtered downscaled icons and
+antialiased thin rounded borders; see the
+[rendering receipt](verification/image-filtering-20261025.md).
+Unity/Godot integration qualification remains the October 20 result below.
+
 The [merge integration receipt](verification/merge-20261020.md) records
 validation of the combined engine and host changes. Performance measurements
 remain specific to the earlier builds identified in their reports.

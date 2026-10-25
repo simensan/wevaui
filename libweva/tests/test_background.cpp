@@ -460,6 +460,46 @@ void test_background_image() {
     ctx.viewport_width_px = 400;
     ctx.viewport_height_px = 300;
 
+    // Minification must integrate detail rather than selecting one source
+    // texel. Hidden RGB must not contaminate the visible edge during filtering.
+    const auto filtered = [&](const DecodedImage& input, int width, int height) {
+        BackgroundLayer layer;
+        layer.image = &input; layer.size_x = "cover";
+        layer.repeat_x = layer.repeat_y = false;
+        std::vector<uint8_t> pixels;
+        rasterize_background({layer}, LinearColor::transparent(), width, height,
+                             width, height, ctx, 16, &pixels);
+        return pixels;
+    };
+    {
+        const auto reduced = filtered(*image, 1, 1);
+        for (int channel = 0; channel < 3; ++channel) CHECK(std::abs(reduced[channel] - 128) <= 1);
+        CHECK(reduced[3] == 255);
+        DecodedImage transparent = *image;
+        transparent.rgba = {255,0,0,255, 0,0,255,0, 0,0,255,0, 0,0,255,0};
+        const auto edge = filtered(transparent, 1, 1);
+        CHECK(edge[0] == 255 && edge[1] == 0 && edge[2] == 0);
+        CHECK(std::abs(edge[3] - 64) <= 1);
+        const auto enlarged = filtered(transparent, 8, 8);
+        const auto middle = texel_at(enlarged, 8, 3, 1);
+        CHECK(middle.r == 255 && middle.b == 0 && middle.a > 100 && middle.a < 240);
+    }
+    {
+        DecodedImage checks;
+        checks.width = checks.height = 32;
+        checks.rgba.resize(32 * 32 * 4);
+        for (int y = 0; y < 32; ++y) for (int x = 0; x < 32; ++x) {
+            auto* p = checks.rgba.data() + (y * 32 + x) * 4;
+            p[0] = p[1] = p[2] = (x + y) % 2 ? 255 : 0; p[3] = 255;
+        }
+        const auto reduced = filtered(checks, 3, 3);
+        for (size_t i = 0; i < reduced.size(); i += 4) {
+            CHECK(std::abs(reduced[i] - 128) <= 2);
+            CHECK(reduced[i] == reduced[i + 1] && reduced[i] == reduced[i + 2] && reduced[i + 3] == 255);
+        }
+        CHECK(filtered(checks, 32, 32) == checks.rgba);
+    }
+
     // ---- `background-size: cover` on a square box ----------------------
     //
     // The image is square and so is the box, so cover scales it to exactly

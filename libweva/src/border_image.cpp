@@ -68,8 +68,8 @@ BorderImageRepeat parse_repeat(std::string_view raw) {
     return BorderImageRepeat::Stretch;
 }
 
-// One texel of the source, nearest, clamped. Matches how the rest of the
-// engine samples a texture; see the note in background.cpp's sample_image.
+// Border-image slices still use nearest, clamped sampling. Ordinary images
+// and backgrounds use the filtered sampler in background.cpp.
 void sample(const DecodedImage& image, double sx, double sy, uint8_t* out) {
     const int ix = std::clamp(static_cast<int>(sx), 0, image.width - 1);
     const int iy = std::clamp(static_cast<int>(sy), 0, image.height - 1);

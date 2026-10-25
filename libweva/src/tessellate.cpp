@@ -478,6 +478,37 @@ void tessellate_border(const Rect& outer, const BorderRadii& outer_radii, double
         if (first<0) first=side;
         else if (colors[side]!=colors[first]) different_colors=true;
     }
+    // A one-pixel rounded border still needs coverage at its curved edges.
+    // The old thick-ring rule discarded AA here. For a thin uniform stroke,
+    // convolving its width with a pixel gives a trapezoid (a triangle at 1px).
+    // Emit that profile directly, retaining the two-outline allocation budget.
+    if (antialias && !different_colors && !outer_radii.is_zero() &&
+        !too_thin_to_feather(outer) && top > 0 && top <= 1 &&
+        top == right && top == bottom && top == left) {
+        const uint32_t base = static_cast<uint32_t>(out->vertices.size());
+        out->reserve_append(n * 4, n * 18);
+        LinearColor solid = colors[0], clear = colors[0];
+        solid.a *= static_cast<float>(top); clear.a = 0;
+        for (uint32_t k = 0; k < n; ++k) {
+            const auto od = outline_displacement(o, k, 1.0);
+            const auto id = outline_displacement(i2, k, 1.0);
+            const auto add = [&](const auto& p, const auto& d, double distance, const LinearColor& c) {
+                out->vertices.push_back(vert(p.first + d.first * distance, p.second + d.second * distance, c));
+            };
+            add(o[k], od, .5, clear);
+            add(o[k], od, .5 - top, solid);
+            add(i2[k], id, top - .5, solid);
+            add(i2[k], id, -.5, clear);
+        }
+        for (uint32_t k = 0; k < n; ++k) {
+            const uint32_t next = (k + 1) % n;
+            for (uint32_t strip = 0; strip < 3; ++strip) {
+                const uint32_t a = base + 4 * k + strip, b = base + 4 * next + strip;
+                for (uint32_t idx : {a, b, a + 1, a + 1, b, b + 1}) out->indices.push_back(idx);
+            }
+        }
+        return;
+    }
     if (different_colors) {
         const size_t strips=feather ? 3 : 1;
         // Each corner's mitre can split different outer/inner arc segments.
