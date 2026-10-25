@@ -117,4 +117,20 @@ void test_dom() {
     CHECK(ok(doc->append_child(child.get())));
     CHECK(child->owner_document() == doc.get());
     CHECK(text->owner_document() == doc.get());
+
+    // Attribute cloning preserves canonical names/order but never copies the
+    // source's notification closure or children into the new element.
+    auto copy = child->clone_attributes();
+    CHECK(copy->parent() == nullptr && copy->children().empty());
+    CHECK(copy->attributes().size() == child->attributes().size());
+    for (size_t i = 0; i < child->attributes().size(); ++i) {
+        CHECK(copy->attributes().name_at(i) == child->attributes().name_at(i));
+        CHECK(copy->attributes().value_at(i) == child->attributes().value_at(i));
+    }
+    const auto source_version = child->version();
+    Node* clone_target = nullptr;
+    copy->add_observer([&](const DomMutation& m) { clone_target = m.target; });
+    copy->set_attribute("ID", "copy");
+    CHECK(clone_target == copy.get());
+    CHECK(child->id() == "target" && child->version() == source_version);
 }

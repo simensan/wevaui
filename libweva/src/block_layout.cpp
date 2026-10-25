@@ -1173,7 +1173,7 @@ const DecodedImage* replaced_image(const Box& box, const LayoutContext& ctx) {
     if (box.element->tag_name() != "img") return nullptr;
     const std::string_view src = box.element->get_attribute("src");
     if (src.empty()) return nullptr;
-    return ctx.images->get(src);
+    return ctx.images->get(src, box.element->get_attribute("decoding") == "async");
 }
 
 namespace {

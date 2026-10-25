@@ -317,6 +317,13 @@ void test_replaced_image_cache() {
     run(units,false,420,18,22,120,"other.png");
     run(units,true,420,18,22,120,"other.png");
     run("",false);
+    // Closing a screen releases GPU textures, but the bounded pixel cache
+    // must keep the downsample so reopening can upload without resampling.
+    const size_t raster_bytes = shared_raster_bytes();
+    CHECK(raster_bytes > 0);
+    cache.release_all(&retained);
+    run("",false);
+    CHECK(shared_raster_bytes() == raster_bytes);
     store.clear(); run("",false);
     store.set_base_path("different"); run("",false);
     store.set_base_path("different"); run("",true);
@@ -498,6 +505,33 @@ void test_background_image() {
             CHECK(reduced[i] == reduced[i + 1] && reduced[i] == reduced[i + 2] && reduced[i + 3] == 255);
         }
         CHECK(filtered(checks, 32, 32) == checks.rgba);
+    }
+
+    // Prepared block sums must preserve the scalar area filter, including
+    // fractional footprints, partial edge blocks and transparent RGB. The
+    // retained original pixels also serve ordinary sizing and magnification.
+    for (const int source_width : {512, 509}) {
+        DecodedImage scalar;
+        scalar.width = source_width; scalar.height = 387;
+        scalar.rgba.resize(static_cast<size_t>(scalar.width) * scalar.height * 4);
+        uint32_t noise = 0x12345678;
+        for (auto& value : scalar.rgba) {
+            noise = noise * 1664525u + 1013904223u;
+            value = static_cast<uint8_t>(noise >> 24);
+        }
+        auto prepared = scalar;
+        prepare_image_sampling(prepared);
+        CHECK(!prepared.block_sums.empty() && prepared.rgba == scalar.rgba);
+        CHECK(prepared.block_sums.size() * sizeof(uint64_t) < prepared.rgba.size() / 6);
+        for (const auto& size : {std::pair<int, int>{1, 1}, {17, 23}, {32, 32}, {63, 17}, {250, 19}, {520, 400}}) {
+            const auto expected = filtered(scalar, size.first, size.second);
+            const auto actual = filtered(prepared, size.first, size.second);
+            CHECK(expected.size() == actual.size());
+            int error = 0;
+            for (size_t i = 0; i < actual.size(); ++i)
+                error = std::max(error, std::abs(static_cast<int>(actual[i]) - expected[i]));
+            CHECK(error <= 1); // floating summation order may round a byte at a tie
+        }
     }
 
     // ---- `background-size: cover` on a square box ----------------------

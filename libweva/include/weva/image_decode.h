@@ -28,6 +28,11 @@ struct DecodedImage {
     int height = 0;
     // Straight (not premultiplied) RGBA, row-major from the top left.
     std::vector<uint8_t> rgba;
+    // Optional summed 8x8 blocks for exact area filtering. Premultiplied RGB
+    // and alpha sums are prepared off-thread for deferred images. Original
+    // pixels and intrinsic dimensions remain intact; edge texels use rgba.
+    int block_stride = 0;
+    std::vector<uint64_t> block_sums;
 
     bool valid() const { return width > 0 && height > 0 && !rgba.empty(); }
 };
@@ -50,5 +55,6 @@ DecodedImage decode_png(const uint8_t* data, size_t size);
 // Dispatches on the content, not on the file extension: a .png that is really
 // something else should fail as what it is.
 DecodedImage decode_image(const uint8_t* data, size_t size);
+void prepare_image_sampling(DecodedImage& image);
 
 } // namespace weva

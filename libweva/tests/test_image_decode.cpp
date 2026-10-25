@@ -7,9 +7,14 @@
 // cannot be coded with the fixed Huffman tables.
 #include "check.h"
 #include "weva/image_decode.h"
+#include "weva/image_store.h"
+#include "weva_c.h"
 
+#include <chrono>
+#include <cstring>
 #include <cstdint>
 #include <string>
+#include <thread>
 #include <vector>
 
 using namespace weva;
@@ -1556,4 +1561,115 @@ void test_image_decode() {
         CHECK(inflate_deflate(mixed_blocks, sizeof(mixed_blocks), &round_trip, limit));
         CHECK(round_trip == std::vector<uint8_t>(expected.begin(), expected.begin() + static_cast<std::ptrdiff_t>(limit)));
     }
+}
+
+void test_async_images() {
+    const auto caller = std::this_thread::get_id();
+    int reads = 0;
+    ImageStore store;
+    store.set_reader([&](const std::string& path, std::vector<uint8_t>* out) {
+        CHECK(std::this_thread::get_id() == caller);
+        ++reads;
+        if (path == "bad") out->assign({1, 2, 3});
+        else out->assign(k_rgba, k_rgba + sizeof(k_rgba));
+        return true;
+    });
+    const auto wait_store = [&] {
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (store.pending() && std::chrono::steady_clock::now() < deadline) {
+            store.poll();
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        CHECK(!store.pending());
+    };
+    const auto version = store.content_version();
+    const auto generation = store.generation_version();
+    CHECK(store.get("icon", true) == nullptr);
+    CHECK(store.pending());
+    CHECK(store.get("icon", true) == nullptr); // repeated layout/paint deduplicates
+    CHECK(reads == 0); // mounting queues URLs; it must not read the entire grid
+    CHECK(store.missing_count() == 0); // loading is not a failed asset
+    wait_store();
+    CHECK(reads == 1);
+    const auto* image = store.get("icon");
+    CHECK(image && image->width == 2 && image->height == 2);
+    CHECK(image && image->rgba == std::vector<uint8_t>(k_rgba_rgba, k_rgba_rgba + sizeof(k_rgba_rgba)));
+    CHECK(store.content_version() != version);
+    CHECK(store.generation_version() == generation);
+    CHECK(!store.poll());
+    CHECK(store.get("bad", true) == nullptr);
+    wait_store();
+    CHECK(store.missing_count() == 1);
+    CHECK(store.get("bad", true) == nullptr);
+    CHECK(reads == 2);
+
+    // Replacing the reader invalidates queued AND already-completed old work.
+    CHECK(store.get("replacement", true) == nullptr);
+    store.poll();
+    store.set_reader([](const std::string&, std::vector<uint8_t>* out) {
+        out->assign(k_grey_alpha, k_grey_alpha + sizeof(k_grey_alpha));
+        return true;
+    });
+    CHECK(store.generation_version() != generation);
+    CHECK(!store.pending());
+    CHECK(!store.poll());
+    CHECK(store.get("replacement", true) == nullptr);
+    wait_store();
+    image = store.get("replacement");
+    CHECK(image && image->width == 2 && image->height == 1);
+    ImageStore batch_store;
+    int batch_reads = 0;
+    batch_store.set_reader([&](const std::string&, std::vector<uint8_t>*) {
+        ++batch_reads; return false;
+    });
+    for (int i = 0; i < 9; ++i) batch_store.get(std::to_string(i), true);
+    CHECK(batch_reads == 0);
+    batch_store.poll();
+    CHECK(batch_reads == 2 && batch_store.pending());
+    for (int i = 0; i < 4; ++i) batch_store.poll();
+    CHECK(batch_reads == 9 && !batch_store.pending() && batch_store.missing_count() == 9);
+    for (int i = 0; i < 32; ++i) {
+        ImageStore discarded;
+        discarded.set_reader([](const std::string&, std::vector<uint8_t>* out) {
+            out->assign(k_noisy_dynamic, k_noisy_dynamic + sizeof(k_noisy_dynamic));
+            return true;
+        });
+        discarded.get("queued", true);
+        discarded.poll(); // destruction must not leave borrowed bytes/state
+    }
+
+    // A host ticking only while is_animating must receive both new intrinsic
+    // size and a new draw list, then return to a settled idle document.
+    weva_config config{};
+    config.viewport_width = 400; config.viewport_height = 300;
+    config.use_user_agent_stylesheet = 1;
+    const auto doc = weva_document_create(&config);
+    const auto reader = [](void* user, const char*, uint8_t* out, size_t size) -> size_t {
+        CHECK(std::this_thread::get_id() == *static_cast<const std::thread::id*>(user));
+        if (out && size >= sizeof(k_rgba)) std::memcpy(out, k_rgba, sizeof(k_rgba));
+        return sizeof(k_rgba);
+    };
+    auto reader_thread = caller;
+    CHECK(weva_document_set_asset_reader(doc, reader, &reader_thread) == WEVA_OK);
+    const char html[] = "<body style='margin:0'><img id='image' decoding='async' src='icon' style='display:block'></body>";
+    CHECK(weva_document_load_html(doc, html, sizeof(html) - 1) == WEVA_OK);
+    CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    CHECK(weva_document_is_animating(doc));
+    const auto serial = weva_document_draw_serial(doc);
+    weva_stats before{};
+    weva_document_stats(doc, &before);
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    while (weva_document_is_animating(doc) && std::chrono::steady_clock::now() < deadline) {
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    CHECK(!weva_document_is_animating(doc));
+    CHECK(weva_document_draw_serial(doc) > serial);
+    weva_stats after{};
+    weva_document_stats(doc, &after);
+    CHECK(after.cascade_elements == before.cascade_elements);
+    double x = 0, y = 0, width = 0, height = 0;
+    CHECK(weva_element_bounds(doc, weva_document_query(doc, "#image"), &x, &y, &width, &height) == WEVA_OK);
+    CHECK(width == 2 && height == 2);
+    weva_document_destroy(doc);
 }

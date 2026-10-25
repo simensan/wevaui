@@ -2,10 +2,82 @@
 
 #include <fstream>
 #include <atomic>
+#include <condition_variable>
+#include <deque>
+#include <mutex>
+#include <thread>
+#include <utility>
 
 namespace weva {
 
+struct ImageDecodeState {
+    std::mutex mutex;
+    std::deque<std::pair<std::string, DecodedImage>> ready;
+};
+
 namespace {
+
+// A bounded number of workers shared by documents. Jobs borrow a generation
+// weakly: clear/reload/destruction drops queued work without joining a decoder
+// on the render thread. No host callback or DOM state crosses this boundary.
+class ImageDecoders {
+public:
+    ImageDecoders() {
+        for (auto& worker : workers_) worker = std::thread([this] { run(); });
+    }
+    ~ImageDecoders() {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            stopping_ = true;
+            jobs_.clear();
+        }
+        wake_.notify_all();
+        for (auto& worker : workers_) worker.join();
+    }
+    void submit(const std::shared_ptr<ImageDecodeState>& state, std::string path,
+                std::vector<uint8_t> bytes) {
+        {
+            std::lock_guard<std::mutex> lock(mutex_);
+            jobs_.push_back({state, std::move(path), std::move(bytes)});
+        }
+        wake_.notify_one();
+    }
+private:
+    struct Job {
+        std::weak_ptr<ImageDecodeState> state;
+        std::string path;
+        std::vector<uint8_t> bytes;
+    };
+    void run() {
+        for (;;) {
+            Job job;
+            {
+                std::unique_lock<std::mutex> lock(mutex_);
+                wake_.wait(lock, [this] { return stopping_ || !jobs_.empty(); });
+                if (stopping_) return;
+                job = std::move(jobs_.front());
+                jobs_.pop_front();
+            }
+            if (job.state.expired()) continue;
+            DecodedImage image = decode_image(job.bytes.data(), job.bytes.size());
+            prepare_image_sampling(image);
+            if (const auto state = job.state.lock()) {
+                std::lock_guard<std::mutex> lock(state->mutex);
+                state->ready.emplace_back(std::move(job.path), std::move(image));
+            }
+        }
+    }
+    std::thread workers_[2];
+    std::mutex mutex_;
+    std::condition_variable wake_;
+    std::deque<Job> jobs_;
+    bool stopping_ = false;
+};
+
+ImageDecoders& image_decoders() {
+    static ImageDecoders workers;
+    return workers;
+}
 
 bool has_scheme(std::string_view url) {
     // `res://`, `user://`, `http://`, `data:` -- anything a host might own.
@@ -41,6 +113,53 @@ bool read_file(const std::string& path, std::vector<uint8_t>* out) {
 
 } // namespace
 
+ImageStore::~ImageStore() = default;
+ImageStore::ImageStore(ImageStore&&) noexcept = default;
+ImageStore& ImageStore::operator=(ImageStore&&) noexcept = default;
+
+void ImageStore::clear() {
+    async_.reset();
+    pending_.clear();
+    requests_.clear();
+    cache_.clear();
+    generation_version_ = content_version_ = next_content_version();
+}
+
+bool ImageStore::poll() {
+    if (!async_ || pending_.empty()) return false;
+    // Admission/publication are bounded too: decoding off-thread alone still
+    // lets an icon grid read all its files, or downsample all completed images,
+    // on one frame. Readers remain on their owning host thread.
+    constexpr size_t batch = 2;
+    for (size_t i = 0; i < batch && !requests_.empty(); ++i) {
+        std::string path = std::move(requests_.front());
+        requests_.pop_front();
+        std::vector<uint8_t> bytes;
+        const bool read = reader_ ? reader_(path, &bytes) : read_file(path, &bytes);
+        if (read && !bytes.empty()) image_decoders().submit(async_, std::move(path), std::move(bytes));
+        else {
+            pending_.erase(path);
+            cache_.emplace(std::move(path), DecodedImage{});
+        }
+    }
+    std::deque<std::pair<std::string, DecodedImage>> ready;
+    {
+        std::lock_guard<std::mutex> lock(async_->mutex);
+        for (size_t i = 0; i < batch && !async_->ready.empty(); ++i) {
+            ready.push_back(std::move(async_->ready.front()));
+            async_->ready.pop_front();
+        }
+    }
+    bool changed = false;
+    for (auto& entry : ready) {
+        pending_.erase(entry.first);
+        changed = changed || entry.second.valid();
+        cache_.emplace(std::move(entry.first), std::move(entry.second));
+    }
+    if (changed) content_version_ = next_content_version();
+    return changed;
+}
+
 uint64_t ImageStore::next_content_version() {
     static std::atomic<uint64_t> serial{1};
     return serial.fetch_add(1, std::memory_order_relaxed);
@@ -63,7 +182,7 @@ bool ImageStore::read(std::string_view url, std::vector<uint8_t>* out) const {
     return reader_ ? reader_(path, out) : read_file(path, out);
 }
 
-const DecodedImage* ImageStore::get(std::string_view url) {
+const DecodedImage* ImageStore::get(std::string_view url, bool async) {
     if (url.empty()) return nullptr;
     const std::string path = resolve(url);
 
@@ -73,7 +192,14 @@ const DecodedImage* ImageStore::get(std::string_view url) {
         // stops the next frame trying the same missing file again.
         return it->second.valid() ? &it->second : nullptr;
     }
+    if (pending_.count(path)) return nullptr;
 
+    if (async) {
+        if (!async_) async_ = std::make_shared<ImageDecodeState>();
+        pending_.insert(path);
+        requests_.push_back(path);
+        return nullptr;
+    }
     std::vector<uint8_t> bytes;
     const bool read = reader_ ? reader_(path, &bytes) : read_file(path, &bytes);
     DecodedImage image;

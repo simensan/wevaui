@@ -1,4 +1,5 @@
 #include "weva/binding.h"
+#include "weva/form_state.h"
 
 #include <algorithm>
 #include <cctype>
@@ -7,6 +8,35 @@
 #include <vector>
 
 namespace weva {
+
+// Only fresh, detached clones enter this builder. Assemble their ownership
+// directly, then reconcile form state once for the completed tree. Replaying
+// append_child for every copied node repeatedly walks the same descendants
+// and stamps mutations that no observer can see.
+struct BindingCloner {
+    static Ref<Node> tree(const Node& source) {
+        if (source.node_type() == NodeType::Text)
+            return Ref<Node>(new TextNode(static_cast<const TextNode&>(source).source()));
+        if (!source.is_element()) return {};
+        const auto& element = static_cast<const Element&>(source);
+        Ref<Element> copy = element.clone_attributes();
+        copy->children_.reserve(source.children().size());
+        for (const auto& child : source.children()) {
+            auto cloned = tree(*child);
+            if (!cloned) continue;
+            cloned->parent_ = copy.get();
+            copy->children_.push_back(std::move(cloned));
+        }
+        form_children_changed(*copy);
+        copy->copy_form_state_from(element);
+        return Ref<Node>::retain(copy.get());
+    }
+    static Ref<Node> clone(const Node& source) {
+        auto copy = tree(source);
+        if (copy) form_subtree_inserted(*copy);
+        return copy;
+    }
+};
 
 namespace {
 
@@ -110,24 +140,7 @@ void clone_children(const Node& source, Node* into) {
 }
 
 Ref<Node> clone_node(const Node& source) {
-    if (source.node_type() == NodeType::Text) {
-        const TextNode& t = static_cast<const TextNode&>(source);
-        // The SOURCE, so the copy is a template like its original and refills
-        // rather than freezing whatever the first pass produced.
-        return Ref<Node>(new TextNode(t.source()));
-    }
-    if (source.node_type() != NodeType::Element) return Ref<Node>(nullptr);
-    const Element& e = static_cast<const Element&>(source);
-    Ref<Element> copy = make_ref<Element>(e.tag_name());
-    const AttributeMap& attrs = e.attributes();
-    for (std::size_t i = 0; i < attrs.size(); ++i) {
-        copy->set_attribute(attrs.name_at(i), attrs.value_at(i));
-    }
-    clone_children(source, copy.get());
-    copy->copy_form_state_from(e);
-    // `retain`, not the constructor: that one ADOPTS a reference the caller
-    // owns, and `copy` already owns the only one there is.
-    return Ref<Node>::retain(copy.get());
+    return BindingCloner::clone(source);
 }
 
 }   // namespace
@@ -241,6 +254,9 @@ int expand_repeat(Element& tmpl, const BindingResolver& resolver, BindingTemplat
         if (e.get_attribute(kCloneMark) == tmpl.get_attribute("data-each")) rows.push_back(&e);
     }
 
+    int changed = 0;
+    // Allocated only when inserting rows, never on an unchanged refresh.
+    std::vector<bool> prepared;
     // One row factory serves both initial expansion and keyed insertion.
     const auto make_row = [&](int i) {
         Ref<Element> row = make_ref<Element>(tmpl.tag_name() == "template" ? "div"
@@ -273,9 +289,17 @@ int expand_repeat(Element& tmpl, const BindingResolver& resolver, BindingTemplat
         // them too.
         made_row.set_attribute(kRowIndex, std::to_string(i));
         made_row.set_attribute(kRowKey, keys[static_cast<size_t>(i)]);
+        // Publish a complete subtree once instead of notifying the live
+        // document for every bound attribute and nested conditional control.
+        // A row that is itself a repeat needs its parent to expand siblings.
+        if (!made_row.has_attribute("data-each")) {
+            const RowResolver row_resolver(resolver, alias, list + "." + std::to_string(i), i);
+            changed += apply_bindings(made_row, row_resolver, templates, repeats);
+            if (prepared.empty()) prepared.resize(static_cast<size_t>(n), false);
+            prepared[static_cast<size_t>(i)] = true;
+        }
         return made;
     };
-    int changed = 0;
     bool reconciled = false;
     if (!same && previous && explicit_keys && previous->size() == rows.size()) {
         std::map<std::string, Element*> keyed;
@@ -342,6 +366,7 @@ int expand_repeat(Element& tmpl, const BindingResolver& resolver, BindingTemplat
     // Filled either way: the values inside a row change far more often than
     // the list does.
     for (size_t i = 0; i < rows.size(); ++i) {
+        if (!prepared.empty() && prepared[i]) continue;
         const RowResolver row_resolver(resolver, alias, list + "." + std::to_string(i),
                                        static_cast<int>(i));
         changed += apply_bindings(*rows[i], row_resolver, templates, repeats);

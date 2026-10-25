@@ -416,8 +416,8 @@ uint64_t weva_document_draw_serial(weva_document_t doc);
  * against the version consumed by the host's last update, not focus identity. */
 uint64_t weva_document_interaction_version(weva_document_t doc);
 
-/* Whether any transition is still running, so a host knows to keep handing
- * over time and redrawing. False for a document that has settled. */
+/* Whether updates are still needed (transitions, input clocks or pending async
+ * image decoding). False for a document that has settled. */
 int weva_document_is_animating(weva_document_t doc);
 
 /* The draw list from the last update. Valid until the next update or destroy,

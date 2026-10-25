@@ -12,6 +12,7 @@
 #include <array>
 #include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -50,6 +51,14 @@ struct StateReach {
     bool empty() const {
         return !everything && classes.empty() && ids.empty() && tags.empty();
     }
+};
+
+// Selector inputs used to share stylesheet matches across repeated controls.
+struct SelectorMatchInputs {
+    std::set<std::string, std::less<>> attributes;
+    std::set<std::string, std::less<>> ids;
+    std::map<std::string, std::set<std::string, std::less<>>, std::less<>> exact_values;
+    std::set<std::string, std::less<>> full_values;
 };
 
 // Unlayered rules outrank every layered rule for normal declarations, and LOSE
@@ -317,6 +326,7 @@ private:
     // set, so the match list can be shared. Getting the key wrong does not
     // fail loudly — it silently serves one element's styles to another.
     uint64_t try_compute_shape_key(const Element& e, const ElementStateProvider& state) const;
+    bool match_attribute_observable(std::string_view name) const;
 
     std::vector<CompiledRule> rules_;
     int next_source_index_ = 0;
@@ -332,8 +342,8 @@ private:
     bool rule_matches(const CompiledRule& rule, const Element& e,
                       const ElementStateProvider& state, bool pseudo, int* distance) const;
     mutable std::map<uint64_t, std::vector<MatchedDeclaration>> shape_cache_;
-    // Where an UNCACHEABLE element's matches live: an element with an inline
-    // style, or a possible subject of a sibling-dependent or :has rule.
+    // Where an UNCACHEABLE element's matches live: a possible subject of a
+    // sibling-dependent or :has rule.
     // Reused rather than allocated per element.
     mutable std::vector<MatchedDeclaration> uncached_matches_;
     mutable CacheStats stats_;
@@ -349,9 +359,11 @@ private:
     bool sibling_hover_dependency_ = false;
     bool sibling_active_dependency_ = false;
     bool style_attribute_selectors_ = false;
+    SelectorMatchInputs selector_inputs_;
     StateReach hover_reach_;                         // what :hover can match
     StateReach active_reach_;                        // what :active can match
     bool shape_key_folds_sibling_index_ = false;     // :nth-child, :first-child, :empty
+    StateReach index_subject_reach_;
     bool shape_key_folds_range_ = false;
     bool shape_key_folds_validity_ = false;
     bool shape_key_folds_default_ = false;           // form-owner/tree-order dependency

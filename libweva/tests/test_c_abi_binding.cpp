@@ -7,6 +7,8 @@
 // UI in HTML rather than in code.
 #include "check.h"
 #include "weva_c.h"
+#include "weva/binding.h"
+#include "weva/html.h"
 
 #include <cstring>
 #include <map>
@@ -661,6 +663,91 @@ void test_abi_row_identity() {
                            &plain_index, plain_key, sizeof(plain_key)) == 1);
     CHECK(plain_index == 1);
     CHECK(std::string(plain_key) == "1");
+}
+
+void test_binding_prepared_rows() {
+    struct Resolver : weva::BindingResolver {
+        bool resolve(std::string_view path, std::string* out) const override {
+            if (path == "Items.0.Name") { *out = "ready"; return true; }
+            if (path == "Items.0.Controls.0.Checked") { *out = "true"; return true; }
+            return false;
+        }
+        int count(std::string_view path) const override {
+            return path == "Items" || path == "Items.0.Controls" ? 1 : 0;
+        }
+    } resolver;
+    weva::SymbolTable symbols;
+    weva::HtmlParseError error;
+    weva::ParseOptions options; options.strict = false;
+    auto doc = weva::parse_html(
+        "<main><template data-each='Items as item'><section title='{{item.Name}}'>"
+        "<template data-each='item.Controls as control'>"
+        "<input type=checkbox checked='{{control.Checked}}'></template>"
+        "</section></template></main>", &symbols, options, &error);
+    CHECK(doc.get() != nullptr);
+    int notifications = 0;
+    bool complete_on_insert = false;
+    doc->add_observer([&](const weva::DomMutation& m) {
+        ++notifications;
+        if (m.kind != weva::MutationKind::ChildAdded || !m.related->is_element()) return;
+        const auto& row = static_cast<const weva::Element&>(*m.related);
+        complete_on_insert = row.get_attribute("title") == "ready" && row.children().size() == 2 &&
+            static_cast<const weva::Element&>(*row.children().back()).form_checked();
+    });
+    weva::BindingTemplates templates;
+    weva::BindingRepeats repeats;
+    CHECK(weva::apply_bindings(*doc, resolver, &templates, &repeats) > 0);
+    CHECK(complete_on_insert && notifications == 1);
+    CHECK(weva::apply_bindings(*doc, resolver, &templates, &repeats) == 0);
+    CHECK(notifications == 1);
+
+    // Newly inserted keyed rows bind once; retained fields keep live edits and
+    // their handles even when moved behind the new row.
+    Doc keyed("", "<main><template data-each='Items as item' data-key='Id'>"
+        "<section><input value='{{item.Name}}'><textarea>{{item.Name}}</textarea>"
+        "<select><option>A</option><option selected>B</option></select>"
+        "</section></template></main>");
+    keyed.data.lists["Items"] = 1;
+    keyed.data.values["Items.0.Id"] = "old";
+    keyed.data.values["Items.0.Name"] = "before";
+    keyed.refresh();
+    const auto field = weva_document_query(keyed.d, "main > section input");
+    weva_element_set_value(keyed.d, field, "edited");
+    weva_document_set_focus(keyed.d, field);
+    keyed.data.lists["Items"] = 2;
+    keyed.data.values["Items.0.Id"] = "new";
+    keyed.data.values["Items.0.Name"] = "inserted";
+    keyed.data.values["Items.1.Id"] = "old";
+    keyed.data.values["Items.1.Name"] = "before";
+    keyed.refresh();
+    CHECK(weva_document_focus(keyed.d) == field);
+    CHECK(weva_document_query(keyed.d, "[data-weva-key=old] input") == field);
+    char value[32]{};
+    weva_element_value(keyed.d, field, value, sizeof(value));
+    CHECK(std::string(value) == "edited");
+    for (const char* selector : {"[data-weva-key=new] input", "[data-weva-key=new] textarea"}) {
+        weva_element_value(keyed.d, weva_document_query(keyed.d, selector), value, sizeof(value));
+        CHECK(std::string(value) == "inserted");
+    }
+    weva_element_value(keyed.d, weva_document_query(keyed.d, "[data-weva-key=new] select"), value, sizeof(value));
+    CHECK(std::string(value) == "B");
+
+    Doc forms("", "<main><template data-each='Items as item'><form>"
+        "<input class=first type=radio name=choice checked>"
+        "<input class=last type=radio name=choice checked>"
+        "<select><optgroup><option selected>A</option><option selected>B</option></optgroup></select>"
+        "</form></template></main>");
+    forms.data.lists["Items"] = 2;
+    forms.refresh();
+    for (int i = 0; i < 2; ++i) {
+        const std::string row = "main > form[data-weva-index='" + std::to_string(i) + "']";
+        CHECK(weva_document_query(forms.d, (row + " .first:checked").c_str()) == WEVA_ELEMENT_NONE);
+        CHECK(weva_document_query(forms.d, (row + " .last:checked").c_str()) != WEVA_ELEMENT_NONE);
+        const auto selected = weva_document_query(forms.d, (row + " select").c_str());
+        weva_element_value(forms.d, selected, value, sizeof(value));
+        CHECK(std::string(value) == "B");
+        CHECK(weva_element_form(forms.d, selected) == weva_document_query(forms.d, row.c_str()));
+    }
 }
 
 void test_abi_bound_dialog_open_order() {

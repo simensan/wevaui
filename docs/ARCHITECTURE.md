@@ -649,10 +649,36 @@ The key owns the source URL, resolved object-fit/position layer inputs, exact
 content and texel dimensions, length-resolution context and accumulated color
 filter. ImageStore content versions distinguish reader/base-path resets and
 replacement stores without retaining decoded-image pointers. Versions change
-only when resource inputs reset; looking up or loading an image does not bump
-them. Identical images share a texture, while position, opacity and clipping
+when resource inputs reset or asynchronous pixels are published; cached lookups
+do not bump them. Identical images share a texture, while position, opacity and clipping
 remain per-draw work. End-of-pass retention and eviction use the existing
 texture ownership contract.
+
+`<img decoding="async">` opts into nonblocking PNG decoding. The asset reader
+still runs on the caller thread; two shared workers receive owned encoded bytes
+and return owned pixels. `ImageStore::poll` publishes completions at the start
+of a document update and requests layout for changed intrinsic sizes and paint
+for the new pixels. `weva_document_is_animating` stays true until these jobs have
+been published, including for hosts that otherwise skip idle updates. Pending
+images are not reported as missing. Clear, reader/base-path replacement and
+destruction retire the generation without waiting on a decoder: queued jobs
+hold weak generation references and obsolete results cannot reach a new store.
+Each update admits at most two reads and publishes at most two decoded images,
+so file reads and first-use downsampling cannot accumulate into one opening
+frame. Workers also prepare summed 8×8 source blocks for large images. The
+area filter integrates fully covered blocks in constant time and samples only
+the fractional edges individually, retaining the original pixels, intrinsic
+size and premultiplied-alpha filter. The table costs about 13% of RGBA storage;
+it avoids moving a full-resolution downsampling hitch to the completion frame.
+Image completion does not restyle unchanged DOM. The default decoding
+path stays synchronous for deterministic one-shot tools.
+
+Replaced-image raster keys use the immutable image-store generation rather
+than the arrival counter, so a newly loaded icon cannot evict every earlier
+icon's texture. Filtered icon pixels also use the existing bounded shared raster
+LRU: unmounting a screen still releases GPU textures, while reopening reuses
+its small downsampled pixels. Reader/base-path replacement changes the generation
+and cannot reuse old pixels.
 
 The public base-path and asset-reader setters schedule layout on changed
 resource inputs, preserving published views until the next update. Background,
@@ -897,6 +923,29 @@ it) but is inert to the ABI's readers -- `query`, `query_all`, `element_text`,
 The cascade also skips that source body, so its animations do not run until
 instantiation. An unchanged empty repeat returns without scanning siblings;
 zero/one control templates retain their normal keyed ownership and cleanup.
+New rows copy their canonical attribute stores and resolve bindings while
+detached, including nested repeats, before publishing the completed subtree.
+Fresh clones assemble parent/child ownership directly and reconcile form state
+once, instead of replaying child-insertion walks and invisible notifications.
+This avoids replaying source-attribute mutations and notifying the document
+for every initial bound value. Retained keyed rows still update in place;
+their handles, focus and live form edits survive insertion and reordering.
+Stylesheet match-cache keys omit unobserved `data-*`, `on-*`, `title` and
+`style` attributes on the element and its ancestors. Explicit attribute
+selectors, including functional and scope selectors, restore those inputs.
+Inline declarations remain per-element and are applied after match lookup;
+different row positions no longer force identical template shapes to rematch
+the entire stylesheet. Unreferenced action IDs share match inputs too. For
+metadata observed only by presence or case-sensitive equality selectors,
+unmentioned values share one unmatched input while presence remains distinct.
+Substring, token and case-insensitive predicates retain full values. Adding
+stylesheets rebuilds these dependencies, including nested and scope selectors.
+Positional key inputs are also subject-scoped: a `figcaption:empty` rule does
+not scan sibling lists or split match-cache entries for every unrelated button
+and template. Possible positional subjects still fold their rank/content;
+positional ancestors and filtered ranks retain their conservative bypass.
+Attribute keys hash each name/value pair before combining them, so exchanging
+two boolean values cannot alias open and closed controls or their descendants.
 
 The seam is `weva_binding_source` (ABI, `weva_c.h`): a callback table the host
 fills with "read this path", "count this collection". The core walks the

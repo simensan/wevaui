@@ -1468,7 +1468,7 @@ std::string replaced_image_key(const BackgroundLayer& layer, const Rect& area,
                               const ColorFilter* filter) {
     std::string key("img|");
     key.reserve(256 + layer.url.size());
-    append_image_version(key, paint);
+    append_texture_input(key, paint.images ? paint.images->generation_version() : uint64_t{0});
     const auto text = [&](std::string_view value) {
         append_texture_input(key, value.size());
         key.append(value);
@@ -2664,6 +2664,9 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     if (paint.texture_cache && (style || replaced)) {
         if (replaced) {
             key = replaced_image_key(*replaced, area, tex_w, tex_h, ctx, font_size, paint, filter);
+            // Keep the expensive high-resolution downsample in the bounded
+            // pixel LRU when an unmounted screen releases its GPU textures.
+            shared_key = key;
         } else {
             key = background_key(style, color, area.width, area.height, radii, font_size, 0, filter,
                                  &layers, tex_w, tex_h);
@@ -2827,7 +2830,8 @@ std::vector<BackgroundLayer> replaced_layer(const Box& b, const PaintContext& pa
         src = b.element->get_attribute("src");
     }
     if (src.empty()) return {};
-    const DecodedImage* image = paint.images->get(src);
+    const DecodedImage* image = paint.images->get(src, b.element &&
+        b.element->get_attribute("decoding") == "async");
     if (!image) return {};
 
     BackgroundLayer layer;

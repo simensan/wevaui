@@ -71,6 +71,7 @@ public:
     void set_change_handler(ChangeFn fn) { on_changed_ = std::move(fn); }
 
 private:
+    friend class Element;
     static std::string canonicalize(std::string_view s);
 
     std::vector<std::string> order_;
@@ -108,6 +109,7 @@ protected:
 
 private:
     friend class Document;
+    friend struct BindingCloner;
     static void propagate_owner_document(Node* n);
     bool has_ancestor(const Node* candidate) const;
     int index_of(const Node* child) const;
@@ -148,6 +150,10 @@ public:
     const std::string& tag_name() const { return tag_name_; }
     AttributeMap& attributes() { return attributes_; }
     const AttributeMap& attributes() const { return attributes_; }
+
+    // A new, detached element with the same tag and attributes. The new
+    // attribute store owns its callback; no live mutations are suppressed.
+    Ref<Element> clone_attributes() const;
 
     std::string_view get_attribute(std::string_view name) const { return attributes_.get(name); }
     void set_attribute(std::string_view name, std::string_view value) { attributes_.set(name, value); }

@@ -74,6 +74,13 @@ bool AttributeMap::remove(std::string_view name) {
 
 // ------------------------------------------------------------------------ Node
 
+Ref<Element> Element::clone_attributes() const {
+    Ref<Element> copy = make_ref<Element>(tag_name_);
+    copy->attributes_.order_ = attributes_.order_;
+    copy->attributes_.values_ = attributes_.values_;
+    return copy;
+}
+
 int Node::index_of(const Node* child) const {
     for (std::size_t i = 0; i < children_.size(); ++i) {
         if (children_[i].get() == child) return static_cast<int>(i);

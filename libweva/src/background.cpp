@@ -1089,10 +1089,35 @@ Srgb sample_image(const DecodedImage& image, double lx, double ly, double tw, do
     const int end_x = shrink_x ? static_cast<int>(std::ceil(std::min<double>(image.width, cx + fw * .5))) : begin_x + 2;
     const int end_y = shrink_y ? static_cast<int>(std::ceil(std::min<double>(image.height, cy + fh * .5))) : begin_y + 2;
     double r = 0, g = 0, b = 0, a = 0, weight = 0;
+    int inner_x0 = 0, inner_x1 = 0, inner_y0 = 0, inner_y1 = 0;
+    if (!image.block_sums.empty() && fw >= 8 && fh >= 8) {
+        // Integrate fully covered 8x8 blocks in constant time; only fractional
+        // edges and clamped border texels need the scalar filter below. This
+        // is the same premultiplied box filter, without revisiting every pixel
+        // of a large icon on the frame that first displays its tiny tile.
+        inner_x0 = std::max(0, static_cast<int>(std::ceil(x0 / 8))) * 8;
+        inner_y0 = std::max(0, static_cast<int>(std::ceil(y0 / 8))) * 8;
+        inner_x1 = std::min(image.width / 8, static_cast<int>(std::floor((cx + fw * .5) / 8))) * 8;
+        inner_y1 = std::min(image.height / 8, static_cast<int>(std::floor((cy + fh * .5) / 8))) * 8;
+        if (inner_x1 > inner_x0 && inner_y1 > inner_y0) {
+            const auto sum = [&](int c) {
+                const auto at = [&](int x, int y) { return image.block_sums[
+                    (static_cast<size_t>(y / 8) * image.block_stride + x / 8) * 4 + c]; };
+                return static_cast<double>((at(inner_x1, inner_y1) - at(inner_x0, inner_y1)) -
+                                           (at(inner_x1, inner_y0) - at(inner_x0, inner_y0)));
+            };
+            r = sum(0); g = sum(1); b = sum(2); a = sum(3);
+            weight = static_cast<double>(inner_x1 - inner_x0) * (inner_y1 - inner_y0);
+        } else inner_x1 = inner_x0;
+    }
     for (int y = begin_y; y < end_y; ++y) {
         const double wy = shrink_y ? std::max(0.0, std::min(y + 1.0, cy + fh * .5) - std::max<double>(y, y0))
                                    : std::max(0.0, 1.0 - std::abs(y - y0));
         for (int x = begin_x; x < end_x; ++x) {
+            if (x == inner_x0 && inner_x1 > inner_x0 && y >= inner_y0 && y < inner_y1) {
+                x = inner_x1;
+                if (x >= end_x) break;
+            }
             const double wx = shrink_x ? std::max(0.0, std::min(x + 1.0, cx + fw * .5) - std::max<double>(x, x0))
                                        : std::max(0.0, 1.0 - std::abs(x - x0));
             const double w = wx * wy;

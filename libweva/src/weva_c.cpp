@@ -4311,6 +4311,7 @@ weva_status weva_document_content_size(weva_document_t doc, double* out_width,
 
 int weva_document_is_animating(weva_document_t doc) {
     if (!doc) return 0;
+    if (doc->images.pending()) return 1;
     // A blinking caret is a moving document: a host that stops handing over
     // time because "nothing is animating" freezes the cursor mid-blink.
     const InteractionState& st = doc->styles.state;
@@ -4478,6 +4479,11 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
             ++d->stats.updates;
         }
     } stats_scope(doc);
+    // Decode completion changes intrinsic dimensions and pixels without a DOM
+    // mutation. Publish only here, never from the worker or during painting.
+    const Invalidation before_images = doc->pending;
+    const bool images_changed = doc->images.poll();
+    if (images_changed) doc->pending = worst(doc->pending, Invalidation::Layout);
     const auto lap = [&](const char* what) {
         const auto t = now();
         const double elapsed = std::chrono::duration<double, std::milli>(t - t0).count();
@@ -4648,7 +4654,9 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
     // and scrolling a 2,000-row list cost 80 ms a frame in the cascade alone
     // to discover that nothing had changed.
     const bool only_time = !touched_anything &&
-                           (!structural_pending || pending_at_entry == Invalidation::Paint);
+                           (!structural_pending || pending_at_entry == Invalidation::Paint ||
+                            (images_changed && before_images <= Invalidation::Paint &&
+                             pending_at_entry == Invalidation::Layout));
 
     // When the only thing that happened is that a host set some attributes,
     // the walk can be confined to what those attributes can reach. Whether

@@ -328,9 +328,11 @@ void CascadeEngine::clear() {
     sibling_hover_dependency_ = false;
     sibling_active_dependency_ = false;
     style_attribute_selectors_ = false;
+    selector_inputs_ = {};
     hover_reach_ = StateReach{};
     active_reach_ = StateReach{};
     shape_key_folds_sibling_index_ = false;
+    index_subject_reach_ = {};
     shape_key_folds_range_ = false;
     shape_key_folds_validity_ = false;
     shape_key_folds_default_ = false;
@@ -346,6 +348,19 @@ uint64_t hash_str(std::string_view s) {
     for (char c : s) {
         h ^= static_cast<unsigned char>(c);
         h *= kFnvPrime;
+    }
+    return h;
+}
+
+uint64_t hash_attribute(std::string_view name, uint64_t value_key) {
+    // Hash each NAME/VALUE PAIR before combining attributes commutatively.
+    // XORing names and values separately aliases swapped boolean attributes,
+    // e.g. data-open=true,data-movable=false with open=false,movable=true.
+    uint64_t h = hash_str(name);
+    for (int i = 0; i < 8; ++i) {
+        h ^= value_key & 255;
+        h *= kFnvPrime;
+        value_key >>= 8;
     }
     return h;
 }
@@ -548,11 +563,21 @@ bool uses_validity(const CompoundSequence& seq) {
 // into a document-wide restyle. Inline styles cannot change a selector match
 // unless an attribute selector explicitly reads the style attribute.
 void mutation_dependencies(const CompoundSequence& seq, bool inside_has,
-                           bool* hover, bool* active, bool* style_attribute) {
+                           bool* hover, bool* active, bool* style_attribute,
+                           SelectorMatchInputs* inputs = nullptr) {
     for (const auto& compound : seq.compounds) for (const auto& part : compound.parts) {
+        if (inputs && part->tag() == SimpleSelector::Tag::Id)
+            inputs->ids.insert(static_cast<const IdSelector&>(*part).id);
         if (part->tag() == SimpleSelector::Tag::Attribute) {
             const auto& attr = static_cast<const AttributeSelector&>(*part);
             if (attr.name == "style") *style_attribute = true;
+            if (inputs) {
+                inputs->attributes.insert(attr.name);
+                if (attr.op == AttributeOperator::Equals && !attr.case_insensitive)
+                    inputs->exact_values[attr.name].insert(attr.value);
+                else if (attr.op != AttributeOperator::Exists)
+                    inputs->full_values.insert(attr.name);
+            }
         }
         if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
         const auto& pc = static_cast<const PseudoClassSelector&>(*part);
@@ -560,21 +585,29 @@ void mutation_dependencies(const CompoundSequence& seq, bool inside_has,
         if (inside_has && pc.kind == PseudoClassKind::Active) *active = true;
         const bool nested = inside_has || pc.kind == PseudoClassKind::Has;
         for (const auto& inner : pc.inner_list)
-            mutation_dependencies(*inner, nested, hover, active, style_attribute);
+            mutation_dependencies(*inner, nested, hover, active, style_attribute, inputs);
         for (const auto& inner : pc.nth_of_filter)
-            mutation_dependencies(*inner, nested, hover, active, style_attribute);
+            mutation_dependencies(*inner, nested, hover, active, style_attribute, inputs);
     }
 }
 
 } // namespace
+
+bool CascadeEngine::match_attribute_observable(std::string_view name) const {
+    // These attributes have no implicit selector semantics. Include them only
+    // when a selector explicitly reads them; inline declarations are applied
+    // after the cached stylesheet match list. Other HTML attributes remain
+    // conservative inputs for form and language pseudo-classes.
+    if (name == "style" || name == "title" || name.substr(0, 5) == "data-" ||
+        name.substr(0, 3) == "on-") return selector_inputs_.attributes.count(name) != 0;
+    return true;
+}
 
 uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
                                               const ElementStateProvider& state) const {
     // 0 means "do not cache". Every opt-out below exists because sharing would
     // otherwise serve one element's match set to a genuinely different element.
 
-    // Inline style is per-element and invisible to a tag/class/attribute key.
-    if (e.has_attribute("style")) return 0;
     // Sibling composition and :has() are unrepresentable in a per-element key.
     if (cache_unsafe_sibling_composition_ && state_observable(sibling_subject_reach_, e)) return 0;
     if (cache_unsafe_scope_) return 0;
@@ -584,6 +617,27 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
     if (cache_unsafe_has_ && state_observable(has_subject_reach_, e)) return 0;
 
     uint64_t h = kFnvOffset;
+    const bool reads_id_attribute = selector_inputs_.attributes.count("id") != 0;
+    const auto id_key = [&](const Element& element) -> uint64_t {
+        // Action handles often have unique IDs that no CSS selector reads.
+        // Such IDs cannot distinguish stylesheet match lists. Attribute
+        // selectors still need the full value AND presence (including id="").
+        if (reads_id_attribute)
+            return hash_str(element.id()) ^ (element.has_attribute("id") ? kFnvPrime : 0);
+        return selector_inputs_.ids.count(element.id()) ? hash_str(element.id()) : 0;
+    };
+    const auto attribute_value_key = [&](std::string_view name, std::string_view value) {
+        // Metadata has no implicit HTML selector semantics. For exact-match
+        // selectors, every unmentioned value has the same (false) match
+        // result. Presence is still folded separately by the attribute name.
+        if ((name == "style" || name == "title" || name.substr(0, 5) == "data-" ||
+             name.substr(0, 3) == "on-") && !selector_inputs_.full_values.count(name)) {
+            const auto values = selector_inputs_.exact_values.find(name);
+            if (values == selector_inputs_.exact_values.end() || !values->second.count(value))
+                return uint64_t{0};
+        }
+        return hash_str(value);
+    };
     if (shape_key_folds_validity_) { h ^= form_validity_selector_state(e); h *= kFnvPrime; }
     if (shape_key_folds_range_) { h ^= form_range_selector_state(e); h *= kFnvPrime; }
     if (shape_key_folds_default_) { h ^= static_cast<uint64_t>(form_is_default(e)); h *= kFnvPrime; }
@@ -592,7 +646,7 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
         h *= kFnvPrime;
     }
     h ^= hash_str(e.tag_name()); h *= kFnvPrime;
-    h ^= hash_str(e.id());       h *= kFnvPrime;
+    h ^= id_key(e);             h *= kFnvPrime;
     h ^= hash_class_tokens(e.class_name()); h *= kFnvPrime;
 
     // Attributes fold NAME AND VALUE: [data-state="open"] and
@@ -601,14 +655,13 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
     const AttributeMap& attrs = e.attributes();
     for (std::size_t i = 0; i < attrs.size(); ++i) {
         std::string_view n = attrs.name_at(i);
-        if (n == "class" || n == "id") continue;
-        attr_hash ^= hash_str(n) * 2654435761ULL;
-        attr_hash ^= hash_str(attrs.value_at(i)) * kFnvOffset;
+        if (n == "class" || n == "id" || !match_attribute_observable(n)) continue;
+        attr_hash ^= hash_attribute(n, attribute_value_key(n, attrs.value_at(i)));
     }
     h ^= attr_hash; h *= kFnvPrime;
 
     // Index-positional pseudos need sibling position folded in.
-    if (shape_key_folds_sibling_index_) {
+    if (shape_key_folds_sibling_index_ && state_observable(index_subject_reach_, e)) {
         const Node* p = e.parent();
         int index = 0, count = 0;
         if (p) {
@@ -637,7 +690,7 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
         if (shape_key_folds_default_) { h ^= static_cast<uint64_t>(form_is_default(*a)); h *= kFnvPrime; }
         uint64_t anc = 0;
         anc ^= hash_str(a->tag_name());
-        anc ^= hash_str(a->id()) * 257ULL;
+        anc ^= id_key(*a) * 257ULL;
         anc ^= hash_class_tokens(a->class_name());
         anc ^= static_cast<uint64_t>(state.state_of(*a)) * 2654435761ULL;
         // An ancestor's OTHER attributes, for the same reason the element's own
@@ -649,9 +702,8 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
         const AttributeMap& ancestor_attrs = a->attributes();
         for (std::size_t i = 0; i < ancestor_attrs.size(); ++i) {
             const std::string_view n = ancestor_attrs.name_at(i);
-            if (n == "class" || n == "id") continue;   // folded above
-            anc ^= hash_str(n) * 2654435761ULL;
-            anc ^= hash_str(ancestor_attrs.value_at(i)) * kFnvOffset;
+            if (n == "class" || n == "id" || !match_attribute_observable(n)) continue;
+            anc ^= hash_attribute(n, attribute_value_key(n, ancestor_attrs.value_at(i)));
         }
         h ^= anc;
         h *= kFnvPrime;
@@ -873,15 +925,18 @@ void CascadeEngine::compile_declarations(const Rule& rule,
         // Classify BEFORE moving: the shape cache's soundness depends
         // on spotting sibling-composition and :has() selectors anywhere
         // in the sheet.
-        bool selector_has = false, selector_sibling = false;
+        bool selector_has = false, selector_sibling = false, selector_index = false;
         classify_selector(cs.sequence, &selector_sibling,
-                          &selector_has, &shape_key_folds_sibling_index_,
+                          &selector_has, &selector_index,
                           &hover_reach_, &active_reach_, false);
+        shape_key_folds_sibling_index_ = shape_key_folds_sibling_index_ || selector_index;
+        if (selector_index && !cs.sequence.compounds.empty())
+            collect_keys(cs.sequence.compounds.back(), &index_subject_reach_);
         cache_unsafe_sibling_composition_ = cache_unsafe_sibling_composition_ || selector_sibling;
         if (selector_sibling && !cs.sequence.compounds.empty())
             collect_keys(cs.sequence.compounds.back(), &sibling_subject_reach_);
         mutation_dependencies(cs.sequence, false, &has_hover_dependency_,
-                              &has_active_dependency_, &style_attribute_selectors_);
+                              &has_active_dependency_, &style_attribute_selectors_, &selector_inputs_);
         if (selector_sibling)
             mutation_dependencies(cs.sequence, true, &sibling_hover_dependency_,
                                   &sibling_active_dependency_, &style_attribute_selectors_);
@@ -988,7 +1043,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                     cache_unsafe_sibling_composition_ = cache_unsafe_sibling_composition_ || sibling;
                     if (sibling) sibling_subject_reach_.everything = true;
                     mutation_dependencies(selector.sequence, false, &has_hover_dependency_,
-                                          &has_active_dependency_, &style_attribute_selectors_);
+                                          &has_active_dependency_, &style_attribute_selectors_, &selector_inputs_);
                     if (sibling)
                         mutation_dependencies(selector.sequence, true, &sibling_hover_dependency_,
                                               &sibling_active_dependency_, &style_attribute_selectors_);

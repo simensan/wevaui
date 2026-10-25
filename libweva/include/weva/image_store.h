@@ -3,11 +3,15 @@
 
 #include <functional>
 #include <cstdint>
+#include <deque>
 #include <map>
+#include <memory>
+#include <set>
 #include <string>
 #include <string_view>
 
 namespace weva {
+struct ImageDecodeState;
 
 // Decoded images, kept for the life of the document and looked up by the URL
 // the stylesheet wrote.
@@ -19,6 +23,12 @@ namespace weva {
 // should not reopen it sixty times a second.
 class ImageStore {
 public:
+    ImageStore() = default;
+    ~ImageStore();
+    ImageStore(ImageStore&&) noexcept;
+    ImageStore& operator=(ImageStore&&) noexcept;
+    ImageStore(const ImageStore&) = delete;
+    ImageStore& operator=(const ImageStore&) = delete;
     // What a relative `url(...)` is relative TO. The document's own location,
     // normally, so `url(icons/gem.png)` beside the HTML resolves the way a
     // browser resolves it.
@@ -42,7 +52,13 @@ public:
 
     // Null when the URL cannot be read or is not a format the decoder knows.
     // The caller then paints what it painted before this existed: nothing.
-    const DecodedImage* get(std::string_view url);
+    // `decoding="async"` opts an <img> into deferred decoding. Readers stay
+    // on the calling thread; workers own only bytes and decoded pixels.
+    const DecodedImage* get(std::string_view url, bool async = false);
+    // Publish finished images on the document thread. True requires layout
+    // (intrinsic dimensions may have changed) and repaint.
+    bool poll();
+    bool pending() const { return !pending_.empty(); }
 
     // Resolved against the base path, without loading anything. Exposed for
     // tests and for a host that wants to report what it could not find.
@@ -52,10 +68,13 @@ public:
     // through, undecoded: what an `@import`ed stylesheet needs.
     bool read(std::string_view url, std::vector<uint8_t>* out) const;
 
-    void clear() { cache_.clear(); content_version_ = next_content_version(); }
+    void clear();
     // Decoded inputs remain immutable until a reset. Versions are unique
     // across stores too, so a paint cache can safely receive a different one.
     uint64_t content_version() const { return content_version_; }
+    // Published images are immutable within a generation. New arrivals must
+    // not invalidate another <img>'s already-filtered pixels.
+    uint64_t generation_version() const { return generation_version_; }
     size_t size() const { return cache_.size(); }
 
     // Every URL that was asked for and could not be produced.
@@ -93,12 +112,16 @@ public:
 
 private:
     static uint64_t next_content_version();
-    uint64_t content_version_ = next_content_version();
+    uint64_t generation_version_ = next_content_version();
+    uint64_t content_version_ = generation_version_;
     std::string base_;
     Reader reader_;
     // Keyed by the RESOLVED path, so two stylesheets reaching the same file by
     // different relative routes share one decode.
     std::map<std::string, DecodedImage> cache_;
+    std::set<std::string> pending_;
+    std::deque<std::string> requests_;
+    std::shared_ptr<ImageDecodeState> async_;
 };
 
 } // namespace weva

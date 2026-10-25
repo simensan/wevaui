@@ -456,4 +456,28 @@ DecodedImage decode_png(const uint8_t* data, size_t size) {
 
 DecodedImage decode_image(const uint8_t* data, size_t size) { return decode_png(data, size); }
 
+void prepare_image_sampling(DecodedImage& image) {
+    if (!image.valid() || image.width < 128 || image.height < 128 || !image.block_sums.empty()) return;
+    constexpr int block = 8;
+    const int cols = image.width / block, rows = image.height / block;
+    image.block_stride = cols + 1;
+    image.block_sums.resize(static_cast<size_t>(cols + 1) * (rows + 1) * 4, 0);
+    for (int by = 0; by < rows; ++by) {
+        uint64_t row[4]{};
+        for (int bx = 0; bx < cols; ++bx) {
+            for (int y = 0; y < block; ++y) {
+                const auto* pixel = image.rgba.data() +
+                    (static_cast<size_t>(by * block + y) * image.width + bx * block) * 4;
+                for (int x = 0; x < block; ++x, pixel += 4) {
+                    for (int c = 0; c < 3; ++c) row[c] += static_cast<uint64_t>(pixel[c]) * pixel[3];
+                    row[3] += pixel[3];
+                }
+            }
+            const size_t at = (static_cast<size_t>(by + 1) * image.block_stride + bx + 1) * 4;
+            const size_t above = (static_cast<size_t>(by) * image.block_stride + bx + 1) * 4;
+            for (int c = 0; c < 4; ++c) image.block_sums[at + c] = image.block_sums[above + c] + row[c];
+        }
+    }
+}
+
 } // namespace weva
