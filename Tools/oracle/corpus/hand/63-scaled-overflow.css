@@ -1,0 +1,4 @@
+body { margin: 0; }
+.panel { position: absolute; left: 20px; top: 20px; width: 200px; height: 200px; transform: scale(.5); transform-origin: 0 0; overflow: hidden; background: #000; }
+.rounded { left: 180px; border-radius: 12px; }
+.child { position: absolute; left: 160px; top: 160px; width: 30px; height: 30px; background: #00ff00; }

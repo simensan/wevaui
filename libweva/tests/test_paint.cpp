@@ -6,6 +6,7 @@
 #include "weva/font_metrics.h"
 #include "weva/html.h"
 #include "weva/paint.h"
+#include "weva/positioning.h"
 #include "weva/software_renderer.h"
 #include "weva/tessellate.h"
 #include "weva/user_agent_stylesheet.h"
@@ -737,6 +738,31 @@ void test_clip_triangles_polygon() {
                       a.color.b == b.color.b && a.color.a == b.color.a);
             }
         }
+    }
+}
+
+void test_paint_scaled_overflow_culling() {
+    // The bottom-right child is inside the scaled padding box. Its layout
+    // coordinates lie outside that box's device-space clip. Cover both the
+    // rectangular scissor and the additional rounded polygon clip.
+    for (const bool rounded : {false, true}) {
+        Fixture f;
+        CHECK(f.css("body { margin:0 } #panel { position:absolute; left:20px; top:20px;"
+                    "width:200px; height:200px; transform:scale(.5); transform-origin:0 0;"
+                    "overflow:hidden; background:#000 }"
+                    "#child { position:absolute; left:160px; top:160px; width:30px; height:30px; background:#00ff00 }"));
+        if (rounded) CHECK(f.css("#panel { border-radius:12px }"));
+        CHECK(f.layout("<div id=panel><div id=child></div></div>", 160, 160));
+        BlockLayout block(&f.tree, f.ctx, &f.metrics);
+        run_positioning(&f.tree, f.root, f.ctx, &block);
+        compute_visual_overflow(&f.tree, f.root);
+        SoftwareRenderer backend(160, 160);
+        PaintContext paint;
+        paint.backend = &backend;
+        paint_tree(f.tree, f.root, f.ctx, paint);
+        const auto child = backend.pixel(107, 107);
+        CHECK(child.g > .99f && child.r < .01f && child.a > .99f);
+        CHECK(backend.pixel(125, 107).a == 0);
     }
 }
 

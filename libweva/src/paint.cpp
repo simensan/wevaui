@@ -3414,7 +3414,11 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     // 2,000-row list, 46,000 boxes to show twenty of them, took 100 ms a frame.
     // The rectangle comes from compute_visual_overflow, which stops the union
     // at a clipping box so a scroll never invalidates it.
-    if (state.scissor || state.clip) {
+    // The cached visual overflow is a layout-space union, including children
+    // whose transforms are applied later. It cannot conservatively bound a
+    // transformed subtree in screen space. Keep that subtree for the precise
+    // geometry clip; retain the fast rejection for ordinary scrolling lists.
+    if ((state.scissor || state.clip) && !state.transformed) {
         const double cx0 = x + b.vis_x0;
         const double cy0 = y + b.vis_y0;
         const double cx1 = x + b.vis_x1;

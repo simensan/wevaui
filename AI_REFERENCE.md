@@ -32,6 +32,10 @@ repeat. The geometry allocation suite now passes 176 checks.
 
 ---
 
+The [scaled-overflow fix](docs/verification/scaled-overflow-20261025.md)
+preserves visible content under transformed clips; its focused validation
+covers both compiler suites, the Chrome hand corpus and Convoy rendering.
+
 ## 1. What it is
 
 A **runtime HTML/CSS UI engine** — `libweva`, C++ behind a C ABI — hosted by a

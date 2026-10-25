@@ -312,6 +312,7 @@ void test_paint_decorations();
 void test_border_side_colors_and_bevels();
 void test_paint_color_resolution();
 void test_paint_registered_font_families();
+void test_paint_scaled_overflow_culling();
 void test_software_raster_coverage();
 void test_software_blending_and_scissor();
 void test_software_texture_and_robustness();
@@ -788,6 +789,7 @@ int main() {
     test_border_side_colors_and_bevels();
     test_paint_color_resolution();
     test_paint_registered_font_families();
+    test_paint_scaled_overflow_culling();
     test_software_raster_coverage();
     test_software_blending_and_scissor();
     test_software_texture_and_robustness();

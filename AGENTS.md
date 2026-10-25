@@ -144,6 +144,9 @@ performance receipts apply to their pre-merge builds, not this combination.
 
 ## 4. Workflow recipes
 
+The [scaled-overflow follow-up](docs/verification/scaled-overflow-20261025.md)
+passes 14 CTest suites on GCC and Clang and 63 Chrome hand-corpus cases.
+
 ### A CSS feature or fix
 
 1. Find or write the Chrome capture: a case in `Tools/oracle/corpus`
