@@ -820,12 +820,13 @@ void test_abi_incremental_glyph_preparation() {
         weva::StubFont font;
         weva::Bitmap bitmap;
         int empty_rasters = 0;
+        std::vector<double> raster_sizes;
     } state[2];
     weva_font_backend fonts[2]{};
     const auto cfg = config();
     weva_document_t docs[2]{};
-    const char* html = "<div id=dirty></div><div id=text>A A</div>"
-                       "<input id=field value='B B'><div id=clip><p>C C</p></div>";
+    const char* html = "<div id=dirty></div><main id=scaled><div id=text>A A</div>"
+                       "<input id=field value='B B'><div id=clip><p>C C</p></div></main>";
     const char* css = "body{margin:0}#dirty{width:40px;height:20px;background:red}"
                       "#clip{height:1px;overflow:hidden}p{margin-top:30px}";
     for (int i = 0; i < 2; ++i) {
@@ -833,6 +834,7 @@ void test_abi_incremental_glyph_preparation() {
         fonts[i].rasterize = [](void* data, uint64_t face, uint32_t glyph, double px,
                                weva_glyph_bitmap* out) -> int32_t {
             auto& s = *static_cast<FontState*>(data);
+            s.raster_sizes.push_back(px);
             s.bitmap = {};
             if (!s.font.rasterize(weva::FaceHandle{face}, glyph, px,
                                   weva::RenderMode::Alpha8, &s.bitmap)) return 0;
@@ -848,7 +850,7 @@ void test_abi_incremental_glyph_preparation() {
         CHECK(state[i].empty_rasters > 0);
     }
     int viewport_width = 400;
-    for (int step = 0; step < 11; ++step) {
+    for (int step = 0; step < 15; ++step) {
         for (int i = 0; i < 2; ++i) {
             const auto doc = docs[i];
             const auto attr = [&](const char* selector, const char* name, const char* value) {
@@ -856,6 +858,7 @@ void test_abi_incremental_glyph_preparation() {
                                                  name, value) == WEVA_OK);
             };
             state[i].empty_rasters = 0;
+            state[i].raster_sizes.clear();
             if (step == 0 || step == 10) attr("#dirty", "style", "background:blue");
             if (step == 1) attr("#dirty", "style", "background:none");
             if (step == 2) {
@@ -868,6 +871,10 @@ void test_abi_incremental_glyph_preparation() {
             if (step == 7) attr("#clip", "style", "height:90px");
             if (step == 8) CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
             if (step == 9) weva_document_set_render_backend(doc, nullptr);
+            if (step == 11) attr("#scaled", "style", "transform:scale(.75);transform-origin:0 0");
+            if (step == 12) attr("#text", "style", "transform:scale(2);transform-origin:0 0");
+            if (step == 13) attr("#scaled", "style", "scale:1.25;translate:0.37px 0.62px");
+            if (step == 14) attr("#scaled", "style", "transform:none");
         }
         // Same final viewport, but a forced complete layout/paint in the control.
         weva_document_set_viewport(docs[1], viewport_width + 1, 300);
@@ -877,6 +884,11 @@ void test_abi_incremental_glyph_preparation() {
         const Frame live = capture(docs[0]), full = capture(docs[1]);
         if (live != full) std::printf("  glyph preparation step %d: %s\n", step, live.diff(full).c_str());
         CHECK(live == full);
+        if (step == 11 || step == 12) {
+            const double expected = step == 11 ? 12 : 24;
+            CHECK(std::find(state[0].raster_sizes.begin(), state[0].raster_sizes.end(), expected) !=
+                  state[0].raster_sizes.end());
+        }
         // Spaces have no slot: visiting unchanged text would rasterize them
         // again even when the shaper memo and every visible glyph are cached.
         if (step == 0 || step == 1 || step == 10) CHECK(state[0].empty_rasters == 0);

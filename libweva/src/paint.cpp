@@ -2461,7 +2461,7 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
             }
         }
         Mesh text;
-        build_text_geometry(t.text, text_left, baseline, fs, color, paint, &text, spacing, &face);
+        build_text_geometry(t.text, text_left, baseline, fs, color, paint, &text, spacing, &face, xf);
         const int deco = decoration_flags_of(b.style);
         double run_w = 0;
         if (deco) {
@@ -2524,20 +2524,43 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
     }
 }
 
+// Axis-aligned uniform scales can draw one atlas texel per screen pixel.
+// Other transforms retain their normal geometry/filtering; do not distort
+// glyph proportions or snap a rotated/skewed run to an unrelated grid.
+double text_raster_scale(const Transform2D* xf) {
+    if (!xf || std::abs(xf->b) > 1e-6 || std::abs(xf->c) > 1e-6 ||
+        std::abs(std::abs(xf->a) - std::abs(xf->d)) > 1e-6) return 1;
+    const double scale = std::abs(xf->a);
+    return std::isfinite(scale) && scale >= 1.0 / 16 && scale <= 16 ? scale : 1;
+}
+
 void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
-                    const PaintContext& paint) {
+                    const PaintContext& paint, Transform2D transform = {}) {
     static const bool disable_reuse = std::getenv("WEVA_DISABLE_GLYPH_REUSE") != nullptr;
     if (!disable_reuse && paint.reuse && paint.reuse->reuse_glyphs(id)) {
         if (g_paint_profile.on) ++g_paint_profile.glyph_subtrees_reused;
         return;
     }
     const Box& b = tree[id];
+    const bool decorated = b.kind != BoxKind::Line && b.kind != BoxKind::AnonymousBlock &&
+                           b.kind != BoxKind::AnonymousInline && b.kind != BoxKind::Text;
+    if (decorated && b.style && b.width > 0 && b.height > 0) {
+        const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
+        Transform2D local;
+        if (parse_transform(b.style, ctx, font_size_px(b.style, ps, ctx),
+                            b.width, b.height, &local)) transform = local.multiply(transform);
+    }
+    const double scale = text_raster_scale(&transform);
     if (b.kind == BoxKind::Text && !b.preserved_tab && !b.text.empty() && paint.font && paint.atlas) {
         const FaceHandle face = face_for_run(b, ctx, paint);
         std::vector<ShapedGlyph> glyphs;
         paint.font->shape(face, b.text, b.font_size, &glyphs);
         for (const ShapedGlyph& g : glyphs) {
-            paint.atlas->get(paint.font, face, g.glyph, b.font_size);
+            paint.atlas->get(paint.font, face, g.glyph, b.font_size * (b.vertical_text ? 1 : scale));
+            // Blurred shadows composite a separate logical-size coverage mask.
+            if (!b.vertical_text && scale != 1 && b.style && b.style->get("text-shadow") != "none" &&
+                !b.style->get("text-shadow").empty())
+                paint.atlas->get(paint.font, face, g.glyph, b.font_size);
         }
     }
     // Control overlays draw text no box carries; their glyphs go into the
@@ -2550,9 +2573,9 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
         const FaceHandle face = face_for_run(b, ctx, paint);
         std::vector<ShapedGlyph> glyphs;
         paint.font->shape(face, t.text, fs, &glyphs);
-        for (const ShapedGlyph& g : glyphs) paint.atlas->get(paint.font, face, g.glyph, fs);
+        for (const ShapedGlyph& g : glyphs) paint.atlas->get(paint.font, face, g.glyph, fs * scale);
     }
-    for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, ctx, paint);
+    for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, ctx, paint, transform);
 }
 
 // The open list's labels, into the same up-front upload. Without this the
@@ -3889,7 +3912,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             if (sh.blur <= 0) {
                 Mesh shadow;
                 build_text_geometry(b.text, x + sh.x, baseline + sh.y, b.font_size, sh.color, paint,
-                                    &shadow, spacing, &run_face);
+                                    &shadow, spacing, &run_face, xf);
                 draw_mesh(std::move(shadow), paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
                 continue;
             }
@@ -3920,14 +3943,14 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                     if (c.a > 1) c.a = 1;
                     Mesh shadow;
                     build_text_geometry(b.text, x + sh.x + i * sigma, baseline + sh.y + j * sigma,
-                                        b.font_size, c, paint, &shadow, spacing, &run_face);
+                                        b.font_size, c, paint, &shadow, spacing, &run_face, xf);
                     draw_mesh(std::move(shadow), paint.backend, atlas_texture, state.opacity, xf, state.clip.get(), state.filter.get());
                 }
             }
         }
         Mesh text;
         build_text_geometry(b.text, x, baseline, b.font_size, text_color, paint, &text, spacing,
-                            &run_face);
+                            &run_face, xf);
         // `background-clip: text`: the run's element paints its gradient
         // through the glyphs. Each glyph vertex takes the gradient's colour
         // at its position over the run — right for a run-wide gradient,
@@ -4257,12 +4280,14 @@ void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& c
 
 void build_text_geometry(std::string_view text, double x, double baseline_y, double font_size,
                          const LinearColor& color, const PaintContext& paint, Mesh* out,
-                         double letter_spacing, const FaceHandle* face_override) {
+                         double letter_spacing, const FaceHandle* face_override,
+                         const Transform2D* transform) {
     ProfileScope prof(&g_paint_profile.text);
     if (!paint.font || !paint.atlas || text.empty()) return;
     const FaceHandle face = face_override ? *face_override : paint.face;
     std::vector<ShapedGlyph> glyphs;
     paint.font->shape(face, text, font_size, &glyphs);
+    const double scale = text_raster_scale(transform);
 
     double pen = x;
     // Atlas entries live in stable map nodes; get() never erases them. A
@@ -4274,7 +4299,7 @@ void build_text_geometry(std::string_view text, double x, double baseline_y, dou
         const size_t count = std::min(batch_size, glyphs.size() - start);
         size_t visible = 0;
         for (size_t i = 0; i < count; ++i) {
-            slots[i] = paint.atlas->get(paint.font, face, glyphs[start + i].glyph, font_size);
+            slots[i] = paint.atlas->get(paint.font, face, glyphs[start + i].glyph, font_size * scale);
             if (slots[i]) ++visible;
         }
         out->reserve_append(visible * 4, visible * 6);
@@ -4297,10 +4322,18 @@ void build_text_geometry(std::string_view text, double x, double baseline_y, dou
                 // subpixel phase, which is what a browser rasterises and this atlas
                 // does not. The pen keeps its full precision, so spacing is still
                 // accumulated exactly; only the bitmap is snapped.
-                const double gx = std::round(pen + g.x_offset + slot->bearing_x);
+                double gx = pen + g.x_offset + slot->bearing_x / scale;
                 // bearing_y measures UP from the baseline, so the quad's top edge
                 // is above it.
-                const double gy = std::round(baseline_y - g.y_offset - slot->bearing_y);
+                double gy = baseline_y - g.y_offset - slot->bearing_y / scale;
+                if (transform && std::abs(transform->b) < 1e-6 && std::abs(transform->c) < 1e-6 &&
+                    std::abs(transform->a) > 1e-6 && std::abs(transform->d) > 1e-6) {
+                    gx = (std::round(gx * transform->a + transform->tx) - transform->tx) / transform->a;
+                    gy = (std::round(gy * transform->d + transform->ty) - transform->ty) / transform->d;
+                } else if (!transform) {
+                    gx = std::round(gx);
+                    gy = std::round(gy);
+                }
                 const uint32_t base = static_cast<uint32_t>(out->vertices.size());
                 // A colour glyph carries its own colours in the atlas; only the
                 // text's alpha applies to it (CSS Fonts 4 §5.2 — `color` does not
@@ -4315,9 +4348,9 @@ void build_text_geometry(std::string_view text, double x, double baseline_y, dou
                     return vt;
                 };
                 out->vertices.push_back(v(gx, gy, slot->u0, slot->v0));
-                out->vertices.push_back(v(gx + slot->width, gy, slot->u1, slot->v0));
-                out->vertices.push_back(v(gx + slot->width, gy + slot->height, slot->u1, slot->v1));
-                out->vertices.push_back(v(gx, gy + slot->height, slot->u0, slot->v1));
+                out->vertices.push_back(v(gx + slot->width / scale, gy, slot->u1, slot->v0));
+                out->vertices.push_back(v(gx + slot->width / scale, gy + slot->height / scale, slot->u1, slot->v1));
+                out->vertices.push_back(v(gx, gy + slot->height / scale, slot->u0, slot->v1));
                 for (uint32_t i : {0u, 1u, 2u, 0u, 2u, 3u}) out->indices.push_back(base + i);
             }
             pen += g.x_advance + letter_spacing;

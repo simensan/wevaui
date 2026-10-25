@@ -244,7 +244,8 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
 // was laid out for it and the gaps between words grow.
 void build_text_geometry(std::string_view text, double x, double baseline_y, double font_size,
                          const LinearColor& color, const PaintContext& paint, Mesh* out,
-                         double letter_spacing = 0, const FaceHandle* face = nullptr);
+                         double letter_spacing = 0, const FaceHandle* face = nullptr,
+                         const Transform2D* transform = nullptr);
 
 // Which character of a field's value sits under a point -- the inverse of
 // putting the cursor at an index, and what a click in a text box needs.

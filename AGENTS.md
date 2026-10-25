@@ -146,6 +146,8 @@ performance receipts apply to their pre-merge builds, not this combination.
 
 The [scaled-overflow follow-up](docs/verification/scaled-overflow-20261025.md)
 passes 14 CTest suites on GCC and Clang and 63 Chrome hand-corpus cases.
+The [scaled-text follow-up](docs/verification/scaled-text-20261025.md) passes
+both core suites, 64 Chrome hand cases and the Agentic font/render gate.
 
 ### A CSS feature or fix
 

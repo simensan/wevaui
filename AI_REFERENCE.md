@@ -212,3 +212,7 @@ any red is new.
 | User guides, engineering references and historical records | `docs/README.md` |
 | Verification counts, configuration and evidence | `docs/verification/review-three-days-20260915.md` |
 | What changed for 1.0 and how to migrate | `Packages/com.wevaui/CHANGELOG.md` |
+# Scaled text validation
+
+Uniform scaled text and controls rasterize at their final pixel size; see
+[the scoped core/Agentic receipt](docs/verification/scaled-text-20261025.md).

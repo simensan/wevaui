@@ -1,0 +1,6 @@
+body { margin: 0; font-family: monospace; }
+.direct, .scaled { position: absolute; left: 24px; top: 20px; width: 400px; font-size: 12px; }
+.scaled { top: 150px; font-size: 16px; transform: scale(.75); transform-origin: 0 0; }
+p { margin: 0 0 12px; line-height: 1.5; }
+input { font: inherit; width: 200px; height: 24px; padding: 0; border: 0; }
+.nested { transform: scale(2); transform-origin: 0 0; margin-top: 12px; }

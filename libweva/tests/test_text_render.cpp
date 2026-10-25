@@ -100,10 +100,14 @@ void test_glyph_atlas() {
     CHECK(sb->x > sa->x + sa->width - 1);
     CHECK(atlas.slot_count() == 2);
 
-    // Sizes are quantised to whole pixels, so a fractional font-size does not
-    // re-pack an identical raster.
-    CHECK(atlas.get(&font, face, a, 15.99) == sa);
+    // Small numerical noise shares a raster, but distinct fractional sizes
+    // must never reuse metrics/coverage from the first requested size.
+    CHECK(atlas.get(&font, face, a, 15.999) == sa);
+    CHECK(atlas.get(&font, face, a, 15.6) != sa);
+    CHECK(atlas.get(&font, face, a, 16.4) != sa);
     CHECK(atlas.get(&font, face, a, 24) != sa);
+    const size_t gutter = (static_cast<size_t>(sa->y) * atlas.width() + sa->x - 1) * 4;
+    CHECK(atlas.pixels()[gutter] == 255 && atlas.pixels()[gutter + 3] == 0);
 
     // A glyph with no bitmap gets no slot at all.
     CHECK(atlas.get(&font, face, space, 16) == nullptr);
@@ -181,6 +185,25 @@ void test_text_geometry() {
     // Snapped, not truncated to the run's origin: the second glyph is still an
     // advance away, so the pen keeps its precision and only the bitmap moves.
     CHECK(near(frac.vertices[4].position.x - frac.vertices[0].position.x, 8, 1e-4));
+
+    // A scaled UI must request the final pixel size and place texels on that
+    // grid, even when its window has a fractional translation. Layout advances
+    // remain logical so caret placement and wrapping do not change.
+    for (float scale : {0.75f, 1.5f, -0.75f}) {
+        const Transform2D xf(scale, 0, 0, scale, 3.37f, 7.62f);
+        Mesh scaled;
+        build_text_geometry("AB", 10.37, 20.62, 16, LinearColor::white(), p, &scaled, 0, nullptr, &xf);
+        uint32_t a = 0;
+        font.glyph_index(p.face, 'A', &a);
+        const GlyphSlot* slot = atlas.get(&font, p.face, a, 16 * std::abs(scale));
+        CHECK(slot && scaled.vertices.size() == 8);
+        CHECK(near(std::abs((scaled.vertices[1].position.x - scaled.vertices[0].position.x) * scale), slot->width, 1e-4));
+        for (const Vertex& v : scaled.vertices) {
+            double x, y;
+            xf.apply(v.position.x, v.position.y, &x, &y);
+            CHECK(near(x, std::round(x), 1e-4) && near(y, std::round(y), 1e-4));
+        }
+    }
 }
 
 // A blurred text-shadow is BLURRED, not a stack of copies of the glyph.
