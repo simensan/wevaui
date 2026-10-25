@@ -2399,12 +2399,7 @@ struct weva_document {
                      uint32_t modifiers = 0, const char* toggle_state = nullptr) {
         weva_event e{};
         e.kind = kind;
-        e.target = WEVA_ELEMENT_NONE;
-        if (target) {
-            for (size_t i = 0; i < elements.size(); ++i) {
-                if (elements[i] == target) { e.target = static_cast<weva_element_t>(i); break; }
-            }
-        }
+        e.target = handle_of(target);
         e.x = x;
         e.y = y;
         e.buttons = buttons;
@@ -5369,11 +5364,7 @@ weva_element_t weva_document_element_at_devtools(weva_document_t doc, double x, 
     options.ignore_pointer_events = true;
     options.include_hidden = true;
     const Element* hit = element_at_point(doc->tree, doc->root, x, y, &doc->ctx, options);
-    if (!hit) return WEVA_ELEMENT_NONE;
-    for (size_t i = 0; i < doc->elements.size(); ++i) {
-        if (doc->elements[i] == hit) return static_cast<weva_element_t>(i);
-    }
-    return WEVA_ELEMENT_NONE;
+    return doc->handle_of(hit);
 }
 
 size_t weva_document_boxes(weva_document_t doc, weva_box* out, size_t capacity) {
@@ -5426,9 +5417,7 @@ void weva_document_stats(weva_document_t doc, weva_stats* out) {
     *out = weva_stats{};
     if (!doc) return;
     *out = doc->stats;
-    uint32_t elements = 0;
-    for (const Element* e : doc->elements) if (e) ++elements;
-    out->elements = elements;
+    out->elements = static_cast<uint32_t>(doc->element_handles.size());
     out->boxes = static_cast<uint32_t>(doc->tree.size());
     out->draws = static_cast<uint32_t>(doc->draw_views.size());
     out->textures = static_cast<uint32_t>(doc->textures.size());
@@ -5442,11 +5431,7 @@ void weva_document_stats(weva_document_t doc, weva_stats* out) {
 weva_element_t weva_document_element_at(weva_document_t doc, double x, double y) {
     if (!doc) return WEVA_ELEMENT_NONE;
     const Element* hit = input_element_at(doc, x, y);
-    if (!hit) return WEVA_ELEMENT_NONE;
-    for (size_t i = 0; i < doc->elements.size(); ++i) {
-        if (doc->elements[i] == hit) return static_cast<weva_element_t>(i);
-    }
-    return WEVA_ELEMENT_NONE;
+    return doc->handle_of(hit);
 }
 
 namespace {
@@ -8102,7 +8087,14 @@ static void forget_element(weva_document* doc, const Element* e) {
         [e](const auto& entry) { return entry.dialog == e; }), doc->dialog_focus_history.end());
     for (auto& entry : doc->dialog_focus_history) if (entry.previous_focus == e) entry.previous_focus = nullptr;
     if (doc->styles.state.vertical_owner == e) doc->styles.state.vertical_owner = nullptr;
-    doc->element_handles.erase(e);
+    // Handles stay tombstoned so stale host references never name a new node.
+    // The reverse index identifies this slot directly: scanning the growing
+    // lifetime table for every removed node made repeated panel closes quadratic.
+    const auto handle = doc->element_handles.find(e);
+    if (handle != doc->element_handles.end()) {
+        doc->elements[handle->second] = nullptr;
+        doc->element_handles.erase(handle);
+    }
     ++doc->structure_version;
     if (doc->focus_follow == e) doc->focus_follow = nullptr;
     if (doc->text_drag == e) clear_text_drag(doc);
@@ -8169,12 +8161,6 @@ static void forget_element(weva_document* doc, const Element* e) {
     drop(&doc->styles.state.hover_chain);
     drop(&doc->styles.state.active_chain);
     drop(&doc->styles.state.focus_chain);
-    // Tombstoned rather than erased: a handle is an INDEX, and erasing would
-    // renumber every element after it under a host that is still holding
-    // handles for the ones it did not touch.
-    for (Element*& slot : doc->elements) {
-        if (slot == e) slot = nullptr;
-    }
 }
 
 static void forget_elements_below(weva_document* doc, const Element& e,

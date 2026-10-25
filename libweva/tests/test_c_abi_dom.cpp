@@ -152,6 +152,31 @@ void test_abi_remove_element() {
     // Removing what is already removed is a miss, not a crash.
     CHECK(weva_element_remove(doc.d, b) == WEVA_ERR_NOT_FOUND);
 
+    // Repeated panel replacement accumulates stale handles. Reusing element
+    // addresses must neither revive them nor renumber retained siblings.
+    weva_stats retained{};
+    weva_document_stats(doc.d, &retained);
+    std::vector<weva_element_t> removed;
+    for (int cycle = 0; cycle < 32; ++cycle) {
+        const char* html = "<div class=row id=temporary><span>row</span></div>";
+        const auto added = weva_element_append_html(doc.d, doc.at("#list"), html, std::strlen(html));
+        CHECK(added != WEVA_ELEMENT_NONE);
+        weva_document_update(doc.d, 0);
+        CHECK(doc.at("#temporary") == added);
+        double x = 0, y = 0, w = 0, h = 0;
+        CHECK(weva_element_bounds(doc.d, c, &x, &y, &w, &h) == WEVA_OK);
+        CHECK(weva_document_element_at(doc.d, x + 1, y + 1) == c);
+        CHECK(weva_document_element_at_devtools(doc.d, x + 1, y + 1) == c);
+        CHECK(weva_element_remove(doc.d, added) == WEVA_OK);
+        removed.push_back(added);
+        weva_document_update(doc.d, 0);
+        for (const auto old : removed) CHECK(weva_element_remove(doc.d, old) == WEVA_ERR_NOT_FOUND);
+        CHECK(doc.at("#a") == a && doc.at("#c") == c);
+        weva_stats stats{};
+        weva_document_stats(doc.d, &stats);
+        CHECK(stats.elements == retained.elements);
+    }
+
     // Even the root element goes, as it does in a browser: what is left is an
     // empty document that still updates and draws nothing, rather than a
     // special case that refuses.

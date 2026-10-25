@@ -58,3 +58,17 @@ Raw profiles and the inspected tooltip capture are retained under
 `E:/Convoy_Agentic/builds/test-evidence/weva-developer-ui/interaction-fixes-20261025/`.
 These results qualify this tooltip fix; graph refresh and panel mounting are
 separate remaining workloads.
+
+## Handle cleanup follow-up
+
+Removing a node previously scanned the full lifetime handle table to tombstone
+its slot. A 100-row conditional control fixture took 14 ms to close initially,
+and 118 ms at its tenth close as stale slots accumulated. Removal now uses the
+existing reverse index, retaining stale-handle rejection and survivor identity.
+The same fixture closes in 2.3–3.7 ms across ten cycles. Pointer hit results,
+queued event targets and element statistics also use that live index.
+
+Both GCC and Clang pass all 14 suites, including repeated removal/replacement,
+stale handles, surviving handles, hit testing and live element counts. Fixture
+and raw before/after CSVs are retained as `mount-*` in the evidence directory
+above. This does not remove first-use image decode costs.
