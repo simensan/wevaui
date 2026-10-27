@@ -17,10 +17,12 @@
 #include <string>
 #include <system_error>
 
+#ifndef WEVA_CHARCONV_FALLBACK
 #if defined(_LIBCPP_VERSION) && _LIBCPP_VERSION < 200000
 #define WEVA_CHARCONV_FALLBACK 1
 #else
 #define WEVA_CHARCONV_FALLBACK 0
+#endif
 #endif
 
 namespace weva {
@@ -68,12 +70,36 @@ inline std::to_chars_result to_chars_double(char* first, char* last, double valu
     if (precision >= 0) {
         written = std::snprintf(buffer, sizeof(buffer), "%.*g", precision, value);
     } else {
+        int digits = 17;
         for (int p = 1; p <= 17; ++p) {
             written = std::snprintf(buffer, sizeof(buffer), "%.*g", p, value);
-            if (written > 0 && std::strtod(buffer, nullptr) == value) break;
+            if (written > 0 && std::strtod(buffer, nullptr) == value) { digits = p; break; }
+        }
+        // %g minimizes significant digits, not text length: %.1g renders 30
+        // as "3e+01". Compare fixed and scientific forms at that round-trip
+        // precision, preferring fixed on ties as std::to_chars does.
+        char candidate[64];
+        int count = std::snprintf(candidate, sizeof(candidate), "%.*e", digits - 1, value);
+        const char* exponent = std::strchr(candidate, 'e');
+        if (exponent) {
+            const int fraction = digits - 1 - std::atoi(exponent + 1);
+            if (count > 0 && count < written && std::strtod(candidate, nullptr) == value) {
+                std::memcpy(buffer, candidate, static_cast<size_t>(count + 1));
+                written = count;
+            }
+            if (fraction < static_cast<int>(sizeof(candidate))) {
+                count = std::snprintf(candidate, sizeof(candidate), "%.*f", fraction > 0 ? fraction : 0, value);
+                if (count > 0 && count <= written && count < static_cast<int>(sizeof(candidate)) &&
+                    std::strtod(candidate, nullptr) == value) {
+                    std::memcpy(buffer, candidate, static_cast<size_t>(count + 1));
+                    written = count;
+                }
+            }
         }
     }
-    if (written <= 0 || first + written > last) return {last, std::errc::value_too_large};
+    if (written <= 0 || written >= static_cast<int>(sizeof(buffer)) ||
+        static_cast<size_t>(written) > static_cast<size_t>(last - first))
+        return {last, std::errc::value_too_large};
     std::memcpy(first, buffer, static_cast<size_t>(written));
     return {first + written, std::errc{}};
 #else
