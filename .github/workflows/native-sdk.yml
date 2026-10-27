@@ -1,0 +1,63 @@
+name: Native SDK
+on:
+  pull_request:
+    paths: ['Tools/native/**', 'Tools/package_native.py', 'Tools/tests/test_native_package.py', '.github/workflows/native-sdk.yml']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a native SDK release for this commit after every platform passes
+        type: boolean
+        default: false
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: windows-2022, target: x86_64-pc-windows-msvc}
+          - {os: ubuntu-22.04, target: x86_64-unknown-linux-gnu}
+          - {os: macos-15, target: aarch64-apple-darwin}
+          - {os: macos-15-intel, target: x86_64-apple-darwin}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Packaging regressions
+        run: python -m unittest discover -s Tools/tests -p test_native_package.py -v
+      - name: Build and qualify native SDK
+        run: python Tools/package_native.py --target '${{ matrix.target }}' --build-dir build-native-sdk --output native-output --cmake-arg=-DWEVA_BUILD_TESTS=ON
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: native-${{ matrix.target }}
+          path: native-output/release/*
+          if-no-files-found: error
+  publish:
+    if: github.event_name == 'workflow_dispatch' && inputs.publish
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - name: Download qualified assets and publish immutable version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          REVISION: ${{ github.sha }}
+        run: |
+          gh run download "$RUN_ID" --pattern 'native-*' --dir artifacts
+          mkdir release
+          find artifacts -type f -exec cp '{}' release/ \;
+          # Creating an existing tag/release fails: published versions are never overwritten.
+          gh release create "native-$REVISION" release/* --target "$REVISION" --title "Native SDK $REVISION" --notes "Static Weva and ICU libraries, matching C headers and licenses. Qualified on each native target."
