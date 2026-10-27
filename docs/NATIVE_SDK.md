@@ -4,7 +4,7 @@ The Weva repository builds static libraries for hosts that use the public C ABI.
 Consumers link the core and its two ICU archives; they do not configure CMake or
 build Weva. ICU data is embedded. The package includes the matching `weva_c.h`
 and all dependency licenses. Windows uses the dynamic MSVC CRT; Linux uses
-libstdc++ (Ubuntu 22.04 baseline), and macOS uses libc++ (macOS 11 minimum).
+libstdc++ from GCC 12 (Ubuntu 22.04 / glibc 2.35 baseline), and macOS uses libc++ (macOS 11 minimum).
 The normal host C/C++ linker/toolchain is still required.
 
 Run **Native SDK** manually on a committed revision. It builds and runs the core
