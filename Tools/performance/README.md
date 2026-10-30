@@ -165,3 +165,15 @@ composited content without raster work; Godot continues rendering its retained
 canvas. Compare stage boundaries explicitly, never a Chrome setter timer against
 a full Weva update or CPU raster timings against GPU timestamps.
 See [the comparison receipt](../../docs/verification/rendering-chrome-20261030.md).
+
+## Agentic CPU submission comparisons
+
+`compare_agentic_cost.py BEFORE_EXE AFTER_EXE NEW_OUTPUT_DIR` alternates eight
+runs of Agentic's `weva_cost` diagnostic and preserves raw stdout/stderr and
+binary hashes. Use `--rounds N` to change the count; append `--args` followed by
+arguments passed identically to both executables. The authored fixture mode
+accepts four paths: HUD HTML/CSS and inventory HTML/CSS. Assets and fonts must
+resolve completely; bind a changing number to `Depth`. These are number-update
+workloads, not selection, GPU completion, FPS or Chrome-equivalent rendering.
+See [the Agentic receipt](../../docs/verification/agentic-packed-20261030.md)
+for exact boundaries, asset conversion, rejected runs and remaining work.
