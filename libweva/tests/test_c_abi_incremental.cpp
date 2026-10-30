@@ -729,6 +729,11 @@ static void check_retained_grid_paint(const char* overflow) {
                 const auto& change = changes[step];
                 CHECK(weva_element_set_attribute(doc, weva_document_query(doc, change.selector),
                                                  "style", change.style) == WEVA_OK);
+                // Mix a geometry change outside the grid with a paint-only
+                // change inside it. Layout may retain the grid, but paint
+                // must consume its new style rather than reuse stale draws.
+                if (step < 3) CHECK(weva_element_set_attribute(doc, weva_document_query(doc, "#c1"),
+                    "style", step == 1 ? "background:#f80;color:blue" : "background:#08f;color:red") == WEVA_OK);
             }
             weva_document_set_viewport(full, 401, 300);
             weva_document_set_viewport(full, 400, 300);

@@ -277,3 +277,9 @@ The [attribute no-op experiment](docs/verification/attribute-noop-20261030.md)
 was rejected after two paired timing batches failed to show a repeatable
 overall gain. Its shared-core changes were reverted and all three hosts
 rebuilt. Production gate counts are unchanged; raw evidence is retained.
+
+The [mixed paint/layout reuse pass](docs/verification/paint-layout-20261030.md)
+keeps paint-only changes from invalidating retained layout. The targeted
+48-cell mixed update is 78.6% faster in complete CPU timing; no survival
+inventory gain is claimed. Main core checks are 492,136 (492,130 sanitized);
+Windows/GCC/Clang, 338 Chrome captures and affected host suites pass.

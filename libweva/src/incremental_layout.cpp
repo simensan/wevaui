@@ -575,6 +575,9 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
         return reject("change count/root");
     ++input_serial_;
     for (const auto& change : changes) {
+        // Paint reads the current styles independently. A color/highlight
+        // change must not invalidate retained geometry during a mixed update.
+        if (change.second < Invalidation::Layout) continue;
         const auto found = by_style_.find(change.first);
         if (found == by_style_.end() || !tree->valid(found->second)) continue;
         if (styles->only_box_edges_changed(change.first))

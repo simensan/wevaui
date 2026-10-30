@@ -1,0 +1,701 @@
+{
+  "scope": "CPU update/submission; not GPU completion",
+  "batches": {
+    "targeted": {
+      "binaries": {
+        "before": {
+          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-paint-layout.exe",
+          "sha256": "6655ca54291a2058003c56db427c2fedbb53a8ad6bfae1b89eaa4740821928a2"
+        },
+        "after": {
+          "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+          "sha256": "064ffedc8b36caf88b6f73c58b274b2bc1f04bfe5d5c27fa2d4159b489858d34"
+        }
+      },
+      "arguments": [
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/mixed-paint-fixtures/grid.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/mixed-paint-fixtures/grid.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/mixed-paint-fixtures/mutations.json"
+      ],
+      "rows": [
+        {
+          "round": 0,
+          "version": "before",
+          "case": "hud",
+          "core": 0.083,
+          "host": 0.104,
+          "frame": 0.187,
+          "controller": 0.101,
+          "complete_cpu": 0.205
+        },
+        {
+          "round": 0,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.467,
+          "host": 0.084,
+          "frame": 0.552,
+          "controller": 0.47,
+          "complete_cpu": 0.555
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "hud",
+          "core": 0.066,
+          "host": 0.091,
+          "frame": 0.157,
+          "controller": 0.08,
+          "complete_cpu": 0.171
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.039,
+          "host": 0.066,
+          "frame": 0.105,
+          "controller": 0.041,
+          "complete_cpu": 0.108
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "hud",
+          "core": 0.055,
+          "host": 0.074,
+          "frame": 0.128,
+          "controller": 0.064,
+          "complete_cpu": 0.137
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.044,
+          "host": 0.069,
+          "frame": 0.113,
+          "controller": 0.046,
+          "complete_cpu": 0.115
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "hud",
+          "core": 0.091,
+          "host": 0.123,
+          "frame": 0.214,
+          "controller": 0.114,
+          "complete_cpu": 0.238
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.546,
+          "host": 0.111,
+          "frame": 0.657,
+          "controller": 0.552,
+          "complete_cpu": 0.663
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "hud",
+          "core": 0.067,
+          "host": 0.09,
+          "frame": 0.157,
+          "controller": 0.078,
+          "complete_cpu": 0.167
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.471,
+          "host": 0.103,
+          "frame": 0.574,
+          "controller": 0.477,
+          "complete_cpu": 0.58
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "hud",
+          "core": 0.084,
+          "host": 0.114,
+          "frame": 0.198,
+          "controller": 0.104,
+          "complete_cpu": 0.218
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.037,
+          "host": 0.062,
+          "frame": 0.098,
+          "controller": 0.039,
+          "complete_cpu": 0.101
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "hud",
+          "core": 0.056,
+          "host": 0.074,
+          "frame": 0.13,
+          "controller": 0.066,
+          "complete_cpu": 0.14
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.054,
+          "host": 0.082,
+          "frame": 0.136,
+          "controller": 0.057,
+          "complete_cpu": 0.139
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "hud",
+          "core": 0.058,
+          "host": 0.076,
+          "frame": 0.134,
+          "controller": 0.067,
+          "complete_cpu": 0.143
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.471,
+          "host": 0.101,
+          "frame": 0.572,
+          "controller": 0.477,
+          "complete_cpu": 0.577
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "hud",
+          "core": 0.057,
+          "host": 0.075,
+          "frame": 0.132,
+          "controller": 0.066,
+          "complete_cpu": 0.141
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.464,
+          "host": 0.092,
+          "frame": 0.556,
+          "controller": 0.469,
+          "complete_cpu": 0.56
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "hud",
+          "core": 0.072,
+          "host": 0.089,
+          "frame": 0.162,
+          "controller": 0.084,
+          "complete_cpu": 0.173
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.061,
+          "host": 0.093,
+          "frame": 0.154,
+          "controller": 0.064,
+          "complete_cpu": 0.158
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "hud",
+          "core": 0.083,
+          "host": 0.117,
+          "frame": 0.2,
+          "controller": 0.105,
+          "complete_cpu": 0.222
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.046,
+          "host": 0.073,
+          "frame": 0.119,
+          "controller": 0.049,
+          "complete_cpu": 0.122
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "hud",
+          "core": 0.079,
+          "host": 0.113,
+          "frame": 0.192,
+          "controller": 0.103,
+          "complete_cpu": 0.215
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.541,
+          "host": 0.115,
+          "frame": 0.656,
+          "controller": 0.547,
+          "complete_cpu": 0.662
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "hud",
+          "core": 0.071,
+          "host": 0.097,
+          "frame": 0.168,
+          "controller": 0.085,
+          "complete_cpu": 0.182
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.512,
+          "host": 0.1,
+          "frame": 0.612,
+          "controller": 0.516,
+          "complete_cpu": 0.616
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "hud",
+          "core": 0.058,
+          "host": 0.079,
+          "frame": 0.137,
+          "controller": 0.069,
+          "complete_cpu": 0.147
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.046,
+          "host": 0.077,
+          "frame": 0.123,
+          "controller": 0.049,
+          "complete_cpu": 0.126
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "hud",
+          "core": 0.071,
+          "host": 0.1,
+          "frame": 0.171,
+          "controller": 0.09,
+          "complete_cpu": 0.19
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.057,
+          "host": 0.086,
+          "frame": 0.143,
+          "controller": 0.061,
+          "complete_cpu": 0.147
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "hud",
+          "core": 0.082,
+          "host": 0.112,
+          "frame": 0.194,
+          "controller": 0.101,
+          "complete_cpu": 0.214
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.464,
+          "host": 0.095,
+          "frame": 0.559,
+          "controller": 0.469,
+          "complete_cpu": 0.564
+        }
+      ]
+    },
+    "survival": {
+      "binaries": {
+        "before": {
+          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-paint-layout.exe",
+          "sha256": "6655ca54291a2058003c56db427c2fedbb53a8ad6bfae1b89eaa4740821928a2"
+        },
+        "after": {
+          "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+          "sha256": "064ffedc8b36caf88b6f73c58b274b2bc1f04bfe5d5c27fa2d4159b489858d34"
+        }
+      },
+      "arguments": [
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
+      ],
+      "rows": [
+        {
+          "round": 0,
+          "version": "before",
+          "case": "hud",
+          "core": 0.06,
+          "host": 0.078,
+          "frame": 0.138,
+          "controller": 0.07,
+          "complete_cpu": 0.147
+        },
+        {
+          "round": 0,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.048,
+          "host": 0.193,
+          "frame": 1.24,
+          "controller": 1.164,
+          "complete_cpu": 1.356
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "hud",
+          "core": 0.058,
+          "host": 0.079,
+          "frame": 0.137,
+          "controller": 0.067,
+          "complete_cpu": 0.146
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "inventory",
+          "core": 1.073,
+          "host": 0.211,
+          "frame": 1.284,
+          "controller": 1.197,
+          "complete_cpu": 1.408
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "hud",
+          "core": 0.085,
+          "host": 0.118,
+          "frame": 0.202,
+          "controller": 0.11,
+          "complete_cpu": 0.228
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "inventory",
+          "core": 1.053,
+          "host": 0.196,
+          "frame": 1.249,
+          "controller": 1.174,
+          "complete_cpu": 1.371
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "hud",
+          "core": 0.081,
+          "host": 0.111,
+          "frame": 0.191,
+          "controller": 0.1,
+          "complete_cpu": 0.211
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.062,
+          "host": 0.193,
+          "frame": 1.255,
+          "controller": 1.176,
+          "complete_cpu": 1.369
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "hud",
+          "core": 0.066,
+          "host": 0.087,
+          "frame": 0.153,
+          "controller": 0.077,
+          "complete_cpu": 0.164
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.154,
+          "host": 0.206,
+          "frame": 1.36,
+          "controller": 1.277,
+          "complete_cpu": 1.482
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "hud",
+          "core": 0.074,
+          "host": 0.096,
+          "frame": 0.17,
+          "controller": 0.089,
+          "complete_cpu": 0.185
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "inventory",
+          "core": 1.125,
+          "host": 0.213,
+          "frame": 1.338,
+          "controller": 1.254,
+          "complete_cpu": 1.467
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "hud",
+          "core": 0.061,
+          "host": 0.084,
+          "frame": 0.145,
+          "controller": 0.071,
+          "complete_cpu": 0.155
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "inventory",
+          "core": 1.11,
+          "host": 0.207,
+          "frame": 1.318,
+          "controller": 1.234,
+          "complete_cpu": 1.441
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "hud",
+          "core": 0.079,
+          "host": 0.112,
+          "frame": 0.192,
+          "controller": 0.099,
+          "complete_cpu": 0.211
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.156,
+          "host": 0.211,
+          "frame": 1.368,
+          "controller": 1.279,
+          "complete_cpu": 1.49
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "hud",
+          "core": 0.063,
+          "host": 0.084,
+          "frame": 0.147,
+          "controller": 0.073,
+          "complete_cpu": 0.157
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.165,
+          "host": 0.206,
+          "frame": 1.371,
+          "controller": 1.289,
+          "complete_cpu": 1.495
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "hud",
+          "core": 0.084,
+          "host": 0.114,
+          "frame": 0.198,
+          "controller": 0.103,
+          "complete_cpu": 0.217
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "inventory",
+          "core": 1.128,
+          "host": 0.21,
+          "frame": 1.338,
+          "controller": 1.252,
+          "complete_cpu": 1.462
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "hud",
+          "core": 0.072,
+          "host": 0.094,
+          "frame": 0.166,
+          "controller": 0.084,
+          "complete_cpu": 0.177
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "inventory",
+          "core": 1.108,
+          "host": 0.208,
+          "frame": 1.316,
+          "controller": 1.229,
+          "complete_cpu": 1.437
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "hud",
+          "core": 0.084,
+          "host": 0.124,
+          "frame": 0.208,
+          "controller": 0.107,
+          "complete_cpu": 0.232
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.024,
+          "host": 0.194,
+          "frame": 1.218,
+          "controller": 1.139,
+          "complete_cpu": 1.333
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "hud",
+          "core": 0.074,
+          "host": 0.087,
+          "frame": 0.161,
+          "controller": 0.086,
+          "complete_cpu": 0.172
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.11,
+          "host": 0.199,
+          "frame": 1.309,
+          "controller": 1.228,
+          "complete_cpu": 1.427
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "hud",
+          "core": 0.061,
+          "host": 0.082,
+          "frame": 0.143,
+          "controller": 0.073,
+          "complete_cpu": 0.155
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "inventory",
+          "core": 1.1,
+          "host": 0.195,
+          "frame": 1.295,
+          "controller": 1.217,
+          "complete_cpu": 1.412
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "hud",
+          "core": 0.055,
+          "host": 0.073,
+          "frame": 0.128,
+          "controller": 0.063,
+          "complete_cpu": 0.137
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.988,
+          "host": 0.182,
+          "frame": 1.171,
+          "controller": 1.095,
+          "complete_cpu": 1.277
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "hud",
+          "core": 0.076,
+          "host": 0.107,
+          "frame": 0.183,
+          "controller": 0.095,
+          "complete_cpu": 0.202
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.033,
+          "host": 0.2,
+          "frame": 1.233,
+          "controller": 1.153,
+          "complete_cpu": 1.353
+        }
+      ]
+    }
+  },
+  "targeted_fixtures": {
+    ".utmp\\render-audit-20261030\\mixed-paint-fixtures\\grid.css": {
+      "sha256": "18ddc781effc03fc6baedb7bff93f3d9afc2d9006fa08559775a3455789fc59c",
+      "content": "*{box-sizing:border-box}html,body{margin:0}#app{display:flex;flex-direction:column;width:400px;height:300px;padding:6px;gap:7px}#live{width:50px;height:24px;background:#abc}#footer{height:10px;flex:none}#wrap{flex:1;min-height:0;padding:4px;overflow:hidden;border-radius:9px;background:#123}#grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}.cell{height:35px;background:linear-gradient(90deg,#456,#acf);border-radius:5px}.cell span{font-size:11px;color:white}"
+    },
+    ".utmp\\render-audit-20261030\\mixed-paint-fixtures\\grid.html": {
+      "sha256": "e207a9ad4e78a4f2e0f8b608d617ef378879f785d3591941f3ec3caa8df323f1",
+      "content": "<div id=app><div id=live><div style=\"width:1px;height:1px\"></div></div><div id=wrap><div id=grid><div class=cell id=c0><span>cell</span></div><div class=cell id=c1><span>cell</span></div><div class=cell id=c2><span>cell</span></div><div class=cell id=c3><span>cell</span></div><div class=cell id=c4><span>cell</span></div><div class=cell id=c5><span>cell</span></div><div class=cell id=c6><span>cell</span></div><div class=cell id=c7><span>cell</span></div><div class=cell id=c8><span>cell</span></div><div class=cell id=c9><span>cell</span></div><div class=cell id=c10><span>cell</span></div><div class=cell id=c11><span>cell</span></div><div class=cell id=c12><span>cell</span></div><div class=cell id=c13><span>cell</span></div><div class=cell id=c14><span>cell</span></div><div class=cell id=c15><span>cell</span></div><div class=cell id=c16><span>cell</span></div><div class=cell id=c17><span>cell</span></div><div class=cell id=c18><span>cell</span></div><div class=cell id=c19><span>cell</span></div><div class=cell id=c20><span>cell</span></div><div class=cell id=c21><span>cell</span></div><div class=cell id=c22><span>cell</span></div><div class=cell id=c23><span>cell</span></div><div class=cell id=c24><span>cell</span></div><div class=cell id=c25><span>cell</span></div><div class=cell id=c26><span>cell</span></div><div class=cell id=c27><span>cell</span></div><div class=cell id=c28><span>cell</span></div><div class=cell id=c29><span>cell</span></div><div class=cell id=c30><span>cell</span></div><div class=cell id=c31><span>cell</span></div><div class=cell id=c32><span>cell</span></div><div class=cell id=c33><span>cell</span></div><div class=cell id=c34><span>cell</span></div><div class=cell id=c35><span>cell</span></div><div class=cell id=c36><span>cell</span></div><div class=cell id=c37><span>cell</span></div><div class=cell id=c38><span>cell</span></div><div class=cell id=c39><span>cell</span></div><div class=cell id=c40><span>cell</span></div><div class=cell id=c41><span>cell</span></div><div class=cell id=c42><span>cell</span></div><div class=cell id=c43><span>cell</span></div><div class=cell id=c44><span>cell</span></div><div class=cell id=c45><span>cell</span></div><div class=cell id=c46><span>cell</span></div><div class=cell id=c47><span>cell</span></div></div></div><div id=footer><div style=\"width:1px;height:1px\"></div></div></div>"
+    },
+    ".utmp\\render-audit-20261030\\mixed-paint-fixtures\\mutations.json": {
+      "sha256": "097c881d2826d449ea1c485a584c8b8cd3da9fd42feb52ff8a78ed8c4c544a59",
+      "content": "[\n  [\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"30\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:30%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"31\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:31%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"32\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:32%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"33\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:33%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"34\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:34%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"35\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:35%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"36\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:36%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"37\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:37%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"38\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:38%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"39\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:39%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"40\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:40%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"41\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:41%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"42\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:42%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"43\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:43%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"44\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:44%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"45\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:45%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"46\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:46%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"47\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:47%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"48\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:48%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"49\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:49%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"50\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:50%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"51\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:51%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"52\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:52%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"53\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:53%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"54\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:54%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"55\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:55%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"56\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:56%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"57\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:57%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"58\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:58%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"59\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:59%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"60\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:60%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"61\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:61%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"62\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:62%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"63\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:63%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"64\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:64%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"65\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:65%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"66\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:66%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"67\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:67%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"68\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:68%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"69\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:69%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"70\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:70%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"71\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:71%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"72\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:72%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"73\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:73%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"74\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:74%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"75\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:75%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"76\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:76%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"77\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:77%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"78\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:78%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"79\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:79%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"80\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:80%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"81\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:81%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"82\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:82%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"83\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:83%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"84\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:84%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"85\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:85%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"86\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:86%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"87\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:87%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"88\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:88%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"89\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:89%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"90\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:90%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"91\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:91%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"92\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:92%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"93\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:93%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"94\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:94%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"95\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:95%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"96\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:96%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"97\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:97%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"98\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:98%\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#stamina-value\",\n        \"value\": \"99\"\n      },\n      {\n        \"selector\": \"#stamina-fill\",\n        \"attribute\": \"style\",\n        \"value\": \"width:99%\"\n      }\n    ]\n  ],\n  [\n    [\n      {\n        \"selector\": \"#live\",\n        \"attribute\": \"style\",\n        \"value\": \"width:100px\"\n      },\n      {\n        \"selector\": \"#c1\",\n        \"attribute\": \"style\",\n        \"value\": \"background:#08f;color:red\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#live\",\n        \"attribute\": \"style\",\n        \"value\": \"width:80px\"\n      },\n      {\n        \"selector\": \"#c1\",\n        \"attribute\": \"style\",\n        \"value\": \"background:#f80;color:blue\"\n      }\n    ],\n    [\n      {\n        \"selector\": \"#live\",\n        \"attribute\": \"style\",\n        \"value\": \"width:120px\"\n      },\n      {\n        \"selector\": \"#c1\",\n        \"attribute\": \"style\",\n        \"value\": \"background:#08f;color:red\"\n      }\n    ]\n  ]\n]"
+    }
+  }
+}
