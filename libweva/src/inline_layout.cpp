@@ -2190,4 +2190,10 @@ ParentLayoutInput measure_parent_layout_input(const BoxTree& tree, BoxId id,
     return {available_width, tree[id].width, tree[id].height, widths.minimum, widths.maximum};
 }
 
+std::pair<double, double> block_intrinsic_contributions(const BoxTree& tree, BoxId id,
+                                                       const LayoutContext* ctx) {
+    const IntrinsicWidths widths = block_child_contribution<true, true>(tree, id, ctx);
+    return {widths.minimum, widths.maximum};
+}
+
 } // namespace weva

@@ -222,8 +222,7 @@ int IncrementalLayout::index_subtree(const BoxTree& tree, BoxId id, const Layout
     local_[id] = local;
     height_independent_[id] = independent;
     if (local && b.element && b.kind == BoxKind::Block)
-        contributions_[id] = {block_intrinsic_contribution(tree, id, &ctx, true),
-                              block_intrinsic_contribution(tree, id, &ctx, false)};
+        contributions_[id] = block_intrinsic_contributions(tree, id, &ctx);
     refresh_grid(tree, id);
     return size;
 }
@@ -259,14 +258,20 @@ void IncrementalLayout::index(const BoxTree& tree, BoxId root, const LayoutConte
     }
 }
 
-void IncrementalLayout::unindex_subtree(const BoxTree& tree, BoxId id) {
+void IncrementalLayout::unindex_subtree(const BoxTree& tree, BoxId id, bool erase_identities) {
     if (preserve_ && std::find(preserve_->begin(), preserve_->end(), id) != preserve_->end()) return;
     grid_versions_[id] = 0;
     const auto found = by_style_.find(tree[id].style);
-    if (found != by_style_.end() && found->second == id) by_style_.erase(found);
+    if (found != by_style_.end() && found->second == id) {
+        if (erase_identities) by_style_.erase(found);
+        else found->second = kNoBox;
+    }
     const auto element = by_element_.find(tree[id].element);
-    if (element != by_element_.end() && element->second == id) by_element_.erase(element);
-    for (BoxId c : tree.children(id)) unindex_subtree(tree, c);
+    if (element != by_element_.end() && element->second == id) {
+        if (erase_identities) by_element_.erase(element);
+        else element->second = kNoBox;
+    }
+    for (BoxId c : tree.children(id)) unindex_subtree(tree, c, erase_identities);
 }
 
 bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
@@ -402,9 +407,14 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
                 // old used width, hiding the change from the export check.
                 // That made a content-box button keep 34px after 11px of
                 // padding was added, leaving its centred flex siblings stale.
-                block.layout_block(r.from, outer.content_width(), outer.style);
+                // Fixed-track grids can measure directly in their final area;
+                // flex and intrinsic-track grids measure at container width.
+                // Reproduce the parent's actual input, not an assumed width.
+                const double measured_width = old.parent_layout_input.available_width;
+                if (measured_width < 0) continue;
+                block.layout_block(r.from, measured_width, outer.style);
                 const ParentLayoutInput natural = measure_parent_layout_input(
-                    r.tree, r.from, outer.content_width(), ctx);
+                    r.tree, r.from, measured_width, ctx);
                 ParentLayoutInput measured = natural;
                 const Box& measured_box = r.tree[r.from];
                 const double old_frame = old.padding_left + old.padding_right + old.border_left + old.border_right;
@@ -438,8 +448,7 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             // a flex/grid ancestor. Compare the exports cached BEFORE styles
             // changed, rather than remeasuring old boxes with new styles.
             if (!independent_inline_contribution &&
-                (contributions_[id].first != block_intrinsic_contribution(r.tree, r.from, &ctx, true) ||
-                 contributions_[id].second != block_intrinsic_contribution(r.tree, r.from, &ctx, false)))
+                contributions_[id] != block_intrinsic_contributions(r.tree, r.from, &ctx))
                 { reject("intrinsic contribution", id); continue; }
             bool safe = true;
             for (BoxId p = old.parent; p != kNoBox; p = (*tree)[p].parent) {
@@ -484,7 +493,10 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
     }
     for (const auto& r : ready) {
         preserve_ = &r.retained;
-        unindex_subtree(*tree, r.into);
+        // A layout-only replacement preserves DOM and computed-style identities.
+        // Reuse their map nodes when indexing the replacement instead of freeing
+        // and reallocating two nodes per element. Structural rebuilds reset them.
+        unindex_subtree(*tree, r.into, false);
         tree->replace_subtree(r.into, r.tree, r.from);
         sizes_.resize(tree->size());
         local_.resize(tree->size());
@@ -657,7 +669,7 @@ bool IncrementalLayout::update_modal(BoxTree* tree, BoxId root, const Document& 
     // for an ordinary incremental replacement. Remove candidates belonging to
     // discarded boxes before their IDs can be recycled by the splice.
     preserve_ = &keep;
-    unindex_subtree(*tree, root);
+    unindex_subtree(*tree, root, true);
     const auto retained_box = [&](BoxId id) {
         for (; id != kNoBox; id = (*tree)[id].parent)
             if (std::find(keep.begin(), keep.end(), id) != keep.end()) return true;

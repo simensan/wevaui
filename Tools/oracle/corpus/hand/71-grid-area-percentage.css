@@ -1,0 +1,11 @@
+html,body{margin:0;padding:0}
+.grid{display:grid;width:310px;gap:10px;margin-bottom:12px}
+.fixed{grid-template-columns:80px 120px}
+.fluid{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+.minimum{grid-template-columns:minmax(150px,1fr) minmax(20px,2fr)}
+.cell{box-sizing:border-box;padding:10%;margin:5%;border:2px solid #abc}
+.explicit{width:50%;margin-left:auto;margin-right:auto}
+.content{box-sizing:content-box}
+.bar{width:100%;height:6px;background:#579}
+.inner{width:50%;height:4px;background:#ace}
+.overflow{width:500px;height:2px;background:#abc}

@@ -949,6 +949,10 @@ void test_abi_incremental_item_box_edges() {
     struct Parent { const char* css; bool retains; };
     const Parent parents[] = {
         {"#items{display:grid;grid-template-columns:repeat(4,64px)}", true},
+        {"#items{display:grid;grid-template-columns:64px 100px}.cell{padding:5%;margin:2%}", true},
+        {"#items{display:grid;grid-template-columns:64px 100px}.cell{padding:5%;margin:2%;width:50%}", false},
+        {"#items{display:grid;grid-template-columns:64px 100px}"
+         ".cell{box-sizing:content-box;padding:5%;margin:2%;width:50%}", false},
         {"#items{display:flex;flex-wrap:wrap}.cell{width:64px;flex:none}", true},
         {"#items{display:flex;flex-direction:column;flex-wrap:nowrap}.cell{width:100%}", true},
         {"#items{display:flex;flex-direction:column;width:auto}.cell{width:100%}", false},

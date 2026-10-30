@@ -28,6 +28,16 @@ dependencies retain normal parent layout. Empty-item reflow shares the normal
 size finalizer. Grid track sizing skips contribution sorting when span order
 cannot matter and directly resolves fixed, nongrowing tracks.
 
+The [grid follow-up](verification/chrome-deeper-20261030.md) resolves columns
+with fixed minima and fixed/fractional maxima before item layout when available
+width is definite. Items then use their final grid-area width on the first pass;
+the constraint record preserves that width for later incremental probes.
+Intrinsic-size probes still run, and subgrid handover keeps its existing path.
+Indexing computes minimum/maximum contributions together and reuses identity-map
+nodes during layout-only replacements; structural replacements reset identities.
+Ordinary block layout and height-dependency queries walk stable tree links
+without temporary traversal vectors.
+
 These are shared-core changes, with no ABI extension or host-specific behavior.
 
 ## Rounded geometry execution

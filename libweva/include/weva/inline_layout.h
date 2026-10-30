@@ -6,6 +6,7 @@
 
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 // Ports the core of Runtime/Layout/{InlineLayout,LineBreaker}.cs — turning a
@@ -170,6 +171,9 @@ double min_content_width(const BoxTree& tree, BoxId id, const LayoutContext* ctx
 // frame, min/max constraints and non-auto margins.
 double block_intrinsic_contribution(const BoxTree& tree, BoxId id,
                                     const LayoutContext* ctx, bool minimum);
+// Both exports from one traversal and one constraint resolution.
+std::pair<double, double> block_intrinsic_contributions(const BoxTree& tree, BoxId id,
+                                                       const LayoutContext* ctx);
 // While one of these is alive, block contributions measured in `tree` with
 // `ctx` are remembered, so a caller asking for every box's contribution walks
 // the tree once rather than once per ancestor. The tree must not change

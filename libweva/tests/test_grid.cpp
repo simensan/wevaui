@@ -111,6 +111,81 @@ struct Fixture {
 } // namespace
 
 void test_grid_items() {
+    // Chrome 152 fluid-grid-reference.json: definite fractional areas can be
+    // allocated before content, even with unequal factors, minimum freezing,
+    // fixed maximum clamping and overflowing descendants. Percentage edges
+    // and descendants still resolve against the final area, not the grid.
+    const char* fluid_tracks[] = {"minmax(0,1fr) minmax(0,2fr)",
+        "minmax(150px,1fr) minmax(20px,2fr)",
+        "minmax(100px,120px) minmax(0,1fr)"};
+    const double first_areas[] = {100, 150, 120};
+    for (int tracks = 0; tracks < 3; ++tracks) {
+        for (const char* width : {"auto", "50%", "80px"}) {
+            Fixture f;
+            CHECK(f.css(std::string("body{margin:0}#g{display:grid;grid-template-columns:") +
+                fluid_tracks[tracks] + ";gap:10px;width:310px}.item{box-sizing:border-box;width:" +
+                width + ";padding:10%;border:2px solid;margin:5%}"
+                ".bar{width:100%;height:6px}.nested{width:50%;height:4px}"
+                ".overflow{width:500px;height:2px}"));
+            CHECK(f.layout("<div id=g><div class=item id=x><div class=bar id=bar>"
+                "<div class=nested id=inner></div></div><div class=overflow></div></div>"
+                "<div class=item id=y><div class=bar></div></div></div>"));
+            const double a = first_areas[tracks], b = 300 - a;
+            const double height = std::max(a * .3 + 12, b * .3 + 10);
+            const auto used_width = [&](double area) {
+                return std::string_view(width) == "auto" ? area * .9 :
+                       std::string_view(width) == "50%" ? area * .5 : 80.;
+            };
+            CHECK(near(f.box("g").height, height));
+            CHECK(near(f.box("x").x, a * .05) && near(f.box("x").y, a * .05));
+            CHECK(near(f.box("x").width, used_width(a)) && near(f.box("x").height, height - a * .1));
+            CHECK(near(f.box("y").x, a + 10 + b * .05) && near(f.box("y").y, b * .05));
+            CHECK(near(f.box("y").width, used_width(b)) && near(f.box("y").height, height - b * .1));
+            CHECK(near(f.box("bar").x, a * .1 + 2) && near(f.box("bar").y, a * .1 + 2));
+            CHECK(near(f.box("inner").width, (used_width(a) - a * .2 - 4) * .5));
+            CHECK(near(f.box("x").parent_layout_input.available_width, a));
+            CHECK(near(f.box("y").parent_layout_input.available_width, b));
+            CHECK(!f.box("y").parent_inline_contribution_independent);
+        }
+    }
+    // Chrome 152, percent-grid-reference.json (October 30 performance pass):
+    // grid areas, not the 400px container, are the percentage basis. Keep
+    // explicit-width auto margins and nested percentage descendants covered.
+    for (const bool border_box : {false, true}) {
+        for (const bool explicit_width : {false, true}) {
+            for (const int left : {8, 11, 12, 80}) {
+                Fixture f;
+                const std::string css =
+                    "body{margin:0}#g{display:grid;grid-template-columns:80px 120px;gap:10px;width:400px}"
+                    ".item{box-sizing:" + std::string(border_box ? "border-box" : "content-box") +
+                    ";width:" + (explicit_width ? "50%" : "auto") +
+                    ";padding:10%;border:2px solid;margin:5%}.bar{height:6px;width:100%;background:#abc}"
+                    ".nested{width:50%;height:4px}" +
+                    (explicit_width ? "#y{margin-left:auto;margin-right:auto}" : "") +
+                    (left == 8 ? "" : "#x{padding-left:" + std::to_string(left) + "px}");
+                CHECK(f.css(css));
+                CHECK(f.layout("<div id=g><div class=item id=x><div class=bar id=bar>"
+                               "<div class=nested id=inner></div></div></div>"
+                               "<div class=item id=y><div class=bar></div></div></div>"));
+                const double frame = left + 8 + 4;
+                const double expected_width = explicit_width
+                    ? (border_box ? std::max(40.0, frame) : 40 + frame) : std::max(72.0, frame);
+                CHECK(near(f.box("g").height, 46));
+                CHECK(near(f.box("x").x, 4) && near(f.box("x").y, 4));
+                CHECK(near(f.box("x").width, expected_width) && near(f.box("x").height, 38));
+                CHECK(near(f.box("x").padding_right, 8) && near(f.box("x").margin_left, 4));
+                CHECK(near(f.box("bar").x, left + 2) && near(f.box("bar").y, 10));
+                CHECK(near(f.box("inner").width, (expected_width - frame) * .5));
+                CHECK(near(f.box("y").x, explicit_width ? (border_box ? 120 : 106) : 96));
+                CHECK(near(f.box("y").width, explicit_width ? (border_box ? 60 : 88) : 108));
+                CHECK(near(f.box("y").height, 34));
+                CHECK(near(f.box("x").parent_layout_input.available_width, 80));
+                CHECK(near(f.box("y").parent_layout_input.available_width, 120));
+                CHECK(near(f.box("g").grid_min_content, 210));
+                CHECK(near(f.box("g").grid_max_content, 210));
+            }
+        }
+    }
     {
         // An item in a FIXED track still gets its box model resolved. Skipping
         // that left padding, border and margin at zero, and the item's own

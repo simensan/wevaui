@@ -61,6 +61,15 @@ def fixtures(directory):
                               '.cell{flex:0 0 auto;padding:4px}'
                               '.icon{width:48px;height:32px;background:#b69063}', 6)
     contents['autosize-flex'] = '<div class="icon"></div>'
+    for name, columns in (('inventory-content', 'repeat(10,64px)'),
+                          ('inventory-fluid', 'repeat(10,minmax(0,1fr))')):
+        shapes[name] = ('#target{display:grid;grid-template-columns:' + columns +
+                        ';gap:6px;width:740px;padding:12px}'
+                        '.cell{height:64px;padding:4px}'
+                        '.icon{width:24px;height:32px;background:#b69063}'
+                        '.track{width:100%;height:6px;margin-top:4px;background:#23323b}'
+                        '.fill{width:75%;height:100%;background:#6ca46b}', 100)
+        contents[name] = '<div class="icon"></div><div class="track"><div class="fill"></div></div>'
     for name, (css, count) in shapes.items():
         html_path, css_path = directory / f'{name}.html', directory / f'{name}.css'
         html_path.write_text('<!doctype html><html><head></head><body><div id="target">' +

@@ -420,6 +420,7 @@ struct Placement {
     BoxId box = kNoBox;
     int column = 0, row = 0;
     int column_span = 1, row_span = 1;
+    double measured_inline_width = -1;
 };
 
 // The rectangle a named area occupies, or false when the name is absent.
@@ -1401,14 +1402,33 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         rows[r].collapsed = !occupied;
     }
 
-    // ---- Size the columns, then lay the items out to size the rows ---------
-    // Every item is laid out once first, whatever track it lands in. This is
-    // what resolves its box model, and skipping it for items in FIXED tracks
-    // left their padding, border and margin at zero — the children of a
-    // 260px-wide sidebar were placed at x=0 rather than at its 16px padding.
-    for (const Placement& p : items) {
-        block->layout_block(p.box, content_width, style);
-        (*tree)[p.box].parent_layout_input = measure_parent_layout_input(*tree, p.box, content_width, ctx);
+    // Fixed minima with fixed/flexible maxima do not consume item contributions
+    // when the available width is definite. Resolve their areas
+    // first, then perform each item's complete initial layout at the actual
+    // containing width rather than laying its subtree out at container width
+    // and immediately repeating it at track width. Box-model resolution is
+    // still mandatory, including percentage edges and nested descendants.
+    const bool independent_areas = content_width >= 0 &&
+        std::all_of(columns.begin(), columns.end(), [](const Track& track) {
+            return track.collapsed || (track.min.kind == Sizing::Kind::Fixed &&
+                (track.max.kind == Sizing::Kind::Fixed || track.max.kind == Sizing::Kind::Flex));
+        });
+    if (independent_areas) {
+        const std::vector<Contribution> none;
+        size_tracks(&columns, content_width, column_gap, none, get(style, kId_justify_content));
+        distribute_content(&columns, content_width, column_gap, get(style, kId_justify_content));
+    }
+    // Subgrids retain their existing first pass until the hand-over below;
+    // that operation supplies their inherited track and gap constraints.
+    for (Placement& p : items) {
+        const bool area_first = independent_areas &&
+            !wants_subgrid((*tree)[p.box].style, "grid-template-columns") &&
+            !wants_subgrid((*tree)[p.box].style, "grid-template-rows");
+        p.measured_inline_width = area_first
+            ? span_size(columns, p.column, p.column_span, column_gap) : content_width;
+        block->layout_block(p.box, p.measured_inline_width, style);
+        (*tree)[p.box].parent_layout_input = measure_parent_layout_input(
+            *tree, p.box, p.measured_inline_width, ctx);
         const Box& item = (*tree)[p.box];
         const auto width = get(item.style, kId_width);
         const auto minimum = get(item.style, kId_min_width);
@@ -1486,9 +1506,11 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         (*tree)[container].grid_min_content = min_w;
         (*tree)[container].grid_max_content = max_w;
     }
-    size_tracks(&columns, content_width, column_gap, column_contributions,
-                get(style, kId_justify_content));
-    distribute_content(&columns, content_width, column_gap, get(style, kId_justify_content));
+    if (!independent_areas) {
+        size_tracks(&columns, content_width, column_gap, column_contributions,
+                    get(style, kId_justify_content));
+        distribute_content(&columns, content_width, column_gap, get(style, kId_justify_content));
+    }
 
     // Each item takes its inline size from its cell: a stretched auto-width
     // item fills it, a `start`/`center`/`end` one fits its content inside it,
@@ -1568,14 +1590,15 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         return std::max(frame, size);
     };
 
-    const auto size_inline = [&](const Placement& p) {
+    const auto size_inline = [&](const Placement& p, bool initial_pass = false) {
         const double w = span_size(columns, p.column, p.column_span, column_gap);
         const bool subgrid = hand_over(p, false);
         const Box& b = (*tree)[p.box];
         const std::string_view width_raw = get(b.style, kId_width);
         const bool auto_width = width_raw.empty() || iequals(width_raw, "auto");
         if (!auto_width) {
-            block->layout_block(p.box, w, style);
+            if (!initial_pass || subgrid || p.measured_inline_width != w)
+                block->layout_block(p.box, w, style);
             return;
         }
         if (subgrid) {
@@ -1599,7 +1622,7 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         }
         block->shrink_to_fit(p.box, w, style);
     };
-    for (const Placement& p : items) size_inline(p);
+    for (const Placement& p : items) size_inline(p, true);
     // Each item's block contributions: its laid-out outer height for both,
     // except that a scroll container's automatic minimum is zero (§6.6) — so
     // in a grid with a DEFINITE height such an item does not force the row

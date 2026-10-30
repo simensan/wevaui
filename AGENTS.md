@@ -156,6 +156,16 @@ The full qualified local gate passes, including 336 Chrome layout captures,
 Chrome behavior checks and Godot rendering, exports and scene tests.
 These compare mutation-to-layout latency, not end-to-end rendered frame cost.
 
+The [grid and allocation follow-up](docs/verification/chrome-deeper-20261030.md)
+adds final-area-first grid layout and allocation-free traversal, with fourteen
+matched benchmark workloads. GCC passes 15 suites / 700,445 core checks;
+Clang ASan/UBSan passes 17 suites / 700,439 checks. Windows core passes 488,168
+checks; full Unity EditMode remains 244 pass with two inconclusive. The Chrome
+layout corpus now has 337 captures (65 hand cases), all within the 1.5px ceiling.
+Tooling remains 70 tests, with nine Linux-only skips on Windows.
+The full qualified release gate passes, including live Chrome behavior and
+Godot rendering, native exports and scene tests; see the follow-up receipt.
+
 The [scaled-overflow follow-up](docs/verification/scaled-overflow-20261025.md)
 passes 14 CTest suites on GCC and Clang and 63 Chrome hand-corpus cases.
 The [scaled-text follow-up](docs/verification/scaled-text-20261025.md) passes

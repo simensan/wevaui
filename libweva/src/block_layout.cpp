@@ -109,6 +109,13 @@ const int kId_contain_intrinsic_width = CssPropertyRegistry::instance().id_of("c
 const int kId_content_visibility = CssPropertyRegistry::instance().id_of("content-visibility");
 const int kId_float = CssPropertyRegistry::instance().id_of("float");
 const int kId_height = CssPropertyRegistry::instance().id_of("height");
+const int kId_display = CssPropertyRegistry::instance().id_of("display");
+const int kId_grid_template_rows = CssPropertyRegistry::instance().id_of("grid-template-rows");
+const int kId_flex_direction = CssPropertyRegistry::instance().id_of("flex-direction");
+const int kId_flex_basis = CssPropertyRegistry::instance().id_of("flex-basis");
+const int kId_row_gap = CssPropertyRegistry::instance().id_of("row-gap");
+const int kId_inset = CssPropertyRegistry::instance().id_of("inset");
+const int kId_aspect_ratio = CssPropertyRegistry::instance().id_of("aspect-ratio");
 const int kId_position = CssPropertyRegistry::instance().id_of("position");
 const int kId_left = CssPropertyRegistry::instance().id_of("left");
 const int kId_right = CssPropertyRegistry::instance().id_of("right");
@@ -154,39 +161,41 @@ std::optional<double> definite_content_height(const BoxTree& tree, BoxId id) {
 // content that reads the height as definite can move: a percentage (or
 // `fr`) against it, a column flex line, an aspect ratio, an out-of-flow
 // box. Conservative: anything it does not recognise as inert is sensitive.
-static std::string_view get_by_name(const ComputedStyle* st, std::string_view name) {
-    return st ? st->get(name) : std::string_view();
-}
-
 bool subtree_reads_definite_height(const BoxTree& tree, BoxId id) {
     const auto container_sensitive = [](const ComputedStyle* st) {
-        const std::string_view rows = get_by_name(st, "grid-template-rows");
+        const std::string_view rows = get(st, kId_grid_template_rows);
         if (rows.find('%') != std::string_view::npos || rows.find("fr") != std::string_view::npos)
             return true;
-        const std::string_view display = get_by_name(st, "display");
+        const std::string_view display = get(st, kId_display);
         if (display.find("flex") != std::string_view::npos &&
-            get_by_name(st, "flex-direction").find("column") != std::string_view::npos) return true;
+            get(st, kId_flex_direction).find("column") != std::string_view::npos) return true;
         return false;
     };
     const Box& root = tree[id];
     if (!root.style || container_sensitive(root.style)) return true;
-    std::vector<BoxId> stack;
-    for (BoxId c = root.first_child; c != kNoBox; c = tree[c].next_sibling) stack.push_back(c);
-    while (!stack.empty()) {
-        const Box& b = tree[stack.back()];
-        stack.pop_back();
+    // The query never changes the tree: parent links provide the return path
+    // without allocating a traversal stack or consuming recursive stack space.
+    BoxId current = root.first_child;
+    while (current != kNoBox) {
+        const Box& b = tree[current];
         if (b.style) {
             if (container_sensitive(b.style)) return true;
             if (b.position == PositionType::Absolute || b.position == PositionType::Fixed ||
                 b.position == PositionType::Sticky) return true;
-            for (const char* property : {"height", "min-height", "max-height", "top", "bottom",
-                                         "flex-basis", "row-gap", "inset"}) {
-                if (get_by_name(b.style, property).find('%') != std::string_view::npos) return true;
+            for (int property : {kId_height, kId_min_height, kId_max_height, kId_top, kId_bottom,
+                                 kId_flex_basis, kId_row_gap, kId_inset}) {
+                if (get(b.style, property).find('%') != std::string_view::npos) return true;
             }
-            const std::string_view ratio = get_by_name(b.style, "aspect-ratio");
+            const std::string_view ratio = get(b.style, kId_aspect_ratio);
             if (!ratio.empty() && ratio != "auto") return true;
         }
-        for (BoxId c = b.first_child; c != kNoBox; c = tree[c].next_sibling) stack.push_back(c);
+        if (b.first_child != kNoBox) {
+            current = b.first_child;
+        } else {
+            while (current != id && tree[current].next_sibling == kNoBox)
+                current = tree[current].parent;
+            current = current == id ? kNoBox : tree[current].next_sibling;
+        }
     }
     return false;
 }
@@ -1748,14 +1757,6 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
         bfc_origin_y_ = prev_bfc_y + (*tree_)[id].y;
     }
 
-    // Keep sibling IDs stable while child layout creates anonymous/line boxes.
-    // Lay out in source order: later floats must see the actual preceding flow.
-    std::vector<BoxId> inflow;
-    for (BoxId c : tree_->children(id)) {
-        if ((*tree_)[c].kind == BoxKind::Block || (*tree_)[c].kind == BoxKind::AnonymousBlock)
-            inflow.push_back(c);
-    }
-
     // The synthetic root has no style and no margins of its own: it is the
     // viewport edge, and nothing collapses through it.
     const bool parent_participates = own_style && participates_in_flow((*tree_)[id]);
@@ -1783,7 +1784,14 @@ void BlockLayout::layout_content(BoxId id, double font_size, double containing_b
     }
     bool any_collapsible_seen = false;
 
-    for (BoxId cid : inflow) {
+    // Child layout may grow the arena and rebuild its own descendants, but
+    // does not change this container's sibling chain. Keep IDs, not Box
+    // references, across recursion; later floats must see preceding flow.
+    BoxId next_child = kNoBox;
+    for (BoxId cid = (*tree_)[id].first_child; cid != kNoBox; cid = next_child) {
+        next_child = (*tree_)[cid].next_sibling;
+        if ((*tree_)[cid].kind != BoxKind::Block && (*tree_)[cid].kind != BoxKind::AnonymousBlock)
+            continue;
         (*tree_)[cid].float_type = parse_float_type(get((*tree_)[cid].style, kId_float));
         (*tree_)[cid].clear = parse_clear_type(get((*tree_)[cid].style, kId_clear));
         if ((*tree_)[cid].is_float()) {

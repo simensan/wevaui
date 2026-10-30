@@ -51,6 +51,6 @@ private:
     void invalidate_subtree(const BoxTree& tree, BoxId root);
     void refresh_grid(const BoxTree& tree, BoxId id);
     int index_subtree(const BoxTree& tree, BoxId root, const LayoutContext& ctx);
-    void unindex_subtree(const BoxTree& tree, BoxId root);
+    void unindex_subtree(const BoxTree& tree, BoxId root, bool erase_identities);
 };
 } // namespace weva

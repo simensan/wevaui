@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generated bindings expect minor 45.
 
 ### Performance
+- Content-independent grid tracks are sized before their items, avoiding
+  duplicate subtree layout. Intrinsic indexing shares minimum/maximum work;
+  layout-only replacements and tree traversal avoid repeated allocations.
 - Local inline style changes avoid unaffected descendant cascade. Proven
   stable flex/grid item allocations can be reused after edge changes, and
   grid sizing avoids contribution sorting when it cannot affect track sizes.

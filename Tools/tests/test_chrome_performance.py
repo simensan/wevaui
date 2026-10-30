@@ -60,7 +60,7 @@ class ChromePerformanceTests(unittest.TestCase):
     def test_identical_fixture_bytes_across_runs(self):
         with tempfile.TemporaryDirectory() as first, tempfile.TemporaryDirectory() as second:
             a, b = comparison.fixtures(Path(first)), comparison.fixtures(Path(second))
-            self.assertEqual(len(a), 10)
+            self.assertEqual(len(a), 14)
             for left, right in zip(a, b):
                 self.assertEqual(left['html_sha256'], right['html_sha256'])
                 self.assertEqual(left['css_sha256'], right['css_sha256'])

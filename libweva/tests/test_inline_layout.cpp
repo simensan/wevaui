@@ -6,6 +6,7 @@
 #include "weva/font_metrics.h"
 #include "weva/html.h"
 #include "weva/inline_layout.h"
+#include "weva/incremental_layout.h"
 #include "weva/bidi.h"
 #include "weva/user_agent_stylesheet.h"
 #include <cmath>
@@ -889,6 +890,21 @@ void test_parent_intrinsic_measurements() {
         CHECK(near(max_content_width(f.tree, id, &f.ctx), example.maximum));
         CHECK(measured.available_width == 200);
         CHECK(measured.width == f.tree[id].width && measured.height == f.tree[id].height);
+        // Indexing captures both outer contributions together. Compare with
+        // the separate sizing paths, including nested percentage widths,
+        // min/max constraints, text wrapping and flex/grid descendants.
+        std::vector<std::pair<double, double>> contributions;
+        for (BoxId box = 0; box < f.tree.size(); ++box)
+            contributions.emplace_back(block_intrinsic_contribution(f.tree, box, &f.ctx, true),
+                                       block_intrinsic_contribution(f.tree, box, &f.ctx, false));
+        {
+            const IntrinsicContributionScope memo(f.tree, &f.ctx);
+            for (BoxId box = 0; box < f.tree.size(); ++box)
+                CHECK(block_intrinsic_contributions(f.tree, box, &f.ctx) == contributions[box]);
+            // Repeated reads share the scope's cache without changing values.
+            for (BoxId box = f.tree.size(); box-- > 0;)
+                CHECK(block_intrinsic_contributions(f.tree, box, &f.ctx) == contributions[box]);
+        }
     }
     // Intrinsic contributions use current child geometry, even if the style
     // version is unchanged. Parent input capture must not retain a prior probe.
@@ -913,6 +929,34 @@ void test_parent_intrinsic_measurements() {
         CHECK(sized.layout("<body><div id=p><div id=s>aa bbbb\ncc</div></div></body>"));
         CHECK(near(sized.box("s").width, 56));
     }
+
+    // Nonstructural replacements preserve identity-map nodes across repeated
+    // mutations, while a new document must drop every old identity.
+    Fixture repeated;
+    CHECK(repeated.css("div { box-sizing:border-box;width:80px;height:40px }"));
+    CHECK(repeated.layout("<body><div id=s></div><div></div><div></div>"
+                          "<div></div><div></div><div></div></body>"));
+    IncrementalLayout index;
+    index.index(repeated.tree, repeated.root, repeated.ctx);
+    const BoxId target = repeated.find("s");
+    const Element* element = repeated.tree[target].element;
+    ComputedStyle* style = repeated.styles.by_element.at(element);
+    const auto* node = &*index.style_boxes().find(style);
+    const size_t identities = index.style_boxes().size();
+    for (int pass = 0; pass < 32; ++pass) {
+        style->set("padding-left", pass % 2 ? "11px" : "12px");
+        CHECK(index.update(&repeated.tree, repeated.root, &repeated.styles,
+                           repeated.ctx, &repeated.metrics, {{style, Invalidation::Layout}}));
+        CHECK(index.style_boxes().size() == identities);
+        CHECK(&*index.style_boxes().find(style) == node);
+        CHECK(index.box_of(element) == repeated.find("s"));
+        CHECK(repeated.box("s").padding_left == (pass % 2 ? 11 : 12));
+    }
+    Fixture replacement;
+    CHECK(replacement.layout("<body><div id=new></div></body>"));
+    index.index(replacement.tree, replacement.root, replacement.ctx, true);
+    CHECK(index.style_boxes().find(style) == index.style_boxes().end());
+    CHECK(index.box_of(element) == kNoBox);
 }
 
 

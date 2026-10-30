@@ -37,7 +37,7 @@ checking only the final state could accept a mutation that did nothing.
 
 The original HUD, inventory and settings fixtures retain empty fixed-size
 cells so previous timings remain comparable. Their leaf cases exercise layout
-bookkeeping even when no visible content moves. Two additional fixtures avoid
+bookkeeping even when no visible content moves. Additional fixtures avoid
 mistaking that case for normal content-bearing UI:
 
 - `hud-content`: each fixed-size cell contains a visible track and percentage-width
@@ -46,7 +46,12 @@ mistaking that case for normal content-bearing UI:
   Cell padding changes the item's intrinsic size and moves neighboring items;
   retaining the parent's old allocation would be wrong.
 
-Each fixture runs panel and leaf mutations, for ten workloads total. The
+- `inventory-content`: 100 fixed-track slots contain icon shapes and percentage
+  durability bars; changing padding moves real descendants.
+- `inventory-fluid`: the same content uses fractional tracks, so panel padding
+  also changes allocated slot widths.
+
+Each fixture runs panel and leaf mutations, for fourteen workloads total. The
 post-timing Chrome snapshots and native preflight runs do not change the initial
 style/cache state of a measured batch.
 

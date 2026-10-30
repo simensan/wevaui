@@ -191,6 +191,82 @@ void test_box_model_width() {
 }
 
 void test_box_model_height_and_position() {
+    // Height-dependency traversal must climb out of deep branches, inspect
+    // later siblings, and stop at the requested subtree's boundary.
+    {
+        ComputedStyle inert, sensitive;
+        inert.set("display", "block");
+        sensitive.set("height", "50%");
+        BoxTree tree;
+        const BoxId outer = tree.create(BoxKind::Block, nullptr, &inert);
+        const BoxId root = tree.create(BoxKind::Block, nullptr, &inert);
+        tree.append_child(outer, root);
+        const BoxId outside = tree.create(BoxKind::Block, nullptr, &sensitive);
+        tree.append_child(outer, outside);
+        BoxId deepest = root;
+        for (int i = 0; i < 4096; ++i) {
+            const BoxId child = tree.create(BoxKind::Block, nullptr, i % 2 ? &inert : nullptr);
+            tree.append_child(deepest, child);
+            deepest = child;
+        }
+        CHECK(!subtree_reads_definite_height(tree, root));
+        tree[deepest].style = &sensitive;
+        CHECK(subtree_reads_definite_height(tree, root));
+        tree[deepest].style = &inert;
+        const BoxId later = tree.create(BoxKind::Block, nullptr, &sensitive);
+        tree.append_child(root, later);
+        CHECK(subtree_reads_definite_height(tree, root));
+        sensitive.set("height", "10px");
+        CHECK(!subtree_reads_definite_height(tree, root));
+        sensitive.set("display", "flex");
+        sensitive.set("flex-direction", "column");
+        CHECK(subtree_reads_definite_height(tree, root));
+        sensitive.set("display", "grid");
+        sensitive.set("grid-template-rows", "1fr");
+        CHECK(subtree_reads_definite_height(tree, root));
+        sensitive.set("grid-template-rows", "10px");
+        CHECK(!subtree_reads_definite_height(tree, root));
+        sensitive.set("aspect-ratio", "2");
+        CHECK(subtree_reads_definite_height(tree, root));
+        sensitive.set("aspect-ratio", "auto");
+        tree[later].position = PositionType::Absolute;
+        CHECK(subtree_reads_definite_height(tree, root));
+        tree[later].position = PositionType::Static;
+        CHECK(!subtree_reads_definite_height(tree, root));
+    }
+    // Inline formatting grows the box arena while the parent walks its block
+    // children. Every following sibling must still be visited, including
+    // floats, positioned boxes and the clearing block after them.
+    {
+        Fixture siblings;
+        CHECK(siblings.css("div{display:block}#walk{width:200px;display:flow-root}"
+                           ".row{height:12px;font-size:0;line-height:12px}"
+                           ".atom{display:inline-block;width:8px;height:10px;vertical-align:top}"
+                           "#float{float:left;width:20px;height:20px}"
+                           "#positioned{position:absolute;width:3px;height:7px}"
+                           "#tail{clear:both;height:9px}"));
+        std::string html = "<div id=walk>";
+        for (int i = 0; i < 96; ++i)
+            html += "<div class=row id=r" + std::to_string(i) +
+                    "><span class=atom></span><span class=atom></span></div>";
+        html += "<div id=float></div><div id=positioned></div><div id=tail></div></div>";
+        CHECK(siblings.build(html));
+        BlockLayout layout(&siblings.tree, siblings.ctx);
+        // Repeat to cover rebuilding existing inline line boxes as well.
+        for (int pass = 0; pass < 2; ++pass) {
+            layout.layout_root(siblings.root, 400, 2000);
+            for (int i = 0; i < 96; ++i) {
+                const BoxId row = siblings.find("r" + std::to_string(i));
+                CHECK(row != kNoBox);
+                if (row == kNoBox) continue;
+                CHECK(near(siblings.tree[row].y, i * 12));
+                CHECK(near(siblings.tree[row].height, 12));
+            }
+            CHECK(near(siblings.box("float").y, 96 * 12));
+            CHECK(near(siblings.box("tail").y, 96 * 12 + 20));
+            CHECK(near(siblings.box("walk").height, 96 * 12 + 29));
+        }
+    }
     Fixture f;
     CHECK(f.css("#h { height: 200px; padding: 10px }"
                 "#hbb { height: 200px; padding: 10px; box-sizing: border-box }"
