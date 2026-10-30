@@ -1,5 +1,10 @@
 # AI_REFERENCE.md — orientation for AI agents
 
+The [matched rendering comparison](docs/verification/prepared-render-comparison-20261031.md)
+corrects diagnostic backgrounds/bindings and records three prepared Chrome/Agentic
+runs. Inventory style/layout remains behind Chrome; no production speedup or
+GPU parity is claimed. Shared-host gate counts are unchanged.
+
 For repeatable Weva/Chrome geometry-workload performance baselines, use
 [`Tools/performance/README.md`](Tools/performance/README.md). The
 [October 30 optimization receipt](docs/verification/chrome-close-20261030.md)

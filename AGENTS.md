@@ -1,5 +1,10 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [matched rendering comparison](docs/verification/prepared-render-comparison-20261031.md)
+corrects diagnostic backgrounds/bindings and records three prepared Chrome/Agentic
+runs. Inventory style/layout remains behind Chrome; no production speedup or
+GPU parity is claimed. Shared-host gate counts are unchanged.
+
 The [October 30 Agentic runtime receipt](docs/verification/agentic-runtime-20261030.md)
 adds 9,000 CPU-only rendered frames, input/binding checks and 339 reloads in an
 immutable SDK built with the current core. No engine code changes in this chunk;

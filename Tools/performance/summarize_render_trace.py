@@ -56,7 +56,9 @@ def main():
     rows = []
     for row in receipt['results']:
         events = json.loads((args.directory / row['trace']).read_text(encoding='utf-8'))['traceEvents']
-        rows.append({'case': row['name'], 'round': row['round'], **summarize(events, row['updates'])})
+        rows.append({'case': row['name'], 'round': row['round'],
+                     **({'phase': row['phase']} if 'phase' in row else {}),
+                     **summarize(events, row['updates'])})
     print(json.dumps(rows, indent=2))
 
 
