@@ -1,5 +1,11 @@
 # AI_REFERENCE.md — orientation for AI agents
 
+For repeatable Weva/Chrome geometry-workload performance baselines, use
+[`Tools/performance/README.md`](Tools/performance/README.md). The
+[October 30 receipt](docs/verification/chrome-performance-20261030.md) records
+the first run and five runner regressions; these timings exclude host/GPU
+presentation and are not a directly comparable end-to-end speed ranking.
+
 A single document for an AI assistant asked to **use, integrate, or reason
 about** Weva: what it is, what it can and cannot do, how to wire it up, how
 the pieces fit, and which tools verify it. When a claim here and the code

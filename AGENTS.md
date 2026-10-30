@@ -144,6 +144,11 @@ performance receipts apply to their pre-merge builds, not this combination.
 
 ## 4. Workflow recipes
 
+The [October 30 Chrome benchmark setup](docs/verification/chrome-performance-20261030.md)
+adds five runner regressions. Windows tooling discovery passes 56 tests with
+nine Linux-only skips (65 total). Its same-fixture timings have different
+rendering boundaries and do not establish an end-to-end speed ranking.
+
 The [scaled-overflow follow-up](docs/verification/scaled-overflow-20261025.md)
 passes 14 CTest suites on GCC and Clang and 63 Chrome hand-corpus cases.
 The [scaled-text follow-up](docs/verification/scaled-text-20261025.md) passes

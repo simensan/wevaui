@@ -1,5 +1,9 @@
 # Core performance benchmark
 
+For repeated same-fixture Chrome comparisons, use the
+[Chrome baseline runner](../performance/README.md). It checks initial geometry
+and reports the engines' different timing boundaries explicitly.
+
 `weva_bench` measures the headless core with its fixed font metrics. Rendered
 Godot frame timing is measured separately by the host's
 [`layout_stress_probe.gd`](../../hosts/godot/project/layout_stress_probe.gd).
