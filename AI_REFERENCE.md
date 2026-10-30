@@ -253,3 +253,8 @@ thin uniform rounded borders retain antialiasing. See
 Relational selector dependencies now bound unrelated hover/active style work;
 template source bodies remain outside the cascade. See
 [the work-count and correctness receipt](docs/verification/selector-invalidation-20261025.md).
+
+The [attribute batching audit](docs/verification/render-batching-20261030.md)
+removes intermediate Godot paints, adds ten timing checks (31 total), and
+records preliminary before/after evidence. The continuing rendering audit
+uses Agentic at the user’s request; Godot results do not qualify that host.

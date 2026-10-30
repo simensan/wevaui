@@ -1,0 +1,232 @@
+{
+  "baseline": {
+    "results": [
+      {
+        "case": "background",
+        "controller_and_update": {
+          "mean_ms": 0.000572222222222223,
+          "median_ms": 0.001,
+          "p95_ms": 0.001
+        },
+        "core_draws": 0,
+        "draw_calls_median": 3.0,
+        "render_setup_cpu": {
+          "mean_ms": 0.00262777777777778,
+          "median_ms": 0.003,
+          "p95_ms": 0.003
+        },
+        "round": 0,
+        "triangles": 0,
+        "wall": {
+          "mean_ms": 0.321166666666667,
+          "median_ms": 0.268,
+          "p95_ms": 0.824
+        }
+      },
+      {
+        "case": "idle_hud",
+        "controller_and_update": {
+          "mean_ms": 0.00315,
+          "median_ms": 0.003,
+          "p95_ms": 0.005
+        },
+        "core_draws": 152,
+        "draw_calls_median": 63.0,
+        "render_setup_cpu": {
+          "mean_ms": 0.00220555555555556,
+          "median_ms": 0.002,
+          "p95_ms": 0.003
+        },
+        "round": 0,
+        "triangles": 4668,
+        "wall": {
+          "mean_ms": 0.313405555555556,
+          "median_ms": 0.266,
+          "p95_ms": 0.486
+        }
+      },
+      {
+        "case": "updating_hud",
+        "controller_and_update": {
+          "mean_ms": 0.119561111111111,
+          "median_ms": 0.11,
+          "p95_ms": 0.168
+        },
+        "core_draws": 152,
+        "draw_calls_median": 63.0,
+        "render_setup_cpu": {
+          "mean_ms": 0.00260555555555556,
+          "median_ms": 0.003,
+          "p95_ms": 0.003
+        },
+        "round": 0,
+        "triangles": 4666,
+        "wall": {
+          "mean_ms": 0.647672222222222,
+          "median_ms": 0.633,
+          "p95_ms": 0.819
+        }
+      },
+      {
+        "case": "inventory",
+        "controller_and_update": {
+          "mean_ms": 0.00251111111111111,
+          "median_ms": 0.002,
+          "p95_ms": 0.005
+        },
+        "core_draws": 300,
+        "draw_calls_median": 140.0,
+        "render_setup_cpu": {
+          "mean_ms": 0.00226111111111111,
+          "median_ms": 0.002,
+          "p95_ms": 0.003
+        },
+        "round": 0,
+        "triangles": 13276,
+        "wall": {
+          "mean_ms": 0.278583333333333,
+          "median_ms": 0.269,
+          "p95_ms": 0.337
+        }
+      },
+      {
+        "case": "inventory_selection",
+        "controller_and_update": {
+          "mean_ms": 1.67772777777778,
+          "median_ms": 1.817,
+          "p95_ms": 2.316
+        },
+        "core_draws": 296,
+        "draw_calls_median": 140.0,
+        "render_setup_cpu": {
+          "mean_ms": 0.00336111111111111,
+          "median_ms": 0.003,
+          "p95_ms": 0.004
+        },
+        "round": 0,
+        "triangles": 13236,
+        "wall": {
+          "mean_ms": 2.75205,
+          "median_ms": 2.866,
+          "p95_ms": 3.421
+        }
+      }
+    ],
+    "sha256": "66d7df1a8b69d9948964175ebe1e0fa0b0627c25c681395ed40734d822fabed7"
+  },
+  "batched": {
+    "results": [
+      {
+        "case": "background",
+        "controller_and_update": {
+          "mean_ms": 0.000511111111111111,
+          "median_ms": 0.001,
+          "p95_ms": 0.001
+        },
+        "core_draws": 0,
+        "draw_calls_median": 3.0,
+        "render_setup_cpu": {
+          "mean_ms": 0.00237222222222222,
+          "median_ms": 0.002,
+          "p95_ms": 0.004
+        },
+        "round": 0,
+        "triangles": 0,
+        "wall": {
+          "mean_ms": 0.330611111111111,
+          "median_ms": 0.261,
+          "p95_ms": 0.519
+        }
+      },
+      {
+        "case": "idle_hud",
+        "controller_and_update": {
+          "mean_ms": 0.00309444444444445,
+          "median_ms": 0.003,
+          "p95_ms": 0.005
+        },
+        "core_draws": 152,
+        "draw_calls_median": 63.0,
+        "render_setup_cpu": {
+          "mean_ms": 0.00222777777777778,
+          "median_ms": 0.002,
+          "p95_ms": 0.003
+        },
+        "round": 0,
+        "triangles": 4668,
+        "wall": {
+          "mean_ms": 0.329544444444444,
+          "median_ms": 0.264,
+          "p95_ms": 0.604
+        }
+      },
+      {
+        "case": "updating_hud",
+        "controller_and_update": {
+          "mean_ms": 0.131116666666667,
+          "median_ms": 0.116,
+          "p95_ms": 0.183
+        },
+        "core_draws": 152,
+        "draw_calls_median": 63.0,
+        "render_setup_cpu": {
+          "mean_ms": 0.00281111111111111,
+          "median_ms": 0.003,
+          "p95_ms": 0.004
+        },
+        "round": 0,
+        "triangles": 4666,
+        "wall": {
+          "mean_ms": 0.689477777777778,
+          "median_ms": 0.636,
+          "p95_ms": 0.908
+        }
+      },
+      {
+        "case": "inventory",
+        "controller_and_update": {
+          "mean_ms": 0.00373888888888889,
+          "median_ms": 0.004,
+          "p95_ms": 0.005
+        },
+        "core_draws": 300,
+        "draw_calls_median": 140.0,
+        "render_setup_cpu": {
+          "mean_ms": 0.0024,
+          "median_ms": 0.003,
+          "p95_ms": 0.004
+        },
+        "round": 0,
+        "triangles": 13276,
+        "wall": {
+          "mean_ms": 0.287872222222222,
+          "median_ms": 0.277,
+          "p95_ms": 0.383
+        }
+      },
+      {
+        "case": "inventory_selection",
+        "controller_and_update": {
+          "mean_ms": 1.17882777777778,
+          "median_ms": 1.166,
+          "p95_ms": 1.405
+        },
+        "core_draws": 296,
+        "draw_calls_median": 140.0,
+        "render_setup_cpu": {
+          "mean_ms": 0.00316111111111111,
+          "median_ms": 0.003,
+          "p95_ms": 0.004
+        },
+        "round": 0,
+        "triangles": 13236,
+        "wall": {
+          "mean_ms": 2.22121111111111,
+          "median_ms": 2.172,
+          "p95_ms": 2.492
+        }
+      }
+    ],
+    "sha256": "ab0c0f517e9570b529721ae428d29bb8ec1209c1abcbe6bbf4d741245944ab3a"
+  }
+}

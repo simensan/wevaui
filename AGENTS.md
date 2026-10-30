@@ -255,3 +255,8 @@ it follows the ABI.
 * Keep gate counts and evidence links current in `AGENTS.md`, `AI_REFERENCE.md`
   and the verification reports. `docs/PRODUCT_READINESS.md` is the concise
   user-facing status: update it when supported use or limitations change.
+
+The [attribute batching audit](docs/verification/render-batching-20261030.md)
+removes intermediate Godot paints, adds ten timing checks (31 total), and
+records preliminary before/after evidence. The continuing rendering audit
+uses Agentic at the user’s request; Godot results do not qualify that host.

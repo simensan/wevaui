@@ -3856,10 +3856,7 @@ String WevaDocument::query_text(const String& selector) {
 
 bool WevaDocument::set_element_attribute(const String& selector, const String& name,
                                          const String& value) {
-    if (!doc_) return false;
-    ensure_updated();
-    const CharString sel = selector.utf8();
-    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    const uint32_t e = resolve(selector, false);
     if (e == WEVA_ELEMENT_NONE) return false;
     const CharString n = name.utf8();
     const CharString v = value.utf8();
@@ -3871,10 +3868,7 @@ bool WevaDocument::set_element_attribute(const String& selector, const String& n
 }
 
 bool WevaDocument::remove_element_attribute(const String& selector, const String& name) {
-    if (!doc_) return false;
-    ensure_updated();
-    const CharString sel = selector.utf8();
-    const weva_element_t e = weva_document_query(doc_, sel.get_data());
+    const uint32_t e = resolve(selector, false);
     if (e == WEVA_ELEMENT_NONE) return false;
     const CharString n = name.utf8();
     // A null value is what the ABI reads as "remove"; GDScript has no way to

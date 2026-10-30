@@ -84,6 +84,8 @@ func measure(case_name: String, round_index: int) -> void:
 	var gpu: Array[float] = []
 	var calls: Array[float] = []
 	var frame_ids: Array[int] = []
+	var core_stats: Array[Dictionary] = []
+	var collect_core := OS.get_environment("WEVA_RENDER_BENCH_CORE_STATS") == "1"
 	var previous := Time.get_ticks_usec()
 	for i in warmup + frames:
 		await process_frame
@@ -99,6 +101,8 @@ func measure(case_name: String, round_index: int) -> void:
 		if case_name != "background":
 			doc.update_document(1.0 / 60.0)
 		var update_ms := (Time.get_ticks_usec() - start) / 1000.0
+		if collect_core and i >= warmup:
+			core_stats.append(doc.get_stats())
 		await RenderingServer.frame_post_draw
 		if i >= warmup:
 			frame_ids.append(frame_id)
@@ -122,6 +126,8 @@ func measure(case_name: String, round_index: int) -> void:
 		result["render_cpu"] = summary(cpu)
 		result["render_gpu"] = summary(gpu)
 		result["gpu_timestamps_available"] = gpu.any(func(value): return value > 0)
+	if collect_core:
+		result["core_stats_diagnostic"] = core_stats
 	results.append(result)
 	print("RENDER_BENCH ", case_name, " round ", round_index, " wall ", result.wall,
 		" update ", result.controller_and_update, " GPU ", result.get("render_gpu", {}))
