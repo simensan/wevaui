@@ -2,7 +2,7 @@
 
 For repeated same-fixture Chrome comparisons, use the
 [Chrome baseline runner](../performance/README.md). It checks initial geometry
-and reports the engines' different timing boundaries explicitly.
+and matches mutation-to-layout timing boundaries, excluding paint in both engines.
 
 `weva_bench` measures the headless core with its fixed font metrics. Rendered
 Godot frame timing is measured separately by the host's
@@ -49,6 +49,7 @@ the scroll setter is outside the timing, like other mutation modes. The
 | `--cold` | Fresh document creation, CSS/HTML loading and initial update at time zero; destruction is excluded. The cross-document raster cache is off, so every pass is a first opening. |
 | `--reopen` | As `--cold`, with the cross-document raster cache on: after the first pass, a screen created again. `best` is the reopen. |
 | `--full` | Update after initial document/atlas preparation; the caller's mutation is excluded. `--dt` advances CSS animations. |
+| `--geometry --mutate=layout` | Attribute mutation plus geometry-only update and target bounds read. No draw list is produced; the mutation is included. Zero dt, no cold/profile/sample options. Used for matched Chrome layout comparisons. |
 
 Allocation counts cover the final measured pass and report C++ `operator new`
 calls and requested bytes. They are not total process memory. Earlier passes

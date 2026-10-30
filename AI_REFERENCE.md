@@ -2,9 +2,9 @@
 
 For repeatable Weva/Chrome geometry-workload performance baselines, use
 [`Tools/performance/README.md`](Tools/performance/README.md). The
-[October 30 receipt](docs/verification/chrome-performance-20261030.md) records
-the first run and five runner regressions; these timings exclude host/GPU
-presentation and are not a directly comparable end-to-end speed ranking.
+[matched October 30 receipt](docs/verification/chrome-matched-20261030.md) records
+the corrected mutation-to-layout comparison and six runner regressions. Both
+engines exclude painting; these timings do not measure rendered frame cost.
 
 A single document for an AI assistant asked to **use, integrate, or reason
 about** Weva: what it is, what it can and cannot do, how to wire it up, how

@@ -1,4 +1,4 @@
-"""Repeatable side-by-side core-update and browser style/layout baselines."""
+"""Matched attribute-mutation-to-layout benchmarks, excluding paint in both engines."""
 import argparse
 import hashlib
 import json
@@ -25,7 +25,9 @@ def digest(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def parse_native(output):
+def parse_native(output, geometry_only=False):
+    if geometry_only and (not output.startswith('mutation-to-layout ') or '  0 draws  0 textures' not in output):
+        raise ValueError('Expected geometry-only benchmark; rebuild weva_bench')
     matches = re.findall(r'best\s+([\d.]+) ms\s+mean\s+([\d.]+) ms', output)
     if len(matches) != 1:
         raise ValueError('Expected exactly one native timing row')
@@ -54,8 +56,8 @@ def fixtures(directory):
         html_path.write_text('<!doctype html><html><head></head><body><div id="target">' +
                              '<div class="cell"></div>' * count + '</div></body></html>', encoding='utf-8')
         css_path.write_text(common + css, encoding='utf-8')
-        for mode in ('cold', 'layout'):
-            jobs.append({'name': name, 'mode': mode, 'html': str(html_path), 'css': str(css_path),
+        for mode, target in (('panel', '#target'), ('leaf', '.cell:last-child')):
+            jobs.append({'name': name, 'mode': mode, 'target': target, 'html': str(html_path), 'css': str(css_path),
                          'html_sha256': digest(html_path), 'css_sha256': digest(css_path)})
     return jobs
 
@@ -101,7 +103,8 @@ def main():
         geometry[job['name']] = json.loads(path.read_text(encoding='utf-8'))['elements']
     manifest = out / 'manifest.json'
     manifest.write_text(json.dumps({'passes': args.passes, 'jobs': jobs}, indent=2), encoding='utf-8')
-    receipt = {'schema': 1, 'utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
+    receipt = {'schema': 2, 'boundary': 'attribute setter + synchronous style/layout + target bounds; no paint',
+               'utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
                'platform': platform.platform(), 'cpu': platform.processor(), 'logical_cpus': os.cpu_count(),
                'git_revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
                'git_status': subprocess.check_output(['git', 'status', '--porcelain'], cwd=ROOT, text=True),
@@ -115,9 +118,10 @@ def main():
             if engine == 'weva':
                 for job in jobs:
                     command = [str(binary), job['html'], job['css'], str(args.passes)]
-                    command += ['--cold'] if job['mode'] == 'cold' else ['--full', '--mutate=layout', '--target=#target']
+                    command += ['--geometry', '--mutate=layout', '--target=' + job['target']]
                     output = run(command, out / f"weva-{repetition}-{job['name']}-{job['mode']}.log")
-                    receipt['samples'].append({'engine': engine, 'run': repetition, **job, **parse_native(output)})
+                    receipt['samples'].append({'engine': engine, 'run': repetition, **job,
+                                               **parse_native(output, geometry_only=True)})
             else:
                 path = out / f'chrome-{repetition}.json'
                 run([args.node, str(Path(__file__).with_name('chrome.cjs')), str(manifest), str(path)],
@@ -127,7 +131,7 @@ def main():
                     raise ValueError('Missing Chrome workloads')
                 receipt['chrome'] = data['browser']
                 for expected, sample in zip(jobs, data['results']):
-                    if any(sample[k] != expected[k] for k in ('name', 'mode', 'html_sha256', 'css_sha256')):
+                    if any(sample[k] != expected[k] for k in ('name', 'mode', 'target', 'html_sha256', 'css_sha256')):
                         raise ValueError('Mismatched Chrome workload')
                     if not math.isfinite(sample['mean_ms']) or sample['mean_ms'] < 0:
                         raise ValueError('Invalid Chrome timing')
@@ -135,18 +139,18 @@ def main():
                     receipt['samples'].append({'engine': engine, 'run': repetition, **sample})
         print(f'Finished round {repetition + 1}/{args.runs}', flush=True)
     (out / 'results.json').write_text(json.dumps(receipt, indent=2), encoding='utf-8')
-    lines = ['# Weva / Chrome synchronous baseline', '',
-             'Milliseconds: median of per-run means (not frame p95). No speedup ratio: timing boundaries differ.', '',
-             '| Workload | Weva core update / creation | Chrome style + layout / DOM replacement |',
+    lines = ['# Weva / Chrome matched mutation-to-layout', '',
+             'Milliseconds: median of per-run means (not frame p95). Both include the attribute setter and exclude paint.', '',
+             '| Workload | Weva mutation + layout | Chrome mutation + layout |',
              '|---|---:|---:|']
     for job in jobs:
         values = [statistics.median(s['mean_ms'] for s in receipt['samples']
                   if s['engine'] == engine and s['name'] == job['name'] and s['mode'] == job['mode'])
                   for engine in ('weva', 'chrome')]
-        lines.append(f"| {job['name']} {job['mode']} | {values[0]:.3f} | {values[1]:.3f} |")
-    lines += ['', 'Weva includes draw-list preparation; Chrome excludes paint, raster and compositing.',
+        lines.append(f"| {job['name']} {job['mode']} | {values[0]:.6f} | {values[1]:.6f} |")
+    lines += ['', 'Neither engine paints, rasterizes or composites in the measured region.',
               'No host rendering, frame pacing, process launch, network, text or image decoding is measured.',
-              'Cold means repeated fresh document content in a warm process, not application startup.',
+              'Panel changes affect a container; leaf changes affect one cell. These are geometry-only fixtures.',
               'See Tools/performance/README.md for methodology and limits.']
     (out / 'summary.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     print('\n'.join(lines))

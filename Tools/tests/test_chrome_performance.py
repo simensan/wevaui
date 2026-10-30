@@ -10,6 +10,14 @@ spec.loader.exec_module(comparison)
 
 
 class ChromePerformanceTests(unittest.TestCase):
+    def test_old_or_painting_binary_is_rejected(self):
+        row = 'best 0.001 ms mean 0.003 ms  0 draws  0 textures'
+        with self.assertRaises(ValueError):
+            comparison.parse_native(row, geometry_only=True)
+        with self.assertRaises(ValueError):
+            comparison.parse_native('mutation-to-layout ' + row.replace('0 draws', '2 draws'), geometry_only=True)
+        self.assertEqual(comparison.parse_native('mutation-to-layout ' + row, geometry_only=True)['mean_ms'], .003)
+
     def test_layout_mismatch_rejects_comparison(self):
         box = {'x': 0, 'y': 0, 'w': 10, 'h': 20}
         self.assertEqual(comparison.check_geometry([box], [box]), 0)

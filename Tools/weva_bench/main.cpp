@@ -330,8 +330,10 @@ int main(int argc, char** argv) {
     bool sample = false;
     bool cold = false;
     bool reopen = false;
+    bool geometry = false;
     for (int i = 1; i < argc; ++i) {
         if (std::string(argv[i]) == "--full") full = true;
+        if (std::string(argv[i]) == "--geometry") geometry = full = true;
         if (std::string(argv[i]) == "--cold") cold = true;
         if (std::string(argv[i]) == "--reopen") cold = reopen = true;
         if (std::string(argv[i]) == "--sample") sample = true;
@@ -386,6 +388,10 @@ int main(int argc, char** argv) {
         if (a.rfind("--focus=", 0) == 0) focus_selector = a.substr(8);
         if (a.rfind("--sample-depth=", 0) == 0) g_sample_depth = std::atoi(a.c_str() + 15);
         if (a.rfind("--dt=", 0) == 0) frame_dt = std::atof(a.c_str() + 5);
+    }
+    if (geometry && (cold || frame_dt != 0 || mutate != "layout" || g_profile || sample)) {
+        std::fprintf(stderr, "weva_bench: --geometry requires --mutate=layout, zero dt and no cold/profile/sample\n");
+        return 2;
     }
     if (g_sample_depth < 1 || g_sample_depth > kFrames) {
         std::fprintf(stderr, "weva_bench: --sample-depth must be between 1 and %d\n", kFrames);
@@ -498,7 +504,8 @@ int main(int argc, char** argv) {
             std::fprintf(stderr, "weva_bench: html rejected\n");
             return 1;
         }
-        weva_document_update(d, 0);   // warm the atlas and the arenas
+        if (geometry) weva_document_update_geometry(d);
+        else weva_document_update(d, 0);   // warm the atlas and the arenas
 
         // The element a mutation lands on: the first the document has, so any
         // sample works without knowing its markup.
@@ -555,6 +562,10 @@ int main(int argc, char** argv) {
         size_t steady_allocations = 0, steady_bytes = 0;
         start_sampling();
         for (int i = 0; i < passes; ++i) {
+            // Matched browser boundary: include attribute parsing/invalidation,
+            // then resolve geometry, without any paint publication.
+            const auto mutation_start = geometry ? std::chrono::steady_clock::now()
+                                                 : std::chrono::steady_clock::time_point{};
             // `hover` moves the pointer instead of editing the document: two
             // points far enough apart to land on different elements, so every
             // pass crosses a real boundary and the hover chain actually flips.
@@ -582,8 +593,12 @@ int main(int argc, char** argv) {
                 g_allocations = g_bytes = 0;
                 g_counting = true;
             }
-            const auto t0 = std::chrono::steady_clock::now();
-            weva_document_update(d, frame_dt);
+            const auto t0 = geometry ? mutation_start : std::chrono::steady_clock::now();
+            if (geometry) {
+                if (weva_document_update_geometry(d) != WEVA_OK) return 1;
+                double x, y, width, height;
+                if (weva_element_bounds(d, target, &x, &y, &width, &height) != WEVA_OK) return 1;
+            } else weva_document_update(d, frame_dt);
             const auto t1 = std::chrono::steady_clock::now();
             if (measure_allocations) {
                 g_counting = false;
@@ -598,7 +613,12 @@ int main(int argc, char** argv) {
         size_t draws = 0, textures = 0;
         weva_document_draws(d, &draws);
         weva_document_textures(d, &textures);
-        std::printf("%-20s %-7s %-10s best %8.3f ms  mean %8.3f ms  %zu draws  %zu textures"
+        if (geometry && (draws != 0 || textures != 0 || weva_document_draw_serial(d) != 0)) {
+            std::fprintf(stderr, "weva_bench: geometry benchmark unexpectedly published paint\n");
+            return 1;
+        }
+        if (geometry) std::printf("mutation-to-layout ");
+        std::printf("%-20s %-7s %-10s best %10.6f ms  mean %10.6f ms  %zu draws  %zu textures"
                     "  steady-state allocations %zu (%zu bytes)\n",
                     argv[1], mutate.c_str(), target_selector.c_str(), best, total / passes, draws, textures,
                     steady_allocations, steady_bytes);

@@ -1,5 +1,9 @@
 # Chrome performance baseline — October 30, 2026
 
+**Superseded for comparison:** this run times different work in each engine.
+Use the [matched mutation-to-layout receipt](chrome-matched-20261030.md) instead.
+The original data remains below as evidence, not a speed ranking.
+
 Added `Tools/performance/compare_chrome.py` and its browser driver. They run
 deterministic geometry-only HUD, inventory and settings fixtures at 1280×720,
 check initial geometry against Chrome, alternate engine order and retain raw

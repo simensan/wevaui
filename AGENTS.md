@@ -145,9 +145,10 @@ performance receipts apply to their pre-merge builds, not this combination.
 ## 4. Workflow recipes
 
 The [October 30 Chrome benchmark setup](docs/verification/chrome-performance-20261030.md)
-adds five runner regressions. Windows tooling discovery passes 56 tests with
-nine Linux-only skips (65 total). Its same-fixture timings have different
-rendering boundaries and do not establish an end-to-end speed ranking.
+is superseded by the [matched layout benchmark](docs/verification/chrome-matched-20261030.md).
+Six runner regressions and native CLI checks cover the matched no-paint boundary.
+Windows tooling discovery passes 57 tests with nine Linux-only skips (66 total).
+These compare mutation-to-layout latency, not end-to-end rendered frame cost.
 
 The [scaled-overflow follow-up](docs/verification/scaled-overflow-20261025.md)
 passes 14 CTest suites on GCC and Clang and 63 Chrome hand-corpus cases.

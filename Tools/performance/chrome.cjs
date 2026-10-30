@@ -14,27 +14,25 @@ const {launch} = require('../oracle/chrome_test_browser.cjs');
             const html = fs.readFileSync(job.html, 'utf8');
             const css = fs.readFileSync(job.css, 'utf8');
             await page.goto('about:blank');
-            const result = await page.evaluate(({html, css, mode, passes}) => {
+            const result = await page.evaluate(({html, css, targetSelector, passes}) => {
                 const source = html.replace('<head>', `<head><style>${css}</style>`);
                 const install = () => {
                     document.open(); document.write(source); document.close();
                 };
                 install();
                 document.body.getBoundingClientRect();
-                let target = document.querySelector('#target');
+                const target = document.querySelector(targetSelector);
                 if (!target) throw new Error('Missing mutation target');
                 const geometry = [...document.querySelectorAll('div')].map(e => {
                     const r = e.getBoundingClientRect();
                     return {x: r.x, y: r.y, w: r.width, h: r.height};
                 });
                 let total = 0, best = Infinity, checksum = 0;
+                const styles = ['padding-left:11px', 'padding-left:12px'];
                 for (let i = 0; i < passes; ++i) {
-                    // Match weva_bench: the mutation setter is outside the timer.
-                    if (mode === 'layout')
-                        target.setAttribute('style', `padding-left:${i & 1 ? 12 : 11}px`);
                     const start = performance.now();
-                    if (mode === 'cold') install();
-                    const rect = document.body.getBoundingClientRect();
+                    target.setAttribute('style', styles[i & 1]);
+                    const rect = target.getBoundingClientRect();
                     const elapsed = performance.now() - start;
                     total += elapsed; best = Math.min(best, elapsed);
                     checksum += rect.height;
@@ -42,7 +40,7 @@ const {launch} = require('../oracle/chrome_test_browser.cjs');
                 if (!(checksum > 0)) throw new Error('Empty layout');
                 return {mean_ms: total / passes, best_ms: best, checksum, geometry,
                     elements: document.querySelectorAll('*').length};
-            }, {html, css, mode: job.mode, passes: manifest.passes});
+            }, {html, css, targetSelector: job.target, passes: manifest.passes});
             results.push({...job, ...result});
         }
         fs.writeFileSync(outputPath, JSON.stringify({browser: await browser.version(),
