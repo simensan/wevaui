@@ -269,6 +269,25 @@ void test_flex_min_height_is_not_a_definite_height() {
 
 void test_flex_direction_and_order() {
     {
+        // Repeated positive/negative orders retain document order within each
+        // group, including lists large enough to exercise the general sort.
+        Fixture f;
+        CHECK(f.css("#r{display:flex;width:500px}.c{flex:none;width:10px;height:10px}"));
+        std::string html = "<body><div id=r>";
+        for (int i = 0; i < 40; ++i)
+            html += "<div class=c id=c" + std::to_string(i) + " style='order:" +
+                    std::to_string(i % 3 - 1) + "'></div>";
+        html += "</div></body>";
+        CHECK(f.layout(html));
+        int position = 0;
+        for (int order = -1; order <= 1; ++order)
+            for (int i = 0; i < 40; ++i)
+                if (i % 3 - 1 == order) {
+                    CHECK(near(f.box("c" + std::to_string(i)).x, position * 10));
+                    ++position;
+                }
+    }
+    {
         // A column stacks along the block axis and gaps use row-gap.
         Fixture f;
         CHECK(f.css("#r { display: flex; flex-direction: column; width: 200px; row-gap: 5px }"

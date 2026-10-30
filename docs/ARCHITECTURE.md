@@ -38,6 +38,16 @@ nodes during layout-only replacements; structural replacements reset identities.
 Ordinary block layout and height-dependency queries walk stable tree links
 without temporary traversal vectors.
 
+The [incremental follow-up](verification/chrome-parity-20261030.md) retains
+immutable grid sizing inputs. Item changes update intrinsic exports; edge-only
+grid changes reuse descendants only when every track and item-area width stays
+equal. Changed exports stop at a proven explicit-width ordinary-block boundary.
+Unchanged ordinary flex/grid items can retain natural input measurements and
+subtrees. Scratch arenas retain capacity without retaining live boxes. Eligible
+edge-only full reflows preserve topology, reset layout fields, and run the
+normal layout/position/overflow/index pipeline. Retained paint compares semantic
+DOM owners of clipping and containing blocks, independent of temporary box IDs.
+
 These are shared-core changes, with no ABI extension or host-specific behavior.
 
 ## Rounded geometry execution

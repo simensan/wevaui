@@ -260,9 +260,11 @@ ResolvedSides resolve_box_sides_px(const ComputedStyle* style, int shorthand_id,
         return v.kind == LengthKind::Length ? v.pixels : 0.0;
     };
     r.top = side(sides.top, sides.top_id, sides.top_part);
-    r.right = side(sides.right, sides.right_id, sides.right_part);
-    r.bottom = side(sides.bottom, sides.bottom_id, sides.bottom_part);
-    r.left = side(sides.left, sides.left_id, sides.left_part);
+    // Every edge uses the same width/font/line-height basis. Equal authored
+    // values therefore share the answer, including percentage and calc edges.
+    r.right = sides.right == sides.top ? r.top : side(sides.right, sides.right_id, sides.right_part);
+    r.bottom = sides.bottom == sides.top ? r.top : side(sides.bottom, sides.bottom_id, sides.bottom_part);
+    r.left = sides.left == sides.right ? r.right : side(sides.left, sides.left_id, sides.left_part);
     r.right_raw = sides.right;
     r.left_raw = sides.left;
     return r;
@@ -1553,6 +1555,7 @@ void BlockLayout::layout_root(BoxId root, double viewport_width, double viewport
 
 void BlockLayout::layout_block(BoxId id, double available_width,
                                const ComputedStyle* parent_style) {
+    if (reuse_ && reuse_->reuse_layout_input(tree_, id, available_width, parent_style)) return;
     // A fresh layout imposes nothing: the flag a flex line or grid area set
     // in an EARLIER pass must not survive into this one, or finalize keeps a
     // stale height. A square item in a grid inside a column flex was 199.85
@@ -2099,6 +2102,41 @@ void BlockLayout::finalize_block_size(BoxId id, double font_size, double content
             for (BoxId c : tree_->children(id)) (*tree_)[c].y += delta;
         }
     }
+}
+
+bool prepare_block_tree_reflow(BoxTree* tree, BoxId root) {
+    if (!tree || !tree->valid(root)) return false;
+    const auto eligible = [&](const auto& self, BoxId id) -> bool {
+        const Box& b = (*tree)[id];
+        if (b.kind != BoxKind::Block || (id != root && !b.element) ||
+            b.pseudo_host || b.contains_inlines || b.is_inline_block || b.is_multicol ||
+            b.orthogonal_root || b.vertical_text || b.position != PositionType::Static ||
+            b.is_float() || b.clear != ClearType::None ||
+            b.intrinsic_width != 0 || b.intrinsic_height != 0 || b.retained_from != kNoBox ||
+            (b.display != DisplayKind::Block && b.display != DisplayKind::FlowRoot &&
+             b.display != DisplayKind::Flex && b.display != DisplayKind::Grid)) return false;
+        if (b.element) {
+            const auto tag = b.element->tag_name();
+            if (tag == "input" || tag == "textarea" || tag == "select" || tag == "button" ||
+                tag == "option" || tag == "optgroup" || tag == "img" || tag == "svg" ||
+                tag == "canvas" || tag == "video" || tag == "audio" || tag == "iframe" ||
+                tag == "object" || tag == "embed") return false;
+        }
+        for (BoxId child : tree->children(id)) if (!self(self, child)) return false;
+        return true;
+    };
+    if (!eligible(eligible, root)) return false;
+    const auto reset = [&](const auto& self, BoxId id) -> void {
+        Box& b = (*tree)[id];
+        Box fresh;
+        fresh.parent = b.parent; fresh.first_child = b.first_child; fresh.last_child = b.last_child;
+        fresh.prev_sibling = b.prev_sibling; fresh.next_sibling = b.next_sibling;
+        fresh.element = b.element; fresh.style = b.style; fresh.display = b.display;
+        b = std::move(fresh);
+        for (BoxId child : tree->children(id)) self(self, child);
+    };
+    reset(reset, root);
+    return true;
 }
 
 } // namespace weva

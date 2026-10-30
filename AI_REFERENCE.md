@@ -9,6 +9,11 @@ exclude painting; these timings do not measure rendered frame cost.
 The [grid follow-up](docs/verification/chrome-deeper-20261030.md) adds populated
 fixed/fractional inventory fixtures, for fourteen workloads, and separate paired
 native measurements including paint preparation. Neither measures game FPS.
+The [incremental follow-up](docs/verification/chrome-parity-20261030.md) keeps
+those fourteen inputs unchanged: seven beat Chrome and four more are within
+0.0013ms. Full fractional-grid panel resizing and autosizing flex still trail.
+The latest gate covers 338 Chrome captures, 702,276 GCC core checks and 702,270
+ASan/UBSan checks; retained paint ownership and inline atom alignment are pinned.
 
 A single document for an AI assistant asked to **use, integrate, or reason
 about** Weva: what it is, what it can and cannot do, how to wire it up, how
@@ -22,7 +27,7 @@ disagree, the code wins — tell the user.
 
 _Unity verified: 2026-10-30 (1.0.0 plus unreleased fixes); Native EditMode
 243 pass / 2 environment-gated inconclusive, full EditMode 244 pass / 2
-inconclusive. See the [grid follow-up](docs/verification/chrome-deeper-20261030.md)
+inconclusive. See the [incremental follow-up](docs/verification/chrome-parity-20261030.md)
 for the current build and the [technical audit](docs/verification/tech-audit-20261011.md)
 for remaining adoption limits._
 

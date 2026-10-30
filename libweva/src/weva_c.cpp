@@ -1379,7 +1379,15 @@ struct StyleMap : StyleProvider {
         // the value the cascade just produced are both in hand. Nothing else
         // in the engine has both.
         std::vector<RunningTransition>* running = nullptr;
-        const bool can_transition = owner && transition_hidden.count(owner) == 0 &&
+        static const int duration_id = CssPropertyRegistry::instance().id_of("transition-duration");
+        static const int delay_id = CssPropertyRegistry::instance().id_of("transition-delay");
+        const bool zero_transition_time = fresh->get(duration_id) == "0s" && fresh->get(delay_id) == "0s";
+        // A zero duration/delay cannot start a transition. An existing one
+        // still needs the normal target/cancellation checks: changing only
+        // its duration does not interrupt the animation already in flight.
+        const bool transition_work = !zero_transition_time ||
+            (owner && !transitions.empty() && transitions.find(owner) != transitions.end());
+        const bool can_transition = owner && transition_work && transition_hidden.count(owner) == 0 &&
             fresh->get("display") != "none" && !transition_ancestor_hidden(*owner);
         // A fresh hidden style owns its latest target. Do not restore an older
         // running target over it when cancellation occurs later in advance().
@@ -4865,7 +4873,16 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
         pending_at_entry < Invalidation::Layout &&
         doc->incremental_layout.update(&doc->tree, doc->root, &doc->styles, doc->ctx,
                                       &doc->metrics_backend(), doc->styles.changes));
-    if (pending >= Invalidation::Layout && !subtree_layout) {
+    bool reflow_boxes = false;
+    if (pending == Invalidation::Layout && !subtree_layout &&
+        pending_at_entry < Invalidation::Layout && !doc->styles.changes.empty()) {
+        bool edge_only = true;
+        for (const auto& change : doc->styles.changes)
+            if (change.second >= Invalidation::Layout && !doc->styles.only_box_edges_changed(change.first))
+                edge_only = false;
+        if (edge_only) reflow_boxes = prepare_block_tree_reflow(&doc->tree, doc->root);
+    }
+    if (pending >= Invalidation::Layout && !subtree_layout && !reflow_boxes) {
         doc->tree.reset();
         BoxBuilder builder(&doc->tree, &doc->styles);
         doc->root = builder.build_document(*doc->doc);

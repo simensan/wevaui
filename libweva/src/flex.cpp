@@ -285,9 +285,13 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     }
 
     // §5.4: items are laid out in `order`, ties broken by document order.
-    std::stable_sort(items.begin(), items.end(), [](const Item& a, const Item& b) {
+    // The source index makes the ordering total, so stable_sort's temporary
+    // allocation is unnecessary. Most containers already have this order.
+    const auto item_less = [](const Item& a, const Item& b) {
         return a.order != b.order ? a.order < b.order : a.source_index < b.source_index;
-    });
+    };
+    if (!std::is_sorted(items.begin(), items.end(), item_less))
+        std::sort(items.begin(), items.end(), item_less);
 
     // ---- Flex base and hypothetical main sizes (§9.2) ----------------------
     // Percentages on the main axis resolve against the container's main size

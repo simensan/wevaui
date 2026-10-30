@@ -174,6 +174,7 @@ size_t shared_raster_bytes() { return shared_raster_cache().bytes(); }
 // where it was laid out.
 struct ClipNode {
     BoxId overflow_owner = kNoBox; // clip-path is never escaped by positioning.
+    const Element* overflow_element = nullptr;
     std::vector<ClipPoint> polygon;
     std::shared_ptr<const ClipNode> parent;
     // The polygon triangulated, bounded, and with its inscribed rectangle
@@ -295,14 +296,21 @@ struct OverflowClip {
     Recti rect;
     double scroll_x, scroll_y;
     std::shared_ptr<const OverflowClip> parent;
+    const Element* owner_element = nullptr;
 };
 
 LinearColor resolve_color(const ComputedStyle* style, std::string_view property);
 
 bool PaintReplayInputs::operator==(const PaintReplayInputs& o) const {
-    if (x != o.x || y != o.y || opacity != o.opacity || canvas_owner != o.canvas_owner ||
+    const auto same_owner = [](BoxId a, const Element* ae, BoxId b, const Element* be) {
+        return ae || be ? ae && ae == be : a == b;
+    };
+    if (x != o.x || y != o.y || opacity != o.opacity ||
+        !same_owner(canvas_owner, canvas_element, o.canvas_owner, o.canvas_element) ||
         transformed != o.transformed || (transformed && xform != o.xform) ||
-        scissor.has_value() != o.scissor.has_value() || absolute_cb != o.absolute_cb || fixed_cb != o.fixed_cb ||
+        scissor.has_value() != o.scissor.has_value() ||
+        !same_owner(absolute_cb, absolute_cb_element, o.absolute_cb, o.absolute_cb_element) ||
+        !same_owner(fixed_cb, fixed_cb_element, o.fixed_cb, o.fixed_cb_element) ||
         blend != o.blend) return false;
     if (scissor && (scissor->x != o.scissor->x || scissor->y != o.scissor->y ||
                     scissor->width != o.scissor->width || scissor->height != o.scissor->height)) return false;
@@ -310,7 +318,8 @@ bool PaintReplayInputs::operator==(const PaintReplayInputs& o) const {
     const ClipNode* b = o.clip.get();
     while (a && b) {
         if (a == b) break;
-        if (a->overflow_owner != b->overflow_owner || a->polygon.size() != b->polygon.size()) return false;
+        if (!same_owner(a->overflow_owner, a->overflow_element, b->overflow_owner, b->overflow_element) ||
+            a->polygon.size() != b->polygon.size()) return false;
         for (size_t i = 0; i < a->polygon.size(); ++i)
             if (a->polygon[i].x != b->polygon[i].x || a->polygon[i].y != b->polygon[i].y) return false;
         a = a->parent.get();
@@ -321,7 +330,8 @@ bool PaintReplayInputs::operator==(const PaintReplayInputs& o) const {
     const auto* ob = o.overflow.get();
     while (oa && ob) {
         if (oa == ob) break;
-        if (oa->owner != ob->owner || oa->rect.x != ob->rect.x || oa->rect.y != ob->rect.y ||
+        if (!same_owner(oa->owner, oa->owner_element, ob->owner, ob->owner_element) ||
+            oa->rect.x != ob->rect.x || oa->rect.y != ob->rect.y ||
             oa->rect.width != ob->rect.width || oa->rect.height != ob->rect.height ||
             oa->scroll_x != ob->scroll_x || oa->scroll_y != ob->scroll_y) return false;
         oa = oa->parent.get(); ob = ob->parent.get();
@@ -1742,7 +1752,8 @@ bool parse_color_filter(const ComputedStyle* style, const LayoutContext& ctx, do
 
 // Pushes a polygon clip onto the state's chain, mapping it through the
 // transform in force so it lives in screen space (see ClipNode).
-void push_clip(PaintState* state, std::vector<ClipPoint> polygon, BoxId overflow_owner = kNoBox) {
+void push_clip(PaintState* state, std::vector<ClipPoint> polygon, BoxId overflow_owner = kNoBox,
+               const Element* overflow_element = nullptr) {
     if (polygon.size() < 3) return;
     if (state->transformed) {
         for (ClipPoint& p : polygon) {
@@ -1754,6 +1765,7 @@ void push_clip(PaintState* state, std::vector<ClipPoint> polygon, BoxId overflow
     }
     auto n = std::make_shared<ClipNode>();
     n->overflow_owner = overflow_owner;
+    n->overflow_element = overflow_element;
     n->polygon = std::move(polygon);
     n->prepare();
     n->parent = state->clip;
@@ -3419,9 +3431,12 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     const double y = origin_y + b.y + b.sticky_offset_y;
     if (paint.reuse && !own_only && !descendants_only) {
         if (paint.reuse->tracks_inputs(id)) {
-            const PaintReplayInputs inputs{x, y, state.opacity, state.scissor, state.transformed,
+            PaintReplayInputs inputs{x, y, state.opacity, state.scissor, state.transformed,
                                             state.xform, state.clip, state.filter, canvas_owner,
                                             state.overflow, state.absolute_cb, state.fixed_cb, state.blend};
+            inputs.canvas_element = tree.valid(canvas_owner) ? tree[canvas_owner].element : nullptr;
+            inputs.absolute_cb_element = tree.valid(state.absolute_cb) ? tree[state.absolute_cb].element : nullptr;
+            inputs.fixed_cb_element = tree.valid(state.fixed_cb) ? tree[state.fixed_cb].element : nullptr;
             if (paint.reuse->replay(id, inputs)) return;
         } else if (paint.reuse->replay(id)) return;
     }
@@ -4053,7 +4068,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         Recti r{static_cast<int>(std::floor(cx0)), static_cast<int>(std::floor(cy0)),
                 std::max(0, static_cast<int>(std::ceil(cx1)) - static_cast<int>(std::floor(cx0))),
                 std::max(0, static_cast<int>(std::ceil(cy1)) - static_cast<int>(std::floor(cy0)))};
-        state.overflow = std::make_shared<OverflowClip>(OverflowClip{id, r, b.scroll_x, b.scroll_y, state.overflow});
+        state.overflow = std::make_shared<OverflowClip>(OverflowClip{id, r, b.scroll_x, b.scroll_y, state.overflow, b.element});
         if (state.scissor) r = intersect(*state.scissor, r);
         state.scissor = r;
         paint.backend->set_scissor(&r);
@@ -4064,7 +4079,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             inset_radii(clamp_radii_to_rect(radii, b.width, b.height), b.border_top, b.border_right, b.border_bottom, b.border_left);
         if (!inner.top_left.is_zero() || !inner.top_right.is_zero() ||
             !inner.bottom_right.is_zero() || !inner.bottom_left.is_zero()) {
-            push_clip(&state, rounded_rect_outline(Rect(px0, py0, px1 - px0, py1 - py0), inner), id);
+            push_clip(&state, rounded_rect_outline(Rect(px0, py0, px1 - px0, py1 - py0), inner), id, b.element);
         }
     }
 

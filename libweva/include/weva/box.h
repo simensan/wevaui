@@ -10,6 +10,7 @@
 #include <string_view>
 #include <vector>
 #include <map>
+#include <memory>
 #include <algorithm>
 
 // Ports Runtime/Layout/Boxes — the box tree that layout writes into and paint
@@ -30,6 +31,7 @@
 // the zero-allocation-per-frame gate does not allow.
 
 namespace weva {
+struct GridSizingInputs;
 
 using BoxId = int32_t;
 constexpr BoxId kNoBox = -1;
@@ -257,6 +259,9 @@ struct Box {
     // for it; negative until the grid has been sized once.
     double grid_min_content = -1;
     double grid_max_content = -1;
+    // Immutable resolved track/contribution inputs; shared by speculative
+    // copies and replaced atomically after a successful incremental proof.
+    std::shared_ptr<const GridSizingInputs> grid_sizing_inputs;
 
     // ---- Text -----------------------------------------------------------
     // Points into either the source text node or the pass arena (for collapsed
@@ -292,6 +297,9 @@ struct Box {
     // Scratch-only reference to a retained layout subtree in the destination
     // tree. Its children stay there until the transaction is committed.
     BoxId retained_from = kNoBox;
+    // Content exports of a deferred ordinary subtree. Its children remain in
+    // the destination arena while the scratch parent resolves its allocation.
+    double retained_intrinsic_min = -1, retained_intrinsic_max = -1;
 
     bool is_float() const { return float_type != FloatType::None; }
     double content_width() const {

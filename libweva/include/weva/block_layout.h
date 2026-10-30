@@ -177,10 +177,19 @@ private:
 class LayoutReuse {
 public:
     virtual ~LayoutReuse() = default;
+    // An unchanged subtree may already have a complete box model for this
+    // exact incoming width. A miss leaves deferred children for reuse_layout.
+    virtual bool reuse_layout_input(BoxTree*, BoxId, double, const ComputedStyle*) { return false; }
     // The box model and imposed width are already resolved. A miss must
     // materialize deferred children before ordinary layout resumes.
     virtual bool reuse_layout(BoxTree* tree, BoxId id) = 0;
 };
+
+// Reuse an unchanged, purely block/flex/grid box topology for a complete
+// reflow. Reject consumed inline sources and special formatting contexts.
+// On success clear all layout outputs to the same state as freshly built
+// boxes, keeping identities and tree links. On failure leave the tree intact.
+bool prepare_block_tree_reflow(BoxTree* tree, BoxId root);
 
 // Whether laying out `id`'s subtree against a definite height could differ
 // from laying it out against an auto one of the same value: a percentage or

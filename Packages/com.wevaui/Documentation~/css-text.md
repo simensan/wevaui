@@ -29,6 +29,11 @@ Inter's metrics diverge slightly from Chrome's Arial — intentional, accepted.
 
 - `text-align`: `left`, `right`, `center`, `justify`, `start`, `end`.
 - `text-align-last`.
+- `vertical-align: baseline | top | bottom` on atomic inline boxes
+  (`inline-block`, `inline-flex`, `inline-grid`, and replaced elements). Top
+  and bottom align the margin box to the line; they differ from `text-top`
+  and `text-bottom`, which are not implemented for inline content. Other
+  inline `vertical-align` values and alignment of text spans remain unsupported.
 - `text-decoration`: underline, overline, and line-through.
 - `text-transform`: `uppercase`, `lowercase`, `capitalize`.
 - `color` (the text fill; honored in linear space).

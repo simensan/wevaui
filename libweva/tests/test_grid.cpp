@@ -111,6 +111,133 @@ struct Fixture {
 } // namespace
 
 void test_grid_items() {
+    // Edge-only grid reuse proves final track/area constraints before moving
+    // any item. Check successive snapshots against complete fresh layouts,
+    // including content distribution that moves each column differently.
+    for (const char* alignment : {"start", "center", "end", "space-between"}) {
+        const std::string css = std::string("#g{display:grid;box-sizing:border-box;width:400px;") +
+            "grid-template-columns:80px 120px;gap:10px;padding:8px;border:2px solid;justify-content:" +
+            alignment + "}.cell{height:30px;padding:5%;margin:2%}.bar{width:50%;height:4px}";
+        const char* html = "<div id=g><div id=a class=cell><div class=bar></div></div>"
+                           "<div id=b class=cell><div class=bar></div></div></div>";
+        Fixture original;
+        CHECK(original.css(css));
+        CHECK(original.layout(html));
+        Box previous = original.box("g");
+        double positions[] = {original.box("a").x, original.box("b").x};
+        for (int padding : {11, 12, 8}) {
+            Fixture fresh;
+            CHECK(fresh.css(css + "#g{padding-left:" + std::to_string(padding) + "px}"));
+            CHECK(fresh.layout(html));
+            const auto unchanged = previous.grid_sizing_inputs;
+            GridEdgeReuseProbe probe;
+            CHECK(probe_grid_edge_reuse(previous, fresh.box("g"), fresh.ctx, &probe));
+            CHECK(previous.grid_sizing_inputs == unchanged);
+            CHECK(probe.inline_offsets.size() == 2);
+            for (size_t i = 0; i < probe.inline_offsets.size(); ++i) {
+                const char* id = i == 0 ? "a" : "b";
+                CHECK(probe.inline_offsets[i].first == original.box(id).element);
+                positions[i] += probe.inline_offsets[i].second;
+                CHECK(near(positions[i], fresh.box(id).x));
+                CHECK(near(original.box(id).width, fresh.box(id).width));
+                CHECK(near(original.box(id).y, fresh.box(id).y));
+            }
+            previous = fresh.box("g");
+            previous.grid_sizing_inputs = probe.inputs;
+        }
+    }
+    for (const char* extra : {
+        "#g{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}",
+        "#g{grid-template-columns:20% 30%}", "#g{column-gap:5%}",
+        "#g{row-gap:5%}", "#g{grid-template-rows:10%}",
+        "#g{grid-template-columns:repeat(auto-fit,80px)}",
+        "#b{position:absolute}", "#b{aspect-ratio:1/1}",
+        "#b{display:grid;grid-template-columns:subgrid}", "#b{min-width:10%}"}) {
+        Fixture f;
+        CHECK(f.css(std::string("#g{display:grid;width:400px;box-sizing:border-box;padding:8px;") +
+            "grid-template-columns:80px 120px}.cell{height:30px}" + extra));
+        CHECK(f.layout("<div id=g><div id=a class=cell></div><div id=b class=cell></div></div>"));
+        Box candidate = f.box("g");
+        candidate.padding_left += 1;
+        GridEdgeReuseProbe probe;
+        CHECK(!probe_grid_edge_reuse(f.box("g"), candidate, f.ctx, &probe));
+    }
+    // Chrome 152 fr-intrinsic-reference.json: a definite allocation must not
+    // erase fractional tracks' intrinsic exports. Fixed minima, unequal and
+    // sub-unit factors, and spanning contributions all participate.
+    struct IntrinsicCase { const char* tracks; int child; bool span; double extent; };
+    for (const IntrinsicCase& c : {
+        IntrinsicCase{"minmax(0,1fr) minmax(0,2fr)", 60, false, 130},
+        IntrinsicCase{"minmax(0,1fr) minmax(0,2fr)", 120, false, 190},
+        IntrinsicCase{"minmax(0,1fr) minmax(0,2fr)", 240, true, 240},
+        IntrinsicCase{"minmax(100px,1fr) minmax(0,2fr)", 240, true, 310},
+        IntrinsicCase{"80px minmax(0,2fr)", 240, true, 240},
+        IntrinsicCase{"minmax(0,.25fr) minmax(0,.5fr)", 240, true, 182.5}}) {
+        Fixture f;
+        CHECK(f.css(std::string("#g{display:grid;width:400px;gap:10px;grid-template-columns:") +
+            c.tracks + "}#a{width:40px;height:4px}#b{width:" + std::to_string(c.child) +
+            "px;height:4px;" + (c.span ? "grid-column:1 / span 2" : "") + "}"));
+        CHECK(f.layout("<div id=g><div id=a></div><div id=b></div></div>"));
+        CHECK(near(f.box("g").grid_min_content, c.extent));
+        CHECK(near(f.box("g").grid_max_content, c.extent));
+    }
+    // Grid export refresh is transactional: updated sizing records may be
+    // chained across sibling mutations while the original layout remains
+    // untouched. Compare each refreshed export with a complete fresh layout.
+    for (const char* tracks : {"80px 120px", "minmax(0,1fr) minmax(0,2fr)",
+                              "minmax(150px,1fr) minmax(20px,2fr)"}) {
+        const std::string base = std::string("#g{display:grid;width:310px;gap:10px;grid-template-columns:") +
+            tracks + "}.cell{padding:8px;box-sizing:border-box}.bar{width:100%;height:6px}";
+        const char* html = "<div id=g><div id=a class=cell><div class=bar></div></div>"
+                           "<div id=b class=cell><div class=bar></div></div></div>";
+        Fixture original;
+        CHECK(original.css(base));
+        CHECK(original.layout(html));
+        Box parent = original.box("g");
+        const auto original_inputs = parent.grid_sizing_inputs;
+        CHECK(original_inputs != nullptr);
+        int left_a = 8, left_b = 8;
+        for (int step = 0; step < 4; ++step) {
+            const bool change_a = step % 2 == 0;
+            if (change_a) left_a = step == 0 ? 11 : 8;
+            else left_b = step == 1 ? 12 : 8;
+            Fixture fresh;
+            CHECK(fresh.css(base + "#a{padding-left:" + std::to_string(left_a) +
+                "px}#b{padding-left:" + std::to_string(left_b) + "px}"));
+            CHECK(fresh.layout(html));
+            const char* id = change_a ? "a" : "b";
+            Box measured = fresh.box(id);
+            measured.element = original.box(id).element;
+            GridItemExportProbe probe;
+            CHECK(probe_grid_item_exports(parent, measured, fresh.ctx, &probe));
+            CHECK(probe.inputs != parent.grid_sizing_inputs);
+            CHECK(near(probe.minimum, fresh.box("g").grid_min_content));
+            CHECK(near(probe.maximum, fresh.box("g").grid_max_content));
+            CHECK(original.box("g").grid_sizing_inputs == original_inputs);
+            parent.grid_sizing_inputs = probe.inputs;
+            parent.grid_min_content = probe.minimum;
+            parent.grid_max_content = probe.maximum;
+        }
+        Box unknown = original.box("a");
+        unknown.element = original.box("g").element;
+        GridItemExportProbe probe;
+        CHECK(!probe_grid_item_exports(parent, unknown, original.ctx, &probe));
+        CHECK(!probe_grid_item_exports(parent, original.box("a"), original.ctx, nullptr));
+    }
+    for (const char* css : {
+        "#g{grid-template-columns:1fr 1fr}",
+        "#g{grid-template-columns:auto auto}",
+        ".cell{justify-self:start}", ".cell{width:50%}",
+        ".cell{margin-left:auto}", ".cell{aspect-ratio:1/1}",
+        ".cell:not(#a){aspect-ratio:1/1}",
+        ".cell:not(#a){display:grid;grid-template-columns:subgrid}"}) {
+        Fixture f;
+        CHECK(f.css(std::string("#g{display:grid;width:300px;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}") +
+            ".cell{padding:8px}" + css));
+        CHECK(f.layout("<div id=g><div class=cell id=a></div><div class=cell></div></div>"));
+        GridItemExportProbe probe;
+        CHECK(!probe_grid_item_exports(f.box("g"), f.box("a"), f.ctx, &probe));
+    }
     // Chrome 152 fluid-grid-reference.json: definite fractional areas can be
     // allocated before content, even with unequal factors, minimum freezing,
     // fixed maximum clamping and overflowing descendants. Percentage edges

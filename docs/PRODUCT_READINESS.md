@@ -5,7 +5,7 @@ Updated October 30, 2026 · Integration verification through October 30.
 Scoped October 25 core/Agentic checks cover filtered downscaled icons and
 antialiased thin rounded borders; see the
 [rendering receipt](verification/image-filtering-20261025.md).
-The [October 30 receipt](verification/chrome-deeper-20261030.md) records the latest
+The [October 30 receipt](verification/chrome-parity-20261030.md) records the latest
 full local gate and Unity EditMode results: 244 pass, zero failures and two
 environment-gated inconclusive. Godot rendering, exports and scene checks pass
 with the qualified patched editor and templates.
@@ -83,16 +83,13 @@ and browser-level visual/text fidelity remain incomplete.
   lowers paired inventory scrolling API CPU p95 by 11.9% to 1.097 ms with
   identical pixels; whole-game and lower-end testing remain outstanding.
   Those performance reports describe separate pre-merge builds. The
-  [October 30 layout comparison](verification/chrome-close-20261030.md) measures
-  the current combined engine: six matched mutation-to-layout workloads improve
-  42–93.5% against the preceding build. Both engines exclude paint; this does not
-  remeasure cold opening, host frame cost or whole-game performance. Whole-panel
-  inventory layout in that run took about 3.1× Chrome's time.
-  The [grid follow-up](verification/chrome-deeper-20261030.md) adds populated
-  inventory fixtures: paired layout costs fall another 27–30%, and native
-  updates including paint preparation improve 15–16% on those grid workloads.
-  Small workloads show mixed results; populated grid layout remains slower
-  than Chrome. These figures still exclude host/GPU presentation and game load.
+  [latest October 30 comparison](verification/chrome-parity-20261030.md) keeps
+  fourteen matched workloads unchanged. All improve against the previous native
+  build, by 3.0–98.1%. Seven beat Chrome and four more are within 0.0013ms;
+  full fractional-grid panel resizing remains about 1.5× Chrome and autosizing
+  flex about 2.1–2.4×. Both engines exclude paint in this comparison. Separate
+  native measurements include paint preparation, with smaller gains. These
+  results do not remeasure cold opening, host/GPU presentation or game load.
 
 - **Deep markup:** content nested more than 64 elements deep is not rendered,
   so layout stays within a 1 MB thread stack.

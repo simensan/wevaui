@@ -1535,9 +1535,15 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
         std::vector<int> env_drops;
         out->copy_set_ids(property_ids_);
         for (int id : property_ids_) {
-            std::string raw(out->get(id));
+            const std::string_view value = out->get(id);
+            const bool has_attr = value.find("attr(") != std::string_view::npos ||
+                                  value.find("ATTR(") != std::string_view::npos;
+            const bool has_env = value.find("env(") != std::string_view::npos ||
+                                 value.find("ENV(") != std::string_view::npos;
+            if (!has_attr && !has_env) continue;
+            std::string raw(value);
             bool changed = false;
-            if (raw.find("attr(") != std::string::npos || raw.find("ATTR(") != std::string::npos) {
+            if (has_attr) {
                 raw = resolve_attr(raw, e);
                 changed = true;
             }

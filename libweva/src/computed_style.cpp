@@ -318,37 +318,46 @@ bool ComputedStyle::differs_from(const ComputedStyle& other, std::vector<int>* c
         any = true;
         if (unattributed) *unattributed = true;
     }
-    const std::size_t n = std::max(occupied_.size(), other.occupied_.size());
-    for (std::size_t i = 0; i < n; ++i) {
-        const bool a = i < occupied_.size() && occupied_[i] != 0;
-        const bool b = i < other.occupied_.size() && other.occupied_[i] != 0;
-        if (!a && !b) continue;
-        bool same;
-        if (a == b) {
-            same = own_value(i) == other.own_value(i) &&
-                   (i < important_.size() && important_[i]) ==
-                       (i < other.important_.size() && other.important_[i]);
-        } else {
-            // Set on one side and not the other is not yet a difference: a
-            // property set to what it would have been anyway computes the
-            // same. Asking for the VALUE settles it, and the question here is
-            // whether the computed value changed -- nothing downstream can
-            // tell how it was arrived at.
-            //
-            // Comparing set-ness alone reported `padding: 0` against an unset
-            // padding as a change, and one such report costs a relayout of the
-            // whole document.
-            same = get(static_cast<int>(i)) == other.get(static_cast<int>(i));
+    // Only owned declarations can differ. Walk their union, preserving the
+    // ascending ID order without scanning every registered CSS property.
+    const std::size_t n = std::max(occupied_bits_.size(), other.occupied_bits_.size());
+    for (std::size_t wi = 0; wi < n; ++wi) {
+        const uint64_t a_bits = wi < occupied_bits_.size() ? occupied_bits_[wi] : 0;
+        const uint64_t b_bits = wi < other.occupied_bits_.size() ? other.occupied_bits_[wi] : 0;
+        uint64_t remaining = a_bits | b_bits;
+        while (remaining) {
+            const unsigned bit = first_set_bit(remaining);
+            remaining &= remaining - 1;
+            const std::size_t i = wi * 64 + bit;
+            const bool a = (a_bits & (uint64_t{1} << bit)) != 0;
+            const bool b = (b_bits & (uint64_t{1} << bit)) != 0;
+            bool same;
+            if (a == b) {
+                same = own_value(i) == other.own_value(i) &&
+                       (i < important_.size() && important_[i]) ==
+                           (i < other.important_.size() && other.important_[i]);
+            } else {
+                // Set on one side and not the other is not yet a difference: a
+                // property set to what it would have been anyway computes the
+                // same. Asking for the VALUE settles it, and the question here is
+                // whether the computed value changed -- nothing downstream can
+                // tell how it was arrived at.
+                //
+                // Comparing set-ness alone reported `padding: 0` against an unset
+                // padding as a change, and one such report costs a relayout of the
+                // whole document.
+                same = get(static_cast<int>(i)) == other.get(static_cast<int>(i));
+            }
+            // Font-size stores syntax. An owned 2em and an inherited 2em have
+            // different bases even though get() returns identical text.
+            if (static_cast<int>(i) == kFontSize &&
+                (a != b || font_size_inherited_ != other.font_size_inherited_)) same = false;
+            if (static_cast<int>(i) == kLineHeight &&
+                (a != b || line_height_inherited_ != other.line_height_inherited_)) same = false;
+            if (same) continue;
+            any = true;
+            if (changed_ids) changed_ids->push_back(static_cast<int>(i));
         }
-        // Font-size stores syntax. An owned 2em and an inherited 2em have
-        // different bases even though get() returns identical text.
-        if (static_cast<int>(i) == kFontSize &&
-            (a != b || font_size_inherited_ != other.font_size_inherited_)) same = false;
-        if (static_cast<int>(i) == kLineHeight &&
-            (a != b || line_height_inherited_ != other.line_height_inherited_)) same = false;
-        if (same) continue;
-        any = true;
-        if (changed_ids) changed_ids->push_back(static_cast<int>(i));
     }
     return any;
 }

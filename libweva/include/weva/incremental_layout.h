@@ -30,6 +30,12 @@ public:
     }
 
 private:
+    // Transaction arenas retain capacity between updates, never live boxes.
+    // Concurrent candidate probes borrow separate entries until commit.
+    std::vector<BoxTree> scratch_pool_;
+    BoxTree edge_probe_;
+    bool update_grid_edges(BoxTree* tree, BoxId id, const LayoutContext& ctx,
+                           bool* attempted);
     std::unordered_map<const ComputedStyle*, BoxId> by_style_;
     std::unordered_map<const Element*, BoxId> by_element_;
     std::vector<int> sizes_;
@@ -39,6 +45,7 @@ private:
     std::vector<BoxId> escapes_;
     std::vector<bool> contained_;
     std::vector<std::pair<double, double>> contributions_;
+    std::vector<double> resolved_font_sizes_;
     std::vector<BoxId> replaced_;
     std::vector<BoxId> retained_;
     std::vector<bool> height_independent_, paint_root_flags_;
@@ -49,7 +56,7 @@ private:
     const std::vector<BoxId>* preserve_ = nullptr;
     bool global_dependencies_ = false;
     void invalidate_subtree(const BoxTree& tree, BoxId root);
-    void refresh_grid(const BoxTree& tree, BoxId id);
+    void refresh_grid(const BoxTree& tree, BoxId id, const LayoutContext& ctx);
     int index_subtree(const BoxTree& tree, BoxId root, const LayoutContext& ctx);
     void unindex_subtree(const BoxTree& tree, BoxId root, bool erase_identities);
 };

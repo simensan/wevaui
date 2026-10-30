@@ -166,6 +166,16 @@ Tooling remains 70 tests, with nine Linux-only skips on Windows.
 The full qualified release gate passes, including live Chrome behavior and
 Godot rendering, native exports and scene tests; see the follow-up receipt.
 
+The [incremental layout follow-up](docs/verification/chrome-parity-20261030.md)
+keeps all fourteen benchmark inputs unchanged. Seven workloads beat Chrome;
+four more are within 0.0013ms. Fractional panel resizing and autosizing flex
+still trail Chrome. Windows core passes 489,999 checks; GCC passes 15 suites /
+702,276 checks; Clang ASan/UBSan passes 17 suites / 702,270 checks. The full
+qualified gate passes with 338 Chrome captures, including the new intrinsic
+grid case; a final conservative cache restriction repeats both core/corpus
+suites and Windows host validation. Unity remains 244 pass, two inconclusive.
+See the receipt for raw failed-candidate evidence and final binary hashes.
+
 The [scaled-overflow follow-up](docs/verification/scaled-overflow-20261025.md)
 passes 14 CTest suites on GCC and Clang and 63 Chrome hand-corpus cases.
 The [scaled-text follow-up](docs/verification/scaled-text-20261025.md) passes

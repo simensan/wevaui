@@ -171,6 +171,11 @@ struct PaintReplayInputs {
     std::shared_ptr<const OverflowClip> overflow;
     BoxId absolute_cb = kNoBox, fixed_cb = kNoBox;
     BlendMode blend = BlendMode::Normal;
+    // Box IDs can change when a surrounding layout subtree is rebuilt. The
+    // semantic owners survive that splice; anonymous owners still use IDs.
+    const Element* canvas_element = nullptr;
+    const Element* absolute_cb_element = nullptr;
+    const Element* fixed_cb_element = nullptr;
     bool operator==(const PaintReplayInputs& other) const;
 };
 

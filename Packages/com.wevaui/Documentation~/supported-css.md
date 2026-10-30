@@ -14,7 +14,8 @@ property surface is split across three sub-pages:
 - [CSS Visual](css-visual.md) — backgrounds, borders, gradients, shadows,
   `opacity`, `transform`, `filter`, `clip-path`, masks.
 - [CSS Text](css-text.md) — fonts, `line-height`, alignment, decoration,
-  `white-space`, wrapping, ellipsis.
+  `white-space`, wrapping, ellipsis; atomic inline boxes support
+  `vertical-align: baseline | top | bottom`.
 
 These pages describe the current core's authoring surface, including
 [balanced multi-column layout](css-layout.md#multi-column).

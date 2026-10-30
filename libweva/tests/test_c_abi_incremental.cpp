@@ -684,10 +684,12 @@ static void check_retained_grid_paint(const char* overflow) {
         "#grid{display:grid;grid-template-columns:repeat(4,1fr);gap:3px}"
         ".cell{height:35px;background:linear-gradient(90deg,#456,#acf);border-radius:5px}"
         ".cell span{font-size:11px;color:white}" + std::string("#wrap{") + overflow + "}";
-    std::string html = "<div id=app><div id=live></div><div id=wrap><div id=grid>";
+    // Real subtrees on both siblings exercise retained-boundary bookkeeping
+    // when the replacement wrapper receives a recycled former sibling ID.
+    std::string html = "<div id=app><div id=live><div style='width:1px;height:1px'></div></div><div id=wrap><div id=grid>";
     for (int i = 0; i < 48; ++i)
         html += "<div class=cell id=c" + std::to_string(i) + "><span>cell</span></div>";
-    html += "</div></div><div id=footer></div></div>";
+    html += "</div></div><div id=footer><div style='width:1px;height:1px'></div></div></div>";
     const auto cfg = config();
     auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
     for (auto doc : {live, full}) {
@@ -1008,10 +1010,93 @@ void test_abi_incremental_item_box_edges() {
     }
 }
 
+namespace {
+void check_retained_item_subtrees() {
+    const char* cases[] = {
+        "", // Fixed areas keep nested percentage bars unchanged.
+        "#panel{grid-template-columns:repeat(4,minmax(0,1fr))}",
+        "#panel{grid-template-columns:repeat(4,auto)}.cell{width:auto}",
+        "#panel{display:flex;flex-wrap:wrap}.cell{width:72px;flex:none}",
+        "#panel{display:flex;align-items:baseline}.cell{width:72px;flex:none}",
+        ".cell{height:auto;padding:0}.icon{margin:13px 0 -3px}",
+        "#panel{height:260px;grid-auto-rows:1fr}.cell{height:auto}.track{height:100%}",
+        "#panel{position:relative}.icon{position:absolute;left:25%;top:10px}",
+        ".cell{position:relative}.icon{position:absolute;right:0;bottom:0}",
+        "#panel{grid-template-columns:repeat(4,minmax(0,1fr));min-width:max-content}",
+        "#panel{grid-template-columns:repeat(4,minmax(0,1fr));max-width:min-content}",
+        ".cell{width:60px;margin-inline:auto}",
+        "#panel{height:260px}.cell{height:auto;min-height:60%}",
+    };
+    for (size_t variant = 0; variant < sizeof(cases) / sizeof(cases[0]); ++variant) {
+        const std::string css = std::string(
+            "*{box-sizing:border-box}body{margin:0}header{height:10px;background:#abc}"
+            "#panel{display:grid;grid-template-columns:repeat(4,72px);gap:4px;"
+            "width:340px;padding:12px;background:#123}"
+            ".cell{height:64px;padding:3px;background:#456}"
+            ".icon{width:24px;height:20px;background:#def}"
+            ".track{width:100%;height:10px;background:#789}"
+            ".fill{width:75%;height:100%;background:#4af}") + cases[variant];
+        std::string html = "<header></header><div id=panel>";
+        for (int i = 0; i < 20; ++i) {
+            html += "<div class=cell id=c" + std::to_string(i) + ">";
+            if (variant == 4) html += "Baseline label"; // Direct lines cannot be deferred.
+            else html += "<div class=icon></div><div class=track><div class=fill></div></div>";
+            html += "</div>";
+        }
+        html += "</div><footer>Outside</footer>";
+        const auto cfg = config();
+        weva_document_t docs[] = {weva_document_create(&cfg), weva_document_create(&cfg)};
+        for (auto doc : docs) {
+            CHECK(weva_document_add_css(doc, css.data(), css.size()) == WEVA_OK);
+            CHECK(weva_document_load_html(doc, html.data(), html.size()) == WEVA_OK);
+            CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        }
+        struct Mutation { const char* selector; const char* value; };
+        const Mutation mutations[] = {
+            {"#panel", "padding:11px"}, {"#panel", "padding:12px"},
+            {"#c7", "padding:7px"}, {"#panel", "padding:11px"},
+            {"#panel", "padding:12px;border:2px solid red"},
+            {"#panel", "padding:11px;height:300px"},
+            {"#c7", "font-size:24px;padding:4px"}, {"#panel", "padding:12px"},
+            {"#panel", "padding:11px;width:300px"},
+            {"#panel", "padding:12px;grid-template-columns:repeat(3,minmax(0,1fr))"},
+            {"#c7", "padding:9px"}, {"#panel", "padding:11px"},
+        };
+        for (const auto& mutation : mutations) {
+            for (auto doc : docs) {
+                CHECK(weva_element_set_attribute(doc, weva_document_query(doc, mutation.selector),
+                                                "style", mutation.value) == WEVA_OK);
+                if (std::strcmp(mutation.selector, "#c7") == 0)
+                    CHECK(weva_element_set_attribute(doc, weva_document_query(doc, "#c8"),
+                                                    "style", "padding:10px") == WEVA_OK);
+            }
+            weva_document_set_viewport(docs[1], cfg.viewport_width + 1, cfg.viewport_height);
+            weva_document_set_viewport(docs[1], cfg.viewport_width, cfg.viewport_height);
+            CHECK(weva_document_update_geometry(docs[0]) == WEVA_OK);
+            for (auto doc : docs) CHECK(weva_document_update(doc, 0) == WEVA_OK);
+            const auto live = capture(docs[0]), full = capture(docs[1]);
+            if (live != full) std::printf("retained item %zu %s {%s}: %s\n", variant,
+                mutation.selector, mutation.value, live.diff(full).c_str());
+            CHECK(live == full);
+            std::string dumps[2];
+            for (size_t i = 0; i < 2; ++i) {
+                const size_t n = weva_document_layout_dump(docs[i], "retained", nullptr, 0);
+                dumps[i].resize(n + 1);
+                weva_document_layout_dump(docs[i], "retained", &dumps[i][0], dumps[i].size());
+                dumps[i].resize(n);
+            }
+            CHECK(dumps[0] == dumps[1]);
+        }
+        for (auto doc : docs) weva_document_destroy(doc);
+    }
+}
+}
+
 // Reflow the surrounding flex allocation while a large grid stays clean.
 // Advance far enough to cross animation reversals, then change the grid,
 // viewport, and a width allocation so both retention and materialization run.
 void test_abi_incremental_grid_animation() {
+    check_retained_item_subtrees();
     const std::string css =
         "*{box-sizing:border-box}html,body{margin:0;height:100%}"
         ".app{display:flex;flex-direction:column;height:100vh;padding:6px;gap:7px}"

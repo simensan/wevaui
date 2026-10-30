@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generated bindings expect minor 45.
 
 ### Performance
+- Incremental grid updates reuse proven track allocations and unchanged item
+  subtrees. Layout scratch storage and eligible full-reflow topology are reused;
+  sparse style comparisons and transition setup avoid redundant work.
 - Content-independent grid tracks are sized before their items, avoiding
   duplicate subtree layout. Intrinsic indexing shares minimum/maximum work;
   layout-only replacements and tree traversal avoid repeated allocations.
@@ -36,6 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   frame-time improvements are not established.
 
 ### Fixed
+- Retained paint survives rebuilt clipping wrappers with unchanged DOM ownership.
+  Fractional-grid intrinsic sizing includes spanning max-content constraints.
+- Inline-block, inline-flex, inline-grid and replaced atoms honor
+  `vertical-align: top` and `bottom` relative to their line box.
 - Binding adapters detach from their previous document when moved or replaced.
   Disposing an old adapter cannot disconnect its replacement; document disposal
   also releases its adapter's callback root.

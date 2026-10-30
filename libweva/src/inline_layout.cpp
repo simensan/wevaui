@@ -70,6 +70,7 @@ const int kId_text_justify = CssPropertyRegistry::instance().id_of("text-justify
 const int kId_text_indent = CssPropertyRegistry::instance().id_of("text-indent");
 const int kId_text_overflow = CssPropertyRegistry::instance().id_of("text-overflow");
 const int kId_white_space = CssPropertyRegistry::instance().id_of("white-space");
+const int kId_vertical_align = CssPropertyRegistry::instance().id_of("vertical-align");
 const int kId_width = CssPropertyRegistry::instance().id_of("width");
 const int kId_word_break = CssPropertyRegistry::instance().id_of("word-break");
 const int kId_word_spacing = CssPropertyRegistry::instance().id_of("word-spacing");
@@ -892,6 +893,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     double y = top_inner;
     double pen = 0;
     double max_ascent = 0, max_descent = 0;
+    double top_aligned_height = 0, bottom_aligned_height = 0;
     bool first_piece = true;
 
     // CSS 2.1 §9.5: a line box beside a float is shortened to make room for it.
@@ -959,6 +961,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         const double half_leading = strut_fm.leading_above(strut_leading, strut_font_size);
         max_ascent = strut_ascent + half_leading;
         max_descent = strut_leading - max_ascent;
+        top_aligned_height = bottom_aligned_height = 0;
     };
     // Markers are not content: a line holding only the opening of an inline
     // box is still at its start for the purposes of dropping a leading
@@ -1105,9 +1108,13 @@ double layout_inline_items(BoxTree* tree, BoxId container,
         // Each inline contributes its own half-leading above and below its
         // baseline. A declared line-height sizes that inline, not every other
         // participant: larger children can still make the line taller.
+        // Line-relative atoms do not contribute their own baseline. Enclose
+        // their margin boxes while retaining the strut and baseline-aligned
+        // participants, choosing the smallest line that satisfies both ends.
+        const double baseline = std::max(max_ascent, bottom_aligned_height - max_descent);
+        const double descent = std::max(max_descent, top_aligned_height - baseline);
         const double line_height = (only_empty_split_fragments || only_edgeless_inlines)
-                                       ? 0.0 : max_ascent + max_descent;
-        const double baseline = max_ascent;
+                                       ? 0.0 : baseline + descent;
 
         // CSS Lists L3 §3.2: an `outside` marker -- the initial value, and so
         // nearly every marker -- sits in the area BEFORE the content edge and
@@ -1333,7 +1340,10 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 // decided here. Its baseline sits on the line's.
                 Box& a = (*tree)[f.item->atom_box];
                 a.x = f.x + dx + a.margin_left;
-                a.y = baseline - f.item->atom_baseline + a.margin_top;
+                const auto align = get(a.style, kId_vertical_align);
+                if (iequals(align, "top")) a.y = a.margin_top;
+                else if (iequals(align, "bottom")) a.y = line_height - a.height - a.margin_bottom;
+                else a.y = baseline - f.item->atom_baseline + a.margin_top;
                 tree->append_child(lb, f.item->atom_box);
                 continue;
             }
@@ -1422,6 +1432,15 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             // baseline counts as ascent, everything below as descent.
             const Box& a = (*tree)[it.atom_box];
             const double outer_h = a.margin_top + a.height + a.margin_bottom;
+            const auto align = get(a.style, kId_vertical_align);
+            if (iequals(align, "top")) {
+                top_aligned_height = std::max(top_aligned_height, outer_h);
+                return;
+            }
+            if (iequals(align, "bottom")) {
+                bottom_aligned_height = std::max(bottom_aligned_height, outer_h);
+                return;
+            }
             max_ascent = std::max(max_ascent, it.atom_baseline);
             max_descent = std::max(max_descent, outer_h - it.atom_baseline);
             return;
@@ -1940,6 +1959,8 @@ IntrinsicWidths block_child_contribution_uncached(const BoxTree& tree, BoxId c,
 template<bool Minimum, bool Maximum>
 IntrinsicWidths intrinsic_widths(const BoxTree& tree, BoxId id, const LayoutContext* ctx) {
     const Box& self = tree[id];
+    if (self.retained_from != kNoBox && self.retained_intrinsic_min >= 0)
+        return {self.retained_intrinsic_min, self.retained_intrinsic_max};
     if (self.kind==BoxKind::Block &&
         (has_size_containment(self.style) || has_inline_size_containment(self.style))) {
         const LayoutContext fallback;

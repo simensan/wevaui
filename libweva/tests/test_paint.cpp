@@ -766,6 +766,59 @@ void test_clip_triangles_polygon() {
 }
 
 void test_paint_scaled_overflow_culling() {
+    {
+        // Rebuilding a wrapper may assign every box a different arena ID even
+        // though its DOM identity, clip and containing-block inputs survived.
+        // Cache equality must not depend on that allocator accident.
+        struct CaptureInputs : PaintReuse {
+            BoxId target = kNoBox;
+            PaintReplayInputs inputs;
+            bool seen = false;
+            void begin_paint(TextureHandle) override {}
+            bool replay(BoxId) override { return false; }
+            bool tracks_inputs(BoxId id) const override { return id == target; }
+            bool replay(BoxId, const PaintReplayInputs& value) override {
+                inputs = value; seen = true; return false;
+            }
+            void begin_box(BoxId) override {}
+            void end_box(BoxId) override {}
+        } capture;
+        Fixture f;
+        CHECK(f.css("body{margin:0;background:#123}#panel{position:relative;transform:translate(0,0);"
+                    "width:100px;height:100px;overflow:hidden;border-radius:8px}"
+                    "#child{width:40px;height:40px;background:#abc}"));
+        CHECK(f.layout("<div id=panel><div id=child></div></div>", 160, 160));
+        const auto paint_inputs = [&] {
+            BlockLayout block(&f.tree, f.ctx, &f.metrics);
+            run_positioning(&f.tree, f.root, f.ctx, &block);
+            compute_visual_overflow(&f.tree, f.root);
+            SoftwareRenderer backend(160, 160);
+            PaintContext paint;
+            paint.backend = &backend; paint.reuse = &capture;
+            capture.target = f.find("child"); capture.seen = false;
+            paint_tree(f.tree, f.root, f.ctx, paint);
+            CHECK(capture.seen);
+            return capture.inputs;
+        };
+        const PaintReplayInputs before = paint_inputs();
+        const BoxId previous = f.find("panel");
+        f.tree.reset();
+        f.tree.create(BoxKind::Block); // Force different IDs, same DOM objects.
+        BoxBuilder builder(&f.tree, &f.styles);
+        f.root = builder.build_document(*f.doc);
+        BlockLayout block(&f.tree, f.ctx, &f.metrics);
+        block.layout_root(f.root, 160, 160);
+        CHECK(f.find("panel") != previous);
+        const PaintReplayInputs after = paint_inputs();
+        CHECK(before.absolute_cb != after.absolute_cb);
+        CHECK(before == after);
+        PaintReplayInputs different = after;
+        different.absolute_cb_element = f.tree[f.find("child")].element;
+        CHECK(!(before == different));
+        different = after;
+        different.fixed_cb_element = f.tree[f.find("child")].element;
+        CHECK(!(before == different));
+    }
     // The bottom-right child is inside the scaled padding box. Its layout
     // coordinates lie outside that box's device-space clip. Cover both the
     // rectangular scissor and the additional rounded polygon clip.

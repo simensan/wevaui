@@ -2,6 +2,7 @@
 #include "weva/inline_layout.h"
 #include "weva/positioning.h"
 #include "weva/anchor.h"
+#include "weva/grid.h"
 #include <algorithm>
 #include <cstdio>
 #include <cstdlib>
@@ -9,6 +10,26 @@
 
 namespace weva {
 namespace {
+// Resolve fixed property names once, outside repeated layout/index walks.
+const int kId_aspect_ratio = CssPropertyRegistry::instance().id_of("aspect-ratio");
+const int kId_float = CssPropertyRegistry::instance().id_of("float");
+const int kId_grid_template_columns = CssPropertyRegistry::instance().id_of("grid-template-columns");
+const int kId_grid_template_rows = CssPropertyRegistry::instance().id_of("grid-template-rows");
+const int kId_height = CssPropertyRegistry::instance().id_of("height");
+const int kId_max_width = CssPropertyRegistry::instance().id_of("max-width");
+const int kId_min_width = CssPropertyRegistry::instance().id_of("min-width");
+const int kId_position = CssPropertyRegistry::instance().id_of("position");
+const int kId_width = CssPropertyRegistry::instance().id_of("width");
+const int kId_bottom = CssPropertyRegistry::instance().id_of("bottom");
+const int kId_left = CssPropertyRegistry::instance().id_of("left");
+const int kId_margin_bottom = CssPropertyRegistry::instance().id_of("margin-bottom");
+const int kId_margin_left = CssPropertyRegistry::instance().id_of("margin-left");
+const int kId_margin_right = CssPropertyRegistry::instance().id_of("margin-right");
+const int kId_margin_top = CssPropertyRegistry::instance().id_of("margin-top");
+const int kId_max_height = CssPropertyRegistry::instance().id_of("max-height");
+const int kId_min_height = CssPropertyRegistry::instance().id_of("min-height");
+const int kId_right = CssPropertyRegistry::instance().id_of("right");
+const int kId_top = CssPropertyRegistry::instance().id_of("top");
 // Aggregate opt-in modal diagnostics in memory; print once at thread teardown.
 // No clock reads or retained trace storage are used by ordinary updates.
 struct ModalTrace {
@@ -57,6 +78,18 @@ bool ordinary(const Box& b) {
     return (b.display == DisplayKind::Block || b.display == DisplayKind::FlowRoot) &&
            !b.contains_inlines && !b.is_multicol && !b.is_inline_block;
 }
+bool fixed_inline_boundary(const BoxTree& tree, const Box& box, const LayoutContext& ctx) {
+    if (!box.style || box.parent == kNoBox || !ordinary(tree[box.parent]) || box.is_inline_block)
+        return false;
+    const auto intrinsic_limit = [](std::string_view value) {
+        return value.find("min-content") != std::string_view::npos ||
+               value.find("max-content") != std::string_view::npos ||
+               value.find("fit-content") != std::string_view::npos;
+    };
+    return box.style->get(kId_width).find('%') == std::string_view::npos &&
+        !intrinsic_limit(box.style->get(kId_min_width)) && !intrinsic_limit(box.style->get(kId_max_width)) &&
+        resolve_length(box.style, kId_width, ctx, box.font_size, std::nullopt).kind == LengthKind::Length;
+}
 bool within(const BoxTree& tree, BoxId child, BoxId ancestor) {
     for (; child != kNoBox; child = tree[child].parent) if (child == ancestor) return true;
     return false;
@@ -91,7 +124,7 @@ bool independent_height(const BoxTree& tree, BoxId id, const LayoutContext& ctx)
         // a 6px track) are independent of the retained grid's incoming height.
         if (b.parent == kNoBox || !tree[b.parent].style) return false;
         const Box& parent = tree[b.parent];
-        const auto basis = resolve_length(parent.style, "height", ctx,
+        const auto basis = resolve_length(parent.style, kId_height, ctx,
                                            parent.font_size > 0 ? parent.font_size : ctx.root_font_size_px,
                                            std::nullopt);
         if (basis.kind != LengthKind::Length) return false;
@@ -102,34 +135,62 @@ bool independent_height(const BoxTree& tree, BoxId id, const LayoutContext& ctx)
 class RetainedGridProbe final : public BoxBuildReuse, public LayoutReuse {
 public:
     RetainedGridProbe(const BoxTree& source, StyleProvider* styles,
-                      const std::unordered_map<const Element*, BoxId>& eligible)
-        : source_(source), styles_(styles), eligible_(eligible) {}
+                      const std::unordered_map<const Element*, BoxId>& eligible,
+                      const LayoutContext& ctx, const std::vector<double>& font_sizes)
+        : source_(source), styles_(styles), eligible_(eligible), ctx_(ctx), font_sizes_(font_sizes) {}
 
     bool reuse_children(BoxTree* tree, BoxId id) override {
         Box& b = (*tree)[id];
         const auto found = eligible_.find(b.element);
         if (found == eligible_.end()) return false;
         b.retained_from = found->second;
+        const Box& old = source_[found->second];
+        if (old.display != DisplayKind::Grid) {
+            b.retained_intrinsic_min = old.parent_layout_input.min_content;
+            b.retained_intrinsic_max = old.parent_layout_input.max_content;
+        }
+        return true;
+    }
+    bool reuse_layout_input(BoxTree* tree, BoxId id, double available_width,
+                            const ComputedStyle* parent_style) override {
+        Box& b = (*tree)[id];
+        if (b.retained_from == kNoBox) return false;
+        const Box& cached = source_[b.retained_from];
+        // Only ordinary items have the validated natural-input record. Their
+        // eligibility excludes incoming percentage-height and imposed-height
+        // dependencies; style/content versions and context are unchanged.
+        if (cached.display == DisplayKind::Grid || cached.cross_size_imposed ||
+            available_width != cached.parent_layout_input.available_width ||
+            font_size_px(b.style, parent_style, ctx_) != font_sizes_[b.retained_from]) return false;
+        // Parent alignment may have distributed auto margins after the natural
+        // measurement. Re-resolve those through the existing box-model hook.
+        for (const int property : {kId_margin_top, kId_margin_right, kId_margin_bottom, kId_margin_left})
+            if (cached.style->get(property) == "auto") return false;
+        restore_cached(&b, cached, false);
         return true;
     }
     bool reuse_layout(BoxTree* tree, BoxId id) override {
         Box& b = (*tree)[id];
         if (b.retained_from == kNoBox) return false;
         const Box& cached = source_[b.retained_from];
+        const bool ordinary_subtree = cached.display != DisplayKind::Grid;
+        const ComputedStyle* parent_style = b.parent == kNoBox ? nullptr : (*tree)[b.parent].style;
         if (b.width == cached.width && !b.cross_size_imposed &&
+            !cached.cross_size_imposed &&
+            font_size_px(b.style, parent_style, ctx_) == font_sizes_[b.retained_from] &&
+            (!ordinary_subtree ||
+             (b.margin_top == cached.margin_top && b.margin_bottom == cached.margin_bottom &&
+              b.margin_left == cached.margin_left && b.margin_right == cached.margin_right &&
+              (get_height_is_auto(cached) || b.height == cached.height))) &&
             b.padding_top == cached.padding_top && b.padding_right == cached.padding_right &&
             b.padding_bottom == cached.padding_bottom && b.padding_left == cached.padding_left &&
             b.border_top == cached.border_top && b.border_right == cached.border_right &&
             b.border_bottom == cached.border_bottom && b.border_left == cached.border_left) {
-            b.height = cached.height;
-            b.grid_min_content = cached.grid_min_content;
-            b.grid_max_content = cached.grid_max_content;
-            b.vis_x0 = cached.vis_x0; b.vis_y0 = cached.vis_y0;
-            b.vis_x1 = cached.vis_x1; b.vis_y1 = cached.vis_y1;
-            b.scroll_x = cached.scroll_x; b.scroll_y = cached.scroll_y;
+            restore_cached(&b, cached, true);
             return true;
         }
         b.retained_from = kNoBox;
+        b.retained_intrinsic_min = b.retained_intrinsic_max = -1;
         // The parent's new allocation changed the input. Rebuild now, before
         // ordinary layout observes the deferred root's empty child list.
         BoxBuilder builder(tree, styles_, nullptr, true);
@@ -137,9 +198,32 @@ public:
         return false;
     }
 private:
+    static void restore_cached(Box* box, const Box& cached, bool keep_margins) {
+        const BoxId parent = box->parent, previous = box->prev_sibling, next = box->next_sibling;
+        const BoxId retained = box->retained_from;
+        const double x = box->x, y = box->y;
+        const double top = box->margin_top, right = box->margin_right;
+        const double bottom = box->margin_bottom, left = box->margin_left;
+        const double minimum = box->retained_intrinsic_min, maximum = box->retained_intrinsic_max;
+        *box = cached;
+        box->parent = parent; box->prev_sibling = previous; box->next_sibling = next;
+        box->first_child = box->last_child = kNoBox;
+        box->x = x; box->y = y;
+        if (keep_margins) {
+            box->margin_top = top; box->margin_right = right;
+            box->margin_bottom = bottom; box->margin_left = left;
+        }
+        box->retained_from = retained;
+        box->retained_intrinsic_min = minimum; box->retained_intrinsic_max = maximum;
+    }
+    static bool get_height_is_auto(const Box& b) {
+        return b.style && b.style->get(kId_height) == "auto";
+    }
     const BoxTree& source_;
     StyleProvider* styles_;
     const std::unordered_map<const Element*, BoxId>& eligible_;
+    const LayoutContext& ctx_;
+    const std::vector<double>& font_sizes_;
 };
 }
 
@@ -148,15 +232,45 @@ void IncrementalLayout::invalidate_subtree(const BoxTree& tree, BoxId id) {
     for (BoxId c : tree.children(id)) invalidate_subtree(tree, c);
 }
 
-void IncrementalLayout::refresh_grid(const BoxTree& tree, BoxId id) {
+void IncrementalLayout::refresh_grid(const BoxTree& tree, BoxId id, const LayoutContext& ctx) {
     const Box& b = tree[id];
     grid_versions_[id] = 0;
-    if (!local_[id] || !height_independent_[id] || sizes_[id] < 32 ||
-        !b.element || !b.style || b.display != DisplayKind::Grid || b.is_inline_block ||
-        b.parent == kNoBox || !ordinary(tree[b.parent]) || b.style->get("height") != "auto" ||
-        b.style->get("aspect-ratio") != "auto" ||
-        b.style->get("grid-template-columns").find("subgrid") != std::string_view::npos ||
-        b.style->get("grid-template-rows").find("subgrid") != std::string_view::npos) return;
+    if (!local_[id] || !height_independent_[id] ||
+        !b.element || !b.style || b.is_inline_block || b.orthogonal_root || b.vertical_text ||
+        b.cross_size_imposed || b.is_multicol || is_table_display(b.display)) return;
+    resolved_font_sizes_[id] = font_size_px(b.style,
+        b.parent == kNoBox ? nullptr : tree[b.parent].style, ctx);
+    const bool retained_grid = sizes_[id] >= 32 && b.display == DisplayKind::Grid &&
+        b.parent != kNoBox && ordinary(tree[b.parent]) && b.style->get(kId_height) == "auto" &&
+        b.style->get(kId_aspect_ratio) == "auto" &&
+        b.style->get(kId_grid_template_columns).find("subgrid") == std::string_view::npos &&
+        b.style->get(kId_grid_template_rows).find("subgrid") == std::string_view::npos;
+    // A proxy for a single box costs more than resolving that empty box;
+    // retain actual subtrees, leaving empty items on the normal layout path.
+    bool retained_block = sizes_[id] > 1 && ordinary(b) && b.parent != kNoBox &&
+        (tree[b.parent].display == DisplayKind::Grid || tree[b.parent].display == DisplayKind::Flex) &&
+        b.intrinsic_width == 0 && b.intrinsic_height == 0 &&
+        b.style->get(kId_aspect_ratio) == "auto" &&
+        b.parent_layout_input.available_width >= 0 &&
+        b.parent_layout_input.width == b.width && b.parent_layout_input.height == b.height;
+    if (retained_block) {
+        const auto height = resolve_length(b.style, kId_height, ctx, resolved_font_sizes_[id], std::nullopt);
+        // A retained proxy is deliberately non-self-collapsing. Keep both
+        // vertical edges closed, or a positive definite height, and prohibit
+        // descendant margins from changing the root's external margin exports.
+        retained_block = (height.kind == LengthKind::Length && height.pixels > 0) ||
+            (b.padding_top + b.border_top > 0 && b.padding_bottom + b.border_bottom > 0);
+        if (b.padding_top + b.border_top == 0 || b.padding_bottom + b.border_bottom == 0)
+            for (BoxId child : tree.children(id))
+                if (tree[child].margin_top != 0 || tree[child].margin_bottom != 0) retained_block = false;
+        // Percent constraints on the root consume the incoming parent's height,
+        // unlike percentages inside a fixed-height descendant. apply_box_model
+        // has not applied auto-height min/max constraints at the reuse hook.
+        for (const int property : {kId_height, kId_min_height, kId_max_height})
+            if (b.style->get(property).find('%') != std::string_view::npos) retained_block = false;
+    }
+    if (!retained_grid && !retained_block) return;
+    // Grid and ordinary-item caches share version invalidation.
     grid_versions_[id] = input_versions_[id];
     if (!paint_root_flags_[id]) { paint_root_flags_[id] = true; paint_roots_.push_back(id); }
     if (std::find(grid_roots_.begin(), grid_roots_.end(), id) == grid_roots_.end())
@@ -199,7 +313,7 @@ int IncrementalLayout::index_subtree(const BoxTree& tree, BoxId id, const Layout
         for (BoxId p = b.parent; p != kNoBox; p = tree[p].parent)
             if (establishes_absolute_containing_block(tree[p])) { cb = p; break; }
         bool anchored = false;
-        for (const char* property : {"left", "right", "top", "bottom", "width", "height"})
+        for (const int property : {kId_left, kId_right, kId_top, kId_bottom, kId_width, kId_height})
             if (b.style && looks_like_anchor_function(b.style->get(property))) anchored = true;
         if (cb == kNoBox || anchored) local = false;
         else escape_to(cb);
@@ -223,7 +337,7 @@ int IncrementalLayout::index_subtree(const BoxTree& tree, BoxId id, const Layout
     height_independent_[id] = independent;
     if (local && b.element && b.kind == BoxKind::Block)
         contributions_[id] = block_intrinsic_contributions(tree, id, &ctx);
-    refresh_grid(tree, id);
+    refresh_grid(tree, id, ctx);
     return size;
 }
 
@@ -244,6 +358,7 @@ void IncrementalLayout::index(const BoxTree& tree, BoxId root, const LayoutConte
     escapes_.assign(tree.size(), kNoBox);
     contained_.assign(tree.size(), false);
     contributions_.resize(tree.size());
+    resolved_font_sizes_.resize(tree.size());
     height_independent_.assign(tree.size(), false);
     input_versions_.assign(tree.size(), ++input_serial_);
     grid_versions_.assign(tree.size(), 0);
@@ -261,6 +376,7 @@ void IncrementalLayout::index(const BoxTree& tree, BoxId root, const LayoutConte
 void IncrementalLayout::unindex_subtree(const BoxTree& tree, BoxId id, bool erase_identities) {
     if (preserve_ && std::find(preserve_->begin(), preserve_->end(), id) != preserve_->end()) return;
     grid_versions_[id] = 0;
+    paint_root_flags_[id] = false;
     const auto found = by_style_.find(tree[id].style);
     if (found != by_style_.end() && found->second == id) {
         if (erase_identities) by_style_.erase(found);
@@ -272,6 +388,69 @@ void IncrementalLayout::unindex_subtree(const BoxTree& tree, BoxId id, bool eras
         else element->second = kNoBox;
     }
     for (BoxId c : tree.children(id)) unindex_subtree(tree, c, erase_identities);
+}
+
+bool IncrementalLayout::update_grid_edges(BoxTree* tree, BoxId id, const LayoutContext& ctx,
+                                          bool* attempted) {
+    const Box& old = (*tree)[id];
+    if (old.display != DisplayKind::Grid || !old.grid_sizing_inputs || !local_[id] ||
+        !fixed_inline_boundary(*tree, old, ctx) || old.cross_size_imposed ||
+        old.orthogonal_root || old.style->get(kId_aspect_ratio) != "auto") return false;
+    for (BoxId child : tree->children(id))
+        if (!local_[child]) return false;
+    *attempted = true;
+    edge_probe_.reset();
+    struct ClearProbe { BoxTree& tree; ~ClearProbe() { tree.reset(); } } clear{edge_probe_};
+    // Copy the containing-block chain for normal box-model resolution. The
+    // probe owns no descendants and cannot change the live layout on a miss.
+    std::vector<BoxId> ancestors;
+    for (BoxId p = old.parent; p != kNoBox; p = (*tree)[p].parent) ancestors.push_back(p);
+    BoxId parent = kNoBox;
+    for (auto it = ancestors.rbegin(); it != ancestors.rend(); ++it) {
+        const BoxId p = edge_probe_.create(BoxKind::Block);
+        edge_probe_[p] = (*tree)[*it];
+        edge_probe_[p].parent = edge_probe_[p].first_child = edge_probe_[p].last_child = kNoBox;
+        edge_probe_[p].next_sibling = edge_probe_[p].prev_sibling = kNoBox;
+        if (parent != kNoBox) edge_probe_.append_child(parent, p);
+        parent = p;
+    }
+    const BoxId candidate_id = edge_probe_.create(BoxKind::Block);
+    edge_probe_[candidate_id] = old;
+    Box& candidate = edge_probe_[candidate_id];
+    candidate.parent = candidate.first_child = candidate.last_child = kNoBox;
+    candidate.next_sibling = candidate.prev_sibling = kNoBox;
+    edge_probe_.append_child(parent, candidate_id);
+    const Box& outer = (*tree)[old.parent];
+    apply_box_model(&edge_probe_, candidate_id, outer.content_width(), outer.style, ctx);
+    // Unchanged vertical edges and unchanged item areas prove the old auto
+    // height below. An aspect ratio cannot couple it to the new content width.
+    candidate.height = old.height;
+    if (!same_outer(old, candidate)) return false;
+    GridEdgeReuseProbe result;
+    if (!probe_grid_edge_reuse(old, candidate, ctx, &result)) return false;
+    for (const auto& item : result.inline_offsets) {
+        const auto found = by_element_.find(item.first);
+        if (found == by_element_.end() || !tree->valid(found->second) ||
+            (*tree)[found->second].parent != id) return false;
+    }
+    // Commit only box edges and item translations. Every descendant keeps its
+    // geometry, identity and intrinsic exports under the proven constraints.
+    Box& live = (*tree)[id];
+    live.padding_left = candidate.padding_left; live.padding_right = candidate.padding_right;
+    live.border_left = candidate.border_left; live.border_right = candidate.border_right;
+    live.grid_sizing_inputs = std::move(result.inputs);
+    for (const auto& item : result.inline_offsets) {
+        const BoxId child = by_element_.find(item.first)->second;
+        (*tree)[child].x += item.second;
+        retained_.push_back(child);
+        if ((*tree)[child].display == DisplayKind::Grid) ++retained_grids_;
+    }
+    replaced_.push_back(id);
+    for (BoxId p = id; p != kNoBox; p = (*tree)[p].parent) {
+        update_visual_overflow(tree, p);
+        refresh_grid(*tree, p, ctx);
+    }
+    return true;
 }
 
 bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
@@ -304,18 +483,23 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
     for (const auto& change : changes) {
         const auto found = by_style_.find(change.first);
         if (found == by_style_.end() || !tree->valid(found->second)) continue;
-        invalidate_subtree(*tree, found->second);
+        if (styles->only_box_edges_changed(change.first))
+            input_versions_[found->second] = input_serial_;
+        else invalidate_subtree(*tree, found->second);
         for (BoxId p = (*tree)[found->second].parent; p != kNoBox; p = (*tree)[p].parent)
             input_versions_[p] = input_serial_;
     }
-    std::unordered_map<const Element*, BoxId> eligible;
-    for (BoxId id : grid_roots_) {
-        if (!tree->valid(id) || !grid_versions_[id] || grid_versions_[id] != input_versions_[id]) continue;
-        bool covered = false;
-        for (BoxId p = (*tree)[id].parent; p != kNoBox; p = (*tree)[p].parent)
-            if (grid_versions_[p] && grid_versions_[p] == input_versions_[p]) { covered = true; break; }
-        if (!covered) eligible.emplace((*tree)[id].element, id);
+    if (changes.size() == 1 && styles->only_box_edges_changed(changes.front().first)) {
+        const auto found = by_style_.find(changes.front().first);
+        if (found != by_style_.end() && tree->valid(found->second)) {
+            bool attempted = false;
+            if (update_grid_edges(tree, found->second, ctx, &attempted)) return true;
+            // Changed grid areas need ordinary layout. Do not build and then
+            // materialize a transaction full of known constraint misses.
+            if (attempted) return false;
+        }
     }
+    std::unordered_map<const Element*, BoxId> eligible;
     std::vector<BoxId> candidates;
     for (const auto& change : changes) {
         if (change.second < Invalidation::Layout) continue;
@@ -342,8 +526,24 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
 
     // All candidates are proved before any splice. A failed probe cannot
     // leave half an update in the retained tree.
-    struct Replacement { BoxId into, from; BoxTree tree; std::vector<BoxId> retained; };
+    struct Replacement {
+        BoxId into, from;
+        BoxTree tree;
+        std::vector<BoxId> retained;
+        BoxId grid_parent = kNoBox;
+        GridItemExportProbe grid_exports;
+    };
     std::vector<Replacement> ready;
+    struct ReturnReadyArenas {
+        std::vector<Replacement>& ready;
+        std::vector<BoxTree>& pool;
+        ~ReturnReadyArenas() {
+            for (auto& replacement : ready) {
+                replacement.tree.reset();
+                pool.push_back(std::move(replacement.tree));
+            }
+        }
+    } return_ready{ready, scratch_pool_};
     for (BoxId candidate : candidates) {
         bool covered = false;
         for (const auto& r : ready) if (within(*tree, candidate, r.into)) covered = true;
@@ -371,11 +571,39 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             // still be replaced, with this box inside it.
             if (!local_[id] && contained_[id]) continue;
             if (!local_[id]) return reject("nonlocal subtree", id);
+            // Build deferred children only for this probe. A local cell update
+            // must not allocate cache entries for every unchanged sibling.
+            eligible.clear();
+            if (sizes_[id] > 1) for (BoxId cached : grid_roots_) {
+                if (!tree->valid(cached) || cached == id || !grid_versions_[cached] ||
+                    grid_versions_[cached] != input_versions_[cached] ||
+                    !within(*tree, cached, id)) continue;
+                bool covered = false;
+                for (BoxId p = (*tree)[cached].parent; p != id && p != kNoBox; p = (*tree)[p].parent)
+                    if (grid_versions_[p] && grid_versions_[p] == input_versions_[p]) {
+                        covered = true; break;
+                    }
+                if (!covered) eligible.emplace((*tree)[cached].element, cached);
+            }
             int work_size = sizes_[id];
             for (const auto& item : eligible)
-                if (item.second != id && within(*tree, item.second, id)) work_size -= sizes_[item.second] - 1;
+                work_size -= sizes_[item.second];
             if (work_size > sizes_[root] / 2) return reject("large subtree", id);
             Replacement r;
+            if (!scratch_pool_.empty()) {
+                r.tree = std::move(scratch_pool_.back());
+                scratch_pool_.pop_back();
+            }
+            struct ReturnProbeArena {
+                BoxTree& tree;
+                std::vector<BoxTree>& pool;
+                bool active = true;
+                ~ReturnProbeArena() {
+                    if (!active) return;
+                    tree.reset();
+                    pool.push_back(std::move(tree));
+                }
+            } return_probe{r.tree, scratch_pool_};
             r.into = id;
             // Preserve the actual containing-block chain for percentages and
             // inherited font sizes. Its siblings are not layout inputs here.
@@ -390,7 +618,7 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
                 if (parent != kNoBox) r.tree.append_child(parent, p);
                 parent = p;
             }
-            RetainedGridProbe reuse(*tree, styles, eligible);
+            RetainedGridProbe reuse(*tree, styles, eligible, ctx, resolved_font_sizes_);
             BoxBuilder builder(&r.tree, styles, &reuse, true);
             r.from = builder.build(*old.element, old.style);
             if (r.from == kNoBox) return false;
@@ -425,6 +653,34 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
                     (outer.display == DisplayKind::Grid
                         ? old.width > old_frame && new_frame <= old.width
                         : outer.display == DisplayKind::Flex && old.parent_layout_input.width == old.width);
+                if (!independent_inline_contribution && outer.display == DisplayKind::Grid &&
+                    !old.cross_size_imposed && old.width > old_frame && new_frame <= old.width &&
+                    styles->only_box_edges_changed(old.style)) {
+                    // Column allocation may be independent while the grid's
+                    // intrinsic exports still depend on this item. Refresh
+                    // those exports without laying out unchanged siblings.
+                    Box parent_inputs = outer;
+                    for (const auto& prior : ready) {
+                        if (prior.grid_parent != old.parent) continue;
+                        parent_inputs.grid_sizing_inputs = prior.grid_exports.inputs;
+                    }
+                    r.tree[r.from].parent_layout_input = natural;
+                    GridItemExportProbe exports;
+                    if (probe_grid_item_exports(parent_inputs, r.tree[r.from], ctx, &exports)) {
+                        const bool unchanged_exports = exports.minimum == outer.grid_min_content &&
+                                                       exports.maximum == outer.grid_max_content;
+                        // An authored length in an ordinary block parent
+                        // exports its used width, not the changed track sizes.
+                        // Percentage/intrinsic widths and flex/grid parents
+                        // still need ancestor sizing and are not cut here.
+                        const bool fixed_boundary = fixed_inline_boundary(*tree, outer, ctx);
+                        if (unchanged_exports || fixed_boundary) {
+                            independent_inline_contribution = true;
+                            r.grid_parent = old.parent;
+                            r.grid_exports = std::move(exports);
+                        }
+                    }
+                }
                 if (independent_inline_contribution) {
                     // The parent's constraint record proves it does not size
                     // tracks/lines from this inline contribution. Natural
@@ -485,6 +741,7 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             ready.erase(std::remove_if(ready.begin(), ready.end(),
                 [&](const Replacement& prior) { return within(*tree, prior.into, id); }), ready.end());
             ready.push_back(std::move(r));
+            return_probe.active = false;
             if (log) reject("accepted", id);
             proved = true;
             break;
@@ -497,12 +754,24 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
         // Reuse their map nodes when indexing the replacement instead of freeing
         // and reallocating two nodes per element. Structural rebuilds reset them.
         unindex_subtree(*tree, r.into, false);
+        // These IDs are about to be recycled. A former leaf paint boundary
+        // must not become a boundary on its replacement's unrelated ancestor:
+        // that stale boundary would invalidate genuinely retained descendants.
+        paint_roots_.erase(std::remove_if(paint_roots_.begin(), paint_roots_.end(),
+            [&](BoxId id) { return !paint_root_flags_[id]; }), paint_roots_.end());
         tree->replace_subtree(r.into, r.tree, r.from);
+        if (r.grid_parent != kNoBox) {
+            Box& parent = (*tree)[r.grid_parent];
+            parent.grid_sizing_inputs = r.grid_exports.inputs;
+            parent.grid_min_content = r.grid_exports.minimum;
+            parent.grid_max_content = r.grid_exports.maximum;
+        }
         sizes_.resize(tree->size());
         local_.resize(tree->size());
         escapes_.resize(tree->size(), kNoBox);
         contained_.resize(tree->size());
         contributions_.resize(tree->size());
+        resolved_font_sizes_.resize(tree->size());
         height_independent_.resize(tree->size());
         paint_root_flags_.resize(tree->size(), false);
         input_versions_.resize(tree->size(), input_serial_);
@@ -512,7 +781,8 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             index_subtree(*tree, r.into, ctx);
         }
         preserve_ = nullptr;
-        retained_grids_ += r.retained.size();
+        for (BoxId retained : r.retained)
+            if ((*tree)[retained].display == DisplayKind::Grid) ++retained_grids_;
         retained_.insert(retained_.end(), r.retained.begin(), r.retained.end());
         replaced_.push_back(r.into);
         for (BoxId p = (*tree)[r.into].parent; p != kNoBox; p = (*tree)[p].parent) {
@@ -521,7 +791,7 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             update_visual_overflow(tree, p);
             height_independent_[p] = independent_height(*tree, p, ctx);
             for (BoxId c : tree->children(p)) height_independent_[p] = height_independent_[p] && height_independent_[c];
-            refresh_grid(*tree, p);
+            refresh_grid(*tree, p, ctx);
         }
     }
     return true;
@@ -578,7 +848,7 @@ bool IncrementalLayout::update_modal(BoxTree* tree, BoxId root, const Document& 
     if (!tree->valid(root) || global_dependencies_) return false;
     const auto* modal_style = styles->style_of(modal);
     if (!modal_style) return false;
-    const auto position = modal_style->get("position");
+    const auto position = modal_style->get(kId_position);
     if (position != "absolute" && position != "fixed") return false;
     const auto under_modal = [&](const Node* node) {
         for (; node; node = node->parent()) if (node == &modal) return true;
@@ -596,7 +866,7 @@ bool IncrementalLayout::update_modal(BoxTree* tree, BoxId root, const Document& 
                     auto value = style->get(key);
                     if (!value.empty() && value != "none") safe = false;
                 }
-                if (style->get("float") != "none" || style->get("position") == "sticky") safe = false;
+                if (style->get(kId_float) != "none" || style->get(kId_position) == "sticky") safe = false;
                 for (const auto& change : changes)
                     if (change.first == style && change.second >= Invalidation::Layout && !under_modal(&node)) safe = false;
             }
@@ -607,7 +877,7 @@ bool IncrementalLayout::update_modal(BoxTree* tree, BoxId root, const Document& 
                 for (const auto& change : changes)
                     if (change.first == ps && change.second >= Invalidation::Layout && !under_modal(&node)) safe = false;
                 if (&element == &modal && std::string_view(pseudo) == "backdrop" &&
-                    ps->get("position") != "absolute" && ps->get("position") != "fixed") safe = false;
+                    ps->get(kId_position) != "absolute" && ps->get(kId_position) != "fixed") safe = false;
             }
         }
         for (const auto& child : node.children()) self(self, *child);
@@ -690,6 +960,7 @@ bool IncrementalLayout::update_modal(BoxTree* tree, BoxId root, const Document& 
     escapes_.resize(tree->size(), kNoBox);
     contained_.resize(tree->size());
     contributions_.resize(tree->size());
+    resolved_font_sizes_.resize(tree->size());
     height_independent_.resize(tree->size());
     paint_root_flags_.resize(tree->size(), false);
     input_versions_.resize(tree->size(), input_serial_);

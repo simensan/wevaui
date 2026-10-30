@@ -48,6 +48,12 @@ std::string_view get(const ComputedStyle* s, int id) {
 // so it is constructed on first use and these cannot outrun it.
 const int kId_align_content = CssPropertyRegistry::instance().id_of("align-content");
 const int kId_column_gap = CssPropertyRegistry::instance().id_of("column-gap");
+const int kId_grid_column = CssPropertyRegistry::instance().id_of("grid-column");
+const int kId_grid_column_start = CssPropertyRegistry::instance().id_of("grid-column-start");
+const int kId_grid_column_end = CssPropertyRegistry::instance().id_of("grid-column-end");
+const int kId_grid_row = CssPropertyRegistry::instance().id_of("grid-row");
+const int kId_grid_row_start = CssPropertyRegistry::instance().id_of("grid-row-start");
+const int kId_grid_row_end = CssPropertyRegistry::instance().id_of("grid-row-end");
 const int kId_grid_area = CssPropertyRegistry::instance().id_of("grid-area");
 const int kId_grid_auto_columns = CssPropertyRegistry::instance().id_of("grid-auto-columns");
 const int kId_grid_auto_rows = CssPropertyRegistry::instance().id_of("grid-auto-rows");
@@ -141,6 +147,8 @@ bool wants_subgrid(const ComputedStyle* style, std::string_view property) {
     return iequals(v, "subgrid");
 }
 
+} // namespace
+namespace grid_detail {
 // A track sizing function (CSS Grid L1 §7.2.3): one side of minmax(). `fr`
 // is only ever a max; fit-content() only ever a max as well.
 struct Sizing {
@@ -187,6 +195,12 @@ struct Contribution {
     double min_c = 0;
     double max_c = 0;
 };
+
+} // namespace grid_detail
+namespace {
+using grid_detail::Sizing;
+using grid_detail::Track;
+using grid_detail::Contribution;
 
 // Splits a value list on top-level whitespace, keeping a function call and its
 // parentheses together so `repeat(3, 1fr)` survives as one token.
@@ -528,8 +542,8 @@ LineSpec parse_line_spec(std::string_view raw) {
 // The two sides of one axis, read from the shorthand (`grid-column: 1 / 3`)
 // when it is set and the longhands otherwise. The shorthands are stored raw
 // rather than expanded. A bare name also supplies the omitted end.
-void read_axis(const ComputedStyle* style, std::string_view shorthand,
-               std::string_view start_prop, std::string_view end_prop,
+void read_axis(const ComputedStyle* style, int shorthand,
+               int start_prop, int end_prop,
                LineSpec* start, LineSpec* end) {
     const std::string_view raw = trim(get(style, shorthand));
     if (!raw.empty() && !iequals(raw, "auto")) {
@@ -863,13 +877,56 @@ void size_tracks(std::vector<Track>* tracks, double available, double gap,
                 t.size = flexible[i] ? hypothetical * t.max.value : t.base;
             }
         } else {
-            // Indefinite: the fr is the largest of each flexible track's base
-            // over its factor (§12.7.1) — its content, in other words.
+            // Indefinite §12.7.2: both track bases and spanning items'
+            // max-content contributions constrain the flex fraction. Fixed
+            // minima alone do not capture content in minmax(0, 1fr).
             double fr = 0;
             for (const Track& t : *tracks) {
                 if (t.collapsed || !t.is_flex()) continue;
                 const double f = t.max.value > 1 ? t.max.value : 1.0;
                 fr = std::max(fr, t.base / f);
+            }
+            for (const Contribution& c : items) {
+                const int end = std::min(n, c.start + c.span);
+                if (c.start < 0 || c.start >= end) continue;
+                if (c.span == 1) {
+                    const Track& track = (*tracks)[c.start];
+                    if (track.collapsed || !track.is_flex()) continue;
+                    // With no competing track and no sub-unit-factor base
+                    // freeze, the find-fr loop is a single division. The
+                    // track-base bound has already contributed above.
+                    if (track.base == 0 || track.max.value >= 1) {
+                        fr = std::max(fr, c.max_c / std::max(1.0, track.max.value));
+                        continue;
+                    }
+                }
+                bool crosses_flex = false;
+                for (int i = c.start; i < end; ++i)
+                    crosses_flex |= !(*tracks)[i].collapsed && (*tracks)[i].is_flex();
+                if (!crosses_flex) continue;
+                // Find an fr size for this item's max-content space. Tracks
+                // whose base exceeds their share become inflexible, as in
+                // the definite-width algorithm. The cutoff only decreases,
+                // so no temporary per-item flexible-track array is needed.
+                double cutoff = -1;
+                for (int pass = 0; pass <= end - c.start; ++pass) {
+                    double remaining = c.max_c - gaps_within(*tracks, c.start, c.span, gap);
+                    double factors = 0;
+                    for (int i = c.start; i < end; ++i) {
+                        const Track& t = (*tracks)[i];
+                        if (t.collapsed) continue;
+                        if (t.is_flex() && (cutoff < 0 || t.base <= cutoff * t.max.value + 1e-9))
+                            factors += t.max.value;
+                        else remaining -= t.base;
+                    }
+                    const double candidate = std::max(0.0, remaining / std::max(1.0, factors));
+                    if (cutoff >= 0 && candidate >= cutoff - 1e-9) {
+                        cutoff = candidate;
+                        break;
+                    }
+                    cutoff = candidate;
+                }
+                fr = std::max(fr, cutoff);
             }
             for (Track& t : *tracks) {
                 if (!t.collapsed && t.is_flex()) t.size = std::max(t.base, fr * t.max.value);
@@ -978,6 +1035,72 @@ void distribute_content(std::vector<Track>* tracks, double available, double gap
     }
 }
 
+Contribution inline_contribution(const Box& b, const LayoutContext& ctx,
+                                 double content_width, double font_size) {
+    const double frame = b.padding_left + b.padding_right + b.border_left + b.border_right;
+    const double margins = b.margin_left + b.margin_right;
+    Contribution c;
+    const std::string_view width_raw = get(b.style, kId_width);
+    const bool explicit_width = !width_raw.empty() && !iequals(width_raw, "auto") &&
+                                width_raw.find('%') == std::string_view::npos;
+    if (explicit_width) {
+        c.min_c = c.max_c = b.width + margins;
+    } else {
+        double min_c = b.parent_layout_input.min_content + frame;
+        double max_c = b.parent_layout_input.max_content + frame;
+        const double item_fs = b.font_size > 0 ? b.font_size : font_size;
+        const double minmax_frame = is_border_box(b.style) ? 0 : frame;
+        const ResolvedLength min_w =
+            resolve_length(b.style, kId_min_width, ctx, item_fs, content_width);
+        if (min_w.kind == LengthKind::Length) {
+            min_c = std::max(min_c, min_w.pixels + minmax_frame);
+            max_c = std::max(max_c, min_w.pixels + minmax_frame);
+        }
+        const ResolvedLength max_w =
+            resolve_length(b.style, kId_max_width, ctx, item_fs, content_width);
+        if (max_w.kind == LengthKind::Length) {
+            min_c = std::min(min_c, max_w.pixels + minmax_frame);
+            max_c = std::min(max_c, max_w.pixels + minmax_frame);
+        }
+        if (clips_overflow(b.style) && min_w.kind != LengthKind::Length) min_c = 0;
+        c.min_c = min_c + margins;
+        c.max_c = std::max(min_c, max_c) + margins;
+    }
+    return c;
+}
+
+std::pair<double, double> intrinsic_track_extents(const std::vector<Track>& columns,
+        double gap, const std::vector<Contribution>& contributions) {
+    std::vector<Track> probe = columns;
+    size_tracks(&probe, -1, gap, contributions, "normal");
+    double maximum = 0;
+    for (size_t c = 0; c < probe.size(); ++c) maximum += probe[c].size + gap_after(probe, c, gap);
+    if (std::all_of(contributions.begin(), contributions.end(),
+            [](const Contribution& c) { return c.min_c == c.max_c; }))
+        return {maximum, maximum};
+    std::vector<Contribution> mins = contributions;
+    for (Contribution& c : mins) c.max_c = c.min_c;
+    size_tracks(&probe, -1, gap, mins, "normal");
+    double minimum = 0;
+    for (size_t c = 0; c < probe.size(); ++c) minimum += probe[c].size + gap_after(probe, c, gap);
+    return {minimum, maximum};
+}
+
+bool independent_stretched_item(const Box& item, const ComputedStyle* parent_style) {
+    const auto width = get(item.style, kId_width);
+    const auto minimum = get(item.style, kId_min_width);
+    double ratio = 0;
+    return (width.empty() || iequals(width, "auto")) &&
+        (minimum.empty() || iequals(minimum, "auto") || minimum == "0" || minimum == "0px") &&
+        iequals(get(item.style, kId_max_width), "none") &&
+        is_stretch(self_alignment(item.style, parent_style, false)) &&
+        !try_resolve_aspect_ratio(item.style, &ratio) &&
+        item.intrinsic_width == 0 && item.intrinsic_height == 0 &&
+        get(item.style, kId_margin_left) != "auto" && get(item.style, kId_margin_right) != "auto" &&
+        !wants_subgrid(item.style, "grid-template-columns") &&
+        !wants_subgrid(item.style, "grid-template-rows");
+}
+
 double span_size(const std::vector<Track>& tracks, int start, int span, double gap) {
     double total = 0;
     for (int i = start; i < start + span && i < static_cast<int>(tracks.size()); ++i) {
@@ -988,9 +1111,83 @@ double span_size(const std::vector<Track>& tracks, int start, int span, double g
 
 } // namespace
 
+struct GridSizingInputs {
+    std::vector<grid_detail::Track> columns;
+    std::vector<grid_detail::Contribution> contributions;
+    std::vector<std::pair<const Element*, bool>> items;
+    double gap = 0;
+    double content_width = 0;
+    double font_size = 0;
+    bool edge_reuse_eligible = false;
+};
+
+bool probe_grid_edge_reuse(const Box& old, const Box& candidate,
+                          const LayoutContext& ctx, GridEdgeReuseProbe* result) {
+    if (!result || !old.grid_sizing_inputs || !old.grid_sizing_inputs->edge_reuse_eligible)
+        return false;
+    const auto& inputs = *old.grid_sizing_inputs;
+    const double font_size = candidate.font_size > 0 ? candidate.font_size : ctx.root_font_size_px;
+    const double width = candidate.content_width();
+    if (width < 0 || font_size != inputs.font_size || old.width != candidate.width ||
+        old.height != candidate.height || old.padding_top != candidate.padding_top ||
+        old.padding_bottom != candidate.padding_bottom || old.border_top != candidate.border_top ||
+        old.border_bottom != candidate.border_bottom) return false;
+    std::vector<Track> columns = inputs.columns;
+    if (width != inputs.content_width) {
+        size_tracks(&columns, width, inputs.gap, inputs.contributions, get(candidate.style, kId_justify_content));
+        distribute_content(&columns, width, inputs.gap, get(candidate.style, kId_justify_content));
+    }
+    for (size_t c = 0; c < columns.size(); ++c)
+        if (columns[c].size != inputs.columns[c].size) return false;
+    for (const Contribution& c : inputs.contributions) {
+        if (c.start < 0 || c.span <= 0 || c.start + c.span > static_cast<int>(columns.size()) ||
+            span_size(columns, c.start, c.span, inputs.gap) !=
+            span_size(inputs.columns, c.start, c.span, inputs.gap)) return false;
+    }
+    GridEdgeReuseProbe ready;
+    ready.inline_offsets.reserve(inputs.items.size());
+    const double frame_shift = candidate.padding_left + candidate.border_left - old.padding_left - old.border_left;
+    for (size_t i = 0; i < inputs.items.size(); ++i) {
+        if (!inputs.items[i].first) return false;
+        const int column = inputs.contributions[i].start;
+        ready.inline_offsets.emplace_back(inputs.items[i].first,
+            frame_shift + columns[column].position - inputs.columns[column].position);
+    }
+    if (width == inputs.content_width) ready.inputs = old.grid_sizing_inputs;
+    else {
+        auto next = std::make_shared<GridSizingInputs>(inputs);
+        next->columns = std::move(columns);
+        next->content_width = width;
+        ready.inputs = std::move(next);
+    }
+    *result = std::move(ready);
+    return true;
+}
+
+bool probe_grid_item_exports(const Box& parent, const Box& measured_item,
+                            const LayoutContext& ctx, GridItemExportProbe* result) {
+    if (!result || !parent.grid_sizing_inputs || !measured_item.element ||
+        !independent_stretched_item(measured_item, parent.style)) return false;
+    const auto& old = *parent.grid_sizing_inputs;
+    size_t index = 0;
+    while (index < old.items.size() && old.items[index].first != measured_item.element) ++index;
+    if (index == old.items.size() || !old.items[index].second) return false;
+    auto next = std::make_shared<GridSizingInputs>(old);
+    Contribution contribution = inline_contribution(measured_item, ctx, old.content_width, old.font_size);
+    contribution.start = old.contributions[index].start;
+    contribution.span = old.contributions[index].span;
+    next->contributions[index] = contribution;
+    const auto extents = intrinsic_track_extents(next->columns, next->gap, next->contributions);
+    result->inputs = std::move(next);
+    result->minimum = extents.first;
+    result->maximum = extents.second;
+    return true;
+}
+
 double layout_grid(BoxTree* tree, BoxId container, double content_width, double content_height,
                    const LayoutContext& ctx, BlockLayout* block) {
     if (!tree || !block || container == kNoBox) return 0;
+    (*tree)[container].grid_sizing_inputs.reset();
     const ComputedStyle* style = (*tree)[container].style;
     const double font_size =
         (*tree)[container].font_size > 0 ? (*tree)[container].font_size : ctx.root_font_size_px;
@@ -1161,9 +1358,9 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
                 re = parts.size() > 2 ? parse_line_spec(parts[2]) : (rs.bare_name() ? rs : LineSpec{});
                 ce = parts.size() > 3 ? parse_line_spec(parts[3]) : (cs.bare_name() ? cs : LineSpec{});
             } else {
-                read_axis(cb.style, "grid-column", "grid-column-start", "grid-column-end",
+                read_axis(cb.style, kId_grid_column, kId_grid_column_start, kId_grid_column_end,
                           &cs, &ce);
-                read_axis(cb.style, "grid-row", "grid-row-start", "grid-row-end", &rs, &re);
+                read_axis(cb.style, kId_grid_row, kId_grid_row_start, kId_grid_row_end, &rs, &re);
             }
             p.col = resolve_axis(cs, ce, explicit_columns, column_names);
             p.row = resolve_axis(rs, re, explicit_rows, row_names);
@@ -1430,20 +1627,9 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         (*tree)[p.box].parent_layout_input = measure_parent_layout_input(
             *tree, p.box, p.measured_inline_width, ctx);
         const Box& item = (*tree)[p.box];
-        const auto width = get(item.style, kId_width);
-        const auto minimum = get(item.style, kId_min_width);
-        double preferred_ratio = 0;
-        bool fixed = (width.empty() || iequals(width, "auto")) &&
-                     (minimum.empty() || iequals(minimum, "auto") || minimum == "0" || minimum == "0px") &&
-                     iequals(get(item.style, kId_max_width), "none") &&
-                     is_stretch(self_alignment(item.style, style, false)) &&
-                     !try_resolve_aspect_ratio(item.style, &preferred_ratio) &&
-                     item.intrinsic_width == 0 && item.intrinsic_height == 0 &&
-                     get(item.style, kId_margin_left) != "auto" && get(item.style, kId_margin_right) != "auto" &&
+        bool fixed = independent_stretched_item(item, style) &&
                      p.column >= 0 && p.column_span > 0 &&
-                     p.column + p.column_span <= static_cast<int>(columns.size()) &&
-                     !wants_subgrid((*tree)[p.box].style, "grid-template-columns") &&
-                     !wants_subgrid((*tree)[p.box].style, "grid-template-rows");
+                     p.column + p.column_span <= static_cast<int>(columns.size());
         for (int c = p.column; fixed && c < p.column + p.column_span; ++c)
             fixed = columns[c].is_definite();
         (*tree)[p.box].parent_inline_contribution_independent = fixed;
@@ -1454,57 +1640,64 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     // width, or its explicit width for both; a scroll container's automatic
     // minimum is zero.
     std::vector<Contribution> column_contributions;
+    column_contributions.reserve(items.size());
     for (const Placement& p : items) {
         const Box& b = (*tree)[p.box];
-        const double frame = b.padding_left + b.padding_right + b.border_left + b.border_right;
-        const double margins = b.margin_left + b.margin_right;
-        Contribution c;
+        Contribution c = inline_contribution(b, ctx, content_width, font_size);
         c.start = p.column;
         c.span = p.column_span;
-        const std::string_view width_raw = get(b.style, kId_width);
-        const bool explicit_width = !width_raw.empty() && !iequals(width_raw, "auto") &&
-                                    width_raw.find('%') == std::string_view::npos;
-        if (explicit_width) {
-            c.min_c = c.max_c = b.width + margins;
-        } else {
-            double min_c = b.parent_layout_input.min_content + frame;
-            double max_c = b.parent_layout_input.max_content + frame;
-            const double item_fs = b.font_size > 0 ? b.font_size : font_size;
-            const double minmax_frame = is_border_box(b.style) ? 0 : frame;
-            const ResolvedLength min_w =
-                resolve_length(b.style, kId_min_width, ctx, item_fs, content_width);
-            if (min_w.kind == LengthKind::Length) {
-                min_c = std::max(min_c, min_w.pixels + minmax_frame);
-                max_c = std::max(max_c, min_w.pixels + minmax_frame);
-            }
-            const ResolvedLength max_w =
-                resolve_length(b.style, kId_max_width, ctx, item_fs, content_width);
-            if (max_w.kind == LengthKind::Length) {
-                min_c = std::min(min_c, max_w.pixels + minmax_frame);
-                max_c = std::min(max_c, max_w.pixels + minmax_frame);
-            }
-            if (clips_overflow(b.style) && min_w.kind != LengthKind::Length) min_c = 0;
-            c.min_c = min_c + margins;
-            c.max_c = std::max(min_c, max_c) + margins;
-        }
         column_contributions.push_back(c);
     }
     // The grid's own intrinsic inline sizes, for whoever shrink-fits it: the
     // tracks under a max-content constraint, and again with every item's
     // max-content pinned to its min-content for the min side.
-    {
-        std::vector<Track> probe = columns;
-        size_tracks(&probe, -1, column_gap, column_contributions, "normal");
-        double max_w = 0;
-        for (size_t c = 0; c < probe.size(); ++c) max_w += probe[c].size + gap_after(probe, c, column_gap);
-        std::vector<Contribution> mins = column_contributions;
-        for (Contribution& c : mins) c.max_c = c.min_c;
-        std::vector<Track> probe_min = columns;
-        size_tracks(&probe_min, -1, column_gap, mins, "normal");
-        double min_w = 0;
-        for (size_t c = 0; c < probe_min.size(); ++c) min_w += probe_min[c].size + gap_after(probe_min, c, column_gap);
-        (*tree)[container].grid_min_content = min_w;
-        (*tree)[container].grid_max_content = max_w;
+    const auto extents = intrinsic_track_extents(columns, column_gap, column_contributions);
+    (*tree)[container].grid_min_content = extents.first;
+    (*tree)[container].grid_max_content = extents.second;
+    // Retain immutable sizing inputs only when actual columns do not depend on
+    // contributions. Incremental probes still recompute intrinsic exports;
+    // definite fr allocation alone does not make those exports independent.
+    const bool stable_export_inputs = independent_areas &&
+        std::all_of(items.begin(), items.end(), [&](const Placement& p) {
+        const Box& item = (*tree)[p.box];
+        double ratio = 0;
+        return !try_resolve_aspect_ratio(item.style, &ratio) &&
+            !wants_subgrid(item.style, "grid-template-columns") &&
+            !wants_subgrid(item.style, "grid-template-rows");
+    });
+    // Subgrid hand-over and row-to-column aspect-ratio feedback happen later.
+    // Their pre-feedback contributions are not reusable snapshots yet.
+    if (independent_areas && stable_export_inputs && !wants_subgrid(style, "grid-template-columns") &&
+        !wants_subgrid(style, "grid-template-rows")) {
+        auto inputs = std::make_shared<GridSizingInputs>();
+        inputs->columns = columns;
+        inputs->contributions = column_contributions;
+        inputs->gap = column_gap;
+        inputs->content_width = content_width;
+        inputs->font_size = font_size;
+        const auto width_dependent = [](std::string_view value) {
+            return value.find('%') != std::string_view::npos ||
+                value.find("auto-fit") != std::string_view::npos ||
+                value.find("auto-fill") != std::string_view::npos;
+        };
+        inputs->edge_reuse_eligible = !width_dependent(columns_raw) && !width_dependent(rows_raw) &&
+            !width_dependent(get(style, kId_grid_auto_columns)) &&
+            !width_dependent(get(style, kId_grid_auto_rows)) &&
+            !width_dependent(get(style, kId_column_gap)) && !width_dependent(get(style, kId_row_gap));
+        for (BoxId child : tree->children(container)) {
+            const Box& item = (*tree)[child];
+            const PositionType position = parse_position_type(get(item.style, kId_position));
+            if (position == PositionType::Absolute || position == PositionType::Fixed ||
+                get(item.style, kId_min_width).find('%') != std::string_view::npos ||
+                get(item.style, kId_max_width).find('%') != std::string_view::npos)
+                inputs->edge_reuse_eligible = false;
+        }
+        inputs->items.reserve(items.size());
+        for (const Placement& p : items) {
+            const Box& item = (*tree)[p.box];
+            inputs->items.emplace_back(item.element, independent_stretched_item(item, style));
+        }
+        (*tree)[container].grid_sizing_inputs = std::move(inputs);
     }
     if (!independent_areas) {
         size_tracks(&columns, content_width, column_gap, column_contributions,

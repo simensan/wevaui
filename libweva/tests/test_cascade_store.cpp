@@ -270,5 +270,26 @@ void test_computed_style() {
         CHECK(values.set_count() == 2 && !values.is_important(high_id));
         values.clear();
         CHECK(values.get(width) == reg.initial_value(width));
+
+        // Sparse one-sided declarations, including a registry extension in a
+        // later occupancy word, must be compared in ascending property order.
+        equal.clear();
+        values.set(high_id, "left");
+        equal.set(width, "42px");
+        changed.clear();
+        CHECK(values.differs_from(equal, &changed, &unattributed));
+        CHECK((changed == std::vector<int>{width, high_id}));
+        equal.set(high_id, "left");
+        values.set(width, "42px");
+        values.set_important(high_id, true);
+        changed.clear();
+        CHECK(values.differs_from(equal, &changed, &unattributed));
+        CHECK((changed == std::vector<int>{high_id}));
+        values.clear();
+        equal.clear();
+        values.set(width, reg.initial_value(width));
+        changed.clear();
+        CHECK(!values.differs_from(equal, &changed, &unattributed));
+        CHECK(changed.empty());
     }
 }

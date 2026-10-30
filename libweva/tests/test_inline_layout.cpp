@@ -657,6 +657,46 @@ void test_shrink_to_fit() {
 // is the point of keeping them: the C++ suite had no case that could tell a
 // missing forced break or a missing intra-word break from correct output.
 void test_form_control_baselines() {
+    // Chrome: line-relative alignment uses the atom's margin box and keeps
+    // the containing line strut. It applies equally to inline block/flex/grid.
+    for (const char* display : {"inline-block", "inline-flex", "inline-grid"}) {
+        for (const char* align : {"top", "bottom"}) {
+            for (int height : {6, 30}) {
+                Fixture f;
+                CHECK(f.css(std::string("#line{font-size:10px;line-height:20px}.atom{display:") +
+                    display + ";width:20px;height:" + std::to_string(height) +
+                    "px;margin:2px 0 3px;vertical-align:" + align + "}"));
+                CHECK(f.layout("<div id=line><span id=atom class=atom></span></div>"));
+                const double line_height = std::max(20, height + 5);
+                CHECK(near(f.box("line").height, line_height));
+                CHECK(near(f.box("atom").y, std::string_view(align) == "top" ? 2 : line_height - height - 3));
+            }
+        }
+    }
+    {
+        Fixture f;
+        CHECK(f.css("#line{font-size:10px;line-height:20px}.atom{display:inline-block;width:20px;"
+                    "margin:2px 0 3px}#top{height:30px;vertical-align:top}"
+                    "#bottom{height:12px;vertical-align:bottom}#base{height:10px}"));
+        CHECK(f.layout("<div id=line><span id=top class=atom></span><span id=bottom class=atom></span>"
+                       "<span id=base class=atom></span></div>"));
+        CHECK(near(f.box("line").height, 35));
+        CHECK(near(f.box("top").y, 2));
+        CHECK(near(f.box("bottom").y, 20));
+    }
+    {
+        Fixture f;
+        CHECK(f.css("#line{width:25px;font-size:10px;line-height:20px}.atom{display:inline-block;"
+                    "width:20px;margin:2px 0 3px}#top{height:6px;vertical-align:top}"
+                    "#bottom{height:30px;vertical-align:bottom}"));
+        CHECK(f.layout("<div id=line><span id=top class=atom></span><span id=bottom class=atom></span></div>"));
+        CHECK(near(f.box("line").height, 55));
+        const auto lines = f.lines("line");
+        CHECK(lines.size() == 2);
+        CHECK(near(f.box("top").y, 2));
+        CHECK(near(f.box("bottom").y, 2));
+        if (lines.size() == 2) CHECK(near(f.tree[lines[1]].y, 20));
+    }
     // An independent ordinary inline-block centers text with a line-height
     // equal to its content height. Editable inputs expose the same baseline.
     for (const auto type : {"text", "search", "tel", "url", "email", "password", "number",
@@ -957,6 +997,45 @@ void test_parent_intrinsic_measurements() {
     index.index(replacement.tree, replacement.root, replacement.ctx, true);
     CHECK(index.style_boxes().find(style) == index.style_boxes().end());
     CHECK(index.box_of(element) == kNoBox);
+
+    const char* pure_html = "<body><div id=p><div id=a><div id=fill></div></div>"
+                            "<div id=b></div></div></body>";
+    const char* pure_css = "body{margin:0}*{box-sizing:border-box}"
+                          "#p{display:grid;width:200px;grid-template-columns:1fr 1fr;gap:4px}"
+                          "#a,#b{height:30px;padding:2px}#fill{width:75%;height:100%}";
+    Fixture reflow;
+    CHECK(reflow.css(pure_css));
+    CHECK(reflow.layout(pure_html));
+    const BoxId original_panel = reflow.find("p");
+    auto* panel_style = reflow.styles.by_element.at(reflow.tree[original_panel].element);
+    for (int pass = 0; pass < 12; ++pass) {
+        const std::string padding = std::to_string(pass % 3 + 10) + "px";
+        panel_style->set("padding-left", padding);
+        CHECK(prepare_block_tree_reflow(&reflow.tree, reflow.root));
+        CHECK(reflow.find("p") == original_panel);
+        BlockLayout flow(&reflow.tree, reflow.ctx, &reflow.metrics);
+        flow.layout_root(reflow.root, 1000, 600);
+        Fixture fresh;
+        CHECK(fresh.css(std::string(pure_css) + "#p{padding-left:" + padding + "}"));
+        CHECK(fresh.layout(pure_html));
+        for (const char* id : {"body", "p", "a", "b", "fill"}) {
+            const Box& live = reflow.box(id);
+            const Box& expected = fresh.box(id);
+            CHECK(live.x == expected.x && live.y == expected.y &&
+                  live.width == expected.width && live.height == expected.height);
+        }
+    }
+    for (const char* content : {"<div id=p>Consumed inline text</div>",
+                                "<img id=p style='display:block'>",
+                                "<input id=p style='display:block'>",
+                                "<div id=p style='position:relative'></div>",
+                                "<div id=p style='writing-mode:vertical-rl'></div>"}) {
+        Fixture excluded;
+        CHECK(excluded.layout(std::string("<body>") + content + "</body>"));
+        const double width = excluded.box("p").width;
+        CHECK(!prepare_block_tree_reflow(&excluded.tree, excluded.root));
+        CHECK(excluded.box("p").width == width);
+    }
 }
 
 

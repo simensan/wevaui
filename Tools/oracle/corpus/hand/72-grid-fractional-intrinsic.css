@@ -1,0 +1,13 @@
+html,body{margin:0;padding:0}
+.row{margin:8px}
+.grid{display:inline-grid;vertical-align:top;gap:10px;background:#def}
+.unequal{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+.minimum{grid-template-columns:minmax(100px,1fr) minmax(0,2fr)}
+.fixed{grid-template-columns:80px minmax(0,2fr)}
+.subunit{grid-template-columns:minmax(0,.25fr) minmax(0,.5fr)}
+.maximum{width:max-content}
+.a{width:40px;height:6px;background:#579}
+.b{height:6px;background:#79b}
+.short{width:60px}
+.medium{width:120px}
+.span{width:240px;grid-column:1 / span 2}
