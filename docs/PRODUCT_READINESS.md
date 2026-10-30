@@ -18,11 +18,10 @@ remain specific to the earlier builds identified in their reports.
 and Godot. HUDs, menus, settings screens and data-bound lists are ready to try.
 Production adoption still needs validation in your game, on your target devices.
 
-The rendering audit found a pre-existing flex baseline discrepancy when an
-item contains nested grid/block content: the retained Chrome reproduction
-differs by up to 47px. This is still unresolved; see the
-[flex allocation audit](verification/flex-defer-20261030.md). The start-aligned
-survival sample is unaffected by that finding.
+The rendering audit's nested first-baseline discrepancy is fixed for the
+captured block/grid/flex cases, including reordered children. See the
+[baseline receipt](verification/nested-baseline-20261030.md) for the scoped
+Chrome and host checks; this is not complete CSS baseline conformance.
 
 ## Choose your host
 

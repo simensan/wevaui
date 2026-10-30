@@ -1043,6 +1043,8 @@ void check_retained_item_subtrees() {
         "#panel{display:flex;flex-wrap:wrap}.cell{width:auto;height:auto;flex:1 1 50px;min-width:24px}",
         "#panel{display:flex}.cell{width:auto;height:auto;flex:1 1 0%;min-width:0}.track{height:40%}",
         "#panel{display:flex}.cell{width:auto;height:auto;flex:1 1 0%;min-width:0;max-width:50px}",
+        "#panel{display:flex;align-items:baseline}.cell{display:grid;grid-template-columns:1fr;width:72px;height:64px;flex:none}",
+        "#panel{display:flex;align-items:baseline}.cell{display:flex;flex-direction:column;width:72px;height:64px;flex:none}",
     };
     for (size_t variant = 0; variant < sizeof(cases) / sizeof(cases[0]); ++variant) {
         const std::string css = std::string(

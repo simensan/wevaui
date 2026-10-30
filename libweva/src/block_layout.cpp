@@ -582,6 +582,21 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
 
 // ---- Margin collapsing ---------------------------------------------------
 
+std::optional<double> first_in_flow_baseline(const BoxTree& tree, BoxId id) {
+    const Box& box = tree[id];
+    if (box.orthogonal_root || box.vertical_text) return std::nullopt;
+    if (box.kind == BoxKind::Line) return box.baseline;
+    if (box.display == DisplayKind::Grid || box.display == DisplayKind::InlineGrid ||
+        box.display == DisplayKind::Flex || box.display == DisplayKind::InlineFlex)
+        return box.first_baseline_export;
+    for (BoxId child : tree.children(id)) {
+        const Box& b = tree[child];
+        if (b.is_float() || b.position == PositionType::Absolute || b.position == PositionType::Fixed) continue;
+        if (const auto value = first_in_flow_baseline(tree, child)) return b.y + *value;
+    }
+    return std::nullopt;
+}
+
 double collapse_margins(double a, double b) {
     // A NaN margin (a bad calc(), a NaN-producing animated length) fails both
     // sign tests and would fall through to `a + b`, which is also NaN — and
@@ -1187,23 +1202,7 @@ void BlockLayout::size_atoms(std::vector<InlineItem>* items, double available_wi
             if (last_line != kNoBox) {
                 it.atom_baseline = (*tree_)[last_line].y + (*tree_)[last_line].baseline;
             } else if (a.display == DisplayKind::Flex || a.display == DisplayKind::InlineFlex) {
-                // Inline flex exposes the first item's first baseline, including
-                // an anonymous flex item created around raw text.
-                const auto first_line = [&](auto&& self, BoxId id, double y) -> std::optional<double> {
-                    const Box& child = (*tree_)[id];
-                    y += child.y;
-                    if (child.kind == BoxKind::Line) return y + child.baseline;
-                    for (BoxId nested : tree_->children(id))
-                        if (auto baseline = self(self, nested, y)) return baseline;
-                    return std::nullopt;
-                };
-                it.atom_baseline = a.height;
-                for (BoxId child : tree_->children(it.atom_box)) {
-                    if (auto baseline = first_line(first_line, child, 0)) {
-                        it.atom_baseline = *baseline;
-                        break;
-                    }
-                }
+                it.atom_baseline = first_in_flow_baseline(*tree_, it.atom_box).value_or(a.height);
             } else {
                 const double content_bottom = a.height - a.padding_bottom - a.border_bottom;
                 it.atom_baseline = content_bottom < 0 ? a.height : content_bottom;

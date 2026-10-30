@@ -238,6 +238,9 @@ struct Box {
 
     // ---- Line -----------------------------------------------------------
     double baseline = 0;
+    // First baseline exported by grid/flex layout, relative to the border top.
+    // An empty formatting context has no baseline to contribute.
+    std::optional<double> first_baseline_export;
     bool is_final_line = false;
     // Preserved newlines and <br> end an intrinsic-sizing paragraph; a soft
     // wrap does not. This is independent of the final line in the container.

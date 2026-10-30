@@ -171,6 +171,7 @@ private:
 double layout_flex(BoxTree* tree, BoxId container, double content_width, double content_height,
                    const LayoutContext& ctx, BlockLayout* block) {
     if (!tree || !block || container == kNoBox) return 0;
+    (*tree)[container].first_baseline_export.reset();
     FlexScratchLease lease;
     FlexScratch& scratch = *lease;
     const ComputedStyle* style = (*tree)[container].style;
@@ -629,17 +630,10 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         return self;
     };
 
-    // An item's baseline is its first line box's, or its bottom margin edge
-    // when it has none — the same rule an inline-block follows.
+    // Nested block/grid/flex contents can contribute a first baseline too.
+    // Only an item without one synthesizes from its border edge.
     const auto first_baseline = [&](BoxId box) {
-        double baseline = (*tree)[box].height;
-        for (BoxId c : tree->children(box)) {
-            if ((*tree)[c].kind == BoxKind::Line) {
-                baseline = (*tree)[c].y + (*tree)[c].baseline;
-                break;
-            }
-        }
-        return baseline;
+        return first_in_flow_baseline(*tree, box).value_or((*tree)[box].height);
     };
 
     // ---- Re-lay each item at its final main size, and measure the cross ----
@@ -961,6 +955,16 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             cursor += it.main + it.main_margins + ln.between;
         }
     }
+
+    const Item* baseline_item = &items.front();
+    if (!column && !lines.empty()) {
+        for (size_t i = lines.front().begin; i < lines.front().end; ++i)
+            if (iequals(self_align((*tree)[items[i].box]), "baseline")) {
+                baseline_item = &items[i];
+                break;
+            }
+    }
+    (*tree)[container].first_baseline_export = (*tree)[baseline_item->box].y + first_baseline(baseline_item->box);
 
     // The container's content height: the lines' cross extent in a row, the
     // items' extent in a column.

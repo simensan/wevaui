@@ -110,6 +110,7 @@ std::pair<double, double> baselines(const BoxTree& tree, BoxId id) {
         out.second = baseline;
         first = false;
     }
+    out.first = first_in_flow_baseline(tree, id).value_or(tree[id].height);
     return out;
 }
 

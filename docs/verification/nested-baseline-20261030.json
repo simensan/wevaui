@@ -1,0 +1,1056 @@
+{
+  "scope": "CPU including setters/update/submission; no GPU completion",
+  "viewport": [
+    1280,
+    720
+  ],
+  "batches": {
+    "baseline-paired": {
+      "binaries": {
+        "before": {
+          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-baseline-cost.exe",
+          "sha256": "f10220697b2c883af4c7cbe0195ecdd12f50ef4f87e2d9203de1457738dedb2a"
+        },
+        "after": {
+          "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+          "sha256": "37d1d82f83ca1acc45f3347945dd6be5b89416516707da1f999935b6577c8325"
+        }
+      },
+      "arguments": [
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
+      ],
+      "rows": [
+        {
+          "round": 0,
+          "version": "before",
+          "case": "hud",
+          "core": 0.092,
+          "host": 0.127,
+          "frame": 0.219,
+          "controller": 0.113,
+          "complete_cpu": 0.24
+        },
+        {
+          "round": 0,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.612,
+          "host": 0.173,
+          "frame": 0.785,
+          "controller": 0.716,
+          "complete_cpu": 0.889
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "hud",
+          "core": 0.076,
+          "host": 0.106,
+          "frame": 0.182,
+          "controller": 0.091,
+          "complete_cpu": 0.197
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.669,
+          "host": 0.194,
+          "frame": 0.863,
+          "controller": 0.783,
+          "complete_cpu": 0.977
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "hud",
+          "core": 0.068,
+          "host": 0.092,
+          "frame": 0.159,
+          "controller": 0.079,
+          "complete_cpu": 0.17
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.691,
+          "host": 0.211,
+          "frame": 0.902,
+          "controller": 0.814,
+          "complete_cpu": 1.025
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "hud",
+          "core": 0.058,
+          "host": 0.077,
+          "frame": 0.135,
+          "controller": 0.067,
+          "complete_cpu": 0.144
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.746,
+          "host": 0.205,
+          "frame": 0.95,
+          "controller": 0.871,
+          "complete_cpu": 1.076
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "hud",
+          "core": 0.067,
+          "host": 0.087,
+          "frame": 0.154,
+          "controller": 0.078,
+          "complete_cpu": 0.165
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.648,
+          "host": 0.196,
+          "frame": 0.845,
+          "controller": 0.761,
+          "complete_cpu": 0.957
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "hud",
+          "core": 0.091,
+          "host": 0.104,
+          "frame": 0.195,
+          "controller": 0.104,
+          "complete_cpu": 0.209
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.631,
+          "host": 0.23,
+          "frame": 0.861,
+          "controller": 0.744,
+          "complete_cpu": 0.974
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "hud",
+          "core": 0.086,
+          "host": 0.111,
+          "frame": 0.196,
+          "controller": 0.098,
+          "complete_cpu": 0.209
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.647,
+          "host": 0.192,
+          "frame": 0.839,
+          "controller": 0.755,
+          "complete_cpu": 0.948
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "hud",
+          "core": 0.099,
+          "host": 0.222,
+          "frame": 0.321,
+          "controller": 0.112,
+          "complete_cpu": 0.334
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.675,
+          "host": 0.198,
+          "frame": 0.873,
+          "controller": 0.792,
+          "complete_cpu": 0.991
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "hud",
+          "core": 0.06,
+          "host": 0.08,
+          "frame": 0.14,
+          "controller": 0.069,
+          "complete_cpu": 0.149
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.636,
+          "host": 0.182,
+          "frame": 0.818,
+          "controller": 0.747,
+          "complete_cpu": 0.929
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "hud",
+          "core": 0.075,
+          "host": 0.102,
+          "frame": 0.177,
+          "controller": 0.088,
+          "complete_cpu": 0.19
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.631,
+          "host": 0.184,
+          "frame": 0.815,
+          "controller": 0.737,
+          "complete_cpu": 0.921
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "hud",
+          "core": 0.062,
+          "host": 0.086,
+          "frame": 0.148,
+          "controller": 0.072,
+          "complete_cpu": 0.158
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.667,
+          "host": 0.191,
+          "frame": 0.857,
+          "controller": 0.777,
+          "complete_cpu": 0.968
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "hud",
+          "core": 0.086,
+          "host": 0.111,
+          "frame": 0.196,
+          "controller": 0.106,
+          "complete_cpu": 0.216
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.616,
+          "host": 0.173,
+          "frame": 0.788,
+          "controller": 0.726,
+          "complete_cpu": 0.898
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "hud",
+          "core": 0.058,
+          "host": 0.076,
+          "frame": 0.133,
+          "controller": 0.067,
+          "complete_cpu": 0.143
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.611,
+          "host": 0.179,
+          "frame": 0.79,
+          "controller": 0.738,
+          "complete_cpu": 0.917
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "hud",
+          "core": 0.075,
+          "host": 0.093,
+          "frame": 0.168,
+          "controller": 0.088,
+          "complete_cpu": 0.181
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.601,
+          "host": 0.177,
+          "frame": 0.778,
+          "controller": 0.71,
+          "complete_cpu": 0.887
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "hud",
+          "core": 0.06,
+          "host": 0.081,
+          "frame": 0.141,
+          "controller": 0.07,
+          "complete_cpu": 0.151
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.639,
+          "host": 0.199,
+          "frame": 0.838,
+          "controller": 0.761,
+          "complete_cpu": 0.96
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "hud",
+          "core": 0.072,
+          "host": 0.098,
+          "frame": 0.17,
+          "controller": 0.087,
+          "complete_cpu": 0.185
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.631,
+          "host": 0.189,
+          "frame": 0.82,
+          "controller": 0.75,
+          "complete_cpu": 0.939
+        }
+      ]
+    },
+    "baseline-paired-repeat": {
+      "binaries": {
+        "before": {
+          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-baseline-cost.exe",
+          "sha256": "f10220697b2c883af4c7cbe0195ecdd12f50ef4f87e2d9203de1457738dedb2a"
+        },
+        "after": {
+          "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+          "sha256": "37d1d82f83ca1acc45f3347945dd6be5b89416516707da1f999935b6577c8325"
+        }
+      },
+      "arguments": [
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
+      ],
+      "rows": [
+        {
+          "round": 0,
+          "version": "before",
+          "case": "hud",
+          "core": 0.07,
+          "host": 0.094,
+          "frame": 0.164,
+          "controller": 0.084,
+          "complete_cpu": 0.178
+        },
+        {
+          "round": 0,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.58,
+          "host": 0.169,
+          "frame": 0.749,
+          "controller": 0.686,
+          "complete_cpu": 0.855
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "hud",
+          "core": 0.07,
+          "host": 0.084,
+          "frame": 0.154,
+          "controller": 0.081,
+          "complete_cpu": 0.165
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.582,
+          "host": 0.169,
+          "frame": 0.752,
+          "controller": 0.689,
+          "complete_cpu": 0.858
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "hud",
+          "core": 0.081,
+          "host": 0.102,
+          "frame": 0.183,
+          "controller": 0.095,
+          "complete_cpu": 0.197
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.604,
+          "host": 0.18,
+          "frame": 0.785,
+          "controller": 0.716,
+          "complete_cpu": 0.897
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "hud",
+          "core": 0.08,
+          "host": 0.113,
+          "frame": 0.193,
+          "controller": 0.101,
+          "complete_cpu": 0.215
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.608,
+          "host": 0.186,
+          "frame": 0.794,
+          "controller": 0.721,
+          "complete_cpu": 0.907
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "hud",
+          "core": 0.073,
+          "host": 0.097,
+          "frame": 0.169,
+          "controller": 0.09,
+          "complete_cpu": 0.187
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.594,
+          "host": 0.175,
+          "frame": 0.77,
+          "controller": 0.706,
+          "complete_cpu": 0.881
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "hud",
+          "core": 0.071,
+          "host": 0.096,
+          "frame": 0.167,
+          "controller": 0.086,
+          "complete_cpu": 0.182
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.593,
+          "host": 0.18,
+          "frame": 0.773,
+          "controller": 0.707,
+          "complete_cpu": 0.887
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "hud",
+          "core": 0.064,
+          "host": 0.085,
+          "frame": 0.148,
+          "controller": 0.077,
+          "complete_cpu": 0.161
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.6,
+          "host": 0.172,
+          "frame": 0.772,
+          "controller": 0.707,
+          "complete_cpu": 0.878
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "hud",
+          "core": 0.065,
+          "host": 0.079,
+          "frame": 0.143,
+          "controller": 0.075,
+          "complete_cpu": 0.154
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.589,
+          "host": 0.168,
+          "frame": 0.757,
+          "controller": 0.694,
+          "complete_cpu": 0.861
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "hud",
+          "core": 0.078,
+          "host": 0.098,
+          "frame": 0.176,
+          "controller": 0.09,
+          "complete_cpu": 0.188
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.62,
+          "host": 0.175,
+          "frame": 0.795,
+          "controller": 0.727,
+          "complete_cpu": 0.902
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "hud",
+          "core": 0.057,
+          "host": 0.075,
+          "frame": 0.132,
+          "controller": 0.066,
+          "complete_cpu": 0.141
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.603,
+          "host": 0.176,
+          "frame": 0.779,
+          "controller": 0.714,
+          "complete_cpu": 0.891
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "hud",
+          "core": 0.059,
+          "host": 0.077,
+          "frame": 0.136,
+          "controller": 0.068,
+          "complete_cpu": 0.146
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.587,
+          "host": 0.171,
+          "frame": 0.758,
+          "controller": 0.691,
+          "complete_cpu": 0.862
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "hud",
+          "core": 0.056,
+          "host": 0.074,
+          "frame": 0.13,
+          "controller": 0.065,
+          "complete_cpu": 0.139
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.59,
+          "host": 0.168,
+          "frame": 0.758,
+          "controller": 0.695,
+          "complete_cpu": 0.863
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "hud",
+          "core": 0.059,
+          "host": 0.077,
+          "frame": 0.136,
+          "controller": 0.069,
+          "complete_cpu": 0.145
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.601,
+          "host": 0.17,
+          "frame": 0.771,
+          "controller": 0.711,
+          "complete_cpu": 0.881
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "hud",
+          "core": 0.076,
+          "host": 0.098,
+          "frame": 0.174,
+          "controller": 0.089,
+          "complete_cpu": 0.187
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.605,
+          "host": 0.172,
+          "frame": 0.777,
+          "controller": 0.71,
+          "complete_cpu": 0.882
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "hud",
+          "core": 0.073,
+          "host": 0.102,
+          "frame": 0.174,
+          "controller": 0.089,
+          "complete_cpu": 0.191
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.595,
+          "host": 0.174,
+          "frame": 0.769,
+          "controller": 0.706,
+          "complete_cpu": 0.88
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "hud",
+          "core": 0.058,
+          "host": 0.073,
+          "frame": 0.131,
+          "controller": 0.067,
+          "complete_cpu": 0.14
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "inventory",
+          "core": 0.597,
+          "host": 0.165,
+          "frame": 0.762,
+          "controller": 0.698,
+          "complete_cpu": 0.863
+        }
+      ]
+    },
+    "baseline-combined-paired": {
+      "binaries": {
+        "before": {
+          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-flex-defer.exe",
+          "sha256": "064ffedc8b36caf88b6f73c58b274b2bc1f04bfe5d5c27fa2d4159b489858d34"
+        },
+        "after": {
+          "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+          "sha256": "37d1d82f83ca1acc45f3347945dd6be5b89416516707da1f999935b6577c8325"
+        }
+      },
+      "arguments": [
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
+      ],
+      "rows": [
+        {
+          "round": 0,
+          "version": "before",
+          "case": "hud",
+          "core": 0.078,
+          "host": 0.093,
+          "frame": 0.171,
+          "controller": 0.089,
+          "complete_cpu": 0.183
+        },
+        {
+          "round": 0,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.055,
+          "host": 0.19,
+          "frame": 1.246,
+          "controller": 1.168,
+          "complete_cpu": 1.358
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "hud",
+          "core": 0.069,
+          "host": 0.089,
+          "frame": 0.158,
+          "controller": 0.08,
+          "complete_cpu": 0.169
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.604,
+          "host": 0.182,
+          "frame": 0.786,
+          "controller": 0.719,
+          "complete_cpu": 0.901
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "hud",
+          "core": 0.067,
+          "host": 0.09,
+          "frame": 0.156,
+          "controller": 0.082,
+          "complete_cpu": 0.171
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.603,
+          "host": 0.176,
+          "frame": 0.779,
+          "controller": 0.712,
+          "complete_cpu": 0.888
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "hud",
+          "core": 0.056,
+          "host": 0.074,
+          "frame": 0.131,
+          "controller": 0.065,
+          "complete_cpu": 0.139
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.009,
+          "host": 0.176,
+          "frame": 1.185,
+          "controller": 1.111,
+          "complete_cpu": 1.287
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "hud",
+          "core": 0.08,
+          "host": 0.099,
+          "frame": 0.18,
+          "controller": 0.093,
+          "complete_cpu": 0.193
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.005,
+          "host": 0.178,
+          "frame": 1.183,
+          "controller": 1.112,
+          "complete_cpu": 1.29
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "hud",
+          "core": 0.085,
+          "host": 0.106,
+          "frame": 0.191,
+          "controller": 0.099,
+          "complete_cpu": 0.205
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.612,
+          "host": 0.174,
+          "frame": 0.786,
+          "controller": 0.734,
+          "complete_cpu": 0.908
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "hud",
+          "core": 0.067,
+          "host": 0.084,
+          "frame": 0.152,
+          "controller": 0.078,
+          "complete_cpu": 0.162
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.612,
+          "host": 0.173,
+          "frame": 0.785,
+          "controller": 0.729,
+          "complete_cpu": 0.902
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "hud",
+          "core": 0.058,
+          "host": 0.075,
+          "frame": 0.133,
+          "controller": 0.067,
+          "complete_cpu": 0.142
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.002,
+          "host": 0.179,
+          "frame": 1.181,
+          "controller": 1.11,
+          "complete_cpu": 1.289
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "hud",
+          "core": 0.076,
+          "host": 0.103,
+          "frame": 0.179,
+          "controller": 0.094,
+          "complete_cpu": 0.198
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.021,
+          "host": 0.187,
+          "frame": 1.208,
+          "controller": 1.134,
+          "complete_cpu": 1.32
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "hud",
+          "core": 0.067,
+          "host": 0.08,
+          "frame": 0.147,
+          "controller": 0.078,
+          "complete_cpu": 0.158
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.601,
+          "host": 0.174,
+          "frame": 0.774,
+          "controller": 0.711,
+          "complete_cpu": 0.885
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "hud",
+          "core": 0.084,
+          "host": 0.118,
+          "frame": 0.202,
+          "controller": 0.107,
+          "complete_cpu": 0.225
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.615,
+          "host": 0.178,
+          "frame": 0.792,
+          "controller": 0.723,
+          "complete_cpu": 0.901
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "hud",
+          "core": 0.075,
+          "host": 0.096,
+          "frame": 0.17,
+          "controller": 0.09,
+          "complete_cpu": 0.185
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.029,
+          "host": 0.195,
+          "frame": 1.225,
+          "controller": 1.146,
+          "complete_cpu": 1.342
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "hud",
+          "core": 0.065,
+          "host": 0.087,
+          "frame": 0.152,
+          "controller": 0.079,
+          "complete_cpu": 0.166
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.074,
+          "host": 0.202,
+          "frame": 1.276,
+          "controller": 1.195,
+          "complete_cpu": 1.397
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "hud",
+          "core": 0.062,
+          "host": 0.082,
+          "frame": 0.144,
+          "controller": 0.075,
+          "complete_cpu": 0.157
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.6,
+          "host": 0.192,
+          "frame": 0.792,
+          "controller": 0.717,
+          "complete_cpu": 0.909
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "hud",
+          "core": 0.072,
+          "host": 0.098,
+          "frame": 0.169,
+          "controller": 0.088,
+          "complete_cpu": 0.185
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.584,
+          "host": 0.168,
+          "frame": 0.752,
+          "controller": 0.69,
+          "complete_cpu": 0.858
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "hud",
+          "core": 0.075,
+          "host": 0.104,
+          "frame": 0.179,
+          "controller": 0.096,
+          "complete_cpu": 0.2
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.057,
+          "host": 0.186,
+          "frame": 1.242,
+          "controller": 1.166,
+          "complete_cpu": 1.352
+        }
+      ]
+    }
+  },
+  "fixture_sha256": {
+    ".utmp\\render-audit-20261030\\survival-fixtures\\ammo.svg.png": "d4520a84fd2b3fb782fff62a8db6309dcc73a01341283e86a878c9db48a2b4c9",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\bandage.svg.png": "21a0b64549df57ec47a4268213a6b6224c6b9fe8ba7397cba905f0c9e853f355",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\beans.svg.png": "cba3c4dc9418d7f358d2fa08ee84fabd465d4833024e39fc1512fe0df7b12eb4",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\bolt.svg.png": "b3377182cda4864d4e856bbafdc770cbdac253e87de7842346be45fc5b1e720a",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\campfire.svg.png": "5e041c7efcd01ebf13145c4a77d4e28b661d01f8d0551c330218705abcaac848",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\canteen.svg.png": "977f51dee7dff4001e396afe93a25d8111821b0b6317f4b15d9a9df79b276e86",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\cloth.svg.png": "2df601d83f95c1afc1196b852b4a41000d73155fdef701af74af5fffd638858b",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\drop.svg.png": "35271db3426bfd7e67188c7dc68684b1bf15508b12db0ccb6485c2afe9652424",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\food.svg.png": "ca655dfac85122ab568f6bb76c5d609447f10a3c5ad9916764803f6fbeb97e34",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hatchet.svg.png": "02508c1e246f60fdab8b2af5afa217582cbd327198dd614de98148655408ed49",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\heart.svg.png": "30d3a74ae6b0ec0d310a5603fe8071e0ad8538a5e25647980f4eb8bca65ab146",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hud.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hud.html": "b29a00ff8341aeec836f793fc988192149206931aa49e83f8895234b74f5ad10",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\inventory.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\inventory.html": "f2f130a482259071b078107e9d1a734c88dd47809bde4f382faa1c3028032090",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\knife.svg.png": "ceda161ae3ae746f80250b104a9146972159dfe6dfc75a06b6c65f512e1daa21",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\mutations.json": "aa0ad5e6a9768b9ece2c00c3a0d5afbb68f167a5461ecc086c029be0f253e8bc",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\open-sans-semibold.ttf": "445ac29890c338bc293873ec8da462193755346499903133b1b4d6f16eb708ca",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\revolver.svg.png": "730e040dd4dc0f0ab0e0919c29a9e00fe293fdf4b2d89544a3135c73b191c692",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\rope.svg.png": "39d42acb1a7b28cc761e4c9c00512ea601627fb0674cf994d53bc6fe86fdf09d",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\stone.svg.png": "64403858edb3564e0b034cf7da6d652286a5b55785f94547f56cf361f08f639b",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\wood.svg.png": "cbb723754580f23cfdd5a47f1640058bee21c510d89f95e7cdb9d42aef95bd7d"
+  }
+}

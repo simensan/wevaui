@@ -68,6 +68,10 @@ renderer branch still needs integration into the configured runtime.
 
 ## Separate unresolved finding: nested baselines
 
+Follow-up: the captured discrepancy is resolved by the
+[nested baseline pass](nested-baseline-20261030.md). The findings below record
+the state at this receipt's commit.
+
 An initial version of the new fixture used `align-items:baseline`. Both
 unmodified 2c7da541 and the optimized core disagree with pinned Chrome 152
 by up to 47px when a flex item contains nested grid/block content. Flex's

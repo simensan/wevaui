@@ -86,6 +86,10 @@ double contain_intrinsic_width(const ComputedStyle* style, const LayoutContext& 
 double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
                        const ComputedStyle* parent_style, const LayoutContext& ctx);
 
+// First in-flow baseline relative to this box's border top. Absence lets the
+// alignment context synthesize its own fallback instead of a descendant's.
+std::optional<double> first_in_flow_baseline(const BoxTree& tree, BoxId id);
+
 // ---- Margin collapsing (CSS Box Model L3 §8.3.1) -------------------------
 
 // Two adjoining margins collapse to max() when both are positive, min() when

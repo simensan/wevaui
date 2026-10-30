@@ -1187,6 +1187,7 @@ bool probe_grid_item_exports(const Box& parent, const Box& measured_item,
 double layout_grid(BoxTree* tree, BoxId container, double content_width, double content_height,
                    const LayoutContext& ctx, BlockLayout* block) {
     if (!tree || !block || container == kNoBox) return 0;
+    (*tree)[container].first_baseline_export.reset();
     (*tree)[container].grid_sizing_inputs.reset();
     const ComputedStyle* style = (*tree)[container].style;
     const double font_size =
@@ -2032,6 +2033,14 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
             extent = std::max(extent, rows[r].position + rows[r].size);
         }
         bottom = extent;
+    }
+    if (!items.empty()) {
+        const auto first = std::min_element(items.begin(), items.end(), [](const Placement& a, const Placement& b) {
+            return a.row < b.row || (a.row == b.row && a.column < b.column);
+        });
+        const Box& child = (*tree)[first->box];
+        (*tree)[container].first_baseline_export = child.y +
+            first_in_flow_baseline(*tree, first->box).value_or(child.height);
     }
     return preserve_auto_block_size ? initial_row_extent : bottom;
 }
