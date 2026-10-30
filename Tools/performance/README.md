@@ -4,8 +4,10 @@ Run identical, deterministic geometry-only HUD, inventory and settings fixtures
 through the native core benchmark and headless Chrome on the **same OS**.
 Both time an attribute mutation followed by completed synchronous layout and a
 target-bounds read. Neither includes painting. This compares layout operations,
-not game-host FPS. Schema 2 replaces the unfair schema 1 full-update comparison;
-old receipts are retained as historical evidence, not comparable results.
+not game-host FPS. Schema 2 replaced the unfair schema 1 full-update comparison.
+Schema 3 keeps the six schema 2 workloads and timing boundaries unchanged,
+adds content-bearing fixtures and checks geometry after mutation. Original
+fixtures are byte-identical, with baseline hashes pinned by tests.
 
 Build a current Release `weva_bench` using [the core benchmark instructions](../weva_bench/README.md).
 Install the pinned root Node dependencies with `npm ci` if needed. Then:
@@ -22,9 +24,31 @@ Chrome version, raster worker overrides, individual batch results and a Markdown
 summary. The source revision identifies the checkout; it does **not** prove that
 an arbitrary supplied binary was built from it. Rebuild before measuring and
 retain that build log. Run on an otherwise idle machine with stable power settings.
-The required `weva_dump` must be from the same build. Initial fixture geometry
-is checked against Chrome (all div rectangles, 0.1 px tolerance); a mismatch
-rejects the comparison. This check is outside the timed region.
+The required `weva_dump` must be from the same build. All div rectangles are
+checked against Chrome with a 0.1 px tolerance: initial geometry, both alternating
+mutation states, and the final state of every measured batch. A mismatch rejects
+the comparison. These checks are outside timing. `weva_bench` must support
+`--geometry-dump`; a missing dump fails rather than weakening validation.
+Native one- and two-pass preflight runs verify both mutation states. This matters
+because an even pass count ends at 12px, matching the original panel padding:
+checking only the final state could accept a mutation that did nothing.
+
+## Fixtures
+
+The original HUD, inventory and settings fixtures retain empty fixed-size
+cells so previous timings remain comparable. Their leaf cases exercise layout
+bookkeeping even when no visible content moves. Two additional fixtures avoid
+mistaking that case for normal content-bearing UI:
+
+- `hud-content`: each fixed-size cell contains a visible track and percentage-width
+  fill. Cell padding moves and resizes the nested bars.
+- `autosize-flex`: centered, naturally sized flex items contain fixed-size icons.
+  Cell padding changes the item's intrinsic size and moves neighboring items;
+  retaining the parent's old allocation would be wrong.
+
+Each fixture runs panel and leaf mutations, for ten workloads total. The
+post-timing Chrome snapshots and native preflight runs do not change the initial
+style/cache state of a measured batch.
 
 ## Boundaries
 

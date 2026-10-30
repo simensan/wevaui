@@ -333,6 +333,7 @@ void test_abi_incremental_retained_grid_paint();
 void test_abi_draw_versions();
 void test_abi_incremental_glyph_preparation();
 void test_abi_incremental_flex_intrinsics();
+void test_abi_incremental_item_box_edges();
 void test_abi_incremental_grid_animation();
 void test_abi_incremental_corpus();
 void test_abi_incremental_selector_reach();
@@ -813,6 +814,7 @@ int main() {
     test_abi_draw_versions();
     test_abi_incremental_glyph_preparation();
     test_abi_incremental_flex_intrinsics();
+    test_abi_incremental_item_box_edges();
     test_abi_incremental_grid_animation();
     test_abi_incremental_corpus();
     test_abi_incremental_selector_reach();

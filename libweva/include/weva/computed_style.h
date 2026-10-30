@@ -84,6 +84,11 @@ public:
     void set_inherit_parent(const ComputedStyle* parent) { parent_ = parent; }
     const ComputedStyle* inherit_parent() const { return parent_; }
 
+    // Explicit `inherit` can make a normally non-inherited property depend
+    // on the parent. Retain that dependency after resolving its raw value.
+    bool inherits_non_inherited() const { return inherits_non_inherited_; }
+    void set_inherits_non_inherited(bool value) { inherits_non_inherited_ = value; }
+
     // A materialized inherit/unset (or pseudo inheritance) retains the raw
     // parent string for style queries, but font resolution must inherit the
     // parent's computed size instead of applying that string again.
@@ -195,6 +200,7 @@ private:
     std::vector<bool> important_;
     CustomPropertyMap custom_;
     const ComputedStyle* parent_ = nullptr;
+    bool inherits_non_inherited_ = false;
     bool font_size_inherited_ = false;
     bool line_height_inherited_ = false;
     int set_count_ = 0;

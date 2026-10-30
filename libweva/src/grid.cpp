@@ -37,6 +37,8 @@ const int kId_align_items = CssPropertyRegistry::instance().id_of("align-items")
 const int kId_justify_items = CssPropertyRegistry::instance().id_of("justify-items");
 const int kId_grid_auto_flow = CssPropertyRegistry::instance().id_of("grid-auto-flow");
 const int kId_min_width = CssPropertyRegistry::instance().id_of("min-width");
+const int kId_margin_left = CssPropertyRegistry::instance().id_of("margin-left");
+const int kId_margin_right = CssPropertyRegistry::instance().id_of("margin-right");
 
 std::string_view get(const ComputedStyle* s, int id) {
     return s ? s->get(id) : std::string_view();
@@ -667,20 +669,49 @@ private:
 
 void size_tracks(std::vector<Track>* tracks, double available, double gap,
                  const std::vector<Contribution>& items_in, std::string_view content_align) {
-    ContributionLease lease;
-    std::vector<Contribution>& items = *lease;
-    items.assign(items_in.begin(), items_in.end());
     if (tracks->empty()) return;
     const int n = static_cast<int>(tracks->size());
     const bool definite = available >= 0;
+    const auto set_positions = [&] {
+        double pos = 0;
+        for (size_t i = 0; i < tracks->size(); ++i) {
+            Track& t = (*tracks)[i];
+            t.position = pos;
+            pos += t.size + gap_after(*tracks, i, gap);
+        }
+    };
 
     // §12.4 initialise: a fixed min is the base, a fixed max the limit;
     // intrinsic ones wait for the items; a flexible max is unbounded.
+    bool fixed_sizes = true;
     for (Track& t : *tracks) {
         if (t.collapsed) { t.base = 0; t.limit = 0; t.size = 0; continue; }
         t.base = t.min.kind == Sizing::Kind::Fixed ? t.min.value : 0;
         t.limit = t.max.kind == Sizing::Kind::Fixed ? t.max.value : -1;
+        fixed_sizes &= t.is_definite() && t.max.value <= t.min.value;
     }
+    // Fixed tracks cannot consume intrinsic item contributions. This also
+    // covers minmax(fixed,fixed) with max <= min: its growth limit is floored
+    // by the base size. Content distribution still runs at the call site.
+    if (fixed_sizes) {
+        for (Track& t : *tracks) t.size = t.limit = t.base;
+        set_positions();
+        return;
+    }
+    // Only the spanning-item pass needs span order. Unit-span grids can use
+    // the caller's contributions directly, avoiding a copy and stable-sort
+    // on every inline/block sizing pass and intrinsic-size probe.
+    std::optional<ContributionLease> sorted;
+    const std::vector<Contribution>* inputs = &items_in;
+    if (std::any_of(items_in.begin(), items_in.end(), [](const Contribution& c) { return c.span > 1; })) {
+        sorted.emplace();
+        std::vector<Contribution>& ordered = **sorted;
+        ordered.assign(items_in.begin(), items_in.end());
+        std::stable_sort(ordered.begin(), ordered.end(),
+                        [](const Contribution& a, const Contribution& b) { return a.span < b.span; });
+        inputs = &ordered;
+    }
+    const std::vector<Contribution>& items = *inputs;
     const auto min_contribution = [](const Track& t, const Contribution& c) {
         return t.min.kind == Sizing::Kind::MaxContent ? c.max_c : c.min_c;
     };
@@ -710,8 +741,6 @@ void size_tracks(std::vector<Track>* tracks, double available, double gap,
     // a flexible track (step 4 handles those through the fr size). Whatever
     // the tracks they cover do not already hold is split equally onto the
     // intrinsic ones among them.
-    std::stable_sort(items.begin(), items.end(),
-                     [](const Contribution& a, const Contribution& b) { return a.span < b.span; });
     for (const Contribution& c : items) {
         if (c.span <= 1 || c.start < 0) continue;
         const int end = std::min(n, c.start + c.span);
@@ -869,12 +898,7 @@ void size_tracks(std::vector<Track>* tracks, double available, double gap,
         }
     }
 
-    double pos = 0;
-    for (size_t i = 0; i < tracks->size(); ++i) {
-        Track& t = *(&(*tracks)[i]);
-        t.position = pos;
-        pos += t.size + gap_after(*tracks, i, gap);
-    }
+    set_positions();
 }
 
 // CSS Box Alignment §6: an item's alignment in one axis is its own
@@ -1385,6 +1409,24 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     for (const Placement& p : items) {
         block->layout_block(p.box, content_width, style);
         (*tree)[p.box].parent_layout_input = measure_parent_layout_input(*tree, p.box, content_width, ctx);
+        const Box& item = (*tree)[p.box];
+        const auto width = get(item.style, kId_width);
+        const auto minimum = get(item.style, kId_min_width);
+        double preferred_ratio = 0;
+        bool fixed = (width.empty() || iequals(width, "auto")) &&
+                     (minimum.empty() || iequals(minimum, "auto") || minimum == "0" || minimum == "0px") &&
+                     iequals(get(item.style, kId_max_width), "none") &&
+                     is_stretch(self_alignment(item.style, style, false)) &&
+                     !try_resolve_aspect_ratio(item.style, &preferred_ratio) &&
+                     item.intrinsic_width == 0 && item.intrinsic_height == 0 &&
+                     get(item.style, kId_margin_left) != "auto" && get(item.style, kId_margin_right) != "auto" &&
+                     p.column >= 0 && p.column_span > 0 &&
+                     p.column + p.column_span <= static_cast<int>(columns.size()) &&
+                     !wants_subgrid((*tree)[p.box].style, "grid-template-columns") &&
+                     !wants_subgrid((*tree)[p.box].style, "grid-template-rows");
+        for (int c = p.column; fixed && c < p.column + p.column_span; ++c)
+            fixed = columns[c].is_definite();
+        (*tree)[p.box].parent_inline_contribution_independent = fixed;
     }
 
     // Each item's inline contributions (§12.5): its min-content and

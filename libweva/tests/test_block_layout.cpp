@@ -225,6 +225,43 @@ void test_box_model_height_and_position() {
     CHECK(f.box("abs").position == PositionType::Absolute);
     CHECK(f.box("stick").position == PositionType::Sticky);
     CHECK(f.box("plain").position == PositionType::Static);
+
+    // Parent-imposed widths must still resolve empty-item box sizing, ratios
+    // and min/max constraints; imposing a height must remain authoritative.
+    Fixture empty;
+    CHECK(empty.css("div{display:block}#ratio{aspect-ratio:2;padding:3px;border:2px solid;min-height:30px;max-height:80px}"
+                    "#fixed{height:40px;padding:4px;border:1px solid;box-sizing:border-box}"));
+    CHECK(empty.build("<div id=ratio></div><div id=fixed></div>"));
+    BlockLayout layout(&empty.tree, empty.ctx);
+    layout.layout_root(empty.root, 400, 300);
+    layout.relayout_at(empty.find("ratio"), 110);
+    CHECK(near(empty.box("ratio").height, 60));
+    layout.relayout_at(empty.find("ratio"), 30);
+    CHECK(near(empty.box("ratio").height, 40));
+    layout.relayout_at(empty.find("ratio"), 400);
+    CHECK(near(empty.box("ratio").height, 90));
+    layout.relayout_at_size(empty.find("ratio"), 110, 71);
+    CHECK(near(empty.box("ratio").height, 71));
+    layout.relayout_at(empty.find("fixed"), 50);
+    CHECK(near(empty.box("fixed").height, 40));
+
+    // Chrome harvest SubgridIntegrationTests-06: explicit row tracks still
+    // size an empty grid. Neither initial nor imposed-width layout may use
+    // the ordinary empty-block shortcut for a formatting-context container.
+    Fixture tracks;
+    CHECK(tracks.css("#p{display:grid;grid-template-columns:100px;width:200px}"
+                     "#c{display:grid;grid-template-columns:subgrid;grid-template-rows:40px}"
+                     "#single{display:grid;grid-template-rows:40px;width:100px}"));
+    CHECK(tracks.build("<div id=p><div id=c></div></div><div id=single></div>"));
+    BlockLayout track_layout(&tracks.tree, tracks.ctx);
+    track_layout.layout_root(tracks.root, 400, 300);
+    CHECK(near(tracks.box("p").height, 40));
+    CHECK(near(tracks.box("c").height, 40));
+    CHECK(near(tracks.box("single").height, 40));
+    track_layout.relayout_at(tracks.find("c"), 100);
+    track_layout.relayout_at(tracks.find("single"), 80);
+    CHECK(near(tracks.box("c").height, 40));
+    CHECK(near(tracks.box("single").height, 40));
 }
 
 void test_auto_margin_centering() {

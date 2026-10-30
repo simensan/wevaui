@@ -284,6 +284,11 @@ struct Box {
     // height — a nested column flex container, for instance.
     bool cross_size_imposed = false;
     ParentLayoutInput parent_layout_input;
+    // The parent does not consume this item's intrinsic inline contribution:
+    // either stretch in fixed grid tracks, or an explicit item width in a
+    // fixed-width nonwrapping column flex. Incremental proof still checks
+    // natural dimensions, frame floors and final outer geometry.
+    bool parent_inline_contribution_independent = false;
     // Scratch-only reference to a retained layout subtree in the destination
     // tree. Its children stay there until the transaction is committed.
     BoxId retained_from = kNoBox;

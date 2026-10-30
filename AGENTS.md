@@ -146,8 +146,14 @@ performance receipts apply to their pre-merge builds, not this combination.
 
 The [October 30 Chrome benchmark setup](docs/verification/chrome-performance-20261030.md)
 is superseded by the [matched layout benchmark](docs/verification/chrome-matched-20261030.md).
-Six runner regressions and native CLI checks cover the matched no-paint boundary.
-Windows tooling discovery passes 57 tests with nine Linux-only skips (66 total).
+The [layout optimization follow-up](docs/verification/chrome-close-20261030.md)
+adds dependency-driven cascade and layout reuse, ten runner regressions and
+post-mutation Chrome geometry checks. Windows tooling discovery passes 61 tests
+with nine Linux-only skips (70 total). GCC passes 15 suites and 698,598 core
+checks; Clang ASan/UBSan passes 17 suites and 698,592 core checks. Windows core
+passes 486,321 checks; full Unity EditMode remains 244 pass with two inconclusive.
+The full qualified local gate passes, including 336 Chrome layout captures,
+Chrome behavior checks and Godot rendering, exports and scene tests.
 These compare mutation-to-layout latency, not end-to-end rendered frame cost.
 
 The [scaled-overflow follow-up](docs/verification/scaled-overflow-20261025.md)

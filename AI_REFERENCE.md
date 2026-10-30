@@ -2,9 +2,10 @@
 
 For repeatable Weva/Chrome geometry-workload performance baselines, use
 [`Tools/performance/README.md`](Tools/performance/README.md). The
-[matched October 30 receipt](docs/verification/chrome-matched-20261030.md) records
-the corrected mutation-to-layout comparison and six runner regressions. Both
-engines exclude painting; these timings do not measure rendered frame cost.
+[October 30 optimization receipt](docs/verification/chrome-close-20261030.md)
+records the matched comparison, dependency-driven cascade/layout improvements,
+ten runner regressions and post-mutation geometry validation. Both engines
+exclude painting; these timings do not measure rendered frame cost.
 
 A single document for an AI assistant asked to **use, integrate, or reason
 about** Weva: what it is, what it can and cannot do, how to wire it up, how
@@ -16,10 +17,10 @@ disagree, the code wins — tell the user.
 > - **Change the engine or a host** → [`AGENTS.md`](AGENTS.md) (the engineering contract) + [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) (the core as built).
 > - **Check if something is supported** → [`supported-css.md`](Packages/com.wevaui/Documentation~/supported-css.md) / [`supported-html.md`](Packages/com.wevaui/Documentation~/supported-html.md), and `Tools/oracle/known-gaps/` for what the Chrome gate excuses.
 
-_Unity verified: 2026-10-20 (1.0.0 plus unreleased fixes); Native EditMode
+_Unity verified: 2026-10-30 (1.0.0 plus unreleased fixes); Native EditMode
 243 pass / 2 environment-gated inconclusive, full EditMode 244 pass / 2
-inconclusive. See the [merge receipt](docs/verification/merge-20261020.md)
-for the combined build and the [technical audit](docs/verification/tech-audit-20261011.md)
+inconclusive. See the [layout follow-up](docs/verification/chrome-close-20261030.md)
+for the current build and the [technical audit](docs/verification/tech-audit-20261011.md)
 for remaining adoption limits._
 
 The [October runtime performance audit](docs/verification/performance-audit-20261011.md)

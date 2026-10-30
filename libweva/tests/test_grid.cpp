@@ -433,6 +433,45 @@ void test_grid_aspect_ratio_item_stretches_one_axis() {
 
 void test_grid_track_sizing_functions() {
     {
+        // Intrinsic overflow and spanning items cannot enlarge fixed tracks.
+        // Free-space alignment still runs after the track sizes are settled.
+        Fixture f;
+        CHECK(f.css("body{margin:0}#g{display:grid;width:200px;height:100px;gap:10px;"
+                    "grid-template-columns:40px 60px;grid-template-rows:20px 30px;"
+                    "justify-content:space-between;align-content:space-between}"
+                    "#a{grid-column:1/3;grid-row:1;width:300px;height:70px}"
+                    "#b{grid-column:1;grid-row:2;height:10px}#c{grid-column:2;grid-row:2;height:10px}"));
+        CHECK(f.layout("<div id=g><div id=a></div><div id=b></div><div id=c></div></div>"));
+        CHECK(near(f.box("a").width, 300));
+        CHECK(near(f.box("b").width, 40));
+        CHECK(near(f.box("c").width, 60));
+        CHECK(near(f.box("c").x, 140));
+        CHECK(near(f.box("b").y, 70));
+        CHECK(near(f.box("g").grid_min_content, 110));
+        CHECK(near(f.box("g").grid_max_content, 110));
+    }
+    {
+        // A fixed max below its min is floored by the min. It cannot grow,
+        // but an unequal minmax with room to grow must use normal sizing.
+        Fixture f;
+        CHECK(f.css("body{margin:0}#g{display:grid;width:200px;grid-template-columns:minmax(80px,20px) 20px}"
+                    "#g>div{height:10px}"));
+        CHECK(f.layout("<div id=g><div id=a></div><div id=b></div></div>"));
+        CHECK(near(f.box("a").width, 80));
+        CHECK(near(f.box("b").x, 80));
+        CHECK(near(f.box("b").width, 20));
+    }
+    {
+        Fixture f;
+        CHECK(f.css("body{margin:0}#g{display:grid;width:300px;gap:10px;"
+                    "grid-template-columns:minmax(20px,80px) auto 1fr}"
+                    "#g>div{height:10px}#a{width:20px}#b{width:30px}"));
+        CHECK(f.layout("<div id=g><div id=a></div><div id=b></div><div id=c></div></div>"));
+        CHECK(near(f.box("b").x, 90));
+        CHECK(near(f.box("c").x, 130));
+        CHECK(near(f.box("c").width, 170));
+    }
+    {
         // minmax(80px, 1fr) minmax(80px, 2fr) minmax(80px, 1fr): the fr shares
         // 1:2:1 once every track's 80px minimum is met — 146/292/146 in 600px
         // with 8px gaps (Chrome and the reference).

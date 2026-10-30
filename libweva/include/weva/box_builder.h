@@ -45,6 +45,11 @@ public:
                                                  std::string_view /*name*/) {
         return nullptr;
     }
+    // True only when every layout-affecting write to this style in the
+    // current update was attributed to padding or border box edges. Unknown
+    // content/input/animation writes must make the answer false. Incremental
+    // layout still has to prove numerical parent exports are unchanged.
+    virtual bool only_box_edges_changed(const ComputedStyle* /*style*/) const { return false; }
 };
 
 // A transaction can defer a clean subtree until layout knows its constraints.

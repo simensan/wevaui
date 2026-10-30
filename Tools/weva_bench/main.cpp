@@ -382,15 +382,21 @@ int main(int argc, char** argv) {
     double frame_dt = 0;
     std::string target_selector = "*";
     std::string focus_selector;
+    std::string geometry_dump;
     for (int i = 1; i < argc; ++i) {
         const std::string a = argv[i];
         if (a.rfind("--target=", 0) == 0) target_selector = a.substr(9);
         if (a.rfind("--focus=", 0) == 0) focus_selector = a.substr(8);
+        if (a.rfind("--geometry-dump=", 0) == 0) geometry_dump = a.substr(16);
         if (a.rfind("--sample-depth=", 0) == 0) g_sample_depth = std::atoi(a.c_str() + 15);
         if (a.rfind("--dt=", 0) == 0) frame_dt = std::atof(a.c_str() + 5);
     }
     if (geometry && (cold || frame_dt != 0 || mutate != "layout" || g_profile || sample)) {
         std::fprintf(stderr, "weva_bench: --geometry requires --mutate=layout, zero dt and no cold/profile/sample\n");
+        return 2;
+    }
+    if (!geometry_dump.empty() && !geometry) {
+        std::fprintf(stderr, "weva_bench: --geometry-dump requires --geometry\n");
         return 2;
     }
     if (g_sample_depth < 1 || g_sample_depth > kFrames) {
@@ -616,6 +622,19 @@ int main(int argc, char** argv) {
         if (geometry && (draws != 0 || textures != 0 || weva_document_draw_serial(d) != 0)) {
             std::fprintf(stderr, "weva_bench: geometry benchmark unexpectedly published paint\n");
             return 1;
+        }
+        // Verification is deliberately outside the measured update region.
+        if (!geometry_dump.empty()) {
+            const size_t length = weva_document_layout_dump(d, argv[1], nullptr, 0);
+            std::vector<char> dump(length + 1);
+            weva_document_layout_dump(d, argv[1], dump.data(), dump.size());
+            std::ofstream file(geometry_dump, std::ios::binary);
+            file.write(dump.data(), static_cast<std::streamsize>(length));
+            file.close();
+            if (!file) {
+                std::fprintf(stderr, "weva_bench: cannot write geometry dump\n");
+                return 1;
+            }
         }
         if (geometry) std::printf("mutation-to-layout ");
         std::printf("%-20s %-7s %-10s best %10.6f ms  mean %10.6f ms  %zu draws  %zu textures"

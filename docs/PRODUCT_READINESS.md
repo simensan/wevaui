@@ -1,11 +1,14 @@
 # Product readiness
 
-Updated October 20, 2026 · Integration verification through October 20.
+Updated October 30, 2026 · Integration verification through October 30.
 
 Scoped October 25 core/Agentic checks cover filtered downscaled icons and
 antialiased thin rounded borders; see the
 [rendering receipt](verification/image-filtering-20261025.md).
-Unity/Godot integration qualification remains the October 20 result below.
+The [October 30 receipt](verification/chrome-close-20261030.md) records the latest
+full local gate and Unity EditMode results: 244 pass, zero failures and two
+environment-gated inconclusive. Godot rendering, exports and scene checks pass
+with the qualified patched editor and templates.
 
 The [merge integration receipt](verification/merge-20261020.md) records
 validation of the combined engine and host changes. Performance measurements
@@ -79,8 +82,12 @@ and browser-level visual/text fidelity remain incomplete.
   The [runtime geometry change](verification/runtime-geometry-20261011.md)
   lowers paired inventory scrolling API CPU p95 by 11.9% to 1.097 ms with
   identical pixels; whole-game and lower-end testing remain outstanding.
-  These performance reports describe separate pre-merge builds; combined
-  performance has not been remeasured.
+  Those performance reports describe separate pre-merge builds. The
+  [October 30 layout comparison](verification/chrome-close-20261030.md) measures
+  the current combined engine: six matched mutation-to-layout workloads improve
+  42–93.5% against the preceding build. Both engines exclude paint; this does not
+  remeasure cold opening, host frame cost or whole-game performance. Whole-panel
+  inventory layout remains about 3.1× slower than Chrome.
 
 - **Deep markup:** content nested more than 64 elements deep is not rendered,
   so layout stays within a 1 MB thread stack.

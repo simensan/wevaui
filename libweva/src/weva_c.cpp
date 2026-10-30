@@ -829,14 +829,32 @@ struct StyleMap : StyleProvider {
     Invalidation pending = Invalidation::Boxes;
     int visited = 0;
     std::vector<std::pair<const ComputedStyle*, Invalidation>> changes;
+    std::vector<std::pair<const ComputedStyle*, bool>> box_edge_change_proofs;
+    bool only_box_edges_changed(const ComputedStyle* style) const override {
+        if (pending >= Invalidation::Boxes) return false;
+        for (const auto& proof : box_edge_change_proofs)
+            if (proof.first == style) return proof.second;
+        return false;
+    }
     // Set while walk() merges an element under a `display: none` ancestor.
     // That element has no box before the change and none after it, so its
     // style diff cannot reach layout or paint. The ancestor's own display
     // change is noted as usual when it happens, and rebuilds the subtree then.
     bool inert_subtree = false;
-    void note_change(const ComputedStyle* style, Invalidation kind) {
+    void note_change(const ComputedStyle* style, Invalidation kind, bool box_edges_only = false) {
         if (inert_subtree) return;
         pending = worst(pending, kind);
+        if (kind >= Invalidation::Layout) {
+            bool found = false;
+            for (auto& proof : box_edge_change_proofs) if (proof.first == style) {
+                // A later attributed write cannot erase an earlier unknown
+                // layout input in the same pass.
+                proof.second = proof.second && box_edges_only && kind == Invalidation::Layout;
+                found = true;
+                break;
+            }
+            if (!found) box_edge_change_proofs.emplace_back(style, box_edges_only && kind == Invalidation::Layout);
+        }
         for (auto& change : changes) {
             if (change.first == style) { change.second = worst(change.second, kind); return; }
         }
@@ -1233,6 +1251,7 @@ struct StyleMap : StyleProvider {
         pending = Invalidation::None;
         visited = 0;
         changes.clear();
+        box_edge_change_proofs.clear();
     }
 
     // The element set changed, so which boxes exist did too.
@@ -1290,6 +1309,7 @@ struct StyleMap : StyleProvider {
         animation_saved.clear();
         animation_shown.clear();
         changes.clear();
+        box_edge_change_proofs.clear();
         pending = Invalidation::Boxes;
     }
 
@@ -1300,12 +1320,17 @@ struct StyleMap : StyleProvider {
     }
 
     std::vector<int> changed_property_ids;
+    bool descendant_inputs_changed = true;
     void merge(ComputedStyle* live, ComputedStyle* fresh, const Element* owner = nullptr) {
         // Reused only within this non-reentrant merge; no callback observes it.
         auto& changed = changed_property_ids;
         changed.clear();
         bool unattributed = false;
+        descendant_inputs_changed = false;
         if (!live->differs_from(*fresh, &changed, &unattributed)) {
+            // Equal values can have different dependency sources, e.g. a
+            // child changing from padding:0 to padding:inherit under zero.
+            live->set_inherits_non_inherited(fresh->inherits_non_inherited());
             // The new target can equal a held step's displayed value, even
             // though the running transition still targets another value.
             if (owner && !transitions.empty()) {
@@ -1318,6 +1343,27 @@ struct StyleMap : StyleProvider {
                 }
             }
             return;
+        }
+        const auto& registry = CssPropertyRegistry::instance();
+        descendant_inputs_changed = unattributed;
+        bool only_box_edges = !unattributed;
+        for (const int id : changed) {
+            const auto name = registry.name_of(id);
+            const auto kind = invalidation_for_property(id);
+            if (kind >= Invalidation::Layout) {
+                const bool padding = name == "padding-top" || name == "padding-right" ||
+                    name == "padding-bottom" || name == "padding-left";
+                const bool border = name == "border-top-width" || name == "border-right-width" ||
+                    name == "border-bottom-width" || name == "border-left-width" ||
+                    name == "border-top-style" || name == "border-right-style" ||
+                    name == "border-bottom-style" || name == "border-left-style";
+                only_box_edges &= kind == Invalidation::Layout && (padding || border);
+            }
+            // Display affects descendant transition/animation eligibility;
+            // container declarations affect descendant query environments.
+            if (registry.is_inherited(id) || name == "display" ||
+                name.substr(0, 10) == "container-" || name.substr(0, 10) == "animation-" ||
+                name.substr(0, 11) == "transition-") descendant_inputs_changed = true;
         }
         static const bool style_log = std::getenv("WEVA_STYLE_LOG") != nullptr;
         if (style_log && owner) {
@@ -1437,7 +1483,7 @@ struct StyleMap : StyleProvider {
             return;
         }
         for (const int id : changed) {
-            note_change(live, invalidation_for_property(id));
+            note_change(live, invalidation_for_property(id), only_box_edges);
             if (pending == Invalidation::Boxes) return;
         }
     }
@@ -1467,8 +1513,9 @@ struct StyleMap : StyleProvider {
         }
     }
 
-    void walk(const Element& e, const ComputedStyle* parent) {
+    void walk(const Element& e, const ComputedStyle* parent, bool inline_style_only = false) {
         ++visited;
+        bool propagate_all = true;
         ComputedStyle* raw = nullptr;
         auto it = by_element.find(&e);
         if (it == by_element.end()) {
@@ -1488,6 +1535,7 @@ struct StyleMap : StyleProvider {
             // rebuild, layout and repaint (8.4 ms) for no visible change.
             inert_subtree = transition_ancestor_hidden(e);
             merge(raw, &scratch, &e);
+            propagate_all = !inline_style_only || descendant_inputs_changed || animating();
         }
         if (raw->get("display") == "none" || transition_ancestor_hidden(e))
             transition_hidden.insert(&e);
@@ -1557,7 +1605,12 @@ struct StyleMap : StyleProvider {
         if (e.tag_name() == "template") return;
         for (const Ref<Node>& c : e.children()) {
             if (c->node_type() == NodeType::Element) {
-                walk(static_cast<const Element&>(*c), raw);
+                const auto& child = static_cast<const Element&>(*c);
+                if (!propagate_all) {
+                    const auto child_style = by_element.find(&child);
+                    if (child_style != by_element.end() && !child_style->second->inherits_non_inherited()) continue;
+                }
+                walk(child, raw, !propagate_all);
             }
         }
     }
@@ -2235,6 +2288,7 @@ struct weva_document {
     std::vector<Element*> touched;
     bool has_inputs_dirty = true;
     bool sibling_inputs_dirty = true;
+    bool selector_state_dirty = true;
     bool default_inputs_dirty = true;
     std::vector<Ref<Element>> default_buttons;
 
@@ -4708,7 +4762,10 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
                 if (c.get() == from) started = true;
                 if (!started) continue;
                 if (c->node_type() != NodeType::Element) continue;
-                doc->styles.walk(static_cast<const Element&>(*c), parent_style);
+                const bool local_inline_style = !doc->has_inputs_dirty && !doc->sibling_inputs_dirty &&
+                                                !doc->selector_state_dirty &&
+                                                doc->touched.size() == 1;
+                doc->styles.walk(static_cast<const Element&>(*c), parent_style, local_inline_style);
                 // Without a sibling combinator in the sheets, nothing after the
                 // touched element can have changed.
                 if (!siblings_matter) break;
@@ -4729,6 +4786,7 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
     doc->touched.clear();
     doc->has_inputs_dirty = false;
     doc->sibling_inputs_dirty = false;
+    doc->selector_state_dirty = false;
     lap("cascade");
     if (stage_log) {
         const auto& stats = doc->styles.engine.cache_stats();
@@ -5285,6 +5343,7 @@ static void note_state_change(weva_document* doc, const std::vector<const Elemen
     // away every cached match set for no reason -- which is most of the cost
     // this is here to avoid.
     if (!any) return;
+    doc->selector_state_dirty = true;
     const auto& engine = doc->styles.engine;
     if (reach == &engine.hover_reach()) {
         doc->has_inputs_dirty |= engine.has_hover_dependency();

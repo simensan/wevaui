@@ -66,10 +66,17 @@ reject("no vertical range" "${html}" "${css}" 3 --full --mutate=scroll "--target
 reject("requires --mutate=layout" "${html}" "${css}" 3 --geometry)
 reject("requires --mutate=layout" "${html}" "${css}" 3 --geometry --mutate=layout --cold)
 reject("requires --mutate=layout" "${html}" "${css}" 3 --geometry --mutate=layout --dt=0.1)
+reject("requires --geometry" "${html}" "${css}" 3 "--geometry-dump=${WORK}/unexpected.json")
 execute_process(COMMAND "${BENCH}" "${html}" "${css}" 3 --geometry --mutate=layout "--target=#p"
+    "--geometry-dump=${WORK}/geometry.json"
     RESULT_VARIABLE result OUTPUT_VARIABLE output ERROR_VARIABLE error TIMEOUT 10)
 if(NOT result STREQUAL "0" OR NOT output MATCHES "mutation-to-layout.*mean.*ms  0 draws  0 textures")
     message(FATAL_ERROR "Geometry-only mutation benchmark failed: ${result}\n${output}\n${error}")
+endif()
+file(READ "${WORK}/geometry.json" geometry)
+string(JSON element_count GET "${geometry}" count)
+if(element_count LESS 1)
+    message(FATAL_ERROR "Geometry dump did not contain the mutated document")
 endif()
 file(WRITE "${WORK}/scroll.css" "html,body{margin:0}#p{height:20px;overflow:auto}span{display:block;height:40px;background:#09f}")
 execute_process(COMMAND "${BENCH}" "${html}" "${WORK}/scroll.css" 5 --full --mutate=scroll "--target=#p"

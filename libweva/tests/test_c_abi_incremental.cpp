@@ -936,6 +936,74 @@ void test_abi_incremental_flex_intrinsics() {
     }
 }
 
+void test_abi_incremental_item_box_edges() {
+    std::string html = "<header id=sentinel></header><main id=items>";
+    for (int i = 0; i < 12; ++i)
+        html += "<div class=cell id=c" + std::to_string(i) + "><span class=bar></span></div>";
+    html += "</main><footer></footer>";
+    const std::string common =
+        "*{box-sizing:border-box}body{margin:0;background:#111}"
+        "header{width:120px;height:20px;background:#123}footer{height:20px;background:#456}"
+        "#items{width:280px;gap:4px}.cell{height:64px;padding:2px;border:1px solid #789;background:#234}"
+        ".bar{display:block;width:100%;height:6px;background:#abc}";
+    struct Parent { const char* css; bool retains; };
+    const Parent parents[] = {
+        {"#items{display:grid;grid-template-columns:repeat(4,64px)}", true},
+        {"#items{display:flex;flex-wrap:wrap}.cell{width:64px;flex:none}", true},
+        {"#items{display:flex;flex-direction:column;flex-wrap:nowrap}.cell{width:100%}", true},
+        {"#items{display:flex;flex-direction:column;width:auto}.cell{width:100%}", false},
+        {"#items{display:flex;flex-direction:column;flex-wrap:wrap;height:150px}.cell{width:100%}", false},
+        {"body{display:flex;width:200px}#items{display:flex;flex-direction:column}.cell{width:100%}", false},
+        {"#items{display:grid;grid-template-columns:repeat(4,1fr)}", false},
+        {"#items{display:grid;grid-template-columns:repeat(4,auto)}", false},
+        {"#items{display:grid;grid-template-columns:repeat(4,64px);justify-items:start}.bar{width:48px}", false},
+        {"#items{display:grid;grid-template-columns:repeat(4,64px);justify-items:center}.bar{width:48px}", false},
+        {"#items{display:grid;grid-template-columns:repeat(4,64px);justify-items:end}.bar{width:48px}", false},
+        {"#items{display:grid;grid-template-columns:repeat(4,64px);grid-auto-rows:80px}"
+         ".cell{height:auto}.bar{height:100%}", false},
+        {"#items{display:flex}.cell{width:auto;flex:1;box-sizing:content-box}", false},
+    };
+    const char* mutations[] = {
+        "padding-left:3px", "padding-left:11px", "padding-left:12px",
+        "padding-left:11px;border-left-width:4px", "border-left-style:none",
+        "padding-left:11px;order:-1", "padding-left:11px;grid-column:span 2",
+        "padding-left:11px;align-self:end", "padding-left:11px;margin-left:auto",
+        "padding-left:11px;width:20px", "padding-left:11px;height:80px",
+        "padding-left:11px;position:relative;left:4px", "padding-left:80px", "",
+    };
+    for (const Parent& parent : parents) {
+        const std::string css = common + parent.css;
+        const auto cfg = config();
+        auto live = weva_document_create(&cfg);
+        CHECK(weva_document_add_css(live, css.data(), css.size()) == WEVA_OK);
+        CHECK(weva_document_load_html(live, html.data(), html.size()) == WEVA_OK);
+        CHECK(weva_document_update(live, 0) == WEVA_OK);
+        const auto target = weva_document_query(live, "#c7");
+        for (size_t i = 0; i < sizeof(mutations) / sizeof(mutations[0]); ++i) {
+            size_t count = 0;
+            const auto* versions = weva_document_draw_versions(live, &count);
+            const auto sentinel_version = count > 1 ? versions[1] : 0;
+            CHECK(weva_element_set_attribute(live, target, "style", mutations[i]) == WEVA_OK);
+            // Geometry-only hit testing followed by painting must preserve all
+            // invalidation even when a parent allocation was reused.
+            CHECK(weva_document_update_geometry(live) == WEVA_OK);
+            CHECK(weva_document_update(live, 0) == WEVA_OK);
+            const Frame expected = build(html.c_str(), css.c_str(), [&](weva_document_t fresh) {
+                weva_element_set_attribute(fresh, weva_document_query(fresh, "#c7"), "style", mutations[i]);
+            });
+            const Frame actual = capture(live);
+            if (actual != expected)
+                std::printf("item edge %s {%s}: %s\n", parent.css, mutations[i], actual.diff(expected).c_str());
+            CHECK(actual == expected);
+            if (parent.retains && i < 3) {
+                versions = weva_document_draw_versions(live, &count);
+                CHECK(count > 1 && versions[1] == sentinel_version);
+            }
+        }
+        weva_document_destroy(live);
+    }
+}
+
 // Reflow the surrounding flex allocation while a large grid stays clean.
 // Advance far enough to cross animation reversals, then change the grid,
 // viewport, and a width allocation so both retention and materialization run.
@@ -2240,6 +2308,98 @@ void test_abi_hidden_subtree_restyle() {
 }
 
 void test_abi_incremental_selector_dependencies() {
+    // A selector-independent inline write does not change descendant style
+    // inputs unless an inherited value changes or a child explicitly inherits
+    // a normally non-inherited property. Compare every optimized result with
+    // a forced full cascade, including equal-value dependency-source changes.
+    {
+        std::string html = "<div id=panel><div id=a><div id=grandchild></div></div><div id=b></div>";
+        for (int i = 0; i < 100; ++i) html += "<div class=cell></div>";
+        html += "</div>";
+        const std::string base = "body{margin:0}#panel{width:200px;padding-left:0}"
+            "#panel div{height:4px;background:currentColor;color:inherit}#a{height:auto}";
+        struct Scenario { const char* css; const char* mutation; bool local; };
+        const Scenario scenarios[] = {
+            {"", "padding-left:11px", true},
+            {"#a{padding-left:inherit}#grandchild{padding-left:inherit}", "padding-left:11px", false},
+            {"#a{padding-left:var(--missing,inherit)}", "padding-left:11px", false},
+            {"@layer low,high;@layer low{#a{padding-left:inherit}}"
+             "@layer high{#a{padding-left:revert-layer}}", "padding-left:11px", false},
+            {"#a{padding-left:var(--gap,0px)}", "--gap:11px", false},
+            {"", "color:red", false},
+            {"#panel[style] #b{padding-left:11px}", "padding-left:11px", false},
+            {"#panel::before{content:'x';padding-left:inherit}", "padding-left:11px", true},
+            {"", "display:none", false},
+        };
+        for (const auto& scenario : scenarios) {
+            auto c = config();
+            auto d = weva_document_create(&c);
+            const std::string css = base + scenario.css;
+            CHECK(weva_document_set_css(d, css.data(), css.size()) == WEVA_OK);
+            CHECK(weva_document_load_html(d, html.data(), html.size()) == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            const auto compare_full = [&] {
+                const Frame actual = capture(d);
+                CHECK(weva_document_set_css(d, css.data(), css.size()) == WEVA_OK);
+                CHECK(weva_document_update(d, 0) == WEVA_OK);
+                const Frame expected = capture(d);
+                if (actual != expected) std::printf("inline cascade %s / %s: %s\n", scenario.css,
+                    scenario.mutation, actual.diff(expected).c_str());
+                CHECK(actual == expected);
+            };
+            weva_stats before{}, after{};
+            weva_document_stats(d, &before);
+            CHECK(weva_element_set_attribute(d, weva_document_query(d, "#panel"), "style", scenario.mutation) == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            weva_document_stats(d, &after);
+            if (scenario.local) CHECK(after.cascade_elements - before.cascade_elements == 1);
+            compare_full();
+            CHECK(weva_element_set_attribute(d, weva_document_query(d, "#panel"), "style", "padding-left:0") == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            compare_full();
+            // Same computed padding, different dependency: the next parent
+            // update must see the newly explicit inherit source.
+            CHECK(weva_element_set_attribute(d, weva_document_query(d, "#a"), "style", "padding-left:inherit") == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            CHECK(weva_element_set_attribute(d, weva_document_query(d, "#panel"), "style", "padding-left:12px") == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            compare_full();
+            // Multiple writes in a batch must not hide a descendant mutation
+            // when overlapping selector scopes are folded to their parent.
+            CHECK(weva_element_set_attribute(d, weva_document_query(d, "#panel"), "style", "padding-left:13px") == WEVA_OK);
+            CHECK(weva_element_set_attribute(d, weva_document_query(d, "#b"), "style", "height:7px;color:blue") == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            compare_full();
+            weva_document_destroy(d);
+        }
+    }
+    {
+        const char* html = "<div id=panel><div id=child></div></div>";
+        const char* css = "body{margin:0}#panel{width:50px;height:50px}#child{width:10px;height:10px;background:red}"
+            "#panel:hover #child{background:green}#panel:active #child{background:blue}";
+        auto c = config();
+        auto d = weva_document_create(&c);
+        weva_document_set_css(d, css, std::strlen(css));
+        weva_document_load_html(d, html, std::strlen(html));
+        weva_document_update(d, 0);
+        for (unsigned buttons : {0u, 1u, 0u}) {
+            // Outside the child, so only the parent's observable state flips.
+            weva_document_set_pointer(d, 30, 30, buttons);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            const Frame actual = capture(d);
+            CHECK(weva_document_set_css(d, css, std::strlen(css)) == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            CHECK(actual == capture(d));
+        }
+        // Consumed state changes must not disable later local inline writes.
+        weva_stats before{}, after{};
+        weva_document_stats(d, &before);
+        weva_element_set_style(d, weva_document_query(d, "#panel"), "padding-left", "2px");
+        weva_document_update(d, 0);
+        weva_document_stats(d, &after);
+        CHECK(after.cascade_elements - before.cascade_elements == 1);
+        weva_document_destroy(d);
+    }
     std::string html = "<button id=hovered>Hover</button><section id=other>";
     for (int i = 0; i < 300; ++i) html += "<div class=row><span>Unrelated</span></div>";
     html += "</section><label><input id=switch type=checkbox><i class=light>Light</i></label>"

@@ -294,6 +294,16 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     // only when it is definite; otherwise they have no basis at all.
     const std::optional<double> main_basis =
         definite_main ? std::optional<double>(available_main) : std::nullopt;
+    // A single column with its own definite width does not derive its inline
+    // size from item intrinsic contributions. Require ordinary incoming block
+    // flow: a flex/grid ancestor could otherwise allocate the column using
+    // those contributions before this local layout runs.
+    const BoxId incoming = (*tree)[container].parent;
+    const bool ordinary_incoming = incoming == kNoBox ||
+        (*tree)[incoming].display == DisplayKind::Block || (*tree)[incoming].display == DisplayKind::FlowRoot;
+    const bool fixed_column = column && ordinary_incoming &&
+        iequals(get(style, kId_flex_wrap), "nowrap") &&
+        resolve_length(style, kId_width, ctx, font_size, std::nullopt).kind == LengthKind::Length;
     for (Item& it : items) {
         // Laid out once at the container's inner width so its natural sizes and
         // box model are resolved; the main size is corrected below.
@@ -301,6 +311,11 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         (*tree)[it.box].parent_layout_input = measure_parent_layout_input(*tree, it.box, content_width, ctx);
         Box& b = (*tree)[it.box];
         const ComputedStyle* is = b.style;
+        const auto cross_width = fixed_column
+            ? resolve_length(is, kId_width, ctx, b.font_size, content_width)
+            : ResolvedLength{};
+        b.parent_inline_contribution_independent = fixed_column &&
+            (cross_width.kind == LengthKind::Length || cross_width.kind == LengthKind::Percent);
 
         it.grow = std::max(0.0, number_or(is, "flex-grow", 0));
         it.shrink = std::max(0.0, number_or(is, "flex-shrink", 1));

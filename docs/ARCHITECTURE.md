@@ -9,6 +9,27 @@ This is an engineering reference. Start with [input parity](INPUT_PARITY.md),
 or the ABI section. The port-design sections retain the rationale for the
 shared engine; dated implementation receipts describe their own checkpoints.
 
+## Dependency-driven style and layout
+
+The [October 30 layout performance pass](verification/chrome-close-20261030.md)
+uses dependency-driven cascade and layout reuse. A single selector-independent
+inline style write only propagates to descendants when inherited/custom or
+other descendant-visible inputs change; explicit `inherit` on non-inherited
+properties retains its dependency after value substitution. Observable state
+changes, including ancestor hover/active selectors, remain full selector scopes.
+
+Layout receives a conservative proof when all layout changes are box edges.
+An item can retain its parent allocation only after natural-size, outer-size,
+baseline, positioning and constraint checks. Fixed stretched grid slots and
+explicitly sized items in definite-width nonwrapping column flex containers
+can additionally prove independence from inline intrinsic contributions.
+Intrinsic/shrink-to-fit, wrapping, imposed-height and other unsupported
+dependencies retain normal parent layout. Empty-item reflow shares the normal
+size finalizer. Grid track sizing skips contribution sorting when span order
+cannot matter and directly resolves fixed, nongrowing tracks.
+
+These are shared-core changes, with no ABI extension or host-specific behavior.
+
 ## Rounded geometry execution
 
 Default eight-segment rounded corners reuse an immutable table of the original

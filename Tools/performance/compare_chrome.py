@@ -51,10 +51,21 @@ def fixtures(directory):
                      'padding:12px}.cell{height:30px;width:100%}', 20),
     }
     jobs = []
+    contents = {}
+    shapes['hud-content'] = ('#target{display:flex;width:620px;gap:8px;padding:12px}'
+                             '.cell{width:90px;height:40px;padding:4px}'
+                             '.track{width:100%;height:14px;background:#23323b}'
+                             '.fill{width:75%;height:100%;background:#6ca46b}', 6)
+    contents['hud-content'] = '<div class="track"><div class="fill"></div></div>'
+    shapes['autosize-flex'] = ('#target{display:flex;justify-content:center;width:740px;gap:6px;padding:12px}'
+                              '.cell{flex:0 0 auto;padding:4px}'
+                              '.icon{width:48px;height:32px;background:#b69063}', 6)
+    contents['autosize-flex'] = '<div class="icon"></div>'
     for name, (css, count) in shapes.items():
         html_path, css_path = directory / f'{name}.html', directory / f'{name}.css'
         html_path.write_text('<!doctype html><html><head></head><body><div id="target">' +
-                             '<div class="cell"></div>' * count + '</div></body></html>', encoding='utf-8')
+                             ('<div class="cell">' + contents.get(name, '') + '</div>') * count +
+                             '</div></body></html>', encoding='utf-8')
         css_path.write_text(common + css, encoding='utf-8')
         for mode, target in (('panel', '#target'), ('leaf', '.cell:last-child')):
             jobs.append({'name': name, 'mode': mode, 'target': target, 'html': str(html_path), 'css': str(css_path),
@@ -72,10 +83,30 @@ def run(command, log):
 def check_geometry(native, chrome):
     if len(native) != len(chrome) or not native:
         raise ValueError('Layout element counts differ')
-    worst = max(abs(a[key] - b[key]) for a, b in zip(native, chrome) for key in ('x', 'y', 'w', 'h'))
+    deltas = [abs(a[key] - b[key]) for a, b in zip(native, chrome) for key in ('x', 'y', 'w', 'h')]
+    if not all(math.isfinite(delta) for delta in deltas):
+        raise ValueError('Nonfinite layout geometry')
+    worst = max(deltas)
     if not math.isfinite(worst) or worst > 0.1:
         raise ValueError(f'Layout differs by {worst} px; timing comparison rejected')
     return worst
+
+
+def check_mutated_geometry(native_states, chrome_states):
+    if len(native_states) != 2 or len(chrome_states) != 2:
+        raise ValueError('Expected both mutation states')
+    return max(check_geometry(a, b) for a, b in zip(native_states, chrome_states))
+
+
+def native_command(binary, job, passes, dump_path):
+    return [str(binary), job['html'], job['css'], str(passes), '--geometry', '--mutate=layout',
+            '--target=' + job['target'], '--geometry-dump=' + str(dump_path)]
+
+
+def read_geometry(path):
+    # An old executable may ignore an unknown flag. Missing dumps are fatal,
+    # rather than silently reverting to only checking the untouched fixture.
+    return json.loads(path.read_text(encoding='utf-8'))['elements']
 
 
 def main():
@@ -94,16 +125,29 @@ def main():
     out.mkdir(parents=True, exist_ok=False)
     jobs = fixtures(out)
     geometry = {}
+    mutation_geometry = {}
     for job in jobs:
         if job['name'] in geometry:
             continue
         path = out / (job['name'] + '-layout.json')
         run([str(dump), job['html'], '1280', '720', str(path), job['css']],
             out / (job['name'] + '-layout.log'))
-        geometry[job['name']] = json.loads(path.read_text(encoding='utf-8'))['elements']
+        geometry[job['name']] = read_geometry(path)
+    # Verify both alternating states, independently of the benchmark pass count.
+    # An even pass count ends at 12px, which matches the original panel style;
+    # checking that alone could incorrectly accept an ignored mutation.
+    for job in jobs:
+        states = []
+        for passes in (1, 2):
+            stem = f"verify-{job['name']}-{job['mode']}-{passes}"
+            path = out / (stem + '.json')
+            output = run(native_command(binary, job, passes, path), out / (stem + '.log'))
+            parse_native(output, geometry_only=True)
+            states.append(read_geometry(path))
+        mutation_geometry[(job['name'], job['mode'])] = states
     manifest = out / 'manifest.json'
     manifest.write_text(json.dumps({'passes': args.passes, 'jobs': jobs}, indent=2), encoding='utf-8')
-    receipt = {'schema': 2, 'boundary': 'attribute setter + synchronous style/layout + target bounds; no paint',
+    receipt = {'schema': 3, 'boundary': 'attribute setter + synchronous style/layout + target bounds; no paint',
                'utc': time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime()),
                'platform': platform.platform(), 'cpu': platform.processor(), 'logical_cpus': os.cpu_count(),
                'git_revision': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
@@ -117,11 +161,12 @@ def main():
         for engine in (('weva', 'chrome') if repetition % 2 == 0 else ('chrome', 'weva')):
             if engine == 'weva':
                 for job in jobs:
-                    command = [str(binary), job['html'], job['css'], str(args.passes)]
-                    command += ['--geometry', '--mutate=layout', '--target=' + job['target']]
+                    path = out / f"weva-{repetition}-{job['name']}-{job['mode']}-final.json"
+                    command = native_command(binary, job, args.passes, path)
                     output = run(command, out / f"weva-{repetition}-{job['name']}-{job['mode']}.log")
                     receipt['samples'].append({'engine': engine, 'run': repetition, **job,
-                                               **parse_native(output, geometry_only=True)})
+                                               **parse_native(output, geometry_only=True),
+                                               'final_geometry': read_geometry(path)})
             else:
                 path = out / f'chrome-{repetition}.json'
                 run([args.node, str(Path(__file__).with_name('chrome.cjs')), str(manifest), str(path)],
@@ -136,7 +181,15 @@ def main():
                     if not math.isfinite(sample['mean_ms']) or sample['mean_ms'] < 0:
                         raise ValueError('Invalid Chrome timing')
                     sample['layout_max_delta_px'] = check_geometry(geometry[sample['name']], sample['geometry'])
+                    sample['mutation_max_delta_px'] = check_mutated_geometry(
+                        mutation_geometry[(sample['name'], sample['mode'])], sample['mutation_geometry'])
                     receipt['samples'].append({'engine': engine, 'run': repetition, **sample})
+        for job in jobs:
+            samples = {s['engine']: s for s in receipt['samples'] if s['run'] == repetition
+                       and s['name'] == job['name'] and s['mode'] == job['mode']}
+            delta = check_geometry(samples['weva']['final_geometry'], samples['chrome']['final_geometry'])
+            samples['weva']['final_layout_max_delta_px'] = delta
+            samples['chrome']['final_layout_max_delta_px'] = delta
         print(f'Finished round {repetition + 1}/{args.runs}', flush=True)
     (out / 'results.json').write_text(json.dumps(receipt, indent=2), encoding='utf-8')
     lines = ['# Weva / Chrome matched mutation-to-layout', '',
@@ -151,6 +204,7 @@ def main():
     lines += ['', 'Neither engine paints, rasterizes or composites in the measured region.',
               'No host rendering, frame pacing, process launch, network, text or image decoding is measured.',
               'Panel changes affect a container; leaf changes affect one cell. These are geometry-only fixtures.',
+              'Initial geometry, both mutation states, and every timed batch final geometry match within 0.1px.',
               'See Tools/performance/README.md for methodology and limits.']
     (out / 'summary.md').write_text('\n'.join(lines) + '\n', encoding='utf-8')
     print('\n'.join(lines))

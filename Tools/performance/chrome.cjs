@@ -23,10 +23,11 @@ const {launch} = require('../oracle/chrome_test_browser.cjs');
                 document.body.getBoundingClientRect();
                 const target = document.querySelector(targetSelector);
                 if (!target) throw new Error('Missing mutation target');
-                const geometry = [...document.querySelectorAll('div')].map(e => {
+                const snapshot = () => [...document.querySelectorAll('div')].map(e => {
                     const r = e.getBoundingClientRect();
                     return {x: r.x, y: r.y, w: r.width, h: r.height};
                 });
+                const geometry = snapshot();
                 let total = 0, best = Infinity, checksum = 0;
                 const styles = ['padding-left:11px', 'padding-left:12px'];
                 for (let i = 0; i < passes; ++i) {
@@ -38,7 +39,14 @@ const {launch} = require('../oracle/chrome_test_browser.cjs');
                     checksum += rect.height;
                 }
                 if (!(checksum > 0)) throw new Error('Empty layout');
+                const final_geometry = snapshot();
+                // Post-timing checks do not change benchmark warmup or cache state.
+                const mutation_geometry = styles.map(style => {
+                    target.setAttribute('style', style);
+                    return snapshot();
+                });
                 return {mean_ms: total / passes, best_ms: best, checksum, geometry,
+                    final_geometry, mutation_geometry,
                     elements: document.querySelectorAll('*').length};
             }, {html, css, targetSelector: job.target, passes: manifest.passes});
             results.push({...job, ...result});

@@ -1627,6 +1627,8 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
                 pre = pre_resolve_rollback(name, raw, matches,
                                            winner_keys_[static_cast<size_t>(id)]);
             }
+            if (!reg.is_inherited(id) && iequals_ascii(trim_ws(pre), "inherit"))
+                out->set_inherits_non_inherited(true);
             if (id == font_id || id == line_id) {
                 const auto keyword = trim_ws(pre);
                 // Relative syntax copied from the parent is not a new

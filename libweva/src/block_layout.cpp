@@ -68,6 +68,14 @@ std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
 
+bool empty_ordinary_flow(const Box& box) {
+    // Empty grids still own explicit tracks; tables, flex and multicolumn
+    // containers also have formatting rules independent of a child count.
+    // Inline reflow may retain source items after removing its line boxes.
+    return box.first_child == kNoBox && !box.contains_inlines && !box.is_multicol &&
+           (box.display == DisplayKind::Block || box.display == DisplayKind::FlowRoot);
+}
+
 // The same lookup by id. A property id is resolved once for the
 // program below rather than hashed from its name on every call --
 // sampling put ComputedStyle::get and CssPropertyRegistry::id_of
@@ -1453,6 +1461,13 @@ void BlockLayout::relayout_content_at(BoxId id, double width, double font_size,
                        b.padding_top + b.padding_bottom + b.border_top + b.border_bottom;
         return;
     }
+    // Match initial layout's empty-box path. Flex/grid commonly impose an
+    // item's width after measuring it; with no content there is no formatting
+    // context to rerun, but min/max height and aspect ratio still need resolving.
+    if (empty_ordinary_flow(b)) {
+        finalize_block_size(id, font_size, b.padding_top + b.border_top);
+        return;
+    }
     // The first inline pass replaced the container's children with line boxes,
     // so the source runs can no longer be walked. The collected items are
     // cached per container for the duration of the pass and reused, which is
@@ -1582,7 +1597,7 @@ void BlockLayout::layout_block(BoxId id, double available_width,
         shrink_to_fit(id, available_width, parent_style);
         return;
     }
-    if (b.first_child == kNoBox) {
+    if (empty_ordinary_flow(b)) {
         finalize_block_size(id, fs, b.padding_top + b.border_top);
         return;
     }

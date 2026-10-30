@@ -353,14 +353,14 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             if (imposed_width) {
                 if (outer.display != DisplayKind::Flex && outer.display != DisplayKind::Grid)
                     continue;
-                // An unchanged flex/grid item's allocated width is an input
-                // to reflow. If its own sizing declarations changed, only its
-                // parent can allocate that width, so promote to the parent.
+                // Edge-only changes can be proved from the parent's measured
+                // inputs below. Sizing, placement and alignment directives
+                // still require the parent to allocate the item again.
                 bool own_change = false;
                 for (const auto& change : changes)
                     if (change.first == old.style && change.second >= Invalidation::Layout)
                         own_change = true;
-                if (own_change) continue;
+                if (own_change && (old.cross_size_imposed || !styles->only_box_edges_changed(old.style))) continue;
             }
             // Placed against a containing block further up: that ancestor can
             // still be replaced, with this box inside it.
@@ -395,6 +395,7 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             r.tree[r.from].is_inline_block = old.is_inline_block;
             r.tree.append_child(parent, r.from);
             BlockLayout block(&r.tree, ctx, metrics, &reuse);
+            bool independent_inline_contribution = false;
             if (imposed_width) {
                 // First measure the parent's sizing input. Imposing the old
                 // width immediately can shrink a growing child back to its
@@ -402,13 +403,32 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
                 // That made a content-box button keep 34px after 11px of
                 // padding was added, leaving its centred flex siblings stale.
                 block.layout_block(r.from, outer.content_width(), outer.style);
-                if (old.parent_layout_input !=
-                    measure_parent_layout_input(r.tree, r.from, outer.content_width(), ctx)) {
+                const ParentLayoutInput natural = measure_parent_layout_input(
+                    r.tree, r.from, outer.content_width(), ctx);
+                ParentLayoutInput measured = natural;
+                const Box& measured_box = r.tree[r.from];
+                const double old_frame = old.padding_left + old.padding_right + old.border_left + old.border_right;
+                const double new_frame = measured_box.padding_left + measured_box.padding_right +
+                                         measured_box.border_left + measured_box.border_right;
+                independent_inline_contribution = old.parent_inline_contribution_independent &&
+                    !old.cross_size_imposed &&
+                    (outer.display == DisplayKind::Grid
+                        ? old.width > old_frame && new_frame <= old.width
+                        : outer.display == DisplayKind::Flex && old.parent_layout_input.width == old.width);
+                if (independent_inline_contribution) {
+                    // The parent's constraint record proves it does not size
+                    // tracks/lines from this inline contribution. Natural
+                    // height and final outer geometry still prove placement.
+                    measured.min_content = old.parent_layout_input.min_content;
+                    measured.max_content = old.parent_layout_input.max_content;
+                }
+                if (old.parent_layout_input != measured) {
                     reject("natural intrinsic contribution", id);
                     continue;
                 }
                 block.relayout_at(r.from, old.width);
-                r.tree[r.from].parent_layout_input = old.parent_layout_input;
+                r.tree[r.from].parent_layout_input = natural;
+                r.tree[r.from].parent_inline_contribution_independent = old.parent_inline_contribution_independent;
             } else {
                 block.layout_block(r.from, outer.content_width(), outer.style);
             }
@@ -417,8 +437,9 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             // Dimensions alone do not prove stable intrinsic contributions to
             // a flex/grid ancestor. Compare the exports cached BEFORE styles
             // changed, rather than remeasuring old boxes with new styles.
-            if (contributions_[id].first != block_intrinsic_contribution(r.tree, r.from, &ctx, true) ||
-                contributions_[id].second != block_intrinsic_contribution(r.tree, r.from, &ctx, false))
+            if (!independent_inline_contribution &&
+                (contributions_[id].first != block_intrinsic_contribution(r.tree, r.from, &ctx, true) ||
+                 contributions_[id].second != block_intrinsic_contribution(r.tree, r.from, &ctx, false)))
                 { reject("intrinsic contribution", id); continue; }
             bool safe = true;
             for (BoxId p = old.parent; p != kNoBox; p = (*tree)[p].parent) {

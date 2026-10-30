@@ -283,6 +283,7 @@ void ComputedStyle::unset(int id) {
 
 void ComputedStyle::clear() {
     parent_ = nullptr;
+    inherits_non_inherited_ = false;
     font_size_inherited_ = false;
     line_height_inherited_ = false;
     // Keep stable pages and their string capacity for the next cascade into

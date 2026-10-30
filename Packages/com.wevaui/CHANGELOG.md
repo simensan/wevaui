@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generated bindings expect minor 45.
 
 ### Performance
+- Local inline style changes avoid unaffected descendant cascade. Proven
+  stable flex/grid item allocations can be reused after edge changes, and
+  grid sizing avoids contribution sorting when it cannot affect track sizes.
+  The matched Chrome benchmark checks mutation-to-layout work in both engines,
+  including post-mutation geometry; it does not measure host frame time.
 - Rounded fills reuse corner directions and AA displacements; thin borders
   avoid temporary outline copies and redundant color selection. Paired Godot
   inventory scrolling API CPU p95 improves 11.9% with identical screenshots.
