@@ -1,0 +1,739 @@
+{
+  "scope": "complete CPU including setters and submission; excludes GPU completion",
+  "batches": [
+    {
+      "binaries": {
+        "before": {
+          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-flex-defer.exe",
+          "sha256": "064ffedc8b36caf88b6f73c58b274b2bc1f04bfe5d5c27fa2d4159b489858d34"
+        },
+        "after": {
+          "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+          "sha256": "f10220697b2c883af4c7cbe0195ecdd12f50ef4f87e2d9203de1457738dedb2a"
+        }
+      },
+      "arguments": [
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
+      ],
+      "rows": [
+        {
+          "round": 0,
+          "version": "before",
+          "case": "hud",
+          "core": 0.066,
+          "host": 0.096,
+          "frame": 0.162,
+          "controller": 0.076,
+          "complete_cpu": 0.172
+        },
+        {
+          "round": 0,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.068,
+          "host": 0.2,
+          "frame": 1.268,
+          "controller": 1.178,
+          "complete_cpu": 1.378
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "hud",
+          "core": 0.076,
+          "host": 0.108,
+          "frame": 0.184,
+          "controller": 0.096,
+          "complete_cpu": 0.204
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.628,
+          "host": 0.187,
+          "frame": 0.815,
+          "controller": 0.757,
+          "complete_cpu": 0.944
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "hud",
+          "core": 0.07,
+          "host": 0.085,
+          "frame": 0.155,
+          "controller": 0.081,
+          "complete_cpu": 0.166
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.649,
+          "host": 0.195,
+          "frame": 0.843,
+          "controller": 0.768,
+          "complete_cpu": 0.963
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "hud",
+          "core": 0.063,
+          "host": 0.082,
+          "frame": 0.146,
+          "controller": 0.074,
+          "complete_cpu": 0.156
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.02,
+          "host": 0.199,
+          "frame": 1.218,
+          "controller": 1.139,
+          "complete_cpu": 1.338
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "hud",
+          "core": 0.056,
+          "host": 0.074,
+          "frame": 0.13,
+          "controller": 0.065,
+          "complete_cpu": 0.139
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.089,
+          "host": 0.192,
+          "frame": 1.281,
+          "controller": 1.204,
+          "complete_cpu": 1.396
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "hud",
+          "core": 0.087,
+          "host": 0.099,
+          "frame": 0.186,
+          "controller": 0.101,
+          "complete_cpu": 0.2
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.595,
+          "host": 0.163,
+          "frame": 0.758,
+          "controller": 0.697,
+          "complete_cpu": 0.86
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "hud",
+          "core": 0.077,
+          "host": 0.105,
+          "frame": 0.182,
+          "controller": 0.093,
+          "complete_cpu": 0.199
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.62,
+          "host": 0.178,
+          "frame": 0.798,
+          "controller": 0.73,
+          "complete_cpu": 0.908
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "hud",
+          "core": 0.076,
+          "host": 0.094,
+          "frame": 0.17,
+          "controller": 0.09,
+          "complete_cpu": 0.184
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.008,
+          "host": 0.186,
+          "frame": 1.194,
+          "controller": 1.12,
+          "complete_cpu": 1.306
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "hud",
+          "core": 0.068,
+          "host": 0.089,
+          "frame": 0.157,
+          "controller": 0.081,
+          "complete_cpu": 0.171
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.006,
+          "host": 0.185,
+          "frame": 1.19,
+          "controller": 1.113,
+          "complete_cpu": 1.298
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "hud",
+          "core": 0.069,
+          "host": 0.083,
+          "frame": 0.152,
+          "controller": 0.08,
+          "complete_cpu": 0.162
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.608,
+          "host": 0.18,
+          "frame": 0.788,
+          "controller": 0.719,
+          "complete_cpu": 0.899
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "hud",
+          "core": 0.063,
+          "host": 0.085,
+          "frame": 0.148,
+          "controller": 0.076,
+          "complete_cpu": 0.16
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.624,
+          "host": 0.192,
+          "frame": 0.816,
+          "controller": 0.738,
+          "complete_cpu": 0.929
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "hud",
+          "core": 0.074,
+          "host": 0.097,
+          "frame": 0.17,
+          "controller": 0.088,
+          "complete_cpu": 0.184
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.055,
+          "host": 0.198,
+          "frame": 1.253,
+          "controller": 1.173,
+          "complete_cpu": 1.371
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "hud",
+          "core": 0.077,
+          "host": 0.105,
+          "frame": 0.181,
+          "controller": 0.094,
+          "complete_cpu": 0.199
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.038,
+          "host": 0.217,
+          "frame": 1.255,
+          "controller": 1.16,
+          "complete_cpu": 1.377
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "hud",
+          "core": 0.058,
+          "host": 0.081,
+          "frame": 0.139,
+          "controller": 0.067,
+          "complete_cpu": 0.148
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.635,
+          "host": 0.186,
+          "frame": 0.822,
+          "controller": 0.749,
+          "complete_cpu": 0.935
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "hud",
+          "core": 0.071,
+          "host": 0.087,
+          "frame": 0.158,
+          "controller": 0.082,
+          "complete_cpu": 0.169
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.594,
+          "host": 0.174,
+          "frame": 0.768,
+          "controller": 0.701,
+          "complete_cpu": 0.875
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "hud",
+          "core": 0.073,
+          "host": 0.101,
+          "frame": 0.173,
+          "controller": 0.09,
+          "complete_cpu": 0.19
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.03,
+          "host": 0.194,
+          "frame": 1.224,
+          "controller": 1.144,
+          "complete_cpu": 1.338
+        }
+      ],
+      "viewport": [
+        1280,
+        720
+      ],
+      "inventory_complete_cpu_pair_reduction_percent": [
+        31.494920174165454,
+        28.026905829596416,
+        38.39541547277937,
+        30.47473200612557,
+        30.739599383667183,
+        32.23924142961342,
+        32.098765432098766,
+        34.60388639760838
+      ]
+    },
+    {
+      "binaries": {
+        "before": {
+          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-flex-defer.exe",
+          "sha256": "064ffedc8b36caf88b6f73c58b274b2bc1f04bfe5d5c27fa2d4159b489858d34"
+        },
+        "after": {
+          "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+          "sha256": "f10220697b2c883af4c7cbe0195ecdd12f50ef4f87e2d9203de1457738dedb2a"
+        }
+      },
+      "arguments": [
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
+        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
+      ],
+      "rows": [
+        {
+          "round": 0,
+          "version": "before",
+          "case": "hud",
+          "core": 0.06,
+          "host": 0.083,
+          "frame": 0.143,
+          "controller": 0.072,
+          "complete_cpu": 0.154
+        },
+        {
+          "round": 0,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.013,
+          "host": 0.191,
+          "frame": 1.204,
+          "controller": 1.128,
+          "complete_cpu": 1.318
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "hud",
+          "core": 0.057,
+          "host": 0.075,
+          "frame": 0.132,
+          "controller": 0.066,
+          "complete_cpu": 0.141
+        },
+        {
+          "round": 0,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.599,
+          "host": 0.181,
+          "frame": 0.779,
+          "controller": 0.709,
+          "complete_cpu": 0.889
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "hud",
+          "core": 0.072,
+          "host": 0.09,
+          "frame": 0.162,
+          "controller": 0.084,
+          "complete_cpu": 0.175
+        },
+        {
+          "round": 1,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.61,
+          "host": 0.183,
+          "frame": 0.793,
+          "controller": 0.723,
+          "complete_cpu": 0.906
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "hud",
+          "core": 0.079,
+          "host": 0.112,
+          "frame": 0.19,
+          "controller": 0.099,
+          "complete_cpu": 0.211
+        },
+        {
+          "round": 1,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.036,
+          "host": 0.202,
+          "frame": 1.238,
+          "controller": 1.157,
+          "complete_cpu": 1.359
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "hud",
+          "core": 0.072,
+          "host": 0.098,
+          "frame": 0.171,
+          "controller": 0.087,
+          "complete_cpu": 0.185
+        },
+        {
+          "round": 2,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.031,
+          "host": 0.192,
+          "frame": 1.223,
+          "controller": 1.145,
+          "complete_cpu": 1.337
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "hud",
+          "core": 0.057,
+          "host": 0.074,
+          "frame": 0.131,
+          "controller": 0.066,
+          "complete_cpu": 0.14
+        },
+        {
+          "round": 2,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.65,
+          "host": 0.206,
+          "frame": 0.856,
+          "controller": 0.766,
+          "complete_cpu": 0.972
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "hud",
+          "core": 0.058,
+          "host": 0.075,
+          "frame": 0.134,
+          "controller": 0.068,
+          "complete_cpu": 0.144
+        },
+        {
+          "round": 3,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.639,
+          "host": 0.203,
+          "frame": 0.842,
+          "controller": 0.763,
+          "complete_cpu": 0.966
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "hud",
+          "core": 0.068,
+          "host": 0.093,
+          "frame": 0.16,
+          "controller": 0.082,
+          "complete_cpu": 0.174
+        },
+        {
+          "round": 3,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.042,
+          "host": 0.198,
+          "frame": 1.24,
+          "controller": 1.16,
+          "complete_cpu": 1.358
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "hud",
+          "core": 0.088,
+          "host": 0.123,
+          "frame": 0.211,
+          "controller": 0.108,
+          "complete_cpu": 0.231
+        },
+        {
+          "round": 4,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.008,
+          "host": 0.187,
+          "frame": 1.195,
+          "controller": 1.115,
+          "complete_cpu": 1.303
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "hud",
+          "core": 0.076,
+          "host": 0.102,
+          "frame": 0.178,
+          "controller": 0.093,
+          "complete_cpu": 0.195
+        },
+        {
+          "round": 4,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.609,
+          "host": 0.171,
+          "frame": 0.78,
+          "controller": 0.728,
+          "complete_cpu": 0.899
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "hud",
+          "core": 0.071,
+          "host": 0.097,
+          "frame": 0.167,
+          "controller": 0.086,
+          "complete_cpu": 0.183
+        },
+        {
+          "round": 5,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.618,
+          "host": 0.192,
+          "frame": 0.81,
+          "controller": 0.738,
+          "complete_cpu": 0.93
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "hud",
+          "core": 0.056,
+          "host": 0.074,
+          "frame": 0.13,
+          "controller": 0.066,
+          "complete_cpu": 0.14
+        },
+        {
+          "round": 5,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.067,
+          "host": 0.203,
+          "frame": 1.27,
+          "controller": 1.188,
+          "complete_cpu": 1.391
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "hud",
+          "core": 0.056,
+          "host": 0.074,
+          "frame": 0.13,
+          "controller": 0.065,
+          "complete_cpu": 0.139
+        },
+        {
+          "round": 6,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.045,
+          "host": 0.196,
+          "frame": 1.241,
+          "controller": 1.159,
+          "complete_cpu": 1.355
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "hud",
+          "core": 0.088,
+          "host": 0.126,
+          "frame": 0.214,
+          "controller": 0.111,
+          "complete_cpu": 0.237
+        },
+        {
+          "round": 6,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.661,
+          "host": 0.193,
+          "frame": 0.854,
+          "controller": 0.783,
+          "complete_cpu": 0.976
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "hud",
+          "core": 0.057,
+          "host": 0.077,
+          "frame": 0.134,
+          "controller": 0.068,
+          "complete_cpu": 0.145
+        },
+        {
+          "round": 7,
+          "version": "after",
+          "case": "inventory",
+          "core": 0.624,
+          "host": 0.19,
+          "frame": 0.813,
+          "controller": 0.74,
+          "complete_cpu": 0.93
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "hud",
+          "core": 0.084,
+          "host": 0.111,
+          "frame": 0.195,
+          "controller": 0.102,
+          "complete_cpu": 0.212
+        },
+        {
+          "round": 7,
+          "version": "before",
+          "case": "inventory",
+          "core": 1.043,
+          "host": 0.191,
+          "frame": 1.234,
+          "controller": 1.156,
+          "complete_cpu": 1.348
+        }
+      ],
+      "viewport": [
+        1920,
+        1080
+      ],
+      "inventory_complete_cpu_pair_reduction_percent": [
+        32.54931714719271,
+        33.33333333333333,
+        27.29992520568437,
+        28.865979381443307,
+        31.00537221795855,
+        33.14162473040977,
+        27.970479704797047,
+        31.008902077151333
+      ]
+    }
+  ],
+  "fixture_sha256": {
+    ".utmp\\render-audit-20261030\\survival-fixtures\\ammo.svg.png": "d4520a84fd2b3fb782fff62a8db6309dcc73a01341283e86a878c9db48a2b4c9",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\bandage.svg.png": "21a0b64549df57ec47a4268213a6b6224c6b9fe8ba7397cba905f0c9e853f355",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\beans.svg.png": "cba3c4dc9418d7f358d2fa08ee84fabd465d4833024e39fc1512fe0df7b12eb4",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\bolt.svg.png": "b3377182cda4864d4e856bbafdc770cbdac253e87de7842346be45fc5b1e720a",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\campfire.svg.png": "5e041c7efcd01ebf13145c4a77d4e28b661d01f8d0551c330218705abcaac848",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\canteen.svg.png": "977f51dee7dff4001e396afe93a25d8111821b0b6317f4b15d9a9df79b276e86",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\cloth.svg.png": "2df601d83f95c1afc1196b852b4a41000d73155fdef701af74af5fffd638858b",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\drop.svg.png": "35271db3426bfd7e67188c7dc68684b1bf15508b12db0ccb6485c2afe9652424",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\food.svg.png": "ca655dfac85122ab568f6bb76c5d609447f10a3c5ad9916764803f6fbeb97e34",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hatchet.svg.png": "02508c1e246f60fdab8b2af5afa217582cbd327198dd614de98148655408ed49",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\heart.svg.png": "30d3a74ae6b0ec0d310a5603fe8071e0ad8538a5e25647980f4eb8bca65ab146",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hud.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hud.html": "b29a00ff8341aeec836f793fc988192149206931aa49e83f8895234b74f5ad10",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\inventory.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\inventory.html": "f2f130a482259071b078107e9d1a734c88dd47809bde4f382faa1c3028032090",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\knife.svg.png": "ceda161ae3ae746f80250b104a9146972159dfe6dfc75a06b6c65f512e1daa21",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\mutations.json": "aa0ad5e6a9768b9ece2c00c3a0d5afbb68f167a5461ecc086c029be0f253e8bc",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\open-sans-semibold.ttf": "445ac29890c338bc293873ec8da462193755346499903133b1b4d6f16eb708ca",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\revolver.svg.png": "730e040dd4dc0f0ab0e0919c29a9e00fe293fdf4b2d89544a3135c73b191c692",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\rope.svg.png": "39d42acb1a7b28cc761e4c9c00512ea601627fb0674cf994d53bc6fe86fdf09d",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\stone.svg.png": "64403858edb3564e0b034cf7da6d652286a5b55785f94547f56cf361f08f639b",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\wood.svg.png": "cbb723754580f23cfdd5a47f1640058bee21c510d89f95e7cdb9d42aef95bd7d"
+  }
+}

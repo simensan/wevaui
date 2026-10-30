@@ -113,6 +113,7 @@ struct Item {
     // justify-content sees any free space.
     bool auto_margin_start = false;
     bool auto_margin_end = false;
+    bool deferred_layout = false;
 };
 
 bool is_auto(std::string_view raw) { return iequals(raw, "auto"); }
@@ -312,8 +313,41 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
     for (Item& it : items) {
         // Laid out once at the container's inner width so its natural sizes and
         // box model are resolved; the main size is corrected below.
-        block->layout_block(it.box, content_width, style);
-        (*tree)[it.box].parent_layout_input = measure_parent_layout_input(*tree, it.box, content_width, ctx);
+        const Box& input = (*tree)[it.box];
+        const ComputedStyle* input_style = input.style;
+        // With explicit row basis/minimum and no maximum, no intrinsic size
+        // participates in allocation. Resolve the box model now and lay out
+        // contents only at the allocated width. Unknown natural-input exports
+        // remain marked unknown for incremental layout's proof.
+        static const int aspect_ratio = CssPropertyRegistry::instance().id_of("aspect-ratio");
+        it.deferred_layout = !column && definite_main && input_style &&
+            input.kind == BoxKind::Block &&
+            (input.display == DisplayKind::Block || input.display == DisplayKind::FlowRoot) &&
+            !input.is_inline_block && !input.is_multicol &&
+            input.element && input.element->tag_name() != "img" &&
+            input.element->tag_name() != "select" && input.element->tag_name() != "input" &&
+            input.element->tag_name() != "textarea" &&
+            vertical_mode_of(input_style) == VerticalMode::None &&
+            get(input_style, aspect_ratio) == "auto" &&
+            get(input_style, kId_width) == "auto" && get(input_style, kId_max_width) == "none" &&
+            get(input_style, kId_min_width) != "auto";
+        if (it.deferred_layout) {
+            const double input_font = font_size_px(input_style, style, ctx);
+            const auto input_basis = resolve_length(input_style, kId_flex_basis, ctx, input_font, main_basis);
+            const auto input_min = resolve_length(input_style, kId_min_width, ctx, input_font, main_basis);
+            it.deferred_layout = input_min.kind == LengthKind::Length &&
+                (input_basis.kind == LengthKind::Length || input_basis.kind == LengthKind::Percent);
+        }
+        if (it.deferred_layout) {
+            (*tree)[it.box].cross_size_imposed = false;
+            (*tree)[it.box].orthogonal_root = false;
+            (*tree)[it.box].vertical_text = 0;
+            (*tree)[it.box].font_size = apply_box_model(tree, it.box, content_width, style, ctx);
+            (*tree)[it.box].parent_layout_input = {};
+        } else {
+            block->layout_block(it.box, content_width, style);
+            (*tree)[it.box].parent_layout_input = measure_parent_layout_input(*tree, it.box, content_width, ctx);
+        }
         Box& b = (*tree)[it.box];
         const ComputedStyle* is = b.style;
         const auto cross_width = fixed_column
@@ -624,7 +658,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             // Re-indexed after every call that can lay out a box: BoxTree::create
             // appends to a vector, so a `Box&` held across a relayout dangles.
             if (!column) {
-                if (std::fabs((*tree)[it.box].width - it.main) > 1e-9) {
+                if (it.deferred_layout || std::fabs((*tree)[it.box].width - it.main) > 1e-9) {
                     block->relayout_at(it.box, it.main);
                 }
             } else {

@@ -1038,6 +1038,11 @@ void check_retained_item_subtrees() {
         "#panel{display:flex}.cell{height:auto;flex:none}.track{width:24px;margin-left:2%}",
         "#panel{display:flex}.cell{height:auto;flex:none}.track{width:24px;min-width:25%}",
         "#panel{display:flex}.cell{height:auto;flex:none}.track{width:24px;margin-inline:auto}",
+        "#panel{display:flex}.cell{width:auto;height:auto;flex:1 1 0%;min-width:0}",
+        "#panel{display:flex;align-items:baseline}.cell{width:auto;height:auto;flex:1 1 12px;min-width:0}",
+        "#panel{display:flex;flex-wrap:wrap}.cell{width:auto;height:auto;flex:1 1 50px;min-width:24px}",
+        "#panel{display:flex}.cell{width:auto;height:auto;flex:1 1 0%;min-width:0}.track{height:40%}",
+        "#panel{display:flex}.cell{width:auto;height:auto;flex:1 1 0%;min-width:0;max-width:50px}",
     };
     for (size_t variant = 0; variant < sizeof(cases) / sizeof(cases[0]); ++variant) {
         const std::string css = std::string(
@@ -1051,7 +1056,8 @@ void check_retained_item_subtrees() {
         std::string html = "<header></header><div id=panel>";
         for (int i = 0; i < 20; ++i) {
             html += "<div class=cell id=c" + std::to_string(i) + ">";
-            if (variant == 4) html += "Baseline label"; // Direct lines cannot be deferred.
+            if (variant == 4) html += "Baseline label";
+            else if (variant >= 20) html += "Baseline label that wraps at its allocated width";
             else html += "<div class=icon></div><div class=track><div class=fill></div></div>";
             html += "</div>";
         }

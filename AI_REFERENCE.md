@@ -281,3 +281,9 @@ keeps paint-only changes from invalidating retained layout. The targeted
 48-cell mixed update is 78.6% faster in complete CPU timing; no survival
 inventory gain is claimed. Main core checks are 492,136 (492,130 sanitized);
 Windows/GCC/Clang, 338 Chrome captures and affected host suites pass.
+
+The [deferred flex measurement pass](docs/verification/flex-defer-20261030.md)
+reduces survival inventory selection complete CPU by 32.2% at 720p and 31.2%
+at 1080p. Main checks are 492,686 (492,680 sanitized); 339 tracked Chrome
+captures and affected host suites pass. A separate pre-existing nested-flex
+baseline discrepancy remains documented in the receipt and product readiness.
