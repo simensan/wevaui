@@ -93,3 +93,44 @@ traces covering equivalent paint and presentation work. Cold application startup
 typing, scrolling, binding dispatch and actual HUD text updates are not covered.
 
 Runner checks: `python -m unittest discover -s Tools/tests -p test_chrome_performance.py`.
+
+## Rendered Godot frames
+
+The survival sample has a separate real-render benchmark:
+[`render_bench.gd`](../../hosts/godot/project/samples/western_survival/render_bench.gd).
+It measures controller/update CPU, renderer CPU setup, viewport render CPU/GPU,
+draw calls and wall-frame intervals. It keeps the native background visible
+while hiding Weva for a background-only control. It does not compare Chrome.
+
+```powershell
+$env:WEVA_RENDER_BENCH_OUT = "$PWD/.utmp/render-results.json"
+godot --path hosts/godot/project --script res://samples/western_survival/render_bench.gd --rendering-method mobile --resolution 1280x720 --audio-driver Dummy --log-file "$PWD/.utmp/render-engine.log"
+```
+
+Create the output directory first. The JSON includes raw samples and frame IDs;
+PNG captures are saved beside it outside measurement. Defaults: three rounds,
+600 measured frames per case after 120 warmups; reverse case order every other
+round. Override with `WEVA_RENDER_BENCH_FRAMES` and `WEVA_RENDER_BENCH_ROUNDS`.
+Cases are background-only, idle HUD, a meter/text change every frame, idle
+inventory, and an inventory selection every frame (an input stress case).
+Automatic sample/document processing and user interaction are disabled; the
+probe applies exactly one controlled update per rendered frame.
+
+Use a real visible rendering window, not headless, minimized or occluded output.
+The probe disables VSync and the frame cap. Repeat with
+`WEVA_RENDER_BENCH_GPU=0` to measure without timestamp collection overhead.
+Unavailable GPU timestamps are explicitly flagged, not interpreted as free
+rendering. Timings are asynchronous phase distributions: do not add CPU and
+GPU medians or subtract p95 values to derive frame cost.
+
+For separate CPU draw-packing/submission diagnostics, set
+`WEVA_GODOT_DRAW_LOG=1` and correlate its frame IDs with the JSON. This logging
+perturbs timing, so keep it out of the main latency run. A retained idle canvas
+may have no Weva draw callback while still being drawn by the GPU every frame.
+Viewport CPU excludes global render setup and document/controller processing;
+the JSON records those boundaries separately. See the
+[Godot timing API](https://docs.godotengine.org/en/stable/classes/class_renderingserver.html#class-renderingserver-method-viewport-get-measured-render-time-cpu)
+and [measured receipt](../../docs/verification/rendering-20261030.md).
+
+This is a warm 2D sample measurement on the reported GPU/driver, not a busy 3D
+game, cold shader compilation, or a matched Chrome rendering comparison.

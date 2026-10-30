@@ -90,6 +90,10 @@ and browser-level visual/text fidelity remain incomplete.
   this comparison. Separate native measurements include paint preparation.
   Cold fixture creation is mixed, including a 2.5% populated-inventory regression.
   These results do not measure host/GPU presentation or game load.
+  The separate [rendering probe](verification/rendering-20261030.md) now measures
+  Godot CPU/GPU rendering of the actual survival sample on an RTX 5080 at
+  1280x720, including a background-only control. It covers OpenGL and Vulkan;
+  weaker hardware, busy 3D scenes and matched Chrome rendering remain unverified.
 
 - **Deep markup:** content nested more than 64 elements deep is not rendered,
   so layout stays within a 1 MB thread stack.

@@ -1,0 +1,723 @@
+{
+  "schema": 1,
+  "methods": {
+    "gl_compatibility": {
+      "metadata": {
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "opengl3",
+        "engine": {
+          "build": "official",
+          "hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+          "hex": 263936,
+          "major": 4,
+          "minor": 7,
+          "patch": 0,
+          "status": "stable",
+          "string": "4.7-stable (official)",
+          "timestamp": 0
+        },
+        "frames": 600,
+        "gpu_timing_enabled": true,
+        "method": "gl_compatibility",
+        "rounds": 3,
+        "schema": 1,
+        "viewport": [
+          1280,
+          720
+        ],
+        "warmup": 120,
+        "binary_metadata": {
+          "revision": "a46a9a237adb65fb294461824e4d4864910066cd",
+          "engine_sha256": "b2ca888d5115a6cedee564764a2ee494a625f2ec2edbabd010fe33c9a88a6bf8",
+          "extension_sha256": "ca68cc035d2f60ea6660f8eec2760bd93e6c15e49f6899c369a19250ca72fe28",
+          "script_sha256": "d7cb729fa1371d3a86edd8fb6c29625bbec51d26b8fe606f519257bd45b22c40"
+        },
+        "raw_files": {
+          "draw-profile.json": "8582387b4a45c84ffd26045d5c6d6a4a50d0bac225226b23d9c71ea453142647",
+          "metadata.json": "bac272e5354237e31917eb596696d2835833075979fb05bce1fdbe1b0efdd803",
+          "timed.json": "eb841110906ce643587d0d6da0fea34faff803d1dbc0ab43e46c289ffd7c16ac",
+          "uninstrumented.json": "c6d54e11dc7f6e83ebb2b88d17e9c7d0c1eba72fbdeaddbe733a50b3b2738126"
+        }
+      },
+      "summary": [
+        {
+          "case": "background",
+          "draw_calls_median": 3.0,
+          "update_ms": {
+            "count": 1800,
+            "median_ms": 0.001,
+            "p95_ms": 0.001,
+            "mean_ms": 0.0005416666666666666,
+            "max_ms": 0.042
+          },
+          "render_setup_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.001,
+            "p95_ms": 0.002,
+            "mean_ms": 0.0012922222222222222,
+            "max_ms": 0.177
+          },
+          "render_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.068000003695488,
+            "p95_ms": 0.114000000059605,
+            "mean_ms": 0.07669888897695475,
+            "max_ms": 0.395000010728836
+          },
+          "render_gpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0270000007003546,
+            "p95_ms": 0.0320000015199184,
+            "mean_ms": 0.033265000670734395,
+            "max_ms": 0.999000012874603
+          },
+          "wall_ms": {
+            "count": 1800,
+            "median_ms": 0.351,
+            "p95_ms": 0.773,
+            "mean_ms": 0.4014377777777778,
+            "max_ms": 1.878
+          },
+          "wall_without_timestamps_ms": {
+            "count": 1800,
+            "median_ms": 0.335,
+            "p95_ms": 0.717,
+            "mean_ms": 0.41763666666666666,
+            "max_ms": 3.294
+          },
+          "draw_profile": {
+            "measured_frames": 120,
+            "redrawn_frames": 0
+          }
+        },
+        {
+          "case": "idle_hud",
+          "draw_calls_median": 63.0,
+          "update_ms": {
+            "count": 1800,
+            "median_ms": 0.004,
+            "p95_ms": 0.005,
+            "mean_ms": 0.004173888888888889,
+            "max_ms": 0.139
+          },
+          "render_setup_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.001,
+            "p95_ms": 0.002,
+            "mean_ms": 0.0012255555555555557,
+            "max_ms": 0.003
+          },
+          "render_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.17399999499321,
+            "p95_ms": 0.261000007390976,
+            "mean_ms": 0.18889944468935335,
+            "max_ms": 0.523000001907349
+          },
+          "render_gpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0390000008046627,
+            "p95_ms": 0.0419999994337559,
+            "mean_ms": 0.040888888931108834,
+            "max_ms": 0.433999985456467
+          },
+          "wall_ms": {
+            "count": 1800,
+            "median_ms": 0.484,
+            "p95_ms": 0.952,
+            "mean_ms": 0.5339033333333333,
+            "max_ms": 1.398
+          },
+          "wall_without_timestamps_ms": {
+            "count": 1800,
+            "median_ms": 0.476,
+            "p95_ms": 0.865,
+            "mean_ms": 0.544085,
+            "max_ms": 10.496
+          },
+          "draw_profile": {
+            "measured_frames": 120,
+            "redrawn_frames": 0
+          }
+        },
+        {
+          "case": "updating_hud",
+          "draw_calls_median": 63.0,
+          "update_ms": {
+            "count": 1800,
+            "median_ms": 0.122,
+            "p95_ms": 0.17,
+            "mean_ms": 0.1299538888888889,
+            "max_ms": 0.424
+          },
+          "render_setup_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.001,
+            "p95_ms": 0.002,
+            "mean_ms": 0.0014944444444444445,
+            "max_ms": 0.004
+          },
+          "render_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.200000002980232,
+            "p95_ms": 0.275000005960464,
+            "mean_ms": 0.21208111072580021,
+            "max_ms": 0.555000007152557
+          },
+          "render_gpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0410000011324883,
+            "p95_ms": 0.0439999997615814,
+            "mean_ms": 0.04422388968989257,
+            "max_ms": 0.842000007629395
+          },
+          "wall_ms": {
+            "count": 1800,
+            "median_ms": 0.9155,
+            "p95_ms": 1.456,
+            "mean_ms": 0.9931394444444445,
+            "max_ms": 2.275
+          },
+          "wall_without_timestamps_ms": {
+            "count": 1800,
+            "median_ms": 0.904,
+            "p95_ms": 1.505,
+            "mean_ms": 1.0003344444444444,
+            "max_ms": 2.694
+          },
+          "draw_profile": {
+            "measured_frames": 120,
+            "redrawn_frames": 120,
+            "callback_ms": {
+              "count": 120,
+              "median_ms": 0.1755,
+              "p95_ms": 0.307,
+              "mean_ms": 0.194175,
+              "max_ms": 0.651
+            },
+            "packing_ms": {
+              "count": 120,
+              "median_ms": 0.007,
+              "p95_ms": 0.007,
+              "mean_ms": 0.006816666666666667,
+              "max_ms": 0.013
+            },
+            "submission_ms": {
+              "count": 120,
+              "median_ms": 0.165,
+              "p95_ms": 0.296,
+              "mean_ms": 0.18326666666666666,
+              "max_ms": 0.641
+            }
+          }
+        },
+        {
+          "case": "inventory",
+          "draw_calls_median": 140.0,
+          "update_ms": {
+            "count": 1800,
+            "median_ms": 0.004,
+            "p95_ms": 0.005,
+            "mean_ms": 0.004281666666666667,
+            "max_ms": 0.016
+          },
+          "render_setup_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.001,
+            "p95_ms": 0.002,
+            "mean_ms": 0.001271111111111111,
+            "max_ms": 0.003
+          },
+          "render_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.319000005722046,
+            "p95_ms": 0.465999990701675,
+            "mean_ms": 0.34361277792188855,
+            "max_ms": 0.728999972343445
+          },
+          "render_gpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0570000000298023,
+            "p95_ms": 0.0599999986588955,
+            "mean_ms": 0.060308888989190255,
+            "max_ms": 1.06500005722046
+          },
+          "wall_ms": {
+            "count": 1800,
+            "median_ms": 0.68,
+            "p95_ms": 1.248,
+            "mean_ms": 0.7633911111111111,
+            "max_ms": 1.991
+          },
+          "wall_without_timestamps_ms": {
+            "count": 1800,
+            "median_ms": 0.7055,
+            "p95_ms": 1.219,
+            "mean_ms": 0.7469433333333333,
+            "max_ms": 2.321
+          },
+          "draw_profile": {
+            "measured_frames": 120,
+            "redrawn_frames": 0
+          }
+        },
+        {
+          "case": "inventory_selection",
+          "draw_calls_median": 140.0,
+          "update_ms": {
+            "count": 1800,
+            "median_ms": 1.8875,
+            "p95_ms": 2.626,
+            "mean_ms": 1.7991794444444444,
+            "max_ms": 3.47
+          },
+          "render_setup_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.002,
+            "p95_ms": 0.002,
+            "mean_ms": 0.00171,
+            "max_ms": 0.158
+          },
+          "render_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.363999992609024,
+            "p95_ms": 0.493999987840652,
+            "mean_ms": 0.3859994443588787,
+            "max_ms": 0.907000005245209
+          },
+          "render_gpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0659999996423721,
+            "p95_ms": 0.0759999975562096,
+            "mean_ms": 0.06970666592940687,
+            "max_ms": 0.522000014781952
+          },
+          "wall_ms": {
+            "count": 1800,
+            "median_ms": 3.3975,
+            "p95_ms": 4.51,
+            "mean_ms": 3.3792594444444446,
+            "max_ms": 5.974
+          },
+          "wall_without_timestamps_ms": {
+            "count": 1800,
+            "median_ms": 3.3765,
+            "p95_ms": 4.566,
+            "mean_ms": 3.376596111111111,
+            "max_ms": 24.062
+          },
+          "draw_profile": {
+            "measured_frames": 120,
+            "redrawn_frames": 120,
+            "callback_ms": {
+              "count": 120,
+              "median_ms": 0.475,
+              "p95_ms": 0.677,
+              "mean_ms": 0.5208333333333334,
+              "max_ms": 1.01
+            },
+            "packing_ms": {
+              "count": 120,
+              "median_ms": 0.083,
+              "p95_ms": 0.101,
+              "mean_ms": 0.08669166666666667,
+              "max_ms": 0.107
+            },
+            "submission_ms": {
+              "count": 120,
+              "median_ms": 0.3845,
+              "p95_ms": 0.563,
+              "mean_ms": 0.4255,
+              "max_ms": 0.895
+            }
+          }
+        }
+      ]
+    },
+    "mobile": {
+      "metadata": {
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "vulkan",
+        "engine": {
+          "build": "official",
+          "hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+          "hex": 263936,
+          "major": 4,
+          "minor": 7,
+          "patch": 0,
+          "status": "stable",
+          "string": "4.7-stable (official)",
+          "timestamp": 0
+        },
+        "frames": 600,
+        "gpu_timing_enabled": true,
+        "method": "mobile",
+        "rounds": 3,
+        "schema": 1,
+        "viewport": [
+          1280,
+          720
+        ],
+        "warmup": 120,
+        "binary_metadata": {
+          "revision": "a46a9a237adb65fb294461824e4d4864910066cd",
+          "engine_sha256": "b2ca888d5115a6cedee564764a2ee494a625f2ec2edbabd010fe33c9a88a6bf8",
+          "extension_sha256": "ca68cc035d2f60ea6660f8eec2760bd93e6c15e49f6899c369a19250ca72fe28",
+          "script_sha256": "d7cb729fa1371d3a86edd8fb6c29625bbec51d26b8fe606f519257bd45b22c40"
+        },
+        "raw_files": {
+          "draw-profile.json": "4e78d23f26a05771b2c14959444bb8103a736c933fe5cff6ae1265899048ad85",
+          "metadata.json": "bac272e5354237e31917eb596696d2835833075979fb05bce1fdbe1b0efdd803",
+          "timed.json": "b7ad4c5f1205028ad1778643ee0d7073c2546d2af0b5cd60ecf555962cb833cc",
+          "uninstrumented.json": "8ec2d8e8eea848dcb7d5631bfb26ae17b40cd50a587d9fe0e09605828d93fa34"
+        }
+      },
+      "summary": [
+        {
+          "case": "background",
+          "draw_calls_median": 3.0,
+          "update_ms": {
+            "count": 1800,
+            "median_ms": 0.0,
+            "p95_ms": 0.001,
+            "mean_ms": 0.00039555555555555557,
+            "max_ms": 0.002
+          },
+          "render_setup_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.002,
+            "p95_ms": 0.004,
+            "mean_ms": 0.0023672222222222224,
+            "max_ms": 0.038
+          },
+          "render_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0120000001043081,
+            "p95_ms": 0.0199999995529652,
+            "mean_ms": 0.013255555542806793,
+            "max_ms": 0.233999997377396
+          },
+          "render_gpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0109999999403954,
+            "p95_ms": 0.0120000001043081,
+            "mean_ms": 0.01154777772621152,
+            "max_ms": 0.430999994277954
+          },
+          "wall_ms": {
+            "count": 1800,
+            "median_ms": 0.258,
+            "p95_ms": 0.432,
+            "mean_ms": 0.2874233333333333,
+            "max_ms": 1.245
+          },
+          "wall_without_timestamps_ms": {
+            "count": 1800,
+            "median_ms": 0.271,
+            "p95_ms": 0.99,
+            "mean_ms": 0.3501361111111111,
+            "max_ms": 1.837
+          },
+          "draw_profile": {
+            "measured_frames": 120,
+            "redrawn_frames": 0
+          }
+        },
+        {
+          "case": "idle_hud",
+          "draw_calls_median": 63.0,
+          "update_ms": {
+            "count": 1800,
+            "median_ms": 0.004,
+            "p95_ms": 0.005,
+            "mean_ms": 0.0037277777777777778,
+            "max_ms": 0.047
+          },
+          "render_setup_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.002,
+            "p95_ms": 0.004,
+            "mean_ms": 0.002543333333333333,
+            "max_ms": 0.055
+          },
+          "render_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0309999994933605,
+            "p95_ms": 0.046000000089407,
+            "mean_ms": 0.032977222546728115,
+            "max_ms": 0.129999995231628
+          },
+          "render_gpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0120000001043081,
+            "p95_ms": 0.0130000002682209,
+            "mean_ms": 0.01247222236926769,
+            "max_ms": 0.0370000004768372
+          },
+          "wall_ms": {
+            "count": 1800,
+            "median_ms": 0.263,
+            "p95_ms": 0.451,
+            "mean_ms": 0.2876088888888889,
+            "max_ms": 2.056
+          },
+          "wall_without_timestamps_ms": {
+            "count": 1800,
+            "median_ms": 0.268,
+            "p95_ms": 0.657,
+            "mean_ms": 0.3396666666666667,
+            "max_ms": 2.013
+          },
+          "draw_profile": {
+            "measured_frames": 120,
+            "redrawn_frames": 0
+          }
+        },
+        {
+          "case": "updating_hud",
+          "draw_calls_median": 63.0,
+          "update_ms": {
+            "count": 1800,
+            "median_ms": 0.134,
+            "p95_ms": 0.157,
+            "mean_ms": 0.13345222222222222,
+            "max_ms": 0.362
+          },
+          "render_setup_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.003,
+            "p95_ms": 0.004,
+            "mean_ms": 0.0028183333333333333,
+            "max_ms": 0.015
+          },
+          "render_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.034000001847744,
+            "p95_ms": 0.0489999987185001,
+            "mean_ms": 0.035865556082377834,
+            "max_ms": 0.200000002980232
+          },
+          "render_gpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0130000002682209,
+            "p95_ms": 0.0140000004321337,
+            "mean_ms": 0.0132655557938334,
+            "max_ms": 0.0209999997168779
+          },
+          "wall_ms": {
+            "count": 1800,
+            "median_ms": 0.639,
+            "p95_ms": 0.793,
+            "mean_ms": 0.6556883333333333,
+            "max_ms": 1.347
+          },
+          "wall_without_timestamps_ms": {
+            "count": 1800,
+            "median_ms": 0.642,
+            "p95_ms": 0.853,
+            "mean_ms": 0.6704711111111111,
+            "max_ms": 1.569
+          },
+          "draw_profile": {
+            "measured_frames": 120,
+            "redrawn_frames": 120,
+            "callback_ms": {
+              "count": 120,
+              "median_ms": 0.233,
+              "p95_ms": 0.268,
+              "mean_ms": 0.23870833333333333,
+              "max_ms": 0.295
+            },
+            "packing_ms": {
+              "count": 120,
+              "median_ms": 0.006,
+              "p95_ms": 0.007,
+              "mean_ms": 0.006366666666666667,
+              "max_ms": 0.008
+            },
+            "submission_ms": {
+              "count": 120,
+              "median_ms": 0.223,
+              "p95_ms": 0.257,
+              "mean_ms": 0.22855833333333334,
+              "max_ms": 0.282
+            }
+          }
+        },
+        {
+          "case": "inventory",
+          "draw_calls_median": 140.0,
+          "update_ms": {
+            "count": 1800,
+            "median_ms": 0.004,
+            "p95_ms": 0.005,
+            "mean_ms": 0.003998333333333334,
+            "max_ms": 0.042
+          },
+          "render_setup_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.003,
+            "p95_ms": 0.004,
+            "mean_ms": 0.002671111111111111,
+            "max_ms": 0.007
+          },
+          "render_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0509999990463257,
+            "p95_ms": 0.0759999975562096,
+            "mean_ms": 0.05742333327109615,
+            "max_ms": 0.150999993085861
+          },
+          "render_gpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0209999997168779,
+            "p95_ms": 0.0219999998807907,
+            "mean_ms": 0.021423888651447134,
+            "max_ms": 0.190999999642372
+          },
+          "wall_ms": {
+            "count": 1800,
+            "median_ms": 0.2775,
+            "p95_ms": 0.584,
+            "mean_ms": 0.3310855555555556,
+            "max_ms": 1.744
+          },
+          "wall_without_timestamps_ms": {
+            "count": 1800,
+            "median_ms": 0.28,
+            "p95_ms": 0.583,
+            "mean_ms": 0.34475222222222224,
+            "max_ms": 2.253
+          },
+          "draw_profile": {
+            "measured_frames": 120,
+            "redrawn_frames": 0
+          }
+        },
+        {
+          "case": "inventory_selection",
+          "draw_calls_median": 140.0,
+          "update_ms": {
+            "count": 1800,
+            "median_ms": 1.889,
+            "p95_ms": 2.441,
+            "mean_ms": 1.7725105555555556,
+            "max_ms": 13.87
+          },
+          "render_setup_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.003,
+            "p95_ms": 0.004,
+            "mean_ms": 0.0034966666666666666,
+            "max_ms": 0.018
+          },
+          "render_cpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0670000016689301,
+            "p95_ms": 0.0949999988079071,
+            "mean_ms": 0.07122166688657469,
+            "max_ms": 0.33899998664856
+          },
+          "render_gpu_ms": {
+            "count": 1800,
+            "median_ms": 0.0219999998807907,
+            "p95_ms": 0.0280000008642673,
+            "mean_ms": 0.023488888925769245,
+            "max_ms": 0.221000000834465
+          },
+          "wall_ms": {
+            "count": 1800,
+            "median_ms": 2.954,
+            "p95_ms": 3.599,
+            "mean_ms": 2.8725244444444447,
+            "max_ms": 15.304
+          },
+          "wall_without_timestamps_ms": {
+            "count": 1800,
+            "median_ms": 2.93,
+            "p95_ms": 3.446,
+            "mean_ms": 2.822626666666667,
+            "max_ms": 4.348
+          },
+          "draw_profile": {
+            "measured_frames": 120,
+            "redrawn_frames": 120,
+            "callback_ms": {
+              "count": 120,
+              "median_ms": 0.577,
+              "p95_ms": 0.606,
+              "mean_ms": 0.5812499999999999,
+              "max_ms": 0.661
+            },
+            "packing_ms": {
+              "count": 120,
+              "median_ms": 0.081,
+              "p95_ms": 0.083,
+              "mean_ms": 0.08093333333333333,
+              "max_ms": 0.09
+            },
+            "submission_ms": {
+              "count": 120,
+              "median_ms": 0.4885,
+              "p95_ms": 0.516,
+              "mean_ms": 0.4926583333333333,
+              "max_ms": 0.566
+            }
+          }
+        }
+      ]
+    }
+  },
+  "input_sha256": {
+    "hosts/godot/project/project.godot": "7d65453f995677a94c34e022da2e315c61f45d8626252e1e43603b7d2f5dca82",
+    "hosts/godot/project/samples/western_survival/assets/ammo.svg": "275371d0d7a68d70153af930f3e8b0671b1820907cbcbd880d41eba744196328",
+    "hosts/godot/project/samples/western_survival/assets/bandage.svg": "856382a1821ddae843b4286b0a35e50a023a2f1bc59526db8b19a49cc99c8b25",
+    "hosts/godot/project/samples/western_survival/assets/beans.svg": "b162c244d83e3eb88e6f63f65789ff737a970f49eac2caf6f169df2aa0da5f6d",
+    "hosts/godot/project/samples/western_survival/assets/bolt.svg": "3e908258ac28f6094b0bc9a0972e8077b9502b4fbf5b51622b2f76bf49247a25",
+    "hosts/godot/project/samples/western_survival/assets/campfire.svg": "5ddf820420850029608567373918acec9288f2de9b613b78c9f6bc45b9187793",
+    "hosts/godot/project/samples/western_survival/assets/canteen.svg": "53fed62656b3e0c3d82f5d8fa1ab442bcda89a671b3b593c784cd4af168f4ccc",
+    "hosts/godot/project/samples/western_survival/assets/cloth.svg": "2ce0d8222bfa9864d2917200f2e0c61385c5615a7ae858935bbc450bbb887209",
+    "hosts/godot/project/samples/western_survival/assets/drop.svg": "968d1c811bdd585f573559062cb674e22e2541df5513d1570b10bc4c68fd13c2",
+    "hosts/godot/project/samples/western_survival/assets/food.svg": "96e412a3424526a59d9b0a3c32cf37189936efb6008af951d72e0032780d239d",
+    "hosts/godot/project/samples/western_survival/assets/frontier.png": "2307c8a96221510fc56434ae5fb93abbf7beb598e58bf910e2ae1ce828d5fbe1",
+    "hosts/godot/project/samples/western_survival/assets/hatchet.svg": "0e7475b08fd04895890b3279d66ab7b69c4a9f95c5d3a9f827644fda9c12bb90",
+    "hosts/godot/project/samples/western_survival/assets/heart.svg": "039a7ae4a0eb57f68917e47445f659b412e9f4de37922fa853aba26c551330d1",
+    "hosts/godot/project/samples/western_survival/assets/knife.svg": "3df4b202877db7788fc5af98597c20ef2051597f9547d90160016e42058510d7",
+    "hosts/godot/project/samples/western_survival/assets/revolver.svg": "ad75260f7c4e9e567f4f1571d5c26e4ba44c0247597ca2ff69564b3795e121c7",
+    "hosts/godot/project/samples/western_survival/assets/rope.svg": "680850698a0ad648cab699f6f1e922b9dada9f13d44a9d8043fefe3cf6fc808b",
+    "hosts/godot/project/samples/western_survival/assets/stone.svg": "7b6529667902a43b2f38260355bf35e15612c45068a1625ee453060a7b5ee05d",
+    "hosts/godot/project/samples/western_survival/assets/wood.svg": "2e0f1b5cc7ba0e60a9ce57393498bc2149aab4db979e1dc4457a20bef732a0a2",
+    "hosts/godot/project/samples/western_survival/image_ui_bench.gd": "bf45d76946659978c81aee53bbb5dc7bbad7467b444a928e326fdd2b8292b992",
+    "hosts/godot/project/samples/western_survival/render_bench.gd": "d7cb729fa1371d3a86edd8fb6c29625bbec51d26b8fe606f519257bd45b22c40",
+    "hosts/godot/project/samples/western_survival/survival.css": "beda6e82a4ea5ee6d22ce9f3570b7569d3cef2bc6863f7116634edc774f14b8f",
+    "hosts/godot/project/samples/western_survival/survival.html": "86c60ccacee2c87fc5960202417641edf30d94a6fdcd5282949a3ea8f4b446a1",
+    "hosts/godot/project/samples/western_survival/survival.tscn": "7ab6051f95211bcb2e41e7aea09748bf17331631a53e3af0ba1cf43af449e642",
+    "hosts/godot/project/samples/western_survival/survival_bench.gd": "76be9a7f5bb819d3abeef262d87cbbd9481f14f0113a1c50456838de2dd1941b",
+    "hosts/godot/project/samples/western_survival/survival_smoke.gd": "2e576bd8641306c7b38cfef29dbb031f27aba3b73b1a695a3479ad1c62401eda",
+    "hosts/godot/project/samples/western_survival/survival_ui.gd": "0f70f8b9d6205b39955d337943a860e9de5d26f6ec46785f893bbc24cd66eca7"
+  },
+  "host_build": {
+    "schema": 1,
+    "library_sha256": "ca68cc035d2f60ea6660f8eec2760bd93e6c15e49f6899c369a19250ca72fe28",
+    "source": {
+      "revision": "ca1748c671d3ff6018a00a0f2fb6f220524ee83b",
+      "dirty": true,
+      "sha256": "7ff49d3996b47e4e84f0acd2c85e0db6d4b20f3f0937d5f7912dd4eb0e3962ac"
+    },
+    "godot_cpp": {
+      "revision": null,
+      "dirty": null,
+      "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+    },
+    "configuration": "Release",
+    "compiler": {
+      "id": "MSVC",
+      "version": "19.44.35222.0"
+    },
+    "cmake_version": "4.3.2",
+    "godot_api": "4.7",
+    "precision": "single",
+    "custom_api": null,
+    "sanitizers": false
+  }
+}

@@ -154,6 +154,13 @@ bounded caches, retained-flex proofs, allocation changes and measurement limits.
 
 ## 4. Workflow recipes
 
+For rendered survival UI measurements, use the
+[Godot render probe](Tools/performance/README.md#rendered-godot-frames).
+The [October 30 rendering receipt](docs/verification/rendering-20261030.md)
+separates controller/update CPU, host draw callbacks, viewport CPU/GPU and
+timestamp-disabled wall intervals. It changes no engine code or gate counts;
+its RTX 5080/OpenGL/Vulkan results are not Chrome rendering parity.
+
 The [October 30 Chrome benchmark setup](docs/verification/chrome-performance-20261030.md)
 is superseded by the [matched layout benchmark](docs/verification/chrome-matched-20261030.md).
 The [layout optimization follow-up](docs/verification/chrome-close-20261030.md)

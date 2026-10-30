@@ -16,6 +16,13 @@ Cold fixture results are mixed; see the receipt rather than assuming every
 operation improves. The latest gate covers 338 Chrome captures, 704,365 GCC
 core checks and 704,359 ASan/UBSan checks, plus both hosts and live Godot scenes.
 
+The [rendering measurement](docs/verification/rendering-20261030.md) adds a
+real survival-UI probe with background-only control, CPU/GPU timestamps,
+timestamp-disabled frame timing and separate draw-submission diagnostics.
+It covers Godot Compatibility/OpenGL and Mobile/Vulkan on an RTX 5080 at
+1280x720; it is not a matched Chrome rendering comparison or a busy 3D scene.
+Run it using [these instructions](Tools/performance/README.md#rendered-godot-frames).
+
 A single document for an AI assistant asked to **use, integrate, or reason
 about** Weva: what it is, what it can and cannot do, how to wire it up, how
 the pieces fit, and which tools verify it. When a claim here and the code

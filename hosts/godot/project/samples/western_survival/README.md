@@ -94,6 +94,12 @@ godot --path hosts/godot/project --rendering-method gl_compatibility --script re
 The probe measures GDScript controller work plus `update_document`, after 60
 warm-up frames, over 300 samples per case at a simulated 60 Hz. It does **not**
 measure GPU rendering, presentation, complete game frame time, or allocations.
+For actual rendered frames and GPU timestamps, use the separate
+[`render_bench.gd`](render_bench.gd) and its
+[run instructions](../../../../../Tools/performance/README.md#rendered-godot-frames).
+It includes a background-only control, changing text/meters, inventory selection,
+raw frame samples and screenshots; the old CPU-only measurements below retain
+their original scope.
 The native runs use Windows on a Ryzen 7 9800X3D and RTX 5080 with Godot 4.7.2's
 Compatibility renderer at 1280 × 720. The table reports the median of each
 statistic from the earlier three paired runtime60/runtime61 runs, alternating run order.
