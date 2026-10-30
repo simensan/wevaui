@@ -259,6 +259,11 @@ removes intermediate Godot paints, adds ten timing checks (31 total), and
 records preliminary before/after evidence. The continuing rendering audit
 uses Agentic at the user’s request; Godot results do not qualify that host.
 
+The [Agentic runtime audit](docs/verification/agentic-runtime-20261030.md) adds
+9,000 CPU-only rendered frames, live click/binding checks and 339 short-cycle
+reloads in a published SDK using the current core. It is not a Chrome rendering
+comparison or a production-game performance result.
+
 The [Agentic packed-paint audit](docs/verification/agentic-packed-20261030.md)
 removes duplicate snapshot/upload copies in Agentic (ff1c9925b, not integrated
 into engine-main yet). Two paint and twelve renderer tests pass. It records

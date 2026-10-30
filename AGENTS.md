@@ -1,5 +1,10 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [October 30 Agentic runtime receipt](docs/verification/agentic-runtime-20261030.md)
+adds 9,000 CPU-only rendered frames, input/binding checks and 339 reloads in an
+immutable SDK built with the current core. No engine code changes in this chunk;
+shared-host gate counts remain those in the nested-baseline receipt.
+
 Read this before changing anything. It is for **changing the engine or a
 host**; if you are being asked to *author UI* (write HTML/CSS and a
 controller), the manual is

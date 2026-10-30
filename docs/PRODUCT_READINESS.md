@@ -23,6 +23,12 @@ captured block/grid/flex cases, including reordered children. See the
 [baseline receipt](verification/nested-baseline-20261030.md) for the scoped
 Chrome and host checks; this is not complete CSS baseline conformance.
 
+The [Agentic runtime audit](verification/agentic-runtime-20261030.md) validates
+the current core in an immutable Agentic SDK with a scripted survival UI over
+a synthetic 3D scene: clicks/bindings, 9,000 profiled frames and 339 short-cycle
+reloads. This is scoped runtime evidence, not a new supported-host release or
+a matched Chrome rendering comparison.
+
 ## Choose your host
 
 | Host | Requirements and tested scope | Start here |

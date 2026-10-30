@@ -1,0 +1,640 @@
+{
+  "weva_commit": "faf04f31",
+  "agentic_commit": "be88b3cb2",
+  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030",
+  "runs": [
+    {
+      "mode": 0,
+      "round": 0,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.5160000000000053,
+      "wall_p95_ms": 0.7549999999999955,
+      "main_ui_p95_ms": 0.0355,
+      "worker_ui_p95_ms": 0.034499999999999996,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f301ffa8a9c-37\\report.json",
+          "sha256": "c1e1f9bbe64f8042c8a69b4e000372164126e1c888b77675b2cf7fea344a5b34"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f301ffa8a9c-37\\frames.jsonl",
+          "sha256": "2b1483027d389f035861cce0d9f41a5e78dc366f6e3aaec684495dc8bd6c44c6"
+        }
+      ]
+    },
+    {
+      "mode": 0,
+      "round": 1,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.5161999999999978,
+      "wall_p95_ms": 0.7443000000000097,
+      "main_ui_p95_ms": 0.054200000000000005,
+      "worker_ui_p95_ms": 0.0537,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31bc587218-136\\report.json",
+          "sha256": "577fc94cfc42d3b6a59af83ed05b7d177dc3138295d33e046884bd6d8d94233e"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31bc587218-136\\frames.jsonl",
+          "sha256": "94f5607dd32bc23f64ff332138960e1f99dddb522c369e5f8bdbea76461e3a25"
+        }
+      ]
+    },
+    {
+      "mode": 0,
+      "round": 2,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.508499999999998,
+      "wall_p95_ms": 0.6919999999999931,
+      "main_ui_p95_ms": 0.029600000000000005,
+      "worker_ui_p95_ms": 0.0283,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31dc05a338-147\\report.json",
+          "sha256": "14c1b30428dec7f223235b20c33934c7b53751c5616c5904398abba727094c54"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31dc05a338-147\\frames.jsonl",
+          "sha256": "57b97c1709e7f0c704938ad5aa1d0fc524e3f937148b9a6b92a84790ee62984e"
+        }
+      ]
+    },
+    {
+      "mode": 1,
+      "round": 0,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.572250000000011,
+      "wall_p95_ms": 0.7128000000000156,
+      "main_ui_p95_ms": 0.103,
+      "worker_ui_p95_ms": 0.1008,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f30da8fc0c0-81\\report.json",
+          "sha256": "348e9e907a621c9e2986fdccfde18b6553b4c3d363abde5eb2059ebc69975a4b"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f30da8fc0c0-81\\frames.jsonl",
+          "sha256": "d092255118e5cabb26559eb92e5678ac559334bd0ddb4434d3f12fbf0b94550b"
+        }
+      ]
+    },
+    {
+      "mode": 1,
+      "round": 1,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.6515999999999877,
+      "wall_p95_ms": 0.8613000000000284,
+      "main_ui_p95_ms": 0.1476,
+      "worker_ui_p95_ms": 0.1442,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f30fc30fc08-92\\report.json",
+          "sha256": "74bfc7497be527513a1712c1e7489ad13f0fadfc6f5212ea3fdddfde5965e8de"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f30fc30fc08-92\\frames.jsonl",
+          "sha256": "1c7f3eee5253b4e1c2a70e2f14a4313ef9edde3bb9d9c5dde328dbda19ab1cd0"
+        }
+      ]
+    },
+    {
+      "mode": 1,
+      "round": 2,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.8932000000000073,
+      "wall_p95_ms": 1.2890999999999622,
+      "main_ui_p95_ms": 0.2236,
+      "worker_ui_p95_ms": 0.221,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f3296aaf468-191\\report.json",
+          "sha256": "1c6ad0d600d5a8481c5bbecf71368b2f882e024fd2ca73b71522dfcb2962f792"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f3296aaf468-191\\frames.jsonl",
+          "sha256": "daf8e07a49be4795b4a1e40f236d4694c6b0d815d68021b1843336b37b36f407"
+        }
+      ]
+    },
+    {
+      "mode": 2,
+      "round": 0,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.7737999999999943,
+      "wall_p95_ms": 0.9746000000000379,
+      "main_ui_p95_ms": 0.3285,
+      "worker_ui_p95_ms": 0.1439,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f303fc9bd98-48\\report.json",
+          "sha256": "14630f91c387fd73464fd90f65b507157ffebf3645a67ed600997a2a6471797e"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f303fc9bd98-48\\frames.jsonl",
+          "sha256": "41fffaf01746a6d92b924fa572e35bd44d34e2e1ccf4ed5dc749c9608fec8cac"
+        }
+      ]
+    },
+    {
+      "mode": 2,
+      "round": 1,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.8237000000000094,
+      "wall_p95_ms": 1.052599999999984,
+      "main_ui_p95_ms": 0.3742,
+      "worker_ui_p95_ms": 0.20450000000000002,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f3190211bb4-125\\report.json",
+          "sha256": "2e8f90a025493888c91de12d63d23d77a383892fc5a9504c52031019ff17ffca"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f3190211bb4-125\\frames.jsonl",
+          "sha256": "bb195dbd73aa78967ec0d4cc0f040fbec7e307ccfbedfa8c1900b9ad589543de"
+        }
+      ]
+    },
+    {
+      "mode": 2,
+      "round": 2,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.8243999999999829,
+      "wall_p95_ms": 1.0640000000000214,
+      "main_ui_p95_ms": 0.36350000000000005,
+      "worker_ui_p95_ms": 0.2047,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31fb42244c-158\\report.json",
+          "sha256": "d2cef908ea44929b2556576064c9bebd0c37addb6d4a2cb6e913a86f827b451a"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31fb42244c-158\\frames.jsonl",
+          "sha256": "7e1b43c66d19d4b31fb69bfa6837264a7dfb73ae92ed68677b8baf3e42d03add"
+        }
+      ]
+    },
+    {
+      "mode": 3,
+      "round": 0,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 1.4463499999999954,
+      "wall_p95_ms": 1.6708999999999605,
+      "main_ui_p95_ms": 1.0381,
+      "worker_ui_p95_ms": 0.2271,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f309141ea10-70\\report.json",
+          "sha256": "939e7ea69315162a85a3dba576f69be35a0e06f9cbb3e2ad3b8fe8089b0e4280"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f309141ea10-70\\frames.jsonl",
+          "sha256": "b57a67d6a7e3eaef484da12c80368cf0441f33355479be1a0d6f51a5267c1c2c"
+        }
+      ]
+    },
+    {
+      "mode": 3,
+      "round": 1,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 1.4932500000000033,
+      "wall_p95_ms": 1.9390999999999394,
+      "main_ui_p95_ms": 1.2877,
+      "worker_ui_p95_ms": 0.2415,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f312110094c-103\\report.json",
+          "sha256": "88463839f94dae2fb171201b3aaaab8cc39f77505cd48fff57dbd3c8904b1472"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f312110094c-103\\frames.jsonl",
+          "sha256": "52cc5346095100dcb5b644fc76e949f41f722ce178df905c5c5b10bf49957c9f"
+        }
+      ]
+    },
+    {
+      "mode": 3,
+      "round": 2,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 1.549350000000004,
+      "wall_p95_ms": 1.9318000000000666,
+      "main_ui_p95_ms": 1.2383,
+      "worker_ui_p95_ms": 0.2931,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f324abb91fc-180\\report.json",
+          "sha256": "eb8a9b518e429a4bc7bbc7d4e8e4e910bb7b4ec32123506f12a745f16ce83354"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f324abb91fc-180\\frames.jsonl",
+          "sha256": "87afe39a4a01ae49676f296f98d53aff592f6593f587447dc8af9d622eb7ed7f"
+        }
+      ]
+    },
+    {
+      "mode": 4,
+      "round": 0,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.6168500000000137,
+      "wall_p95_ms": 0.8944000000000187,
+      "main_ui_p95_ms": 0.16689999999999997,
+      "worker_ui_p95_ms": 0.1639,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f306b3d4954-59\\report.json",
+          "sha256": "0c52bb119fdbb7ab4d96aa395f1d5d8919054d78afc3b16516b5bb60371d6156"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f306b3d4954-59\\frames.jsonl",
+          "sha256": "490a9fc34df1d9aa361c816e9615304a26f51f2ea18d532837a639907b1c2296"
+        }
+      ]
+    },
+    {
+      "mode": 4,
+      "round": 1,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.5896999999999935,
+      "wall_p95_ms": 0.7402999999999906,
+      "main_ui_p95_ms": 0.11389999999999999,
+      "worker_ui_p95_ms": 0.1119,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f316d47ac34-114\\report.json",
+          "sha256": "78e96430c232e63f9f563a2f879e12edf3035d3dc05a57a5a0521dbbf2643aee"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f316d47ac34-114\\frames.jsonl",
+          "sha256": "8c710b1495de4b054e3084be68092dc482e9cd2f442e1f7eaf532e7246fd503d"
+        }
+      ]
+    },
+    {
+      "mode": 4,
+      "round": 2,
+      "frames": 600,
+      "marked_frames": 0,
+      "wall_median_ms": 0.5852000000000217,
+      "wall_p95_ms": 0.8352999999999611,
+      "main_ui_p95_ms": 0.17930000000000001,
+      "worker_ui_p95_ms": 0.17650000000000002,
+      "artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f322869d974-169\\report.json",
+          "sha256": "db05d154d4aa80395c8c01795b4aeb536ba96592c13cc8386de83fb995a44636"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f322869d974-169\\frames.jsonl",
+          "sha256": "bea8d58ddb3e020a42e1504bff69d00fab12aa2a97f5a7f45fd8bd21bef38114"
+        }
+      ]
+    }
+  ],
+  "runtime_metadata": {
+    "session_id": "d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08",
+    "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-runtime-project-v2",
+    "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\69d1a835fcaa3dc7ec4f5627ecce8d69a3e513058329f6e592ac24b1faa52ae2",
+    "executable_sha256": "3ea52566cb2b3ae54688bdf6b30dadf480f7856844804666cf8312293651ee67",
+    "adapter": "NVIDIA GeForce RTX 5080",
+    "driver": "Vulkan (NVIDIA 617.42)",
+    "os": "windows",
+    "arch": "x86_64",
+    "logical_processors": 16,
+    "launch_args": [],
+    "settings": {
+      "title": "Weva runtime audit",
+      "app_id": "com.agentic.game",
+      "retain_save_backup": true,
+      "version": "1.0.0",
+      "build_number": 1,
+      "icon": "",
+      "width": 1280,
+      "height": 720,
+      "physical_window_size": false,
+      "agent_activity_overlay": false,
+      "fullscreen": false,
+      "start_scene": "Scenes/audit.scene.ron",
+      "vsync": false,
+      "threaded_rendering": true,
+      "weva_ui": false,
+      "show_cursor": true,
+      "quality": "Auto",
+      "water_render_budget": null,
+      "white_primitives": false,
+      "white_materials": false,
+      "orientation": "Landscape",
+      "html_screen": "",
+      "loading_screen": {
+        "image": "",
+        "stretch_mode": "Cover",
+        "background": [
+          0.03500000014901161,
+          0.03500000014901161,
+          0.03999999910593033,
+          1.0
+        ],
+        "bar_color": [
+          0.8500000238418579,
+          0.8500000238418579,
+          0.8799999952316284,
+          1.0
+        ]
+      },
+      "privacy": {
+        "camera": "",
+        "microphone": "",
+        "photo_library": "",
+        "location": "",
+        "bluetooth": "",
+        "local_network": ""
+      }
+    },
+    "viewport": [
+      1280,
+      720
+    ],
+    "adapter_info": {
+      "name": "NVIDIA GeForce RTX 5080",
+      "vendor": 4318,
+      "device": 11266,
+      "backend": "Vulkan",
+      "device_type": "DiscreteGpu",
+      "driver": "NVIDIA",
+      "driver_info": "617.42"
+    },
+    "presentation": "AutoNoVsync",
+    "frame_pacing": {
+      "uncapped": false,
+      "configured_foreground_fps": 0.0,
+      "configured_background_fps": 0.0,
+      "focused": false
+    },
+    "debug_assertions": false,
+    "scenario": {
+      "owned": false,
+      "fixed_delta_seconds": null,
+      "uncapped": false,
+      "checkpoints": [],
+      "pending": null
+    },
+    "independent_gpu_profiling": false,
+    "cpu_allocations": "unavailable",
+    "measurement": "rendered development runtime; CPU/wall observations with explicitly selected GPU timestamp sampling",
+    "input": null,
+    "sampling": "cpu_only",
+    "gpu_timestamp_sampling": {
+      "requested": false,
+      "supported": true,
+      "enabled_recorded_frames": 0,
+      "status": "skipped",
+      "reason": "cpu_only requested; GPU measurements omitted; actual instrumentation state checked separately",
+      "scheduling": "CPU-only leaves the normal GPU-enable gate unchanged; GPU diagnostics opts into timestamp scheduling",
+      "cpu_only_contract_satisfied": true
+    }
+  },
+  "configuration": [
+    {
+      "schema_version": 1,
+      "game_config": {
+        "quality": "Auto",
+        "fullscreen": false,
+        "vsync": false,
+        "threaded_rendering": true,
+        "ui_backend": "native",
+        "water_render_budget": null,
+        "white_primitives": false,
+        "white_materials": false
+      },
+      "output_size": [
+        1280,
+        720
+      ],
+      "scene_size": [
+        1280,
+        720
+      ],
+      "render_scale": 1.0,
+      "camera_viewport": null,
+      "presentation": "AutoNoVsync",
+      "surface_format": "Bgra8Unorm",
+      "frame_pacing": {
+        "uncapped": false,
+        "configured_foreground_fps": 0.0,
+        "configured_background_fps": 0.0,
+        "focused": false
+      },
+      "render_quality": {
+        "mode": "Solid",
+        "shadows": true,
+        "shadow_resolution": 1024,
+        "bounding_boxes": false,
+        "fog": false,
+        "fog_mode": "Linear",
+        "glow": false,
+        "ssao": false,
+        "ssao_temporal": true,
+        "ssao_assao": null,
+        "ssgi": false,
+        "msaa_samples": 1,
+        "fxaa": false,
+        "smaa": false,
+        "smaa_edge_threshold": 0.05000000074505806,
+        "taa": false,
+        "volumetric_fog": false,
+        "volumetric_fog_after_opaque": false,
+        "god_rays": false,
+        "god_rays_samples": 64,
+        "dof": false,
+        "vignette": false,
+        "chromatic_aberration": false,
+        "film_grain": false,
+        "motion_blur": false,
+        "motion_blur_samples": 8,
+        "lens_flare": false,
+        "depth_prepass": true,
+        "tonemap": "AcesApprox",
+        "ibl": true,
+        "ibl_diffuse": true
+      },
+      "coverage": {
+        "included": "GameConfig quality fields, submitted primary viewport/scale, presentation/pacing, enumerated extracted quality controls and completed-frame built-in/loaded user pass enables plus material anisotropy",
+        "excluded": [
+          "window title and application metadata",
+          "animated lighting/weather/effect values",
+          "per-object materials",
+          "sub-view settings",
+          "renderer fallback decisions",
+          "driver overrides"
+        ]
+      },
+      "renderer_controls": {
+        "builtin": {
+          "shadow": true,
+          "shadow_2d": true,
+          "depth_prepass": true,
+          "clustered_culling": true,
+          "gbuffer_fill": true,
+          "opaque": true,
+          "sky": true,
+          "transparent": true,
+          "particles": true,
+          "decals": true,
+          "ssao": true,
+          "bloom": true,
+          "volumetric_fog": true,
+          "lens_flare": true,
+          "tonemap": true,
+          "fxaa": true,
+          "taa": true,
+          "vignette": true,
+          "chromatic_aberration": true,
+          "film_grain": true,
+          "motion_blur": true,
+          "dof": true,
+          "lut": true,
+          "compositor_pre_opaque": true,
+          "compositor_post_opaque": true,
+          "compositor_transparent": true,
+          "compositor_post_transparent": true,
+          "compositor_post_process": true,
+          "selection_outline": true,
+          "overlay_blit": true,
+          "final_blit": true
+        },
+        "user": {},
+        "material_anisotropy": 8
+      }
+    }
+  ],
+  "lifecycle": [
+    {
+      "globals": {
+        "audit_reloads": 0.0,
+        "audit_mode": 4.0,
+        "audit_clicks": 2.0,
+        "audit_uses": 1.0
+      },
+      "memory": {
+        "PrivateMemorySize64": 958013440,
+        "WorkingSet64": 471195648
+      }
+    },
+    {
+      "globals": {
+        "audit_reloads": 106.0,
+        "audit_mode": 4.0,
+        "audit_clicks": 2.0,
+        "audit_uses": 1.0
+      },
+      "memory": {
+        "PrivateMemorySize64": 956788736,
+        "WorkingSet64": 469598208
+      }
+    },
+    {
+      "globals": {
+        "audit_reloads": 209.0,
+        "audit_mode": 4.0,
+        "audit_clicks": 2.0,
+        "audit_uses": 1.0
+      },
+      "memory": {
+        "PrivateMemorySize64": 957050880,
+        "WorkingSet64": 469843968
+      }
+    },
+    {
+      "globals": {
+        "audit_reloads": 339.0,
+        "audit_mode": 4.0,
+        "audit_clicks": 2.0,
+        "audit_uses": 1.0
+      },
+      "memory": {
+        "PrivateMemorySize64": 957124608,
+        "WorkingSet64": 470069248
+      }
+    }
+  ],
+  "aggregates": [
+    {
+      "mode": 0,
+      "wall_median_ms": 0.5160000000000053,
+      "wall_p95_ms": 0.7443000000000097,
+      "main_ui_p95_ms": 0.0355,
+      "worker_ui_p95_ms": 0.034499999999999996
+    },
+    {
+      "mode": 1,
+      "wall_median_ms": 0.6515999999999877,
+      "wall_p95_ms": 0.8613000000000284,
+      "main_ui_p95_ms": 0.1476,
+      "worker_ui_p95_ms": 0.1442
+    },
+    {
+      "mode": 2,
+      "wall_median_ms": 0.8237000000000094,
+      "wall_p95_ms": 1.052599999999984,
+      "main_ui_p95_ms": 0.36350000000000005,
+      "worker_ui_p95_ms": 0.20450000000000002
+    },
+    {
+      "mode": 3,
+      "wall_median_ms": 1.4932500000000033,
+      "wall_p95_ms": 1.9318000000000666,
+      "main_ui_p95_ms": 1.2383,
+      "worker_ui_p95_ms": 0.2415
+    },
+    {
+      "mode": 4,
+      "wall_median_ms": 0.5896999999999935,
+      "wall_p95_ms": 0.8352999999999611,
+      "main_ui_p95_ms": 0.16689999999999997,
+      "worker_ui_p95_ms": 0.1639
+    }
+  ]
+}
