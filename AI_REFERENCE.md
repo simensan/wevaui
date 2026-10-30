@@ -269,6 +269,11 @@ removes unused GPU setup, verifies 13 renderer/42 overlay tests, and measures
 both runtime routes. Threaded median opening improves 6.6%; slow cold outliers
 remain. Unity/Godot already allocate backdrop resources on demand.
 
+The [hidden UI follow-up](docs/verification/agentic-hidden-ui-20261030.md) adds
+correct direct HTML CPU attribution and eliminates hidden layout/upload work
+in Agentic direct rendering, matching its snapshot path. 43 overlay tests and
+6,000 paired frames pass; visible-workload and other-host gains are not implied.
+
 The [Agentic packed-paint audit](docs/verification/agentic-packed-20261030.md)
 removes duplicate snapshot/upload copies in Agentic (ff1c9925b, not integrated
 into engine-main yet). Two paint and twelve renderer tests pass. It records

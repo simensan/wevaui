@@ -16,7 +16,7 @@ def main():
     parser.add_argument('output', type=Path)
     parser.add_argument('--direct', action='store_true')
     parser.add_argument('--defer-ui', action='store_true',
-                        help='Start without a UI; first key 2-6 loads it for cold-open profiling')
+                        help='Start without a UI; first key 2-7 loads it for cold-open profiling')
     args = parser.parse_args()
     source = args.fixtures.resolve(strict=True)
     output = args.output.resolve()
@@ -99,7 +99,7 @@ engine.set_global("audit_selected",selected);
 }
 function setMode(value:i32):void {
 if(value!=0 && !loaded){engine.html_load("assets/Ui/main.html");loaded=true;}
-mode=value;engine.html_show(mode!=0);
+mode=value;engine.html_show(mode!=0 && mode!=6);
 engine.html_set("MenuClass",mode>=3?"menu-open":"");
 engine.html_set("Stamina","100");select(selected);
 engine.set_global("audit_mode",mode);
@@ -113,8 +113,9 @@ if(engine.get_key_down("3")){setMode(2);}
 if(engine.get_key_down("4")){setMode(3);}
 if(engine.get_key_down("5")){setMode(4);}
 if(engine.get_key_down("6")){setMode(5);}
+if(engine.get_key_down("7")){setMode(6);}
 if(mode==2){engine.html_set("Stamina",engine.to_string_i((30+ticks%70) as i64));}
-if(mode==3){select(ticks%12);}
+if(mode==3 || mode==6){select(ticks%12);}
 if(mode==5 && ticks%10==0){engine.html_load("assets/Ui/main.html");setMode(5);reloads++;}
 let action:string=engine.html_event();
 while(action!="") {
@@ -156,7 +157,8 @@ engine.set_global("audit_uses",uses);engine.set_global("audit_reloads",reloads);
     (scenes / 'audit.scene.ron').write_text('(version:1,entities:[' + ','.join(entities) + '])', encoding='utf-8')
     (output / 'AgenticTools.ron').write_text('(profiles:{"dev":(runtime_features:["weva"])})', encoding='utf-8')
     (output / 'AUDIT.txt').write_text('Keys: 1=world only, 2=static HUD, 3=updating HUD, '
-        '4=cycling inventory, 5=interactive inventory, 6=reload every 10 ticks.\n'
+        '4=cycling inventory, 5=interactive inventory, 6=reload every 10 ticks, '
+        '7=hidden inventory with continuing binding updates.\n'
         'Globals: audit_mode, audit_ticks, audit_selected, audit_clicks, audit_uses, audit_reloads.\n'
         'Synthetic 240-cube scene; not a production-game workload.\n', encoding='utf-8')
     print(output)

@@ -10,6 +10,11 @@ adds lazy backdrop/local-renderer setup in Agentic, 13 renderer and 42 overlay
 tests, and paired cold opening in both runtime routes. The core and Unity/Godot
 are unchanged; cold-opening tails remain unresolved.
 
+The [hidden UI follow-up](docs/verification/agentic-hidden-ui-20261030.md) fixes
+Agentic direct UI attribution and defers hidden document work. Its 43 overlay
+tests and 6,000 paired runtime frames pass. The shared core and other hosts are
+unchanged; their automatic hidden-update policies need a separate audit.
+
 Read this before changing anything. It is for **changing the engine or a
 host**; if you are being asked to *author UI* (write HTML/CSS and a
 controller), the manual is

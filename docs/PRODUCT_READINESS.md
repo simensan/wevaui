@@ -33,6 +33,10 @@ The [cold renderer follow-up](verification/agentic-cold-render-20261030.md)
 reduces Agentic's median threaded opening frame by 6.6% in that synthetic
 scene, but retains a 69 ms outlier. Cold opening is not yet hitch-free.
 
+The [hidden UI follow-up](verification/agentic-hidden-ui-20261030.md) removes
+unnecessary Agentic direct rendering work while hidden data continues changing.
+This improves that specific workload; it does not change release status.
+
 ## Choose your host
 
 | Host | Requirements and tested scope | Start here |
