@@ -17,16 +17,17 @@ namespace weva {
 
 namespace {
 
-std::string_view get(const ComputedStyle* s, std::string_view property) {
-    return s ? s->get(property) : std::string_view();
-}
-
 // The same lookup by id. A property id is resolved once for the
 // program below rather than hashed from its name on every call --
 // sampling put ComputedStyle::get and CssPropertyRegistry::id_of
 // together at a quarter of a layout pass, ahead of any layout
 // algorithm. Safe because the registry keeps an id stable across
 // re-registration, which is what its header promises it for.
+const int kId_order = CssPropertyRegistry::instance().id_of("order");
+const int kId_flex_grow = CssPropertyRegistry::instance().id_of("flex-grow");
+const int kId_flex_shrink = CssPropertyRegistry::instance().id_of("flex-shrink");
+const int kId_row_gap = CssPropertyRegistry::instance().id_of("row-gap");
+const int kId_column_gap = CssPropertyRegistry::instance().id_of("column-gap");
 const int kId_max_height = CssPropertyRegistry::instance().id_of("max-height");
 
 std::string_view get(const ComputedStyle* s, int id) {
@@ -71,7 +72,7 @@ bool iequals(std::string_view a, std::string_view b) {
 
 // Read through the style's parsed cache: flex-grow, flex-shrink and order are
 // read for every item on every pass.
-double number_or(const ComputedStyle* style, std::string_view property, double fallback) {
+double number_or(const ComputedStyle* style, int property, double fallback) {
     if (!style) return fallback;
     const CssValue* v = style->parsed(property);
     if (!v || v->kind() != CssValueKind::Number) return fallback;
@@ -79,7 +80,7 @@ double number_or(const ComputedStyle* style, std::string_view property, double f
 }
 
 // `gap` expands to row-gap/column-gap, and `normal` means zero for flex.
-double gap_px(const ComputedStyle* style, std::string_view property, const LayoutContext& ctx,
+double gap_px(const ComputedStyle* style, int property, const LayoutContext& ctx,
               double font_size, double basis) {
     const std::string_view raw = get(style, property);
     if (raw.empty() || iequals(raw, "normal")) return 0;
@@ -193,8 +194,8 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         if (writing_mode.empty() || iequals(writing_mode, "horizontal-tb")) reverse = !reverse;
     }
 
-    const double main_gap = column ? gap_px(style, "row-gap", ctx, font_size, content_height)
-                                   : gap_px(style, "column-gap", ctx, font_size, content_width);
+    const double main_gap = column ? gap_px(style, kId_row_gap, ctx, font_size, content_height)
+                                   : gap_px(style, kId_column_gap, ctx, font_size, content_width);
 
     // The main axis's available space. A column container with an indefinite
     // height has no main size to distribute, so nothing grows or shrinks.
@@ -244,7 +245,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         Item it;
         it.box = c;
         it.source_index = source_index++;
-        it.order = static_cast<int>(number_or(cb.style, "order", 0));
+        it.order = static_cast<int>(number_or(cb.style, kId_order, 0));
         items.push_back(it);
     }
     // Static positions for the out-of-flow children (§4.1): each sits where
@@ -321,8 +322,8 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         b.parent_inline_contribution_independent = fixed_column &&
             (cross_width.kind == LengthKind::Length || cross_width.kind == LengthKind::Percent);
 
-        it.grow = std::max(0.0, number_or(is, "flex-grow", 0));
-        it.shrink = std::max(0.0, number_or(is, "flex-shrink", 1));
+        it.grow = std::max(0.0, number_or(is, kId_flex_grow, 0));
+        it.shrink = std::max(0.0, number_or(is, kId_flex_shrink, 1));
         // An auto margin on the main axis is resolved by THIS algorithm (§9.5
         // step 1), not by block layout, which may already have centred the box
         // with it. Zeroed here so the share below is the whole used value.
@@ -652,6 +653,10 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
                     (*tree)[it.box].height = it.main;
                 }
             }
+            // Even an allocation equal to the natural measurement needs to
+            // validate a deferred subtree: its cached final width may differ.
+            if ((*tree)[it.box].retained_natural_measurement)
+                block->relayout_at(it.box, (*tree)[it.box].width);
             const Box& measured = (*tree)[it.box];
             const double outer = (column ? measured.width : measured.height) + it.cross_margins;
             if (!column && iequals(self_align(measured), "baseline")) {
@@ -667,8 +672,8 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
 
     // ---- Cross sizes of the lines (§9.4 step 8, §9.6 align-content) --------
     const double container_cross = column ? content_width : content_height;   // -1: indefinite
-    const double cross_gap = column ? gap_px(style, "column-gap", ctx, font_size, content_width)
-                                    : gap_px(style, "row-gap", ctx, font_size, content_height);
+    const double cross_gap = column ? gap_px(style, kId_column_gap, ctx, font_size, content_width)
+                                    : gap_px(style, kId_row_gap, ctx, font_size, content_height);
     double total_cross = 0;
     if (lines.size() == 1) {
         Line& ln = lines[0];

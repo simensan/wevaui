@@ -34,6 +34,7 @@
 
 namespace weva {
 
+struct BoxModelMemo;
 class ComputedStyle {
 public:
     // Transparent comparison lets reads use string_view without allocating
@@ -79,6 +80,10 @@ public:
     // every out-of-flow box on every layout pass.
     mutable int64_t insets_memo_version = -1;
     mutable bool insets_memo = false;
+    // Numeric box-model resolution, keyed by this version and all length
+    // inputs. The implementation owns no borrowed strings or tree pointers.
+    mutable std::shared_ptr<BoxModelMemo> box_model_memo;
+    mutable int64_t box_model_observed_version = -1;
 
 
     void set_inherit_parent(const ComputedStyle* parent) { parent_ = parent; }
@@ -185,7 +190,10 @@ private:
     // "parsed, and the result was null" — without it a malformed value would be
     // re-parsed on every read, which is the case the cache most needs to cover.
     mutable std::vector<CssValuePtr> parsed_;
-    mutable std::vector<bool> parsed_ready_;
+    // Two bits per property: 0 unresolved, 1 initial, 2 retained owned syntax.
+    mutable std::vector<uint64_t> parsed_ready_;
+    uint8_t parsed_state(size_t id) const;
+    void set_parsed_state(size_t id, uint8_t state) const;
     // uint8_t, not bool. std::vector<bool> is a bitset, so every presence
     // check -- and `get` does one for every property read in a layout pass --
     // paid a shift and a mask to extract one bit. The C# this ports keeps a

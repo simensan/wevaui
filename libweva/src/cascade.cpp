@@ -302,6 +302,8 @@ int compare_for_cascade(const CascadeKey& x, const CascadeKey& y) {
 }
 
 void CascadeEngine::clear() {
+    inline_declarations_.clear();
+    inline_declaration_bytes_ = 0;
     ++container_generation_;
     rules_.clear();
     next_source_index_ = 0;
@@ -1374,6 +1376,28 @@ void substitute_light_dark(ComputedStyle* out, std::vector<int>* ids, const Medi
 }
 } // namespace
 
+const std::vector<Declaration>& CascadeEngine::inline_declarations(std::string_view text,
+        std::vector<Declaration>* scratch) const {
+    const auto found = inline_declarations_.find(text);
+    if (found != inline_declarations_.end()) return found->second;
+    std::vector<Declaration> parsed;
+    CssParseError error;
+    if (parse_inline_declarations(text, false, &parsed, &error))
+        *scratch = expand_declarations(parsed);
+    // Bound retained syntax payload and avoid caching large one-off strings.
+    size_t bytes = text.size() + scratch->capacity() * sizeof(Declaration);
+    for (const auto& declaration : *scratch)
+        bytes += declaration.property.capacity() + declaration.value_text.capacity();
+    constexpr size_t budget = 64 * 1024;
+    if (text.size() > 4096 || bytes > budget) return *scratch;
+    if (inline_declarations_.size() >= 128 || inline_declaration_bytes_ + bytes > budget) {
+        inline_declarations_.clear();
+        inline_declaration_bytes_ = 0;
+    }
+    inline_declaration_bytes_ += bytes;
+    return inline_declarations_.emplace(std::string(text), std::move(*scratch)).first->second;
+}
+
 void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
                             const ComputedStyle* parent, ComputedStyle* out) const {
     CascadePhaseProfile profile(work_profile_, 6);
@@ -1411,14 +1435,10 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     // element with `style="--bg:#cfe0c6"` resolved against the sheet alone
     // and took the fallback — level-select's discs and roads all grey. The
     // attribute is parsed once here; step 2 applies the rest of it.
-    std::vector<Declaration> inline_expanded;
+    std::vector<Declaration> inline_scratch;
+    const auto& inline_expanded = e.has_attribute("style")
+        ? inline_declarations(e.get_attribute("style"), &inline_scratch) : inline_scratch;
     if (e.has_attribute("style")) {
-        std::vector<Declaration> inline_decls;
-        CssParseError perr;
-        if (parse_inline_declarations(e.get_attribute("style"), /*strict=*/false,
-                                      &inline_decls, &perr)) {
-            inline_expanded = expand_declarations(inline_decls);
-        }
         for (const Declaration& d : inline_expanded) {
             if (d.property.size() > 2 && d.property[0] == '-' && d.property[1] == '-') {
                 out->set(d.property, d.value_text);

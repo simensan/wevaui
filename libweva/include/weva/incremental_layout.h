@@ -12,6 +12,9 @@ class IncrementalLayout {
 public:
     void index(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
                bool reset_identities = true);
+    // Only after prepare_block_tree_reflow accepted an edge-only change:
+    // topology, style identities and non-geometric dependencies are unchanged.
+    void refresh_reflow_geometry(const BoxTree& tree, BoxId root, const LayoutContext& ctx);
     bool update(BoxTree* tree, BoxId root, StyleProvider* styles,
                 const LayoutContext& ctx, const FontMetrics* metrics,
                 const std::vector<std::pair<const ComputedStyle*, Invalidation>>& changes);
@@ -33,6 +36,8 @@ private:
     // Transaction arenas retain capacity between updates, never live boxes.
     // Concurrent candidate probes borrow separate entries until commit.
     std::vector<BoxTree> scratch_pool_;
+    std::vector<std::pair<const Element*, BoxId>> eligible_scratch_;
+    std::vector<BoxId> candidate_scratch_, ancestor_scratch_;
     BoxTree edge_probe_;
     bool update_grid_edges(BoxTree* tree, BoxId id, const LayoutContext& ctx,
                            bool* attempted);
@@ -46,6 +51,7 @@ private:
     std::vector<bool> contained_;
     std::vector<std::pair<double, double>> contributions_;
     std::vector<double> resolved_font_sizes_;
+    std::vector<bool> natural_width_independent_;
     std::vector<BoxId> replaced_;
     std::vector<BoxId> retained_;
     std::vector<bool> height_independent_, paint_root_flags_;

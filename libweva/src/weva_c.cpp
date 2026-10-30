@@ -4907,7 +4907,8 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
         // where layout first put it and the rect has to cover where it ended.
         compute_visual_overflow(&doc->tree, doc->root);
         layout_lap("overflow");
-        doc->incremental_layout.index(doc->tree, doc->root, doc->ctx, pending == Invalidation::Boxes);
+        if (reflow_boxes) doc->incremental_layout.refresh_reflow_geometry(doc->tree, doc->root, doc->ctx);
+        else doc->incremental_layout.index(doc->tree, doc->root, doc->ctx, pending == Invalidation::Boxes);
         layout_lap("index");
     }
     if (stage_log && subtree_layout)

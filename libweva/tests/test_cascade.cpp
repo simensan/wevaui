@@ -316,6 +316,34 @@ void test_cascade_nesting() {
 void test_cascade_compute() {
     {
         Fixture f;
+        CHECK(f.html("<div id=p></div>"));
+        ComputedStyle parent;
+        const std::string base = "padding:var(--edge);width:attr(data-w px);"
+                                 "height:env(safe-area-inset-left)";
+        for (int i = 0; i < 180; ++i) {
+            if (i == 170) f.engine.clear();
+            std::string text = base;
+            if (i < 140) text += ";--unused:" + std::to_string(i); // bounded eviction
+            else if (i % 3 == 0) text += ";/*" + std::string(5000, 'x') + "*/"; // uncached
+            f.id("p")->set_attribute("style", text);
+            f.id("p")->set_attribute("data-w", std::to_string(i + 20));
+            parent.set("--edge", std::to_string(i % 5 + 1) + "px");
+            const std::string inset = std::to_string(i % 7) + "px";
+            f.engine.set_env("safe-area-inset-left", inset);
+            ComputedStyle cached, expected;
+            f.engine.compute(*f.id("p"), f.state, &parent, &cached);
+            CascadeEngine fresh;
+            fresh.set_env("safe-area-inset-left", inset);
+            fresh.compute(*f.id("p"), f.state, &parent, &expected);
+            std::vector<int> changed;
+            bool unattributed = false;
+            CHECK(!cached.differs_from(expected, &changed, &unattributed));
+            CHECK(cached.get("width") == std::to_string(i + 20) + "px");
+            CHECK(cached.get("height") == inset);
+        }
+    }
+    {
+        Fixture f;
         CHECK(f.html("<div id=p><button id=b>label</button><input id=i><select id=s></select>"
                      "<textarea id=t></textarea></div>"));
         CHECK(f.css(user_agent_stylesheet_source(), DeclarationOrigin::UserAgent));

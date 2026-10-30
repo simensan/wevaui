@@ -50,6 +50,23 @@ DOM owners of clipping and containing blocks, independent of temporary box IDs.
 
 These are shared-core changes, with no ABI extension or host-specific behavior.
 
+Numeric box-model resolution keeps four exact constraint entries per reused
+style, plus two height-resolution entries. Keys include the style version,
+font and line-height values, viewport/root metrics, DPI and relevant percentage
+bases. Entries own numeric values, never views into mutable declaration strings.
+Allocation starts on the second use of an unchanged style. Stable-topology
+edge reflows refresh geometry-dependent indexes without rebuilding identity maps.
+
+Flex items may reuse natural measurements separately from their final allocation.
+The final allocation is always validated before retaining the subtree, including
+when it equals the natural size. Reuse across a changed incoming width requires
+fixed child inline constraints and unchanged root edges; percentage constraints
+and auto margins keep ordinary layout. Inline declaration caching retains syntax
+only (128 entries / 64 KiB payload); variables, attributes and environment values
+still resolve on every cascade. Scratch styles retain per-property strings and
+parsed owned syntax across clear, while ownership and default/inherited reads
+remain separate. These caches trade bounded retained storage for less repeat work.
+
 ## Rounded geometry execution
 
 Default eight-segment rounded corners reuse an immutable table of the original

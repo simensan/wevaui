@@ -346,6 +346,12 @@ private:
     // sibling-dependent or :has rule.
     // Reused rather than allocated per element.
     mutable std::vector<MatchedDeclaration> uncached_matches_;
+    // Syntax-only inline declarations. Variable/attribute/environment and
+    // inheritance resolution still run separately for each element.
+    mutable std::map<std::string, std::vector<Declaration>, std::less<>> inline_declarations_;
+    mutable size_t inline_declaration_bytes_ = 0;
+    const std::vector<Declaration>& inline_declarations(std::string_view text,
+                                                       std::vector<Declaration>* scratch) const;
     mutable CacheStats stats_;
     mutable WorkProfile work_profile_;
     // Sheet-wide opt-outs, computed once at rule-compile time.

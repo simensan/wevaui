@@ -19,6 +19,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generated bindings expect minor 45.
 
 ### Performance
+- Reused styles memoize numeric box constraints and retain parsed declaration
+  syntax. Flex items reuse validated natural measurements, and topology-preserving
+  reflows refresh geometry indexes without reconstructing identity maps.
 - Incremental grid updates reuse proven track allocations and unchanged item
   subtrees. Layout scratch storage and eligible full-reflow topology are reused;
   sparse style comparisons and transition setup avoid redundant work.

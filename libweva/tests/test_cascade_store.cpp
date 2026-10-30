@@ -101,6 +101,48 @@ void test_computed_style() {
     const int color = reg.id_of("color");
     const int width = reg.id_of("width");
 
+    // Reusing scratch storage must distinguish old owned syntax from initial
+    // and inherited values, including reads between clear and re-assignment.
+    {
+        ComputedStyle cached, parent;
+        parent.set(color, "red");
+        for (int pass = 0; pass < 80; ++pass) {
+            cached.clear();
+            cached.set_inherit_parent(&parent);
+            CHECK(cached.set_count() == 0);
+            CHECK(!cached.is_important(width));
+            CHECK(cached.parsed(color) == parent.parsed(color));
+            if (pass % 2) CHECK(cached.parsed(width)->raw == "auto");
+            const std::string raw = pass % 3 ? "37px" : "42px";
+            cached.set(width, raw);
+            CHECK(cached.parsed(width)->raw == raw);
+            CHECK(cached.set_count() == 1);
+            cached.set_important(width, true);
+            cached.set(color, "blue");
+            CHECK(cached.parsed(color)->raw == "blue");
+            parent.set(color, pass % 2 ? "green" : "red");
+        }
+        ComputedStyle moved = std::move(cached);
+        cached.clear();
+        cached.set(width, "19px");
+        CHECK(cached.parsed(width)->raw == "19px");
+        CHECK(moved.parsed(width)->raw == "37px");
+        for (int id : {31, 32, 63, 64, 127, 128, 347}) {
+            cached.set(id, "17px");
+            CHECK(cached.parsed(id)->raw == "17px");
+        }
+        cached.clear();
+        ComputedStyle fresh;
+        for (int id : {31, 32, 63, 64, 127, 128, 347}) {
+            CHECK(!cached.contains(id));
+            const auto* actual = cached.parsed(id);
+            const auto* expected = fresh.parsed(id);
+            CHECK(actual && expected ? actual->raw == expected->raw : actual == expected);
+            cached.set(id, "17px");
+            CHECK(cached.parsed(id)->raw == "17px");
+        }
+    }
+
     ComputedStyle s;
     CHECK(s.set_count() == 0);
     CHECK(!s.contains(display));

@@ -140,7 +140,7 @@ void split_template(std::string_view text, std::string* rows, std::string* colum
     *rows = std::string(trim(text));
 }
 
-bool wants_subgrid(const ComputedStyle* style, std::string_view property) {
+bool wants_subgrid(const ComputedStyle* style, int property) {
     std::string_view v = get(style, property);
     while (!v.empty() && (v.front() == ' ' || v.front() == '\t')) v.remove_prefix(1);
     while (!v.empty() && (v.back() == ' ' || v.back() == '\t')) v.remove_suffix(1);
@@ -1097,8 +1097,8 @@ bool independent_stretched_item(const Box& item, const ComputedStyle* parent_sty
         !try_resolve_aspect_ratio(item.style, &ratio) &&
         item.intrinsic_width == 0 && item.intrinsic_height == 0 &&
         get(item.style, kId_margin_left) != "auto" && get(item.style, kId_margin_right) != "auto" &&
-        !wants_subgrid(item.style, "grid-template-columns") &&
-        !wants_subgrid(item.style, "grid-template-rows");
+        !wants_subgrid(item.style, kId_grid_template_columns) &&
+        !wants_subgrid(item.style, kId_grid_template_rows);
 }
 
 double span_size(const std::vector<Track>& tracks, int start, int span, double gap) {
@@ -1267,13 +1267,13 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
                     last.min.value = last.max.value = std::max(0.0, last.max.value - end_edge);
                 }
             };
-            if (wants_subgrid(style, "grid-template-columns") && !it->second.columns.empty()) {
+            if (wants_subgrid(style, kId_grid_template_columns) && !it->second.columns.empty()) {
                 adopt(it->second.columns, self.padding_left + self.border_left,
                       self.padding_right + self.border_right, &columns);
                 column_gap_used = it->second.column_gap;
                 columns_are_subgrid = true;
             }
-            if (wants_subgrid(style, "grid-template-rows") && !it->second.rows.empty()) {
+            if (wants_subgrid(style, kId_grid_template_rows) && !it->second.rows.empty()) {
                 adopt(it->second.rows, self.padding_top + self.border_top,
                       self.padding_bottom + self.border_bottom, &rows);
                 row_gap_used = it->second.row_gap;
@@ -1619,8 +1619,8 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     // that operation supplies their inherited track and gap constraints.
     for (Placement& p : items) {
         const bool area_first = independent_areas &&
-            !wants_subgrid((*tree)[p.box].style, "grid-template-columns") &&
-            !wants_subgrid((*tree)[p.box].style, "grid-template-rows");
+            !wants_subgrid((*tree)[p.box].style, kId_grid_template_columns) &&
+            !wants_subgrid((*tree)[p.box].style, kId_grid_template_rows);
         p.measured_inline_width = area_first
             ? span_size(columns, p.column, p.column_span, column_gap) : content_width;
         block->layout_block(p.box, p.measured_inline_width, style);
@@ -1662,13 +1662,13 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
         const Box& item = (*tree)[p.box];
         double ratio = 0;
         return !try_resolve_aspect_ratio(item.style, &ratio) &&
-            !wants_subgrid(item.style, "grid-template-columns") &&
-            !wants_subgrid(item.style, "grid-template-rows");
+            !wants_subgrid(item.style, kId_grid_template_columns) &&
+            !wants_subgrid(item.style, kId_grid_template_rows);
     });
     // Subgrid hand-over and row-to-column aspect-ratio feedback happen later.
     // Their pre-feedback contributions are not reusable snapshots yet.
-    if (independent_areas && stable_export_inputs && !wants_subgrid(style, "grid-template-columns") &&
-        !wants_subgrid(style, "grid-template-rows")) {
+    if (independent_areas && stable_export_inputs && !wants_subgrid(style, kId_grid_template_columns) &&
+        !wants_subgrid(style, kId_grid_template_rows)) {
         auto inputs = std::make_shared<GridSizingInputs>();
         inputs->columns = columns;
         inputs->contributions = column_contributions;
@@ -1747,8 +1747,8 @@ double layout_grid(BoxTree* tree, BoxId container, double content_width, double 
     // layout of it, and is always re-laid so it sees them.
     const auto hand_over = [&](const Placement& p, bool with_rows) {
         const Box& b = (*tree)[p.box];
-        const bool cols = wants_subgrid(b.style, "grid-template-columns");
-        const bool rws = with_rows && wants_subgrid(b.style, "grid-template-rows");
+        const bool cols = wants_subgrid(b.style, kId_grid_template_columns);
+        const bool rws = with_rows && wants_subgrid(b.style, kId_grid_template_rows);
         if (!cols && !rws) return false;
         SubgridTracks st;
         st.column_gap = column_gap;

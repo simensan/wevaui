@@ -23,6 +23,31 @@
 
 namespace weva {
 
+struct BoxModelResolved {
+    ResolvedSides padding, border, margin;
+    ResolvedLength width, height, minimum, maximum;
+    PositionType position = PositionType::Static;
+    double ratio = 0;
+    bool has_ratio = false, border_box = false;
+};
+
+struct BoxModelMemo {
+    struct HeightEntry {
+        std::array<double, 8> key{};
+        ResolvedLength height, minimum, maximum;
+        double ratio = 0;
+        bool border_box = false, has_ratio = false, valid = false;
+    } heights[2];
+    struct Entry {
+        std::array<double, 8> key{};
+        BoxModelResolved value;
+        bool valid = false;
+    } entries[4];
+    int64_t version = -1;
+    unsigned next = 0;
+    unsigned next_height = 0;
+};
+
 namespace {
 
 struct LayoutProfile {
@@ -316,6 +341,62 @@ double resolve_block_inline_offset(Box& box, double containing_width, bool rtl) 
     return rtl ? containing_width - box.width - box.margin_right : box.margin_left;
 }
 
+// Flex/grid routinely measure a box at natural and allocated widths. Keep
+// a small set of exact resolutions, never approximating percentage or calc expressions.
+// All cached fields are numeric or immutable keyword literals. Style moves or
+// replacements cannot leave references into the previous value storage.
+static const BoxModelResolved& resolved_box_model(const ComputedStyle* style,
+        const LayoutContext& ctx, double fs, double lh, double width,
+        BoxModelResolved* uncached) {
+    BoxModelResolved* result = uncached;
+    BoxModelMemo::Entry* publish = nullptr;
+    // Allocate only after observing reuse. A screen's first layout should not
+    // pay for per-style memo storage that may never be queried again.
+    if (style && !style->box_model_memo) {
+        if (style->box_model_observed_version == style->version())
+            style->box_model_memo = std::make_shared<BoxModelMemo>();
+        else style->box_model_observed_version = style->version();
+    }
+    if (style && style->box_model_memo) {
+        auto& memo = *style->box_model_memo;
+        if (memo.version != style->version()) {
+            memo.version = style->version();
+            for (auto& entry : memo.entries) entry.valid = false;
+            for (auto& entry : memo.heights) entry.valid = false;
+        }
+        const std::array<double, 8> key{width, fs, lh, ctx.viewport_width_px,
+            ctx.viewport_height_px, ctx.root_font_size_px, ctx.root_line_height_px,
+            ctx.dpi_pixels_per_inch};
+        for (const auto& entry : memo.entries)
+            if (entry.valid && entry.key == key) return entry.value;
+        auto& entry = memo.entries[memo.next++ % 4];
+        entry.key = key;
+        entry.valid = false;
+        publish = &entry;
+        result = &entry.value;
+    }
+    result->padding = resolve_box_sides_px(style, kId_padding, ctx, fs, width, lh);
+    result->border = resolve_border_edges(style, ctx, fs);
+    result->margin = resolve_box_sides_px(style, kId_margin, ctx, fs, width, lh);
+    // Only auto-ness is consumed by box-model arithmetic. Do not retain views
+    // into a style that may be replaced or copied before the next invocation.
+    result->padding.left_raw = result->padding.right_raw = "0";
+    result->border.left_raw = result->border.right_raw = "0";
+    result->margin.left_raw = result->margin.left_raw == "auto" ? "auto" : "0";
+    result->margin.right_raw = result->margin.right_raw == "auto" ? "auto" : "0";
+    result->width = resolve_length(style, kId_width, ctx, fs, width, lh);
+    result->height = resolve_length(style, kId_height, ctx, fs, std::nullopt, lh);
+    result->minimum = resolve_length(style, kId_min_width, ctx, fs, width, lh);
+    result->maximum = resolve_length(style, kId_max_width, ctx, fs, width, lh);
+    static const int position = CssPropertyRegistry::instance().id_of("position");
+    result->position = parse_position_type(style ? style->get(position) : std::string_view());
+    result->border_box = is_border_box(style);
+    result->ratio = 0;
+    result->has_ratio = try_resolve_aspect_ratio(style, &result->ratio);
+    if (publish) publish->valid = true;
+    return *result;
+}
+
 double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
                        const ComputedStyle* parent_style, const LayoutContext& ctx) {
     LayoutProfilePart profile(0);
@@ -328,29 +409,27 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
     // rather than the 1.2 x font-size fallback.
     const double lh = line_height_px(style, fs, ctx);
 
-    const ResolvedSides pad =
-        resolve_box_sides_px(style, kId_padding, ctx, fs, containing_block_width, lh);
+    BoxModelResolved uncached;
+    const auto& inputs = resolved_box_model(style, ctx, fs, lh, containing_block_width, &uncached);
+    const auto& pad = inputs.padding;
     box.padding_top = pad.top;
     box.padding_right = pad.right;
     box.padding_bottom = pad.bottom;
     box.padding_left = pad.left;
 
-    const ResolvedSides borders = resolve_border_edges(style, ctx, fs);
+    const auto& borders = inputs.border;
     box.border_top = borders.top;
     box.border_right = borders.right;
     box.border_bottom = borders.bottom;
     box.border_left = borders.left;
 
-    const ResolvedSides mar =
-        resolve_box_sides_px(style, kId_margin, ctx, fs, containing_block_width, lh);
+    const auto& mar = inputs.margin;
     box.margin_top = mar.top;
     box.margin_right = mar.right;
     box.margin_bottom = mar.bottom;
     box.margin_left = mar.left;
 
-    static const int kPosition = CssPropertyRegistry::instance().id_of("position");
-    box.position =
-        parse_position_type(style ? style->get(kPosition) : std::string_view());
+    box.position = inputs.position;
     // A top-layer box establishes its containing block at the document root.
     // Non-absolute/fixed author positions have absolute used positioning.
     const Element* top_host = box.element ? box.element : box.pseudo_host;
@@ -358,7 +437,7 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
         top_host && top_host->top_layer_order() && box.position != PositionType::Fixed)
         box.position = PositionType::Absolute;
 
-    const bool border_box = is_border_box(style);
+    const bool border_box = inputs.border_box;
     const double width_frame =
         box.padding_left + box.padding_right + box.border_left + box.border_right;
     const double height_frame =
@@ -371,13 +450,11 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
         iequals(get(style, kBorderCollapse), "collapse");
     const double width_floor = collapsed_table ? 0.0 : width_frame;
 
-    const ResolvedLength width_r =
-        resolve_length(style, kId_width, ctx, fs, containing_block_width, lh);
+    const auto& width_r = inputs.width;
     // The height is resolved WITHOUT a basis here, so a percentage surfaces as
     // Percent and is handled separately below — its basis is the parent's
     // height, not the containing block's width.
-    const ResolvedLength height_r =
-        resolve_length(style, kId_height, ctx, fs, std::nullopt, lh);
+    const auto& height_r = inputs.height;
 
     double avail = containing_block_width - (box.margin_left + box.margin_right);
     if (avail < 0) avail = 0;
@@ -385,8 +462,8 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
     bool width_is_auto = width_r.kind == LengthKind::Auto;
     double resolved_width;
 
-    double aspect_ratio = 0;
-    const bool has_ratio = try_resolve_aspect_ratio(style, &aspect_ratio);
+    const double aspect_ratio = inputs.ratio;
+    const bool has_ratio = inputs.has_ratio;
     const bool height_is_definite = height_r.kind == LengthKind::Length;
 
     if (width_is_auto && has_ratio && height_is_definite && height_r.pixels > 0) {
@@ -429,10 +506,8 @@ double apply_box_model(BoxTree* tree, BoxId id, double containing_block_width,
     // difference decides whether auto margins centre.
     const double auto_fill_width = resolved_width;
 
-    const ResolvedLength min_r =
-        resolve_length(style, kId_min_width, ctx, fs, containing_block_width, lh);
-    const ResolvedLength max_r =
-        resolve_length(style, kId_max_width, ctx, fs, containing_block_width, lh);
+    const auto& min_r = inputs.minimum;
+    const auto& max_r = inputs.maximum;
 
     // CSS Sizing L3 §5.2: when min exceeds max, MIN wins. Applying max first
     // and min second gets that for free — the min clamp raises the value back
@@ -2032,20 +2107,43 @@ void BlockLayout::finalize_block_size(BoxId id, double font_size, double content
     // block with a DEFINITE height; an indefinite parent makes it compute to
     // auto. An out-of-flow box's containing block is not known here at all, so
     // it gets no basis rather than the wrong one.
-    const std::optional<double> basis =
-        is_out_of_flow(box) ? std::nullopt : definite_content_height(*tree_, box.parent);
-    const ResolvedLength height_r =
-        resolve_length(box.style, kId_height, ctx_, font_size, basis);
-
-    const bool border_box = is_border_box(box.style);
+    const bool needs_basis = box.style->get(kId_height).find('%') != std::string_view::npos;
+    const std::optional<double> basis = !needs_basis || is_out_of_flow(box) ?
+        std::nullopt : definite_content_height(*tree_, box.parent);
+    const std::array<double, 8> height_key{font_size, basis ? 1.0 : 0.0, basis.value_or(0),
+        ctx_.viewport_width_px, ctx_.viewport_height_px, ctx_.root_font_size_px,
+        ctx_.root_line_height_px, ctx_.dpi_pixels_per_inch};
+    BoxModelMemo::HeightEntry uncached;
+    auto* resolved = &uncached;
+    auto* memo = box.style->box_model_memo.get();
+    if (memo && memo->version == box.style->version()) {
+        for (auto& entry : memo->heights)
+            if (entry.valid && entry.key == height_key) { resolved = &entry; break; }
+        if (resolved == &uncached) {
+            resolved = &memo->heights[memo->next_height++ % 2];
+            resolved->valid = false;
+        }
+    }
+    if (!resolved->valid) {
+        resolved->height = resolve_length(box.style, kId_height, ctx_, font_size, basis);
+        resolved->minimum = resolve_length(box.style, kId_min_height, ctx_, font_size, std::nullopt);
+        resolved->maximum = resolve_length(box.style, kId_max_height, ctx_, font_size, std::nullopt);
+        resolved->border_box = is_border_box(box.style);
+        resolved->ratio = 0;
+        resolved->has_ratio = try_resolve_aspect_ratio(box.style, &resolved->ratio);
+        resolved->key = height_key;
+        resolved->valid = true;
+    }
+    const auto& height_r = resolved->height;
+    const bool border_box = resolved->border_box;
     const double frame =
         box.padding_top + box.padding_bottom + box.border_top + box.border_bottom;
 
     double computed;
-    double aspect_ratio = 0;
+    const double aspect_ratio = resolved->ratio;
     if (height_r.kind == LengthKind::Length) {
         computed = border_box ? std::max(height_r.pixels, frame) : height_r.pixels + frame;
-    } else if (try_resolve_aspect_ratio(box.style, &aspect_ratio) && aspect_ratio > 0 &&
+    } else if (resolved->has_ratio && aspect_ratio > 0 &&
                box.width > 0) {
         // Width set, height auto: the ratio derives the height, between the
         // boxes box-sizing names (css-sizing-4 §5.1). A 288px-wide 3/4
@@ -2065,10 +2163,8 @@ void BlockLayout::finalize_block_size(BoxId id, double font_size, double content
 
     // min-/max-height share height's box-sizing basis, so a content-box bound
     // needs the frame added before it is compared with the border-box value.
-    const ResolvedLength min_r =
-        resolve_length(box.style, kId_min_height, ctx_, font_size, std::nullopt);
-    const ResolvedLength max_r =
-        resolve_length(box.style, kId_max_height, ctx_, font_size, std::nullopt);
+    const auto& min_r = resolved->minimum;
+    const auto& max_r = resolved->maximum;
     if (min_r.kind == LengthKind::Length) {
         const double px = border_box ? min_r.pixels : min_r.pixels + frame;
         if (computed < px) computed = px;

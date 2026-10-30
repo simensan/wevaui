@@ -50,7 +50,7 @@ void ComputedStyle::ensure_capacity(int id) {
     if (full > need) need = full;
     value_slots_.resize(need, 0);
     parsed_.resize(need);
-    parsed_ready_.resize(need, false);
+    parsed_ready_.resize((need + 31) / 32, 0);
     occupied_.resize(need, 0);
     important_.resize(need, false);
     occupied_bits_.resize((need + 63) / 64, 0);
@@ -145,7 +145,8 @@ void ComputedStyle::set(int id, std::string_view value) {
         line_height_inherited_ = false;
         source_changed = true;
     }
-    if (occupied_[i] != 0 && own_value(i) == value) {
+    const bool same_value = value_slots_[i] != 0 && own_value(i) == value;
+    if (occupied_[i] != 0 && same_value) {
         if (source_changed) version_ = next_version();
         return;
     }
@@ -159,10 +160,12 @@ void ComputedStyle::set(int id, std::string_view value) {
     // in and frees the slot's existing allocation. assign() reuses the
     // capacity the slot already has, which after the first pass is usually
     // enough.
-    ensure_value(i).assign(value.data(), value.size());
-    // The memo describes the old string.
-    parsed_[i].reset();
-    parsed_ready_[i] = false;
+    if (!same_value) {
+        ensure_value(i).assign(value.data(), value.size());
+        // The memo describes the old string.
+        parsed_[i].reset();
+        set_parsed_state(i, 0);
+    }
     version_ = next_version();
 }
 
@@ -228,10 +231,21 @@ bool ComputedStyle::contains(std::string_view property) const {
     return false;
 }
 
+uint8_t ComputedStyle::parsed_state(size_t id) const {
+    return static_cast<uint8_t>((parsed_ready_[id / 32] >> ((id % 32) * 2)) & 3);
+}
+
+void ComputedStyle::set_parsed_state(size_t id, uint8_t state) const {
+    const size_t shift = (id % 32) * 2;
+    auto& word = parsed_ready_[id / 32];
+    word = (word & ~(uint64_t{3} << shift)) | (uint64_t{state} << shift);
+}
+
 const CssValue* ComputedStyle::parsed(int id) const {
     if (id < 0) return nullptr;
     const auto& reg = CssPropertyRegistry::instance();
-    if (!contains(id)) {
+    const bool own = contains(id);
+    if (!own) {
         // Share the ancestor's entry rather than parsing the same inherited
         // string again at every level of the subtree.
         if (parent_ && reg.is_inherited(id)) return parent_->parsed(id);
@@ -240,18 +254,18 @@ const CssValue* ComputedStyle::parsed(int id) const {
         // storage of its own to hang it from.
     }
     const auto i = static_cast<std::size_t>(id);
-    if (i >= parsed_ready_.size()) {
+    if (i >= parsed_.size()) {
         // ensure_capacity is non-const; the memo is the only mutable state, so
         // it is grown directly.
         const std::size_t need = i + 1;
         parsed_.resize(need);
-        parsed_ready_.resize(need, false);
+        parsed_ready_.resize((need + 31) / 32, 0);
     }
-    if (!parsed_ready_[i]) {
+    if (parsed_state(i) != (own ? 2 : 1)) {
         CssParseError err;
         const std::string_view raw = get(id);
         parsed_[i] = raw.empty() ? nullptr : parse_css_value(raw, &err);
-        parsed_ready_[i] = true;
+        set_parsed_state(i, own ? 2 : 1);
     }
     return parsed_[i].get();
 }
@@ -271,7 +285,7 @@ void ComputedStyle::unset(int id) {
     occupied_bits_[i >> 6] &= ~(1ULL << (i & 63));
     ensure_value(i).clear();
     parsed_[i].reset();
-    parsed_ready_[i] = false;
+    set_parsed_state(i, 0);
     important_[i] = false;
     if (font_size_inherited_ && id == CssPropertyRegistry::instance().id_of("font-size"))
         font_size_inherited_ = false;
@@ -286,19 +300,20 @@ void ComputedStyle::clear() {
     inherits_non_inherited_ = false;
     font_size_inherited_ = false;
     line_height_inherited_ = false;
-    // Keep stable pages and their string capacity for the next cascade into
-    // this scratch style. Walk owned pages rather than value_count_: default
-    // move transfers the pages but leaves scalar counts in the source, which
-    // must still support clear() before being reused.
-    for (auto& page : values_)
-        for (auto& value : *page) value.clear();
-    value_slots_.clear();
-    value_count_ = 0;
-    parsed_.clear();
-    parsed_ready_.clear();
-    occupied_.clear();
-    occupied_bits_.clear();
-    important_.clear();
+    // Keep per-property storage and parsed syntax for the next cascade.
+    // Ownership is cleared independently: reads must still see initial or
+    // inherited values, and parsed() distinguishes those from stored syntax.
+    // Default move leaves scalar counts behind in an otherwise empty source.
+    if (values_.empty()) {
+        value_count_ = 0;
+        std::fill(value_slots_.begin(), value_slots_.end(), 0);
+    }
+    std::fill(occupied_.begin(), occupied_.end(), 0);
+    std::fill(occupied_bits_.begin(), occupied_bits_.end(), 0);
+    std::fill(important_.begin(), important_.end(), false);
+    // Registry initial values may be re-registered between cascades. Only
+    // syntax paired with a retained owned string can survive that boundary.
+    for (auto& word : parsed_ready_) word &= UINT64_C(0xAAAAAAAAAAAAAAAA);
     custom_.clear();
     set_count_ = 0;
     version_ = next_version();

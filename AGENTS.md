@@ -142,6 +142,16 @@ Full Unity EditMode passes 244 tests with two environment-gated inconclusive;
 its Native subset passes 243 with the same two inconclusive. Earlier
 performance receipts apply to their pre-merge builds, not this combination.
 
+The [repeated-work follow-up](docs/verification/chrome-target-20261030.md)
+reduces all fourteen paired layout workloads by 5.1-53.3% against `ca1748c6`.
+Thirteen beat Chrome; autosizing-flex leaf updates remain 0.000971 ms slower.
+Cold fixture results are mixed, including a 2.5% populated-inventory regression.
+Windows core passes 492,088 checks; GCC passes 15 suites / 704,365 checks;
+Clang ASan/UBSan passes 17 suites / 704,359 checks. The full qualified gate,
+338 Chrome captures, both Windows host builds and Unity full EditMode pass
+(244 passed, two environment-gated inconclusive). The receipt records the
+bounded caches, retained-flex proofs, allocation changes and measurement limits.
+
 ## 4. Workflow recipes
 
 The [October 30 Chrome benchmark setup](docs/verification/chrome-performance-20261030.md)

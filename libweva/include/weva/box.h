@@ -297,6 +297,9 @@ struct Box {
     // Scratch-only reference to a retained layout subtree in the destination
     // tree. Its children stay there until the transaction is committed.
     BoxId retained_from = kNoBox;
+    // A deferred flex item is exposing its cached natural measurement. The
+    // parent's final allocation must validate/materialize it before use.
+    bool retained_natural_measurement = false;
     // Content exports of a deferred ordinary subtree. Its children remain in
     // the destination arena while the scratch parent resolves its allocation.
     double retained_intrinsic_min = -1, retained_intrinsic_max = -1;

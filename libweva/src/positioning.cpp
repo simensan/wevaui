@@ -398,18 +398,25 @@ ContainingBlock resolve_fixed_containing_block(const BoxTree& tree, BoxId box,
 void stamp_offsets(BoxTree* tree, BoxId root, const LayoutContext& ctx) {
     Box& b = (*tree)[root];
     if (b.style) {
-        const BoxId parent = b.parent;
-        const ComputedStyle* ps = parent == kNoBox ? nullptr : (*tree)[parent].style;
-        const double fs = font_size_px(b.style, ps, ctx);
-        // A percentage offset resolves against the containing block, which is
-        // not known until placement — so the containing block's own dimensions
-        // are used as the basis at placement time instead. Here only the
-        // lengths are resolved; percentages are re-read against the real basis.
-        const double basis = parent == kNoBox ? ctx.viewport_width_px : (*tree)[parent].width;
-        b.offset_top = resolve_offset(b.style, kId_top, ctx, fs, basis);
-        b.offset_right = resolve_offset(b.style, kId_right, ctx, fs, basis);
-        b.offset_bottom = resolve_offset(b.style, kId_bottom, ctx, fs, basis);
-        b.offset_left = resolve_offset(b.style, kId_left, ctx, fs, basis);
+        // Insets are non-inherited. Without an owned longhand, every offset
+        // is initial auto and no font or containing-block resolution is needed.
+        if (!b.style->contains(kId_top) && !b.style->contains(kId_right) &&
+            !b.style->contains(kId_bottom) && !b.style->contains(kId_left)) {
+            b.offset_top = b.offset_right = b.offset_bottom = b.offset_left = std::nullopt;
+        } else {
+            const BoxId parent = b.parent;
+            const ComputedStyle* ps = parent == kNoBox ? nullptr : (*tree)[parent].style;
+            const double fs = font_size_px(b.style, ps, ctx);
+            // A percentage offset resolves against the containing block, which is
+            // not known until placement — so the containing block's own dimensions
+            // are used as the basis at placement time instead. Here only the
+            // lengths are resolved; percentages are re-read against the real basis.
+            const double basis = parent == kNoBox ? ctx.viewport_width_px : (*tree)[parent].width;
+            b.offset_top = resolve_offset(b.style, kId_top, ctx, fs, basis);
+            b.offset_right = resolve_offset(b.style, kId_right, ctx, fs, basis);
+            b.offset_bottom = resolve_offset(b.style, kId_bottom, ctx, fs, basis);
+            b.offset_left = resolve_offset(b.style, kId_left, ctx, fs, basis);
+        }
 
         const std::string_view z = get(b.style, kId_z_index);
         if (!z.empty() && !iequals(z, "auto")) {

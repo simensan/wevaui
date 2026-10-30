@@ -1026,6 +1026,13 @@ void check_retained_item_subtrees() {
         "#panel{grid-template-columns:repeat(4,minmax(0,1fr));max-width:min-content}",
         ".cell{width:60px;margin-inline:auto}",
         "#panel{height:260px}.cell{height:auto;min-height:60%}",
+        "#panel{display:flex;justify-content:center}.cell{height:auto;flex:0 0 auto}",
+        "#panel{display:flex}.cell{height:auto;flex:1 1 0;min-width:0}",
+        "#panel{display:flex;flex-direction:column;align-items:start}.cell{height:auto;flex:none}",
+        "#panel{display:flex;justify-content:center}.cell{height:auto;flex:none}.track{width:24px}",
+        "#panel{display:flex}.cell{height:auto;flex:none}.track{width:24px;margin-left:2%}",
+        "#panel{display:flex}.cell{height:auto;flex:none}.track{width:24px;min-width:25%}",
+        "#panel{display:flex}.cell{height:auto;flex:none}.track{width:24px;margin-inline:auto}",
     };
     for (size_t variant = 0; variant < sizeof(cases) / sizeof(cases[0]); ++variant) {
         const std::string css = std::string(
@@ -1054,6 +1061,9 @@ void check_retained_item_subtrees() {
         struct Mutation { const char* selector; const char* value; };
         const Mutation mutations[] = {
             {"#panel", "padding:11px"}, {"#panel", "padding:12px"},
+            // For growing zero-basis items this makes their final width equal
+            // the cached natural width: validate even without a resize call.
+            {"#c0", "margin-left:-6080px"}, {"#c0", ""},
             {"#c7", "padding:7px"}, {"#panel", "padding:11px"},
             {"#panel", "padding:12px;border:2px solid red"},
             {"#panel", "padding:11px;height:300px"},

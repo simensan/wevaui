@@ -96,6 +96,77 @@ bool near(double a, double b) { return a - b < 1e-9 && b - a < 1e-9; }
 } // namespace
 
 void test_box_model_edges() {
+    {
+        ComputedStyle parent;
+        parent.set("font-size", "14px");
+        parent.set("line-height", "1.5");
+        auto original = std::make_unique<ComputedStyle>();
+        original->set_inherit_parent(&parent);
+        original->set("width", "calc(10vw + 10vh + 1rem + 1rlh + 1in + 10%)");
+        original->set("height", "25%");
+        original->set("padding", "calc(.5em + .5lh + 2%)");
+        original->set("margin-left", "auto");
+        original->set("margin-right", "auto");
+        original->set("border-left-style", "solid");
+        original->set("border-left-width", "2pt");
+        LayoutContext context;
+        const auto clone = [](const ComputedStyle& source) {
+            ComputedStyle result;
+            result.set_inherit_parent(source.inherit_parent());
+            std::vector<int> ids;
+            source.copy_set_ids(ids);
+            for (int id : ids) result.set(id, source.get(id));
+            return result;
+        };
+        const auto compare_fresh = [&](ComputedStyle& live, double width, double parent_height) {
+            ComputedStyle fresh = clone(live);
+            BoxTree tree;
+            const BoxId root = tree.create(BoxKind::Block);
+            tree[root].style = &parent;
+            tree[root].height = parent_height;
+            const auto measure = [&](const ComputedStyle* style) {
+                const BoxId id = tree.create(BoxKind::Block);
+                tree[id].style = style;
+                tree[id].height = 13; // Auto height must preserve the input.
+                tree.append_child(root, id);
+                apply_box_model(&tree, id, width, &parent, context);
+                const Box& b = tree[id];
+                return std::array<double, 15>{b.width, b.height, b.margin_top, b.margin_right,
+                    b.margin_bottom, b.margin_left, b.padding_top, b.padding_right,
+                    b.padding_bottom, b.padding_left, b.border_top, b.border_right,
+                    b.border_bottom, b.border_left, static_cast<double>(b.position)};
+            };
+            const auto cached = measure(&live);
+            CHECK(cached == measure(&fresh));
+        };
+        parent.set("height", "400px");
+        for (int i = 0; i < 18; ++i) compare_fresh(*original, 320 + 31 * (i % 6), 400);
+        ComputedStyle copy = std::move(*original);
+        original.reset(); // The shared memo must not borrow any source strings.
+        for (int change = 0; change < 10; ++change) {
+            switch (change) {
+            case 0: context.viewport_width_px += 71; break;
+            case 1: context.viewport_height_px += 39; break;
+            case 2: context.root_font_size_px += 3; break;
+            case 3: context.root_line_height_px = 28; break;
+            case 4: context.dpi_pixels_per_inch = 120; break;
+            case 5: parent.set("font-size", "23px"); break;
+            case 6: parent.set("line-height", "2.5"); break;
+            case 7: parent.set("height", "600px"); break;
+            case 8: copy.set("height", "auto"); break;
+            case 9: copy.set("padding-left", "11px"); break;
+            }
+            compare_fresh(copy, 320, change >= 7 ? 600 : 400);
+            compare_fresh(copy, 320, change >= 7 ? 600 : 400);
+        }
+        ComputedStyle sibling = clone(copy);
+        sibling.box_model_memo = copy.box_model_memo;
+        sibling.set("width", "29px");
+        for (int i = 0; i < 4; ++i) {
+            compare_fresh(sibling, 320, 600);
+            compare_fresh(copy, 320, 600);
+        }
+    }
     Fixture f;
     // Borders are written as longhands: this port does not yet expand
     // shorthands at cascade time, so `border: solid 6px` sets nothing. See
