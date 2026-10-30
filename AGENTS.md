@@ -266,3 +266,9 @@ removes duplicate snapshot/upload copies in Agentic (ff1c9925b, not integrated
 into engine-main yet). Two paint and twelve renderer tests pass. It records
 scoped CPU gains and rejected experiments; core/Unity/Godot gate counts are
 unchanged. GPU/Chrome parity and the wider rendering audit remain open.
+
+The [Agentic GPU/selection audit](docs/verification/agentic-gpu-20261030.md)
+adds real Vulkan timestamps, complete setter/update/submission timing and
+720p/1080p/4K scripted workloads. Agentic commit be88b3cb2 is not integrated
+yet. Retained GPU costs are small on the RTX 5080; selection preparation is
+the main remaining CPU target. It does not establish Chrome GPU parity.

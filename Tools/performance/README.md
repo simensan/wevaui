@@ -177,3 +177,9 @@ resolve completely; bind a changing number to `Depth`. These are number-update
 workloads, not selection, GPU completion, FPS or Chrome-equivalent rendering.
 See [the Agentic receipt](../../docs/verification/agentic-packed-20261030.md)
 for exact boundaries, asset conversion, rejected runs and remaining work.
+
+Agentic’s optional fifth authored argument is a JSON mutation sequence. Set
+`WEVA_GPU_TIMING=1` for separate retained GPU timestamps and
+`WEVA_BENCH_WIDTH`/`WEVA_BENCH_HEIGHT` for resolution. The
+[GPU/selection receipt](../../docs/verification/agentic-gpu-20261030.md) records
+actual hardware intervals and distinguishes them from changing-frame CPU cost.
