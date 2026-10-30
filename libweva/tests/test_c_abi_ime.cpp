@@ -160,6 +160,20 @@ void test_abi_ime_lifecycle() {
 }
 
 void test_abi_ime_external_mutation() {
+    // Equal writes and absent removals still retain the API's explicit IME
+    // commit behavior even though they do not produce attribute mutations.
+    for (const char* name : {"type", "readonly", "disabled"}) {
+        Document d("<input id=field type=text value=abcd>");
+        weva_element_set_selection(d.doc, d.field, 1, 3);
+        CHECK(weva_document_set_composition(d.doc, "XY", 0, 2) == 1);
+        d.events();
+        CHECK(weva_element_set_attribute(d.doc, d.field, name,
+            std::strcmp(name, "type") == 0 ? "text" : nullptr) == WEVA_OK);
+        CHECK(weva_document_composition(d.doc, nullptr, nullptr) == WEVA_ELEMENT_NONE);
+        CHECK_EQ(d.value(), "aXYd");
+        CHECK(d.events() == std::vector<int>({WEVA_EVENT_COMPOSITION_END}));
+        CHECK(weva_document_update(d.doc, 0) == WEVA_OK);
+    }
     for (bool update_first : {false, true}) {
         for (bool markup : {false, true}) {
             Document d("<textarea id=field>abcd</textarea>");

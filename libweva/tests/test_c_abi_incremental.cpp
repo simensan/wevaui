@@ -2420,6 +2420,49 @@ void test_abi_hidden_subtree_restyle() {
 }
 
 void test_abi_incremental_selector_dependencies() {
+    // Repeating a host's complete attribute state must not overflow the
+    // scoped-mutation budget or restyle unrelated controls. Presence remains
+    // distinct from an empty value, and a queued real mutation stays queued.
+    {
+        auto c = config();
+        auto d = weva_document_create(&c);
+        const char* html = "<div id=a class=slot></div><div id=b></div>";
+        const char* css = "div{height:20px;width:30px;background:red}"
+            "[data-state]{width:70px}.selected{background:blue}";
+        CHECK(weva_document_load_html(d, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_set_css(d, css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        const auto a = weva_document_query(d, "#a");
+        const auto b = weva_document_query(d, "#b");
+        const auto initial = capture(d);
+        const auto serial = weva_document_draw_serial(d);
+        weva_stats before{}, after{};
+        weva_document_stats(d, &before);
+        for (int i = 0; i < 80; ++i) {
+            CHECK(weva_element_set_attribute(d, a, "CLASS", "slot") == WEVA_OK);
+            CHECK(weva_element_set_attribute(d, b, "disabled", nullptr) == WEVA_OK);
+        }
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        weva_document_stats(d, &after);
+        CHECK(after.cascade_elements == before.cascade_elements);
+        CHECK(weva_document_draw_serial(d) == serial);
+        CHECK(capture(d) == initial);
+        for (const char* value : {"", static_cast<const char*>(nullptr)}) {
+            CHECK(weva_element_set_attribute(d, a, "data-state", value) == WEVA_OK);
+            CHECK(weva_element_set_attribute(d, b, "class", "selected") == WEVA_OK);
+            for (int i = 0; i < 80; ++i)
+                CHECK(weva_element_set_attribute(d, a, "class", "slot") == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            const auto actual = capture(d);
+            CHECK(weva_document_set_css(d, css, std::strlen(css)) == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            CHECK(capture(d) == actual);
+            double x, y, w, h;
+            CHECK(weva_element_bounds(d, a, &x, &y, &w, &h) == WEVA_OK);
+            CHECK(w == (value ? 70 : 30));
+        }
+        weva_document_destroy(d);
+    }
     // A footer sibling rule must not broaden unrelated text invalidation.
     // Relevant siblings (including their inherited descendants), filtered
     // ranks and nested selectors must still agree with a full cascade.

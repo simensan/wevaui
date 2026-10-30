@@ -1,5 +1,11 @@
 # AI_REFERENCE.md — orientation for AI agents
 
+The [unchanged-attribute follow-up](docs/verification/scoped-noop-20261031.md)
+avoids no-op restyles after sibling pruning: paired complete inventory CPU
+falls 7.3%. Windows/GCC main checks pass 493,402 (493,396 sanitized), all 340
+Chrome captures pass, Unity Native passes 243 with two inconclusive, Agentic
+renderer passes 13, and affected Godot scenes pass. No ABI change or new full gate.
+
 The [sibling-subject optimization](docs/verification/sibling-subjects-20261031.md)
 reduces unnecessary sibling restyles in the shared core. Windows/GCC main tests
 pass 493,041 checks (493,035 sanitized), all 340 Chrome captures pass, Unity

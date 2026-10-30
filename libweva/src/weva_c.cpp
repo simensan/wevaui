@@ -8659,10 +8659,16 @@ weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t eleme
     const bool table_span_changed = is_table_span_attribute(name) &&
         e->get_attribute(name) != std::string_view(value ? value : "");
     if (finish && !disabling) weva_document_commit_composition(doc, nullptr);
+    const auto attribute_version = e->version();
     if (value) e->set_attribute(name, value);
     else e->remove_attribute(name);
+    const bool attribute_changed = e->version() != attribute_version;
     if (std::strcmp(name, "open") == 0) doc->sync_dialog_open(e);
     if (finish && disabling) weva_document_commit_composition(doc, nullptr);
+    // AttributeMap already rejects equal writes and missing removals. Use its
+    // version result without repeating presence/value lookups. Explicit input
+    // and dialog side effects above still run; their observers own invalidation.
+    if (!attribute_changed) return WEVA_OK;
     if (image_source_changed || table_span_changed) {
         auto& inputs = doc->styles.pending_content_inputs;
         if (std::find(inputs.begin(),inputs.end(),e) == inputs.end()) inputs.push_back(e);
