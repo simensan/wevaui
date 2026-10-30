@@ -100,7 +100,7 @@ The survival sample has a separate real-render benchmark:
 [`render_bench.gd`](../../hosts/godot/project/samples/western_survival/render_bench.gd).
 It measures controller/update CPU, renderer CPU setup, viewport render CPU/GPU,
 draw calls and wall-frame intervals. It keeps the native background visible
-while hiding Weva for a background-only control. It does not compare Chrome.
+while hiding Weva for a background-only control.
 
 ```powershell
 $env:WEVA_RENDER_BENCH_OUT = "$PWD/.utmp/render-results.json"
@@ -134,3 +134,34 @@ and [measured receipt](../../docs/verification/rendering-20261030.md).
 
 This is a warm 2D sample measurement on the reported GPU/driver, not a busy 3D
 game, cold shader compilation, or a matched Chrome rendering comparison.
+
+## Same-scene Chrome rendering diagnostic
+
+Export the live sample state and actual fallback font with Godot:
+
+```powershell
+$env:WEVA_RENDER_EXPORT_OUT = "$PWD/.utmp/fixture.json"
+godot --headless --path hosts/godot/project --script res://samples/western_survival/render_export.gd
+node Tools/performance/render_chrome.cjs .utmp/fixture.json .utmp/chrome-render-new 180 3
+python Tools/performance/summarize_render_trace.py .utmp/chrome-render-new
+python -m unittest discover -s Tools/performance -p test_render_trace.py
+```
+
+Use `WEVA_CHROME` to select the reference executable. The browser output directory
+must not already exist. Keep the exported JSON and adjacent `.ttf` together.
+Chrome uses the sample HTML/CSS/images, exported controller states and font, at
+1280x720 with 60 scheduled mutations per second. It saves real screenshots,
+element rectangles, GPU configuration and raw traces. Raster CPU is summed
+across worker threads; nested intervals within each thread are counted once.
+Only the marked measurement window and target renderer process are counted.
+GPU-process CPU slices are **not GPU hardware time**; GPU execution is reported
+unavailable. Tracing perturbs CPU work, so this is a stage diagnostic, not a
+maximum-throughput or input-to-photon benchmark.
+
+For the corresponding Godot run, set `WEVA_RENDER_BENCH_FPS=60`,
+`WEVA_RENDER_BENCH_FRAMES=180`, and `WEVA_RENDER_BENCH_ROUNDS=3`.
+The default frame limit remains zero (uncapped). An idle Chrome page can reuse
+composited content without raster work; Godot continues rendering its retained
+canvas. Compare stage boundaries explicitly, never a Chrome setter timer against
+a full Weva update or CPU raster timings against GPU timestamps.
+See [the comparison receipt](../../docs/verification/rendering-chrome-20261030.md).

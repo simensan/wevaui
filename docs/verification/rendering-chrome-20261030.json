@@ -1,0 +1,555 @@
+{
+  "schema": 1,
+  "base_commit": "e4dfaa60",
+  "browser": "Chrome/152.0.7977.82",
+  "gpu": {
+    "gpu": {
+      "devices": [
+        {
+          "vendorId": 4318,
+          "deviceId": 11266,
+          "subSysId": 4079030448,
+          "revision": 161,
+          "vendorString": "",
+          "deviceString": "NVIDIA GeForce RTX 5080",
+          "driverVendor": "NVIDIA",
+          "driverVersion": "32.0.16.1742"
+        },
+        {
+          "vendorId": 4098,
+          "deviceId": 5056,
+          "subSysId": 2289504323,
+          "revision": 203,
+          "vendorString": "",
+          "deviceString": "AMD Radeon(TM) Graphics",
+          "driverVendor": "",
+          "driverVersion": "32.0.21042.62"
+        },
+        {
+          "vendorId": 4318,
+          "deviceId": 11266,
+          "subSysId": 4079030448,
+          "revision": 161,
+          "vendorString": "",
+          "deviceString": "NVIDIA GeForce RTX 5080",
+          "driverVendor": "",
+          "driverVersion": "32.0.16.1742"
+        },
+        {
+          "vendorId": 5140,
+          "deviceId": 140,
+          "subSysId": 0,
+          "revision": 0,
+          "vendorString": "",
+          "deviceString": "Microsoft Basic Render Driver",
+          "driverVendor": "",
+          "driverVersion": "10.0.26100.9711"
+        },
+        {
+          "vendorId": 5140,
+          "deviceId": 140,
+          "subSysId": 0,
+          "revision": 0,
+          "vendorString": "",
+          "deviceString": "Microsoft Basic Render Driver",
+          "driverVendor": "",
+          "driverVersion": "10.0.26100.9711"
+        }
+      ],
+      "auxAttributes": {
+        "amdSwitchable": false,
+        "bgra8OverlaySupport": "SCALING",
+        "canSupportThreadedTextureMailbox": false,
+        "directComposition": true,
+        "directMLFeatureLevel": "Not supported",
+        "directRenderingVersion": "",
+        "displayType": "ANGLE_D3D11",
+        "dx12FeatureLevel": "Not supported",
+        "glExtensions": "GL_AMD_performance_monitor GL_ANGLE_base_vertex_base_instance_shader_builtin GL_ANGLE_blob_cache GL_ANGLE_client_arrays GL_ANGLE_clip_cull_distance GL_ANGLE_copy_texture_3d GL_ANGLE_depth_texture GL_ANGLE_framebuffer_blit GL_ANGLE_framebuffer_multisample GL_ANGLE_get_serialized_context_string GL_ANGLE_get_tex_level_parameter GL_ANGLE_instanced_arrays GL_ANGLE_memory_size GL_ANGLE_multiview_multisample GL_ANGLE_pack_reverse_row_order GL_ANGLE_polygon_mode GL_ANGLE_program_binary_readiness_query GL_ANGLE_program_cache_control GL_ANGLE_provoking_vertex GL_ANGLE_renderability_validation GL_ANGLE_request_extension GL_ANGLE_robust_client_memory GL_ANGLE_shader_pixel_local_storage GL_ANGLE_shader_pixel_local_storage_coherent GL_ANGLE_stencil_texturing GL_ANGLE_texture_compression_dxt3 GL_ANGLE_texture_compression_dxt5 GL_ANGLE_texture_multisample GL_ANGLE_texture_usage GL_ANGLE_translated_shader_source GL_APPLE_clip_distance GL_ARM_rgba8 GL_CHROMIUM_bind_generates_resource GL_CHROMIUM_bind_uniform_location GL_CHROMIUM_copy_compressed_texture GL_CHROMIUM_copy_texture GL_CHROMIUM_lose_context GL_EXT_EGL_image_external_wrap_modes GL_EXT_base_instance GL_EXT_blend_func_extended GL_EXT_blend_minmax GL_EXT_clip_control GL_EXT_clip_cull_distance GL_EXT_color_buffer_float GL_EXT_color_buffer_half_float GL_EXT_conservative_depth GL_EXT_debug_label GL_EXT_debug_marker GL_EXT_depth_clamp GL_EXT_discard_framebuffer GL_EXT_disjoint_timer_query GL_EXT_draw_buffers GL_EXT_draw_buffers_indexed GL_EXT_draw_elements_base_vertex GL_EXT_float_blend GL_EXT_frag_depth GL_EXT_instanced_arrays GL_EXT_map_buffer_range GL_EXT_occlusion_query_boolean GL_EXT_polygon_offset_clamp GL_EXT_read_format_bgra GL_EXT_render_snorm GL_EXT_robustness GL_EXT_sRGB GL_EXT_shader_texture_lod GL_EXT_texture_border_clamp GL_EXT_texture_compression_bptc GL_EXT_texture_compression_dxt1 GL_EXT_texture_compression_rgtc GL_EXT_texture_compression_s3tc_srgb GL_EXT_texture_filter_anisotropic GL_EXT_texture_format_BGRA8888 GL_EXT_texture_mirror_clamp_to_edge GL_EXT_texture_norm16 GL_EXT_texture_rg GL_EXT_texture_storage GL_EXT_texture_type_2_10_10_10_REV GL_EXT_unpack_subimage GL_KHR_debug GL_KHR_parallel_shader_compile GL_KHR_robustness GL_NV_EGL_stream_consumer_external GL_NV_fence GL_NV_framebuffer_blit GL_NV_pack_subimage GL_NV_pixel_buffer_object GL_NV_shader_noperspective_interpolation GL_OES_EGL_image GL_OES_EGL_image_external GL_OES_EGL_image_external_essl3 GL_OES_depth24 GL_OES_depth32 GL_OES_draw_buffers_indexed GL_OES_draw_elements_base_vertex GL_OES_element_index_uint GL_OES_fbo_render_mipmap GL_OES_get_program_binary GL_OES_mapbuffer GL_OES_packed_depth_stencil GL_OES_required_internalformat GL_OES_rgb8_rgba8 GL_OES_sample_variables GL_OES_shader_multisample_interpolation GL_OES_standard_derivatives GL_OES_surfaceless_context GL_OES_texture_border_clamp GL_OES_texture_float GL_OES_texture_float_linear GL_OES_texture_half_float GL_OES_texture_half_float_linear GL_OES_texture_npot GL_OES_texture_stencil8 GL_OES_texture_storage_multisample_2d_array GL_OES_vertex_array_object GL_OVR_multiview GL_OVR_multiview2 ",
+        "glImplementationParts": "(gl=egl-angle,angle=d3d11)",
+        "glRenderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11-32.0.16.1742)",
+        "glResetNotificationStrategy": 33362,
+        "glVendor": "Google Inc. (NVIDIA)",
+        "glVersion": "OpenGL ES 3.0 (ANGLE 2.1.28468 git hash: 7df613367a1d)",
+        "glWsExtensions": "EGL_EXT_create_context_robustness EGL_ANGLE_d3d_share_handle_client_buffer EGL_ANGLE_d3d_texture_client_buffer EGL_ANGLE_surface_d3d_texture_2d_share_handle EGL_ANGLE_query_surface_pointer EGL_ANGLE_window_fixed_size EGL_ANGLE_keyed_mutex EGL_ANGLE_surface_orientation EGL_ANGLE_direct_composition EGL_NV_post_sub_buffer EGL_KHR_create_context EGL_KHR_image EGL_KHR_image_base EGL_KHR_gl_texture_2D_image EGL_KHR_gl_texture_cubemap_image EGL_KHR_gl_renderbuffer_image EGL_KHR_get_all_proc_addresses EGL_KHR_stream EGL_KHR_stream_consumer_gltexture EGL_NV_stream_consumer_gltexture_yuv EGL_ANGLE_stream_producer_d3d_texture EGL_ANGLE_create_context_webgl_compatibility EGL_CHROMIUM_create_context_bind_generates_resource EGL_CHROMIUM_sync_control EGL_EXT_pixel_format_float EGL_KHR_surfaceless_context EGL_ANGLE_display_texture_share_group EGL_ANGLE_display_semaphore_share_group EGL_ANGLE_create_context_client_arrays EGL_ANGLE_program_cache_control EGL_ANGLE_robust_resource_initialization EGL_ANGLE_create_context_extensions_enabled EGL_ANDROID_blob_cache EGL_ANDROID_recordable EGL_ANGLE_image_d3d11_texture EGL_ANGLE_create_context_backwards_compatible EGL_KHR_no_config_context EGL_KHR_create_context_no_error EGL_KHR_reusable_sync EGL_ANGLE_memory_usage_report ",
+        "glWsVendor": "Google Inc. (NVIDIA)",
+        "glWsVersion": "1.5 (ANGLE 2.1.28468 git hash: 7df613367a1d)",
+        "inProcessGpu": false,
+        "initializationTime": 0.226126,
+        "isAsan": false,
+        "isClangCoverage": false,
+        "jpegDecodeAcceleratorSupported": false,
+        "maxMsaaSamples": "8",
+        "nv12OverlaySupport": "SCALING",
+        "optimus": false,
+        "p010OverlaySupport": "SCALING",
+        "passthroughCmdDecoder": true,
+        "pixelShaderVersion": "5.0",
+        "processCrashCount": 0,
+        "rgb10a2OverlaySupport": "SCALING",
+        "sandboxed": true,
+        "skiaBackendType": "GraphiteDawnD3D11",
+        "subpixelFontRendering": true,
+        "supportsD3dSharedImages": false,
+        "supportsDirectML": false,
+        "supportsDx12": false,
+        "supportsOverlays": true,
+        "supportsVulkan": false,
+        "targetCpuBits": 64,
+        "vertexShaderVersion": "5.0",
+        "visibilityCallbackCallCount": 0,
+        "vulkanVersion": "Not supported",
+        "yuy2OverlaySupport": "SCALING"
+      },
+      "featureStatus": {
+        "2d_canvas": "enabled",
+        "direct_rendering_display_compositor": "disabled_off_ok",
+        "gpu_compositing": "enabled",
+        "multiple_raster_threads": "enabled_on",
+        "opengl": "enabled_on",
+        "rasterization": "enabled",
+        "raw_draw": "disabled_off_ok",
+        "skia_graphite": "enabled_on",
+        "trees_in_viz": "enabled_on",
+        "video_decode": "enabled",
+        "video_encode": "enabled",
+        "webgl": "enabled",
+        "webgpu": "enabled",
+        "webnn": "disabled_off"
+      },
+      "driverBugWorkarounds": [
+        "disable_d3d11_vp9_ksvc_decoding",
+        "enable_webgl_timer_query_extensions",
+        "exit_on_context_lost",
+        "unpack_overlapping_rows_separately_unpack_buffer",
+        "disabled_extension_GL_KHR_blend_equation_advanced",
+        "disabled_extension_GL_KHR_blend_equation_advanced_coherent"
+      ],
+      "videoDecoding": [],
+      "videoEncoding": []
+    },
+    "modelName": "",
+    "modelVersion": "",
+    "commandLine": "C:/Users/simen/Documents/GitHub/unityui/.utmp/review-20260914/ci-chrome/pinned-browser/chrome/win64-152.0.7977.82/chrome-win64/chrome.exe --allow-pre-commit-input --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-crash-reporter --disable-default-apps --disable-dev-shm-usage --disable-hang-monitor --disable-infobars --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-search-engine-choice-screen --disable-sync --enable-automation --export-tagged-pdf --force-color-profile=srgb --generate-pdf-document-outline --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --disable-features=Translate,AcceptCHFrame,MediaRouter,OptimizationHints,WebUIReloadButton,WebUIOmniboxPopup,WebUIOmniboxAimPopup,ProcessPerSiteUpToMainFrameThreshold,IsolateSandboxedIframes --enable-features=PdfOopif --disable-extensions --enable-gpu-service-tracing --disable-backgrounding-occluded-windows --window-size=1320,820 --remote-debugging-port=0 --user-data-dir=\"C:\\Users\\simen\\AppData\\Local\\Temp\\puppeteer_dev_chrome_profile-iIyBkM\" --flag-switches-begin --flag-switches-end about:blank"
+  },
+  "godot": {
+    "adapter": "NVIDIA GeForce RTX 5080",
+    "driver": "vulkan",
+    "engine": {
+      "build": "official",
+      "hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+      "hex": 263936,
+      "major": 4,
+      "minor": 7,
+      "patch": 0,
+      "status": "stable",
+      "string": "4.7-stable (official)",
+      "timestamp": 0
+    },
+    "frame_limit": 60,
+    "frames": 180,
+    "gpu_timing_enabled": true,
+    "method": "mobile",
+    "rounds": 3,
+    "schema": 1,
+    "viewport": [
+      1280,
+      720
+    ],
+    "warmup": 120
+  },
+  "chrome_trace_rounds": [
+    {
+      "case": "background",
+      "round": 0,
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.014666666666666668,
+      "paint_recording_events": 909,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 2978.169,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "idle_hud",
+      "round": 0,
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.013655555555555556,
+      "paint_recording_events": 899,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 2979.09,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "updating_hud",
+      "round": 0,
+      "style_layout_cpu_ms_per_update": 0.08081111111111111,
+      "style_layout_events": 360,
+      "paint_recording_cpu_ms_per_update": 0.0958611111111111,
+      "paint_recording_events": 1279,
+      "raster_workers_cpu_ms_per_update": 0.07191666666666667,
+      "raster_workers_events": 180,
+      "window_ms": 2975.94,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 0,
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.01168888888888889,
+      "paint_recording_events": 910,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 2975.992,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory_selection",
+      "round": 0,
+      "style_layout_cpu_ms_per_update": 0.14651111111111112,
+      "style_layout_events": 360,
+      "paint_recording_cpu_ms_per_update": 0.2063722222222222,
+      "paint_recording_events": 1789,
+      "raster_workers_cpu_ms_per_update": 0.16799444444444445,
+      "raster_workers_events": 540,
+      "window_ms": 2976.235,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory_selection",
+      "round": 1,
+      "style_layout_cpu_ms_per_update": 0.16484444444444446,
+      "style_layout_events": 360,
+      "paint_recording_cpu_ms_per_update": 0.22286666666666666,
+      "paint_recording_events": 1796,
+      "raster_workers_cpu_ms_per_update": 0.1891388888888889,
+      "raster_workers_events": 540,
+      "window_ms": 2976.16,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 1,
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.013794444444444444,
+      "paint_recording_events": 939,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 2975.631,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "updating_hud",
+      "round": 1,
+      "style_layout_cpu_ms_per_update": 0.08476666666666666,
+      "style_layout_events": 360,
+      "paint_recording_cpu_ms_per_update": 0.1063111111111111,
+      "paint_recording_events": 1296,
+      "raster_workers_cpu_ms_per_update": 0.08015,
+      "raster_workers_events": 180,
+      "window_ms": 2976.074,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "idle_hud",
+      "round": 1,
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.01113888888888889,
+      "paint_recording_events": 878,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 2976.208,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "background",
+      "round": 1,
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.010744444444444444,
+      "paint_recording_events": 877,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 2976.18,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "background",
+      "round": 2,
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.009644444444444445,
+      "paint_recording_events": 762,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3779.185,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "idle_hud",
+      "round": 2,
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.0085,
+      "paint_recording_events": 750,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 2979.073,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "updating_hud",
+      "round": 2,
+      "style_layout_cpu_ms_per_update": 0.10263333333333334,
+      "style_layout_events": 360,
+      "paint_recording_cpu_ms_per_update": 0.10591666666666667,
+      "paint_recording_events": 1146,
+      "raster_workers_cpu_ms_per_update": 0.08151666666666667,
+      "raster_workers_events": 180,
+      "window_ms": 2979.2,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 2,
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.008422222222222222,
+      "paint_recording_events": 761,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 2979.222,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory_selection",
+      "round": 2,
+      "style_layout_cpu_ms_per_update": 0.1623888888888889,
+      "style_layout_events": 360,
+      "paint_recording_cpu_ms_per_update": 0.21361666666666668,
+      "paint_recording_events": 1674,
+      "raster_workers_cpu_ms_per_update": 0.19670555555555552,
+      "raster_workers_events": 540,
+      "window_ms": 2979.29,
+      "gpu_execution_ms": null
+    }
+  ],
+  "summary": [
+    {
+      "case": "background",
+      "chrome": {
+        "style_layout_cpu_ms_per_update": 0.0,
+        "paint_recording_cpu_ms_per_update": 0.011685185185185186,
+        "raster_workers_cpu_ms_per_update": 0.0
+      },
+      "godot": {
+        "update_ms": {
+          "mean": 0.0014240740740740741,
+          "median": 0.001,
+          "p95": 0.002
+        },
+        "render_cpu_ms": {
+          "mean": 0.031438888935372236,
+          "median": 0.0270000007003546,
+          "p95": 0.0520000010728836
+        },
+        "render_setup_cpu_ms": {
+          "mean": 0.0068462962962962965,
+          "median": 0.006,
+          "p95": 0.011
+        },
+        "render_gpu_ms": {
+          "mean": 0.0773777779053759,
+          "median": 0.0140000004321337,
+          "p95": 0.523000001907349
+        },
+        "wall_ms": {
+          "mean": 16.644318518518517,
+          "median": 15.652,
+          "p95": 30.074
+        }
+      }
+    },
+    {
+      "case": "idle_hud",
+      "chrome": {
+        "style_layout_cpu_ms_per_update": 0.0,
+        "paint_recording_cpu_ms_per_update": 0.011098148148148149,
+        "raster_workers_cpu_ms_per_update": 0.0
+      },
+      "godot": {
+        "update_ms": {
+          "mean": 0.009535185185185185,
+          "median": 0.008,
+          "p95": 0.016
+        },
+        "render_cpu_ms": {
+          "mean": 0.06443333340187866,
+          "median": 0.0584999993443489,
+          "p95": 0.108000002801418
+        },
+        "render_setup_cpu_ms": {
+          "mean": 0.007046296296296296,
+          "median": 0.006,
+          "p95": 0.013
+        },
+        "render_gpu_ms": {
+          "mean": 0.10055370347539859,
+          "median": 0.0209999997168779,
+          "p95": 0.605000019073486
+        },
+        "wall_ms": {
+          "mean": 16.68080925925926,
+          "median": 15.656500000000001,
+          "p95": 29.907
+        }
+      }
+    },
+    {
+      "case": "updating_hud",
+      "chrome": {
+        "style_layout_cpu_ms_per_update": 0.08940370370370371,
+        "paint_recording_cpu_ms_per_update": 0.1026962962962963,
+        "raster_workers_cpu_ms_per_update": 0.07786111111111112
+      },
+      "godot": {
+        "update_ms": {
+          "mean": 0.26284259259259257,
+          "median": 0.228,
+          "p95": 0.407
+        },
+        "render_cpu_ms": {
+          "mean": 0.050846296604032865,
+          "median": 0.0450000017881393,
+          "p95": 0.0729999989271164
+        },
+        "render_setup_cpu_ms": {
+          "mean": 0.0051907407407407406,
+          "median": 0.005,
+          "p95": 0.008
+        },
+        "render_gpu_ms": {
+          "mean": 0.07545370364872116,
+          "median": 0.0209999997168779,
+          "p95": 0.515999972820282
+        },
+        "wall_ms": {
+          "mean": 16.67793888888889,
+          "median": 15.6535,
+          "p95": 29.757
+        }
+      }
+    },
+    {
+      "case": "inventory",
+      "chrome": {
+        "style_layout_cpu_ms_per_update": 0.0,
+        "paint_recording_cpu_ms_per_update": 0.011301851851851851,
+        "raster_workers_cpu_ms_per_update": 0.0
+      },
+      "godot": {
+        "update_ms": {
+          "mean": 0.009461111111111111,
+          "median": 0.007,
+          "p95": 0.016
+        },
+        "render_cpu_ms": {
+          "mean": 0.10128148169153266,
+          "median": 0.090999998152256,
+          "p95": 0.172999992966652
+        },
+        "render_setup_cpu_ms": {
+          "mean": 0.007101851851851852,
+          "median": 0.006,
+          "p95": 0.013
+        },
+        "render_gpu_ms": {
+          "mean": 0.07274814789286918,
+          "median": 0.0299999993294477,
+          "p95": 0.587999999523163
+        },
+        "wall_ms": {
+          "mean": 16.684194444444444,
+          "median": 15.676,
+          "p95": 29.945
+        }
+      }
+    },
+    {
+      "case": "inventory_selection",
+      "chrome": {
+        "style_layout_cpu_ms_per_update": 0.1579148148148148,
+        "paint_recording_cpu_ms_per_update": 0.2142851851851852,
+        "raster_workers_cpu_ms_per_update": 0.18461296296296295
+      },
+      "godot": {
+        "update_ms": {
+          "mean": 2.2174314814814813,
+          "median": 2.1369999999999996,
+          "p95": 3.19
+        },
+        "render_cpu_ms": {
+          "mean": 0.08444074088776554,
+          "median": 0.0810000002384186,
+          "p95": 0.123000003397465
+        },
+        "render_setup_cpu_ms": {
+          "mean": 0.005798148148148149,
+          "median": 0.005,
+          "p95": 0.011
+        },
+        "render_gpu_ms": {
+          "mean": 0.07930000005634845,
+          "median": 0.0280000008642673,
+          "p95": 0.582000017166138
+        },
+        "wall_ms": {
+          "mean": 16.647057407407406,
+          "median": 15.6675,
+          "p95": 29.629
+        }
+      }
+    }
+  ],
+  "geometry": {
+    "idle_hud": {
+      "max_delta_px": 2.509368896483977,
+      "max_except_crosshair_px": 0.03125,
+      "elements": 82
+    },
+    "inventory": {
+      "max_delta_px": 0.046875,
+      "max_except_crosshair_px": 0.046875,
+      "elements": 82
+    }
+  },
+  "artifacts": {
+    ".utmp\\chrome-render-20261030\\fixture.json": "a7ba4bed078d6d9fcd6dfe978b346c79ffbd6dd50c14e28c43e7d96ee801bebf",
+    ".utmp\\chrome-render-20261030\\fixture.json.ttf": "55809808749613ed9ef9ad4f61424a14d2aa265d74369ad43403b9761aa6bac4",
+    ".utmp\\chrome-render-20261030\\godot60.json": "5e780257cc6457fbfee20422a38e9954b9ba70161cdb903a2f666e14403b6ec3",
+    ".utmp\\chrome-render-20261030\\final\\results.json": "4b5993811dcf91bd2ce8c9550951c7ec12fdca1588b8297c67f9cb833f7b828f",
+    ".utmp\\chrome-render-20261030\\final\\0-background-trace.json": "523528c08593f832267b3790bc6c9d879736f2a01fb44902e1c1f80c66aba235",
+    ".utmp\\chrome-render-20261030\\final\\0-idle_hud-trace.json": "5835cb4e0785ec11a2fb2ee3ed91299aebd9cf297ef1713cc9a7864ae02cd77e",
+    ".utmp\\chrome-render-20261030\\final\\0-inventory-trace.json": "9d84ba8a8d2e9f5f7e00d3ce374ee97a83792d59fd55bafa19f62657ab4b5bfe",
+    ".utmp\\chrome-render-20261030\\final\\0-inventory_selection-trace.json": "7e3ef75ef3456f26aa8e02d584ed85c4b84ca3636c8e1491e2cb9a4cbdc1eac7",
+    ".utmp\\chrome-render-20261030\\final\\0-updating_hud-trace.json": "45a95c2ae4b6cc207d8f28699d5a56f3e2b2368569a42f4e04081f3c748f2b6e",
+    ".utmp\\chrome-render-20261030\\final\\1-background-trace.json": "928205c6cb4f0c8629e035fa77e753d76322a0fb104a1817dc28ce0d3de0af63",
+    ".utmp\\chrome-render-20261030\\final\\1-idle_hud-trace.json": "98548d9b70132f3685411188814966891ff4ed28b0ea9d9cf71365ec31aac4b3",
+    ".utmp\\chrome-render-20261030\\final\\1-inventory-trace.json": "0080d80fcfb940b6826e106283e552cbe2210809e88db4fab7fe4a47945ae8f6",
+    ".utmp\\chrome-render-20261030\\final\\1-inventory_selection-trace.json": "69421a5b88caed3bc4dea8479480b5a0b3b00eb95be6860a402d33450adc0bd1",
+    ".utmp\\chrome-render-20261030\\final\\1-updating_hud-trace.json": "2182ab0bd8331cd947b63dfe56d72631be1e6f3600bcbefbec295209484808cb",
+    ".utmp\\chrome-render-20261030\\final\\2-background-trace.json": "15629386b3018e0c04e6f06baa8b11cab7e97a88a0d5137c8392463add98e3b8",
+    ".utmp\\chrome-render-20261030\\final\\2-idle_hud-trace.json": "aa4f3eb1391f75f965c8bd7aaa1b64a2eb0ddad1652c0110d06cd05020cb7c91",
+    ".utmp\\chrome-render-20261030\\final\\2-inventory-trace.json": "63763a55ee176406c84152ade47a4d3fe24c856c7c789b3774f81622baaf5d52",
+    ".utmp\\chrome-render-20261030\\final\\2-inventory_selection-trace.json": "1e48b16b0b71821a4b0d8263f4f7c860657f5f2207f93c79f2f97ee1fe6d6ff5",
+    ".utmp\\chrome-render-20261030\\final\\2-updating_hud-trace.json": "dbd41856b241a2de76d7c4a2b68722cf3e1deee6a037ac1c5daad4993b1bb294",
+    "hosts\\godot\\project\\addons\\weva\\bin\\weva_godot.dll": "ca68cc035d2f60ea6660f8eec2760bd93e6c15e49f6899c369a19250ca72fe28"
+  },
+  "chrome_gpu_execution_available": false
+}

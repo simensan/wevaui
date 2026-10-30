@@ -34,7 +34,7 @@ func run() -> void:
 	if OS.has_environment("WEVA_RENDER_BENCH_ROUNDS"):
 		rounds = maxi(1, int(OS.get_environment("WEVA_RENDER_BENCH_ROUNDS")))
 	gpu_timing = OS.get_environment("WEVA_RENDER_BENCH_GPU") != "0"
-	Engine.max_fps = 0
+	Engine.max_fps = maxi(0, int(OS.get_environment("WEVA_RENDER_BENCH_FPS")))
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	root.size = Vector2i(1280, 720)
 	sample = load("res://samples/western_survival/survival.tscn").instantiate()
@@ -56,7 +56,8 @@ func run() -> void:
 		"driver": RenderingServer.get_current_rendering_driver_name(),
 		"method": RenderingServer.get_current_rendering_method(),
 		"viewport": [root.size.x, root.size.y], "gpu_timing_enabled": gpu_timing,
-		"frames": frames, "warmup": warmup, "rounds": rounds, "results": results}
+		"frames": frames, "warmup": warmup, "rounds": rounds,
+		"frame_limit": Engine.max_fps, "results": results}
 	var file := FileAccess.open(output, FileAccess.WRITE)
 	if file == null:
 		printerr("FAIL cannot write benchmark output: ", output)

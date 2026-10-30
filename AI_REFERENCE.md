@@ -23,6 +23,12 @@ It covers Godot Compatibility/OpenGL and Mobile/Vulkan on an RTX 5080 at
 1280x720; it is not a matched Chrome rendering comparison or a busy 3D scene.
 Run it using [these instructions](Tools/performance/README.md#rendered-godot-frames).
 
+The [same-scene Chrome rendering comparison](docs/verification/rendering-chrome-20261030.md)
+adds actual survival-scene traces at 60 scheduled updates/second. CPU stage
+boundaries remain explicit; Chrome hardware GPU timing is unavailable. Three
+trace-accounting tests pass; engine gate counts are unchanged. Inventory
+selection remains the main measured CPU gap.
+
 A single document for an AI assistant asked to **use, integrate, or reason
 about** Weva: what it is, what it can and cannot do, how to wire it up, how
 the pieces fit, and which tools verify it. When a claim here and the code

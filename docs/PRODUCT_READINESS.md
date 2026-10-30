@@ -93,7 +93,10 @@ and browser-level visual/text fidelity remain incomplete.
   The separate [rendering probe](verification/rendering-20261030.md) now measures
   Godot CPU/GPU rendering of the actual survival sample on an RTX 5080 at
   1280x720, including a background-only control. It covers OpenGL and Vulkan;
-  weaker hardware, busy 3D scenes and matched Chrome rendering remain unverified.
+  the [same-scene Chrome follow-up](verification/rendering-chrome-20261030.md)
+  adds CPU rendering-stage traces. Inventory selection remains more expensive
+  in Weva. End-to-end/GPU parity, weaker hardware and busy 3D scenes remain
+  unverified.
 
 - **Deep markup:** content nested more than 64 elements deep is not rendered,
   so layout stays within a 1 MB thread stack.

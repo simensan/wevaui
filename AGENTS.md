@@ -152,6 +152,12 @@ Clang ASan/UBSan passes 17 suites / 704,359 checks. The full qualified gate,
 (244 passed, two environment-gated inconclusive). The receipt records the
 bounded caches, retained-flex proofs, allocation changes and measurement limits.
 
+The [same-scene Chrome rendering comparison](docs/verification/rendering-chrome-20261030.md)
+adds actual survival-scene traces at 60 scheduled updates/second. CPU stage
+boundaries remain explicit; Chrome hardware GPU timing is unavailable. Three
+trace-accounting tests pass; engine gate counts are unchanged. Inventory
+selection remains the main measured CPU gap.
+
 ## 4. Workflow recipes
 
 For rendered survival UI measurements, use the
