@@ -67,3 +67,7 @@ NEW_OUTPUT`. Run Agentic `weva_cost` with the same five prepared files and
 The next shared optimization target is inventory cascade/box reconstruction.
 Any correction belongs in libweva and must be checked through both hosts;
 these measurements do not justify an Agentic-only CSS workaround.
+
+The [mutation-result experiment](attribute-result-20261031.md) was rejected
+after paired measurements. Its follow-up probe identifies unrelated sibling
+selector invalidation as the next specific cascade target.
