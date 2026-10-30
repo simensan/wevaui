@@ -3198,6 +3198,11 @@ void WevaDocument::_process(double delta) {
     const double input_dt = last_input_tick_usec_ ? (now - last_input_tick_usec_) / 1000000.0 : 0;
     last_input_tick_usec_ = now;
     if (!doc_) return;
+    // Hidden controls retain pending mutations but need no automatic layout,
+    // paint or texture upload. Keep the input clock current so showing one
+    // cannot replay the hidden interval as a held gesture. Explicit updates
+    // and geometry queries still work through ensure_updated for prewarming.
+    if (is_inside_tree() && !is_visible_in_tree()) return;
     repeat_navigation(now);
     if (paused_) {
         // Input time advances held gestures while CSS time stays fixed.

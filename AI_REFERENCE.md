@@ -279,6 +279,11 @@ attributes most cold glyph preparation to scaler/raster work and verifies
 same-content retained reopening at 0.530 ms median main CPU versus 19.563 ms
 cold. This is reuse evidence, not a first-time raster speedup or edit-time bake.
 
+The [Godot hidden UI follow-up](docs/verification/godot-hidden-ui-20261030.md)
+pauses automatic hidden document work, including hidden ancestors. Explicit
+`update_document(0)` still prewarms while hidden; timing passes 39 checks.
+Unity disable releases its document, so it is a different lifecycle.
+
 The [Agentic packed-paint audit](docs/verification/agentic-packed-20261030.md)
 removes duplicate snapshot/upload copies in Agentic (ff1c9925b, not integrated
 into engine-main yet). Two paint and twelve renderer tests pass. It records

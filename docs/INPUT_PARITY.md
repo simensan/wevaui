@@ -43,3 +43,17 @@ Every row is pinned on both hosts (the last two were pinned 2026-09-14:
 Godot's touch pan by a scene check, Unity's multi-document pointer
 arbitration by implementing it -- a feed had fed the pointer to its document
 regardless of what was painted over it -- and testing it).
+
+## Host visibility lifecycle
+
+Godot automatic document/input ticks pause when the control or an ancestor is
+hidden; the monotonic input timestamp remains current so showing it cannot
+replay the hidden interval. Explicit `update_document` and geometry queries
+still work for prewarming. `timing_tests.gd` pins direct/ancestor hiding,
+pending changes on show, and explicit hidden preparation.
+
+Unity uses a different lifecycle: disabling the component/GameObject stops its
+Update calls and `OnDisable` unregisters the paint source and releases the
+native document. `NativeControllerBindingTests.DictionaryBinding_SurvivesBindingWhileDisabled_AndReenable`
+pins binding restoration. This is not retained-document visibility parity;
+CSS visibility/display rules remain core-owned and unchanged.

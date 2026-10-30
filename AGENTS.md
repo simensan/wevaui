@@ -20,6 +20,11 @@ adds bounded diagnostic font timing and verifies retained inventory reopening
 in three runtime processes. Eight font tests pass (one existing ignored).
 No shared engine or host behavior changes; cold glyph work remains open.
 
+The [Godot hidden UI follow-up](docs/verification/godot-hidden-ui-20261030.md)
+defers automatic hidden ticks while preserving explicit prewarming. Timing now
+passes 39 checks; bindings, transitions and timed-input scenes pass, with a real
+Vulkan hide/show capture. Core and Unity are unchanged; this is not a full gate.
+
 Read this before changing anything. It is for **changing the engine or a
 host**; if you are being asked to *author UI* (write HTML/CSS and a
 controller), the manual is

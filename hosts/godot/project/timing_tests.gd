@@ -78,6 +78,42 @@ func _ready() -> void:
 	check(is_equal_approx(doc.query_bounds("#second").size.x, 151.0), "Explicit button geometry still flushes pending changes")
 	doc.set_focus("#field")
 	check(doc.get_caret_bounds().size.y > 0, "Text focus still publishes a usable IME caret")
+	# Hidden automatic ticks must defer paint, while explicit preparation and
+	# geometry queries remain usable for loading-phase prewarming.
+	doc.set_focus("")
+	doc.hide()
+	doc.set_process(true)
+	var hidden_start := doc.get_core_update_count()
+	for i in 10:
+		doc.set_element_style("#label", "width", str(160 + i) + "px")
+		await get_tree().process_frame
+	check(doc.get_core_update_count() == hidden_start, "Hidden automatic ticks defer core updates")
+	check(is_equal_approx(doc.query_bounds("#label").size.x, 169.0), "Hidden explicit geometry reads see latest writes")
+	check(doc.get_core_update_count() == hidden_start + 1, "Hidden geometry query flushes once")
+	doc.set_element_style("#label", "width", "177px")
+	var hidden_manual := doc.get_core_update_count()
+	doc.update_document(0)
+	check(doc.get_core_update_count() == hidden_manual + 1, "Hidden explicit updates still prepare paint")
+	doc.set_element_style("#label", "width", "181px")
+	doc.show()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(doc.get_core_update_count() > hidden_manual + 1, "Showing resumes automatic updates")
+	check(is_equal_approx(doc.query_bounds("#label").size.x, 181.0), "Showing applies pending state")
+	var parent := Control.new()
+	add_child(parent)
+	doc.reparent(parent)
+	parent.hide()
+	var parent_hidden_start := doc.get_core_update_count()
+	for i in 5:
+		doc.set_element_style("#label", "width", str(190 + i) + "px")
+		await get_tree().process_frame
+	check(doc.get_core_update_count() == parent_hidden_start, "Hidden ancestor also defers automatic updates")
+	parent.show()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	check(is_equal_approx(doc.query_bounds("#label").size.x, 194.0), "Ancestor show applies latest state")
 	doc.free()
+	parent.free()
 	print("godot timing: %d checks, %d failures" % [checks, failures])
 	get_tree().quit(0 if failures == 0 else 1)

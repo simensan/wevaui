@@ -137,6 +137,15 @@ with `ui.register_font_face("Camp", bold_font, 700, false)`. A family or face
 the game registered itself keeps its font. A source that cannot load warns and
 the family falls back. See `GODOT_TEXT_SHAPING.md` for details.
 
+## Visibility and prewarming
+
+Automatic document updates and CSS animation time pause while the control or
+an ancestor is hidden. Pending data/style changes are retained and applied
+when shown. Explicit `update_document(dt)` and geometry queries still work
+while hidden, so a loading phase can prepare layout, glyphs and textures with
+`update_document(0)` before showing the document. Retain the document when
+toggling menus to reuse those resources.
+
 ## Export
 
 Add `*.html,*.css` to the export preset's non-resource include filter. Use

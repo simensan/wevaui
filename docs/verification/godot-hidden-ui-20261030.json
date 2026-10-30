@@ -1,0 +1,42 @@
+{
+  "core_last_changed": "faf04f31",
+  "scope": "Godot automatic hidden ticks only; explicit updates remain supported",
+  "logs": [
+    {
+      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\godot-hidden-timing_tests.log",
+      "sha256": "f12ef29dbd0b42c277fb12ea3fc7890d677c94f25dc80d70faac82539579b85d"
+    },
+    {
+      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\godot-hidden-binding_tests.log",
+      "sha256": "ca4efc0766133c5cfa96c12f26cc91dc0a7d8a9a48848db5a154275758d8e64f"
+    },
+    {
+      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\godot-hidden-transition_reversal_tests.log",
+      "sha256": "6abc882bbe01c548a6d62a32aab9fd6968d63b59dfeb3f6818ba9c7dbe66cdd1"
+    },
+    {
+      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\godot-hidden-transition_cancellation_tests.log",
+      "sha256": "19570174c3ef1b0e9ff193ac2c280d30859343fda54cbc7de2825d412d766b20"
+    },
+    {
+      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\godot-hidden-typeahead_tests.log",
+      "sha256": "63a8784d3784cc39e099df57f45387e00a329f1a3f44a7f819561ce41b4e182f"
+    },
+    {
+      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\godot-hidden-text_autoscroll_tests.log",
+      "sha256": "31cc717e783613643214cef431dc4416291f8c73ed0860d447a824e158c40c08"
+    },
+    {
+      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\godot-hidden-select_autoscroll_tests.log",
+      "sha256": "7c0068474a8868623314ee181cf1fd975c54fbe1bd50453b270bcd29d678953e"
+    },
+    {
+      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\godot-hidden-retained_canvas_tests.log",
+      "sha256": "ead7e13641dd175d6caaad41ec388210b238e2fc4f3fa0c2416fdff33244d3bd"
+    }
+  ],
+  "dll_sha256": "a550b67b9a7b1524bea22cd082896f335bee96ddb7d8da0ed57655f6fbd3568b",
+  "show_matches_prior_clipped_image": true,
+  "real_render": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\godot-hidden-visible.png",
+  "before_failure": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\godot-hidden-before.log"
+}

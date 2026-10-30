@@ -37,6 +37,10 @@ The [hidden UI follow-up](verification/agentic-hidden-ui-20261030.md) removes
 unnecessary Agentic direct rendering work while hidden data continues changing.
 This improves that specific workload; it does not change release status.
 
+Godot also [defers automatic hidden updates](verification/godot-hidden-ui-20261030.md).
+Explicit `update_document(0)` can prewarm a hidden document before showing it.
+Unity disabling releases the native document rather than retaining it.
+
 ## Choose your host
 
 | Host | Requirements and tested scope | Start here |
