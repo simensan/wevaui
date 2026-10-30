@@ -66,3 +66,7 @@ compiler warnings were found in captured core or Unity/Godot build logs.
 Raw evidence is under `.utmp/render-audit-20261030/sibling-*`.
 [Paired results, hashes and stage intervals](sibling-subjects-20261031.json)
 retain every run; instrumented stage timings are excluded from the table.
+
+The [host preparation follow-up](host-preparation-20261031.md) splits the
+remaining host CPU cost and identifies detail-image texture churn. Its temporary
+retention probe is removed; it is not another production speedup.
