@@ -24,6 +24,7 @@ def main():
     binaries = {'before': args.before.resolve(strict=True), 'after': args.after.resolve(strict=True)}
     args.output.mkdir(parents=True, exist_ok=False)
     rows = []
+    optional_keys = None
     for round_index in range(args.rounds):
         order = ['before', 'after'] if round_index % 2 == 0 else ['after', 'before']
         for version in order:
@@ -42,6 +43,17 @@ def main():
                     if not match:
                         raise ValueError(f'Missing {key} timing for {case}')
                     metrics[key] = float(match[1])
+                present = set()
+                for key, pattern in [('controller', r'controller \+ update\s+([0-9.]+)'),
+                                     ('complete_cpu', r'complete CPU path\s+([0-9.]+)')]:
+                    match = re.search(pattern, block)
+                    if match:
+                        present.add(key)
+                        metrics[key] = float(match[1])
+                if optional_keys is None:
+                    optional_keys = present
+                elif present != optional_keys:
+                    raise ValueError('Controller timing coverage differs between workloads or binaries')
                 rows.append(dict(round=round_index, version=version, case=case, **metrics))
     receipt = {'binaries': {k: {'path': str(v), 'sha256': hashlib.sha256(v.read_bytes()).hexdigest()}
                             for k, v in binaries.items()}, 'arguments': args.args, 'rows': rows}
@@ -49,7 +61,8 @@ def main():
     for case in ['hud', 'inventory']:
         for version in binaries:
             print(case, version, {key: statistics.median(row[key] for row in rows
-                  if row['case'] == case and row['version'] == version) for key in ['core', 'host', 'frame']})
+                  if row['case'] == case and row['version'] == version)
+                  for key in ['core', 'host', 'frame', *sorted(optional_keys)]})
 
 
 if __name__ == '__main__':

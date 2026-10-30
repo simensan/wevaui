@@ -270,3 +270,8 @@ adds real Vulkan timestamps, complete setter/update/submission timing and
 720p/1080p/4K scripted workloads. Agentic commit be88b3cb2 is not integrated
 yet. Retained GPU costs are small on the RTX 5080; selection preparation is
 the main remaining CPU target. It does not establish Chrome GPU parity.
+
+The [attribute no-op experiment](docs/verification/attribute-noop-20261030.md)
+was rejected after two paired timing batches failed to show a repeatable
+overall gain. Its shared-core changes were reverted and all three hosts
+rebuilt. Production gate counts are unchanged; raw evidence is retained.
