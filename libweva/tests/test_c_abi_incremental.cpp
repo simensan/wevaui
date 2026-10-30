@@ -2420,6 +2420,53 @@ void test_abi_hidden_subtree_restyle() {
 }
 
 void test_abi_incremental_selector_dependencies() {
+    // A footer sibling rule must not broaden unrelated text invalidation.
+    // Relevant siblings (including their inherited descendants), filtered
+    // ranks and nested selectors must still agree with a full cascade.
+    {
+        const char* html = "<main><div id=a>one</div><div id=b><span id=child>two</span></div>"
+            "<div id=c></div></main><footer><kbd>A</kbd><kbd>B</kbd></footer>";
+        const char* rules[] = {
+            "footer kbd + kbd{margin-left:18px}",
+            "#a:empty + #b{color:red}",
+            "#a:empty ~ #b #child{color:red}",
+            "#b:is(#a:empty + #b){color:red}",
+            "div:nth-last-child(1 of :empty){height:40px}",
+            "@scope (#a:empty + #b){span{color:red}}",
+            "#a.selected + #b{color:red}",
+        };
+        for (const char* rule : rules) {
+            auto c = config();
+            auto d = weva_document_create(&c);
+            const std::string css = std::string("div{height:20px}span{color:inherit}") + rule;
+            CHECK(weva_document_load_html(d, html, std::strlen(html)) == WEVA_OK);
+            CHECK(weva_document_set_css(d, css.data(), css.size()) == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            const auto a = weva_document_query(d, "#a");
+            for (const char* value : {"", "three"}) {
+                weva_stats before{}, after{};
+                weva_document_stats(d, &before);
+                CHECK(weva_element_set_text(d, a, value) == WEVA_OK);
+                CHECK(weva_document_update(d, 0) == WEVA_OK);
+                weva_document_stats(d, &after);
+                if (rule == rules[0]) CHECK(after.cascade_elements - before.cascade_elements == 1);
+                const auto actual = capture(d);
+                CHECK(weva_document_set_css(d, css.data(), css.size()) == WEVA_OK);
+                CHECK(weva_document_update(d, 0) == WEVA_OK);
+                CHECK(capture(d) == actual);
+            }
+            // Two roots must not be folded together when the earlier root's
+            // skipped sibling contains a separate real mutation.
+            CHECK(weva_element_set_attribute(d, a, "class", "selected") == WEVA_OK);
+            CHECK(weva_element_set_text(d, weva_document_query(d, "#child"), "changed") == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            const auto actual = capture(d);
+            CHECK(weva_document_set_css(d, css.data(), css.size()) == WEVA_OK);
+            CHECK(weva_document_update(d, 0) == WEVA_OK);
+            CHECK(capture(d) == actual);
+            weva_document_destroy(d);
+        }
+    }
     // A selector-independent inline write does not change descendant style
     // inputs unless an inherited value changes or a child explicitly inherits
     // a normally non-inherited property. Compare every optimized result with

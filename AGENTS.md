@@ -1,5 +1,12 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [sibling-subject optimization](docs/verification/sibling-subjects-20261031.md)
+reduces unnecessary sibling restyles in the shared core. Windows/GCC main tests
+pass 493,041 checks (493,035 sanitized), all 340 Chrome captures pass, Unity
+Native passes 243 with two inconclusive, and affected Godot scenes pass.
+Inventory core CPU improves 6.9%; complete inventory CPU did not improve in
+the recorded batch. This is affected-suite evidence, not a new full gate.
+
 The [matched rendering comparison](docs/verification/prepared-render-comparison-20261031.md)
 corrects diagnostic backgrounds/bindings and records three prepared Chrome/Agentic
 runs. Inventory style/layout remains behind Chrome; no production speedup or

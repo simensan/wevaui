@@ -2630,7 +2630,8 @@ void note_binding_mutation(weva_document* doc, const DomMutation& mutation) {
     doc->dom_touched = true;
     // Filtered nth-last-child ranks can affect preceding siblings too.
     const bool local_style = mutation.name == "style" && !doc->styles.engine.has_style_attribute_selectors();
-    if (!local_style && doc->styles.engine.has_sibling_selectors() && e->parent() && e->parent()->is_element())
+    if (!local_style && doc->styles.engine.has_sibling_selectors() && e->parent() && e->parent()->is_element() &&
+        doc->styles.engine.sibling_subject_in_subtree(static_cast<const Element&>(*e->parent())))
         e = static_cast<Element*>(e->parent());
     if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), e) == doc->touched.end())
         doc->touched.push_back(e);
@@ -4741,7 +4742,8 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
                 bool after = false;
                 for (const auto& child : root->parent()->children()) {
                     if (child.get() == root) after = true;
-                    if (child.get() == n) return after;
+                    if (child.get() == n) return after && n->is_element() &&
+                        doc->styles.engine.sibling_subject_in_subtree(static_cast<const Element&>(*n));
                 }
             }
             return false;
@@ -4770,6 +4772,8 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
                 if (c.get() == from) started = true;
                 if (!started) continue;
                 if (c->node_type() != NodeType::Element) continue;
+                if (c.get() != from && !doc->styles.engine.sibling_subject_in_subtree(
+                        static_cast<const Element&>(*c))) continue;
                 const bool local_inline_style = !doc->has_inputs_dirty && !doc->sibling_inputs_dirty &&
                                                 !doc->selector_state_dirty &&
                                                 doc->touched.size() == 1;
@@ -8670,7 +8674,8 @@ weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t eleme
     Element* scope = e;
     // A filtered sibling rank can move in either direction after a src swap.
     if (image_source_changed && doc->styles.engine.has_sibling_selectors() &&
-        e->parent() && e->parent()->is_element()) scope = static_cast<Element*>(e->parent());
+        e->parent() && e->parent()->is_element() && doc->styles.engine.sibling_subject_in_subtree(
+            static_cast<const Element&>(*e->parent()))) scope = static_cast<Element*>(e->parent());
     if (doc->touched.size() < 64) doc->touched.push_back(scope);
     return WEVA_OK;
 }
@@ -8697,7 +8702,8 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     Element* scope = e;
     // :nth-last-child(... of :empty) can reach preceding siblings too.
     // With sibling-dependent sheets, text restyles the containing family.
-    if (doc->styles.engine.has_sibling_selectors() && e->parent() && e->parent()->is_element())
+    if (doc->styles.engine.has_sibling_selectors() && e->parent() && e->parent()->is_element() &&
+        doc->styles.engine.sibling_subject_in_subtree(static_cast<const Element&>(*e->parent())))
         scope = static_cast<Element*>(e->parent());
     if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), scope) == doc->touched.end())
         doc->touched.push_back(scope);

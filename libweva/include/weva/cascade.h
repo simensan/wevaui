@@ -195,6 +195,9 @@ public:
     // can reach. A sibling combinator lets it reach the elements after it; a
     // :has() lets it reach its ancestors, and then anything they select.
     bool has_sibling_selectors() const { return cache_unsafe_sibling_composition_; }
+    // Conservative subject keys: unrelated subtrees cannot receive a changed
+    // sibling-rule match. Unkeyed/nested scope boundaries retain the full walk.
+    bool sibling_subject_in_subtree(const Element& element) const;
     bool has_has_selectors() const { return cache_unsafe_has_; }
     bool has_hover_dependency() const { return has_hover_dependency_; }
     bool has_active_dependency() const { return has_active_dependency_; }

@@ -918,6 +918,13 @@ bool CascadeEngine::state_observable(const StateReach& reach, const Element& e) 
     return false;
 }
 
+bool CascadeEngine::sibling_subject_in_subtree(const Element& element) const {
+    if (state_observable(sibling_subject_reach_, element)) return true;
+    for (const auto& child : element.children())
+        if (child->is_element() && sibling_subject_in_subtree(static_cast<const Element&>(*child))) return true;
+    return false;
+}
+
 void CascadeEngine::compile_declarations(const Rule& rule,
                                           const std::vector<Declaration>& declarations,
                                           std::vector<CompiledSelector> selectors,
