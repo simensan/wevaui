@@ -15,6 +15,8 @@ def main():
     parser.add_argument('fixtures', type=Path)
     parser.add_argument('output', type=Path)
     parser.add_argument('--direct', action='store_true')
+    parser.add_argument('--defer-ui', action='store_true',
+                        help='Start without a UI; first key 2-6 loads it for cold-open profiling')
     args = parser.parse_args()
     source = args.fixtures.resolve(strict=True)
     output = args.output.resolve()
@@ -89,18 +91,20 @@ def main():
         select.append('if (index == ' + str(i) + ') {' + ''.join(lines) + '}')
     driver = '''
 let mode:i32=4;let ticks:i32=0;let selected:i32=0;let clicks:i32=0;let uses:i32=0;let reloads:i32=0;
+let loaded:bool=false;
 function select(index:i32):void {
 selected=index;
 SELECT_BODY
 engine.set_global("audit_selected",selected);
 }
 function setMode(value:i32):void {
+if(value!=0 && !loaded){engine.html_load("assets/Ui/main.html");loaded=true;}
 mode=value;engine.html_show(mode!=0);
 engine.html_set("MenuClass",mode>=3?"menu-open":"");
 engine.html_set("Stamina","100");select(selected);
 engine.set_global("audit_mode",mode);
 }
-export function init(entity:i64):void {engine.html_load("assets/Ui/main.html");setMode(4);}
+export function init(entity:i64):void {setMode(INITIAL_MODE);}
 export function update(entity:i64,dt:f64):void {
 ticks++;
 if(engine.get_key_down("1")){setMode(0);}
@@ -126,6 +130,12 @@ engine.set_global("audit_uses",uses);engine.set_global("audit_reloads",reloads);
 '''
     events = ''.join(f'if(action=="select_{i}"){{select({i});clicks++;}}' for i in range(12))
     driver = driver.replace('SELECT_BODY', '\n'.join(select)).replace('EVENT_BODY', events)
+    driver = driver.replace('INITIAL_MODE', '0' if args.defer_ui else '4')
+    if args.defer_ui:
+        # Avoid the host's conventional main.html startup load as well as init's.
+        (ui / 'main.html').rename(ui / 'audit.html')
+        (ui / 'main.css').rename(ui / 'audit.css')
+        driver = driver.replace('assets/Ui/main.html', 'assets/Ui/audit.html')
     (scripts / 'audit.ts').write_text(driver, encoding='utf-8')
     config = '(title:"Weva runtime audit",width:1280,height:720,fullscreen:false,vsync:false,' \
              'start_scene:"Scenes/audit.scene.ron",show_cursor:true,agent_activity_overlay:false,' \

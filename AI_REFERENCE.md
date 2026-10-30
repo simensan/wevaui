@@ -264,6 +264,11 @@ The [Agentic runtime audit](docs/verification/agentic-runtime-20261030.md) adds
 reloads in a published SDK using the current core. It is not a Chrome rendering
 comparison or a production-game performance result.
 
+The [Agentic cold renderer audit](docs/verification/agentic-cold-render-20261030.md)
+removes unused GPU setup, verifies 13 renderer/42 overlay tests, and measures
+both runtime routes. Threaded median opening improves 6.6%; slow cold outliers
+remain. Unity/Godot already allocate backdrop resources on demand.
+
 The [Agentic packed-paint audit](docs/verification/agentic-packed-20261030.md)
 removes duplicate snapshot/upload copies in Agentic (ff1c9925b, not integrated
 into engine-main yet). Two paint and twelve renderer tests pass. It records

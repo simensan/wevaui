@@ -29,6 +29,10 @@ a synthetic 3D scene: clicks/bindings, 9,000 profiled frames and 339 short-cycle
 reloads. This is scoped runtime evidence, not a new supported-host release or
 a matched Chrome rendering comparison.
 
+The [cold renderer follow-up](verification/agentic-cold-render-20261030.md)
+reduces Agentic's median threaded opening frame by 6.6% in that synthetic
+scene, but retains a 69 ms outlier. Cold opening is not yet hitch-free.
+
 ## Choose your host
 
 | Host | Requirements and tested scope | Start here |

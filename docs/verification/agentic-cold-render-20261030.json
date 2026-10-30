@@ -1,0 +1,1576 @@
+{
+  "core_last_changed_commit": "faf04f31",
+  "agentic_before": "be88b3cb2",
+  "agentic_after": "f90b04b9b",
+  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030",
+  "standalone": [
+    {
+      "variant": "before",
+      "round": 0,
+      "case": "Authored HUD",
+      "document_create_ms": 0.6705,
+      "default_font_ms": 0.2665,
+      "parse_ms": 1.5229,
+      "declared_fonts_ms": 0.13520000000000001,
+      "bindings_ms": 0.0477,
+      "first_update_ms": 14.747,
+      "cascade_ms": 3.2209,
+      "boxes_ms": 0.2601,
+      "layout_ms": 2.531,
+      "paint_ms": 8.7208,
+      "renderer_create_ms": 37.562,
+      "first_prepare_ms": 0.48879999999999996,
+      "target_create_ms": 0.19560000000000002,
+      "first_submit_ms": 0.3421,
+      "total_to_submit_ms": 55.978300000000004
+    },
+    {
+      "variant": "before",
+      "round": 0,
+      "case": "Authored inventory",
+      "document_create_ms": 0.5843,
+      "default_font_ms": 0.2187,
+      "parse_ms": 1.2976,
+      "declared_fonts_ms": 0.0943,
+      "bindings_ms": 0.0392,
+      "first_update_ms": 16.0441,
+      "cascade_ms": 2.6435,
+      "boxes_ms": 0.2893,
+      "layout_ms": 4.3136,
+      "paint_ms": 8.7752,
+      "renderer_create_ms": 1.4324,
+      "first_prepare_ms": 0.5739,
+      "target_create_ms": 0.0026,
+      "first_submit_ms": 0.1738,
+      "total_to_submit_ms": 20.460900000000002
+    },
+    {
+      "variant": "after",
+      "round": 0,
+      "case": "Authored HUD",
+      "document_create_ms": 0.8402999999999999,
+      "default_font_ms": 0.2499,
+      "parse_ms": 1.7312,
+      "declared_fonts_ms": 0.1281,
+      "bindings_ms": 0.0591,
+      "first_update_ms": 12.807300000000001,
+      "cascade_ms": 2.9149,
+      "boxes_ms": 0.1939,
+      "layout_ms": 2.5566,
+      "paint_ms": 7.1061,
+      "renderer_create_ms": 5.414300000000001,
+      "first_prepare_ms": 0.467,
+      "target_create_ms": 0.0785,
+      "first_submit_ms": 0.47590000000000005,
+      "total_to_submit_ms": 22.2516
+    },
+    {
+      "variant": "after",
+      "round": 0,
+      "case": "Authored inventory",
+      "document_create_ms": 0.5906,
+      "default_font_ms": 0.2105,
+      "parse_ms": 1.4649,
+      "declared_fonts_ms": 0.132,
+      "bindings_ms": 0.0414,
+      "first_update_ms": 15.1736,
+      "cascade_ms": 2.4712,
+      "boxes_ms": 0.1749,
+      "layout_ms": 3.9264,
+      "paint_ms": 8.5803,
+      "renderer_create_ms": 0.4911,
+      "first_prepare_ms": 0.5469999999999999,
+      "target_create_ms": 0.0033,
+      "first_submit_ms": 0.1773,
+      "total_to_submit_ms": 18.8317
+    },
+    {
+      "variant": "after",
+      "round": 1,
+      "case": "Authored HUD",
+      "document_create_ms": 0.9973,
+      "default_font_ms": 0.3591,
+      "parse_ms": 2.5482,
+      "declared_fonts_ms": 0.1803,
+      "bindings_ms": 0.0626,
+      "first_update_ms": 18.0832,
+      "cascade_ms": 4.1517,
+      "boxes_ms": 0.2365,
+      "layout_ms": 3.7026,
+      "paint_ms": 9.9451,
+      "renderer_create_ms": 1.3925,
+      "first_prepare_ms": 0.5657,
+      "target_create_ms": 0.0218,
+      "first_submit_ms": 0.5566,
+      "total_to_submit_ms": 24.7673
+    },
+    {
+      "variant": "after",
+      "round": 1,
+      "case": "Authored inventory",
+      "document_create_ms": 0.9233,
+      "default_font_ms": 0.32039999999999996,
+      "parse_ms": 2.3589,
+      "declared_fonts_ms": 0.2379,
+      "bindings_ms": 0.0621,
+      "first_update_ms": 30.473799999999997,
+      "cascade_ms": 4.2377,
+      "boxes_ms": 0.3512,
+      "layout_ms": 6.8703,
+      "paint_ms": 18.9713,
+      "renderer_create_ms": 1.5067,
+      "first_prepare_ms": 0.9644,
+      "target_create_ms": 0.0066,
+      "first_submit_ms": 0.555,
+      "total_to_submit_ms": 37.4091
+    },
+    {
+      "variant": "before",
+      "round": 1,
+      "case": "Authored HUD",
+      "document_create_ms": 0.6849999999999999,
+      "default_font_ms": 0.28390000000000004,
+      "parse_ms": 1.7014,
+      "declared_fonts_ms": 0.1556,
+      "bindings_ms": 0.052899999999999996,
+      "first_update_ms": 12.1207,
+      "cascade_ms": 2.7,
+      "boxes_ms": 0.1432,
+      "layout_ms": 2.4259,
+      "paint_ms": 6.829,
+      "renderer_create_ms": 6.9392000000000005,
+      "first_prepare_ms": 0.47169999999999995,
+      "target_create_ms": 0.011899999999999999,
+      "first_submit_ms": 0.5316000000000001,
+      "total_to_submit_ms": 22.9539
+    },
+    {
+      "variant": "before",
+      "round": 1,
+      "case": "Authored inventory",
+      "document_create_ms": 0.8463999999999999,
+      "default_font_ms": 0.29910000000000003,
+      "parse_ms": 2.1069999999999998,
+      "declared_fonts_ms": 0.1369,
+      "bindings_ms": 0.054799999999999995,
+      "first_update_ms": 20.021400000000003,
+      "cascade_ms": 4.7052,
+      "boxes_ms": 0.2816,
+      "layout_ms": 6.1241,
+      "paint_ms": 8.8949,
+      "renderer_create_ms": 1.4684,
+      "first_prepare_ms": 0.5791000000000001,
+      "target_create_ms": 0.0033,
+      "first_submit_ms": 0.2161,
+      "total_to_submit_ms": 25.732499999999998
+    },
+    {
+      "variant": "before",
+      "round": 2,
+      "case": "Authored HUD",
+      "document_create_ms": 0.9939,
+      "default_font_ms": 0.3748,
+      "parse_ms": 1.9307,
+      "declared_fonts_ms": 0.1255,
+      "bindings_ms": 0.050800000000000005,
+      "first_update_ms": 13.488,
+      "cascade_ms": 2.9404,
+      "boxes_ms": 0.1654,
+      "layout_ms": 3.3281,
+      "paint_ms": 7.0265,
+      "renderer_create_ms": 10.102699999999999,
+      "first_prepare_ms": 0.4697,
+      "target_create_ms": 0.0117,
+      "first_submit_ms": 0.3907,
+      "total_to_submit_ms": 27.9385
+    },
+    {
+      "variant": "before",
+      "round": 2,
+      "case": "Authored inventory",
+      "document_create_ms": 0.7656,
+      "default_font_ms": 0.2536,
+      "parse_ms": 1.5273,
+      "declared_fonts_ms": 0.1048,
+      "bindings_ms": 0.036699999999999997,
+      "first_update_ms": 15.8251,
+      "cascade_ms": 2.4301,
+      "boxes_ms": 0.1516,
+      "layout_ms": 3.7549,
+      "paint_ms": 9.4818,
+      "renderer_create_ms": 1.5526,
+      "first_prepare_ms": 0.617,
+      "target_create_ms": 0.0029000000000000002,
+      "first_submit_ms": 0.2454,
+      "total_to_submit_ms": 20.931
+    },
+    {
+      "variant": "after",
+      "round": 2,
+      "case": "Authored HUD",
+      "document_create_ms": 0.7504000000000001,
+      "default_font_ms": 0.2419,
+      "parse_ms": 1.5534999999999999,
+      "declared_fonts_ms": 0.1125,
+      "bindings_ms": 0.0468,
+      "first_update_ms": 12.216,
+      "cascade_ms": 2.7592,
+      "boxes_ms": 0.1723,
+      "layout_ms": 2.4541,
+      "paint_ms": 6.8144,
+      "renderer_create_ms": 0.8543999999999999,
+      "first_prepare_ms": 0.3634,
+      "target_create_ms": 0.011300000000000001,
+      "first_submit_ms": 0.3792,
+      "total_to_submit_ms": 16.5294
+    },
+    {
+      "variant": "after",
+      "round": 2,
+      "case": "Authored inventory",
+      "document_create_ms": 0.5483,
+      "default_font_ms": 0.1889,
+      "parse_ms": 1.2581,
+      "declared_fonts_ms": 0.0916,
+      "bindings_ms": 0.037200000000000004,
+      "first_update_ms": 15.174999999999999,
+      "cascade_ms": 2.4735,
+      "boxes_ms": 0.1583,
+      "layout_ms": 3.9463,
+      "paint_ms": 8.576,
+      "renderer_create_ms": 0.4684,
+      "first_prepare_ms": 0.5452,
+      "target_create_ms": 0.0042,
+      "first_submit_ms": 0.1646,
+      "total_to_submit_ms": 18.4815
+    },
+    {
+      "variant": "after",
+      "round": 3,
+      "case": "Authored HUD",
+      "document_create_ms": 0.8147,
+      "default_font_ms": 0.2831,
+      "parse_ms": 1.6136,
+      "declared_fonts_ms": 0.12530000000000002,
+      "bindings_ms": 0.0515,
+      "first_update_ms": 11.8589,
+      "cascade_ms": 2.7189,
+      "boxes_ms": 0.1566,
+      "layout_ms": 2.2701,
+      "paint_ms": 6.6931,
+      "renderer_create_ms": 6.9758,
+      "first_prepare_ms": 0.7202000000000001,
+      "target_create_ms": 0.0424,
+      "first_submit_ms": 0.45830000000000004,
+      "total_to_submit_ms": 22.9438
+    },
+    {
+      "variant": "after",
+      "round": 3,
+      "case": "Authored inventory",
+      "document_create_ms": 0.5796,
+      "default_font_ms": 0.1793,
+      "parse_ms": 1.2512999999999999,
+      "declared_fonts_ms": 0.0829,
+      "bindings_ms": 0.0369,
+      "first_update_ms": 14.9889,
+      "cascade_ms": 2.4518,
+      "boxes_ms": 0.1564,
+      "layout_ms": 4.0105,
+      "paint_ms": 8.3498,
+      "renderer_create_ms": 0.4094,
+      "first_prepare_ms": 0.5281,
+      "target_create_ms": 0.0027,
+      "first_submit_ms": 0.1679,
+      "total_to_submit_ms": 18.227
+    },
+    {
+      "variant": "before",
+      "round": 3,
+      "case": "Authored HUD",
+      "document_create_ms": 0.7349,
+      "default_font_ms": 0.3325,
+      "parse_ms": 1.4251,
+      "declared_fonts_ms": 0.17,
+      "bindings_ms": 0.0471,
+      "first_update_ms": 12.0694,
+      "cascade_ms": 2.5499,
+      "boxes_ms": 0.1097,
+      "layout_ms": 2.3772,
+      "paint_ms": 7.0094,
+      "renderer_create_ms": 6.7175,
+      "first_prepare_ms": 0.3651,
+      "target_create_ms": 0.0096,
+      "first_submit_ms": 0.36469999999999997,
+      "total_to_submit_ms": 22.2359
+    },
+    {
+      "variant": "before",
+      "round": 3,
+      "case": "Authored inventory",
+      "document_create_ms": 0.5614,
+      "default_font_ms": 0.2789,
+      "parse_ms": 1.3680999999999999,
+      "declared_fonts_ms": 0.0927,
+      "bindings_ms": 0.0386,
+      "first_update_ms": 15.6181,
+      "cascade_ms": 2.8578,
+      "boxes_ms": 0.2121,
+      "layout_ms": 4.0426,
+      "paint_ms": 8.4858,
+      "renderer_create_ms": 1.1581,
+      "first_prepare_ms": 0.5492,
+      "target_create_ms": 0.0031999999999999997,
+      "first_submit_ms": 0.15009999999999998,
+      "total_to_submit_ms": 19.8184
+    },
+    {
+      "variant": "before",
+      "round": 4,
+      "case": "Authored HUD",
+      "document_create_ms": 0.7902,
+      "default_font_ms": 0.2251,
+      "parse_ms": 1.4537,
+      "declared_fonts_ms": 0.1038,
+      "bindings_ms": 0.0426,
+      "first_update_ms": 11.5905,
+      "cascade_ms": 2.5572,
+      "boxes_ms": 0.133,
+      "layout_ms": 2.3243,
+      "paint_ms": 6.5524,
+      "renderer_create_ms": 9.3071,
+      "first_prepare_ms": 0.4326,
+      "target_create_ms": 0.0089,
+      "first_submit_ms": 0.3547,
+      "total_to_submit_ms": 24.3092
+    },
+    {
+      "variant": "before",
+      "round": 4,
+      "case": "Authored inventory",
+      "document_create_ms": 0.5691999999999999,
+      "default_font_ms": 0.21589999999999998,
+      "parse_ms": 1.2333,
+      "declared_fonts_ms": 0.0731,
+      "bindings_ms": 0.036699999999999997,
+      "first_update_ms": 15.1637,
+      "cascade_ms": 2.4486,
+      "boxes_ms": 0.1712,
+      "layout_ms": 3.8644,
+      "paint_ms": 8.6583,
+      "renderer_create_ms": 1.3062,
+      "first_prepare_ms": 0.5605,
+      "target_create_ms": 0.0026,
+      "first_submit_ms": 0.1725,
+      "total_to_submit_ms": 19.3337
+    },
+    {
+      "variant": "after",
+      "round": 4,
+      "case": "Authored HUD",
+      "document_create_ms": 0.7094,
+      "default_font_ms": 0.2631,
+      "parse_ms": 1.5192999999999999,
+      "declared_fonts_ms": 0.10959999999999999,
+      "bindings_ms": 0.043300000000000005,
+      "first_update_ms": 12.133899999999999,
+      "cascade_ms": 2.6888,
+      "boxes_ms": 0.1301,
+      "layout_ms": 2.3913,
+      "paint_ms": 6.9017,
+      "renderer_create_ms": 5.9743,
+      "first_prepare_ms": 0.7448999999999999,
+      "target_create_ms": 0.0644,
+      "first_submit_ms": 0.4414,
+      "total_to_submit_ms": 22.003600000000002
+    },
+    {
+      "variant": "after",
+      "round": 4,
+      "case": "Authored inventory",
+      "document_create_ms": 0.5453,
+      "default_font_ms": 0.1926,
+      "parse_ms": 1.2255,
+      "declared_fonts_ms": 0.0693,
+      "bindings_ms": 0.0387,
+      "first_update_ms": 15.2305,
+      "cascade_ms": 2.4133,
+      "boxes_ms": 0.1786,
+      "layout_ms": 3.9179,
+      "paint_ms": 8.7009,
+      "renderer_create_ms": 0.4066,
+      "first_prepare_ms": 0.5313,
+      "target_create_ms": 0.0023,
+      "first_submit_ms": 0.1636,
+      "total_to_submit_ms": 18.4057
+    },
+    {
+      "variant": "after",
+      "round": 5,
+      "case": "Authored HUD",
+      "document_create_ms": 0.7902,
+      "default_font_ms": 0.2792,
+      "parse_ms": 1.7319,
+      "declared_fonts_ms": 0.14459999999999998,
+      "bindings_ms": 0.0432,
+      "first_update_ms": 11.997499999999999,
+      "cascade_ms": 2.8076,
+      "boxes_ms": 0.1874,
+      "layout_ms": 2.2898,
+      "paint_ms": 6.6898,
+      "renderer_create_ms": 6.4066,
+      "first_prepare_ms": 0.5836,
+      "target_create_ms": 0.0158,
+      "first_submit_ms": 0.4472,
+      "total_to_submit_ms": 22.439799999999998
+    },
+    {
+      "variant": "after",
+      "round": 5,
+      "case": "Authored inventory",
+      "document_create_ms": 0.5719,
+      "default_font_ms": 0.19369999999999998,
+      "parse_ms": 1.4132,
+      "declared_fonts_ms": 0.10239999999999999,
+      "bindings_ms": 0.0365,
+      "first_update_ms": 15.1526,
+      "cascade_ms": 2.5489,
+      "boxes_ms": 0.2445,
+      "layout_ms": 3.8595,
+      "paint_ms": 8.4789,
+      "renderer_create_ms": 0.45439999999999997,
+      "first_prepare_ms": 0.5353,
+      "target_create_ms": 0.0051,
+      "first_submit_ms": 0.3,
+      "total_to_submit_ms": 18.7651
+    },
+    {
+      "variant": "before",
+      "round": 5,
+      "case": "Authored HUD",
+      "document_create_ms": 0.713,
+      "default_font_ms": 0.25129999999999997,
+      "parse_ms": 1.3978,
+      "declared_fonts_ms": 0.1073,
+      "bindings_ms": 0.0446,
+      "first_update_ms": 11.963700000000001,
+      "cascade_ms": 2.5169,
+      "boxes_ms": 0.1208,
+      "layout_ms": 2.6776,
+      "paint_ms": 6.6279,
+      "renderer_create_ms": 9.1398,
+      "first_prepare_ms": 0.5006999999999999,
+      "target_create_ms": 0.0098,
+      "first_submit_ms": 0.4862,
+      "total_to_submit_ms": 24.6142
+    },
+    {
+      "variant": "before",
+      "round": 5,
+      "case": "Authored inventory",
+      "document_create_ms": 0.5643,
+      "default_font_ms": 0.1958,
+      "parse_ms": 1.2474999999999998,
+      "declared_fonts_ms": 0.0748,
+      "bindings_ms": 0.0425,
+      "first_update_ms": 14.9166,
+      "cascade_ms": 2.4176,
+      "boxes_ms": 0.2389,
+      "layout_ms": 3.7409,
+      "paint_ms": 8.4994,
+      "renderer_create_ms": 1.142,
+      "first_prepare_ms": 0.5494,
+      "target_create_ms": 0.0024,
+      "first_submit_ms": 0.1521,
+      "total_to_submit_ms": 18.8874
+    },
+    {
+      "variant": "before",
+      "round": 6,
+      "case": "Authored HUD",
+      "document_create_ms": 0.7198,
+      "default_font_ms": 0.2375,
+      "parse_ms": 1.3312,
+      "declared_fonts_ms": 0.1065,
+      "bindings_ms": 0.0463,
+      "first_update_ms": 11.9658,
+      "cascade_ms": 2.5419,
+      "boxes_ms": 0.1163,
+      "layout_ms": 2.3714,
+      "paint_ms": 6.9222,
+      "renderer_create_ms": 8.785599999999999,
+      "first_prepare_ms": 0.3951,
+      "target_create_ms": 0.0361,
+      "first_submit_ms": 0.3827,
+      "total_to_submit_ms": 24.0066
+    },
+    {
+      "variant": "before",
+      "round": 6,
+      "case": "Authored inventory",
+      "document_create_ms": 0.5873999999999999,
+      "default_font_ms": 0.25970000000000004,
+      "parse_ms": 1.4723,
+      "declared_fonts_ms": 0.10569999999999999,
+      "bindings_ms": 0.0379,
+      "first_update_ms": 15.943599999999998,
+      "cascade_ms": 2.988,
+      "boxes_ms": 0.2309,
+      "layout_ms": 3.9133,
+      "paint_ms": 8.8055,
+      "renderer_create_ms": 1.4546999999999999,
+      "first_prepare_ms": 0.5625,
+      "target_create_ms": 0.0027,
+      "first_submit_ms": 0.2733,
+      "total_to_submit_ms": 20.6998
+    },
+    {
+      "variant": "after",
+      "round": 6,
+      "case": "Authored HUD",
+      "document_create_ms": 0.7196,
+      "default_font_ms": 0.24879999999999997,
+      "parse_ms": 1.4139000000000002,
+      "declared_fonts_ms": 0.0948,
+      "bindings_ms": 0.0573,
+      "first_update_ms": 12.0265,
+      "cascade_ms": 2.5927,
+      "boxes_ms": 0.1715,
+      "layout_ms": 2.5997,
+      "paint_ms": 6.6394,
+      "renderer_create_ms": 7.601100000000001,
+      "first_prepare_ms": 0.5148,
+      "target_create_ms": 0.0649,
+      "first_submit_ms": 0.4128,
+      "total_to_submit_ms": 23.154500000000002
+    },
+    {
+      "variant": "after",
+      "round": 6,
+      "case": "Authored inventory",
+      "document_create_ms": 0.6034,
+      "default_font_ms": 0.2288,
+      "parse_ms": 1.5181,
+      "declared_fonts_ms": 0.10830000000000001,
+      "bindings_ms": 0.0363,
+      "first_update_ms": 15.2189,
+      "cascade_ms": 2.6398,
+      "boxes_ms": 0.2256,
+      "layout_ms": 3.9179,
+      "paint_ms": 8.4154,
+      "renderer_create_ms": 0.5268,
+      "first_prepare_ms": 0.5731999999999999,
+      "target_create_ms": 0.0034000000000000002,
+      "first_submit_ms": 0.1742,
+      "total_to_submit_ms": 18.9914
+    }
+  ],
+  "runtime": {
+    "threaded": {
+      "runs": [
+        {
+          "variant": "before",
+          "round": 0,
+          "input_tick": 896,
+          "main_cpu_ms": 22.4139,
+          "main_ui_ms": 19.3472,
+          "worker_ui_ms": 1.7341,
+          "next_interval_ms": 22.483300000000042,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\538bb410c848cbbc9ca421d70cec3627dedc5017d208637e2815ae709ff46121\\profiles\\23280-18e36fab44b71708-7\\report.json",
+              "sha256": "1cd1936887457e726a8e3b60ce246a1b1973a2cd7c6c30ec865039f96c70eb72"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\538bb410c848cbbc9ca421d70cec3627dedc5017d208637e2815ae709ff46121\\profiles\\23280-18e36fab44b71708-7\\frames.jsonl",
+              "sha256": "61ca1e538b7fc78cfaaa0c9af978946380f4ae4e202d2b6e91b3ad1b399be97e"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\538bb410c848cbbc9ca421d70cec3627dedc5017d208637e2815ae709ff46121\\captures\\23280-18e36fac3eb9d498-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\538bb410c848cbbc9ca421d70cec3627dedc5017d208637e2815ae709ff46121\\captures\\23280-18e36fac3eb9d498-14\\frame.json",
+              "sha256": "8b2a551c0287c57eac5df3e6462c370f408970f984bd5fc7401d2fcec7c913f7"
+            }
+          ]
+        },
+        {
+          "variant": "after",
+          "round": 0,
+          "input_tick": 1036,
+          "main_cpu_ms": 21.3387,
+          "main_ui_ms": 19.1858,
+          "worker_ui_ms": 1.3599,
+          "next_interval_ms": 21.483900000000062,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\485f3f89c12eec60d25c7caa1e8d7868b28e45707f07e321c71b433c49affc9a\\profiles\\35856-18e36facae6ec7bc-7\\report.json",
+              "sha256": "bec8373152f7d4ff4b63593aaf8d6a40a34cb7572fb458bc197ad2e2889c078d"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\485f3f89c12eec60d25c7caa1e8d7868b28e45707f07e321c71b433c49affc9a\\profiles\\35856-18e36facae6ec7bc-7\\frames.jsonl",
+              "sha256": "50f6b888f07cc90bd726ba757d28b4290402b73bb0fa6bc2aea00f6e4bd4f313"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\485f3f89c12eec60d25c7caa1e8d7868b28e45707f07e321c71b433c49affc9a\\captures\\35856-18e36fada0fcf198-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\485f3f89c12eec60d25c7caa1e8d7868b28e45707f07e321c71b433c49affc9a\\captures\\35856-18e36fada0fcf198-14\\frame.json",
+              "sha256": "7cda5e0f3d642fb1cca218c0c19253139a70efff6899fa39b80c2a7d154f2f6a"
+            }
+          ]
+        },
+        {
+          "variant": "after",
+          "round": 1,
+          "input_tick": 1071,
+          "main_cpu_ms": 19.9837,
+          "main_ui_ms": 18.526000000000003,
+          "worker_ui_ms": 1.3558999999999999,
+          "next_interval_ms": 20.037199999999928,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\beaa29093d244e6dad06b2567fec9fb9d3f6b40abda0986fcebd8b1dc7f027a9\\profiles\\49780-18e36fadeb90f2b8-7\\report.json",
+              "sha256": "2d141a05e857283f7d60500540561c760e75ebec6e782d93533c91547937ab5f"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\beaa29093d244e6dad06b2567fec9fb9d3f6b40abda0986fcebd8b1dc7f027a9\\profiles\\49780-18e36fadeb90f2b8-7\\frames.jsonl",
+              "sha256": "4743b4f14dac33b8cc3c7476f41c77aea8e20194986cdc9e6bdada5ad67cf24b"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\beaa29093d244e6dad06b2567fec9fb9d3f6b40abda0986fcebd8b1dc7f027a9\\captures\\49780-18e36faed52c19c0-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\beaa29093d244e6dad06b2567fec9fb9d3f6b40abda0986fcebd8b1dc7f027a9\\captures\\49780-18e36faed52c19c0-14\\frame.json",
+              "sha256": "2bed96c7c6a75cf08f261b802a63711c389d3f0024a884df8fdab6edd1719e25"
+            }
+          ]
+        },
+        {
+          "variant": "before",
+          "round": 1,
+          "input_tick": 1055,
+          "main_cpu_ms": 22.244300000000003,
+          "main_ui_ms": 19.1226,
+          "worker_ui_ms": 1.737,
+          "next_interval_ms": 22.37469999999996,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\c70da60ac061c31716fbe349a4744fae35baac7cd3709ddf89ff0ea03ffec6da\\profiles\\52784-18e36faf1e8a7e54-7\\report.json",
+              "sha256": "ca2c290be337aae6b938396f18e4d912cd7b59651cb9072317d158f10fc05ad9"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\c70da60ac061c31716fbe349a4744fae35baac7cd3709ddf89ff0ea03ffec6da\\profiles\\52784-18e36faf1e8a7e54-7\\frames.jsonl",
+              "sha256": "58faacf0fc8f1682c7e5ca25dc273e78e6c80b6de6a1076663d2250495a0fed3"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\c70da60ac061c31716fbe349a4744fae35baac7cd3709ddf89ff0ea03ffec6da\\captures\\52784-18e36fb009825634-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\c70da60ac061c31716fbe349a4744fae35baac7cd3709ddf89ff0ea03ffec6da\\captures\\52784-18e36fb009825634-14\\frame.json",
+              "sha256": "89ebcccbc7e6a7a92024c47ab731b3f0a134e118547fe680b11b26964c545358"
+            }
+          ]
+        },
+        {
+          "variant": "before",
+          "round": 2,
+          "input_tick": 1090,
+          "main_cpu_ms": 21.131899999999998,
+          "main_ui_ms": 18.054300000000005,
+          "worker_ui_ms": 1.4816,
+          "next_interval_ms": 21.18520000000001,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\2f3d5281997678ddf23a2edcf4c717b21902796cf82e27993d525602d16e237c\\profiles\\15020-18e36fb058252294-7\\report.json",
+              "sha256": "eaca1bfddb8123263e65995938ff6f8b1e410d6809012465c834d67ba681b2a3"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\2f3d5281997678ddf23a2edcf4c717b21902796cf82e27993d525602d16e237c\\profiles\\15020-18e36fb058252294-7\\frames.jsonl",
+              "sha256": "301edb2a52303c3fe114adaf7a3a131a6107cef6b18c6c58d97e241450ac96a0"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\2f3d5281997678ddf23a2edcf4c717b21902796cf82e27993d525602d16e237c\\captures\\15020-18e36fb142437164-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\2f3d5281997678ddf23a2edcf4c717b21902796cf82e27993d525602d16e237c\\captures\\15020-18e36fb142437164-14\\frame.json",
+              "sha256": "37449d512f54387f5a7206e99432fade8081b8acbb2993100ab21ddd5b4ff8b9"
+            }
+          ]
+        },
+        {
+          "variant": "after",
+          "round": 2,
+          "input_tick": 1053,
+          "main_cpu_ms": 20.5248,
+          "main_ui_ms": 19.156399999999998,
+          "worker_ui_ms": 1.4237,
+          "next_interval_ms": 20.58009999999996,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\a832455ac90e5a9ffd2bbd7858ed9c1a749e80b27f26e2e2ec36f79b71c42732\\profiles\\52420-18e36fb18c205464-7\\report.json",
+              "sha256": "3e98a5086eb640a023c88052e3f1691dc247ea33d702d02e1f399ea14c643c8d"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\a832455ac90e5a9ffd2bbd7858ed9c1a749e80b27f26e2e2ec36f79b71c42732\\profiles\\52420-18e36fb18c205464-7\\frames.jsonl",
+              "sha256": "4dcaf59c96c161333d4ab80f8413d14623355338644c4b6daaaee5ab30e80b37"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\a832455ac90e5a9ffd2bbd7858ed9c1a749e80b27f26e2e2ec36f79b71c42732\\captures\\52420-18e36fb28347ca88-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\a832455ac90e5a9ffd2bbd7858ed9c1a749e80b27f26e2e2ec36f79b71c42732\\captures\\52420-18e36fb28347ca88-14\\frame.json",
+              "sha256": "dbb8b1a24edaff981f4ba0007d3d4ece7646cdf7fcc3cf32df83e59734e056c8"
+            }
+          ]
+        },
+        {
+          "variant": "after",
+          "round": 3,
+          "input_tick": 1088,
+          "main_cpu_ms": 20.5225,
+          "main_ui_ms": 19.059700000000003,
+          "worker_ui_ms": 1.4163,
+          "next_interval_ms": 20.58749999999992,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\471f33d8b2700dc2147ed4d0e67f203361b7a027d94df6ae76bfec19d52d4db0\\profiles\\51384-18e36fb2d1355d28-7\\report.json",
+              "sha256": "cd0d6b226115f9caf4f1c86bf855cee5c1ab9f30effea7c33ab26957cab0cd66"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\471f33d8b2700dc2147ed4d0e67f203361b7a027d94df6ae76bfec19d52d4db0\\profiles\\51384-18e36fb2d1355d28-7\\frames.jsonl",
+              "sha256": "82f771fc5cfc6301d0fe280415c49a897f7d6e487919f04567f267f3aee11671"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\471f33d8b2700dc2147ed4d0e67f203361b7a027d94df6ae76bfec19d52d4db0\\captures\\51384-18e36fb3bff0691c-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\471f33d8b2700dc2147ed4d0e67f203361b7a027d94df6ae76bfec19d52d4db0\\captures\\51384-18e36fb3bff0691c-14\\frame.json",
+              "sha256": "346af27db1be91d5f9154597aab9b758cc9644c4bf1fd7de0353d6ceed50be1b"
+            }
+          ]
+        },
+        {
+          "variant": "before",
+          "round": 3,
+          "input_tick": 1097,
+          "main_cpu_ms": 21.9789,
+          "main_ui_ms": 18.736900000000002,
+          "worker_ui_ms": 1.5567,
+          "next_interval_ms": 22.033799999999985,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\dcc8d56efceac3c4d2c8869fafb99851d38ba532801467076dd034230731f3ae\\profiles\\40180-18e36fb40d701048-7\\report.json",
+              "sha256": "055c4c9cb796a11022df32e033ea80d40e8154e9ae27a7ee0280fbde686232ec"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\dcc8d56efceac3c4d2c8869fafb99851d38ba532801467076dd034230731f3ae\\profiles\\40180-18e36fb40d701048-7\\frames.jsonl",
+              "sha256": "c2851d8782d06f74d990d91950e41d5e0871215c94c8908148e308085befbac3"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\dcc8d56efceac3c4d2c8869fafb99851d38ba532801467076dd034230731f3ae\\captures\\40180-18e36fb4f7d03ff0-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\dcc8d56efceac3c4d2c8869fafb99851d38ba532801467076dd034230731f3ae\\captures\\40180-18e36fb4f7d03ff0-14\\frame.json",
+              "sha256": "a971c5afc9f1fdd33fd35eef5520c474933f09065857950d4e4c8430129fbee0"
+            }
+          ]
+        },
+        {
+          "variant": "before",
+          "round": 4,
+          "input_tick": 1032,
+          "main_cpu_ms": 21.675900000000002,
+          "main_ui_ms": 18.4931,
+          "worker_ui_ms": 1.5256,
+          "next_interval_ms": 21.736699999999928,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\f850e93ffc3c1fefc00341ccbeaa7e61480f37bbd09fe97adfb09045057d06c1\\profiles\\8356-18e36fb5434593e0-7\\report.json",
+              "sha256": "74989d975f0c9a73b45ff41a029a47fb915c0bedddb2b8070d292e7cc11bdf56"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\f850e93ffc3c1fefc00341ccbeaa7e61480f37bbd09fe97adfb09045057d06c1\\profiles\\8356-18e36fb5434593e0-7\\frames.jsonl",
+              "sha256": "522fca0b1d8106395ecd215d84602df02ba7b9c91922ab46807ea2b0a4d0b0f9"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\f850e93ffc3c1fefc00341ccbeaa7e61480f37bbd09fe97adfb09045057d06c1\\captures\\8356-18e36fb62eabaf7c-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\f850e93ffc3c1fefc00341ccbeaa7e61480f37bbd09fe97adfb09045057d06c1\\captures\\8356-18e36fb62eabaf7c-14\\frame.json",
+              "sha256": "3fa8972a96bc026261a7f66c9b3eb3b0ab0644327de824a44b373765410b7319"
+            }
+          ]
+        },
+        {
+          "variant": "after",
+          "round": 4,
+          "input_tick": 897,
+          "main_cpu_ms": 69.31750000000001,
+          "main_ui_ms": 66.7123,
+          "worker_ui_ms": 1.8953,
+          "next_interval_ms": 69.56510000000003,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\8a7da85803b17032b0698bfae272da16eab9101e5893c90f36e9dd99f963570d\\profiles\\14612-18e36fb67eee5e44-7\\report.json",
+              "sha256": "c19bca002842d2a2e556c1c760227a9c5c9d8cedf1034e23f5ff4b7c45e3156a"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\8a7da85803b17032b0698bfae272da16eab9101e5893c90f36e9dd99f963570d\\profiles\\14612-18e36fb67eee5e44-7\\frames.jsonl",
+              "sha256": "9fb37dd3faaf2578776c6b925523f2d18ae69703cedc14c0ed4a8d49ff8bf111"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\8a7da85803b17032b0698bfae272da16eab9101e5893c90f36e9dd99f963570d\\captures\\14612-18e36fb85754bb88-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-paired\\registry\\runs\\8a7da85803b17032b0698bfae272da16eab9101e5893c90f36e9dd99f963570d\\captures\\14612-18e36fb85754bb88-14\\frame.json",
+              "sha256": "1a40b14d745f0da3f90a03b19ced900c0b767e5a259baf0a4427c91d138e2a90"
+            }
+          ]
+        }
+      ],
+      "median": {
+        "before": {
+          "main_cpu_ms": 21.9789,
+          "main_ui_ms": 18.736900000000002,
+          "next_interval_ms": 22.033799999999985
+        },
+        "after": {
+          "main_cpu_ms": 20.5248,
+          "main_ui_ms": 19.156399999999998,
+          "next_interval_ms": 20.58749999999992
+        }
+      },
+      "first_pair_rgb_identical": true,
+      "metadata": {
+        "before": {
+          "session_id": "538bb410c848cbbc9ca421d70cec3627dedc5017d208637e2815ae709ff46121",
+          "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-cold-project",
+          "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\69d1a835fcaa3dc7ec4f5627ecce8d69a3e513058329f6e592ac24b1faa52ae2",
+          "executable_sha256": "3ea52566cb2b3ae54688bdf6b30dadf480f7856844804666cf8312293651ee67",
+          "adapter": "NVIDIA GeForce RTX 5080",
+          "driver": "Vulkan (NVIDIA 617.42)",
+          "os": "windows",
+          "arch": "x86_64",
+          "logical_processors": 16,
+          "launch_args": [],
+          "settings": {
+            "title": "Weva runtime audit",
+            "app_id": "com.agentic.game",
+            "retain_save_backup": true,
+            "version": "1.0.0",
+            "build_number": 1,
+            "icon": "",
+            "width": 1280,
+            "height": 720,
+            "physical_window_size": false,
+            "agent_activity_overlay": false,
+            "fullscreen": false,
+            "start_scene": "Scenes/audit.scene.ron",
+            "vsync": false,
+            "threaded_rendering": true,
+            "weva_ui": false,
+            "show_cursor": true,
+            "quality": "Auto",
+            "water_render_budget": null,
+            "white_primitives": false,
+            "white_materials": false,
+            "orientation": "Landscape",
+            "html_screen": "",
+            "loading_screen": {
+              "image": "",
+              "stretch_mode": "Cover",
+              "background": [
+                0.03500000014901161,
+                0.03500000014901161,
+                0.03999999910593033,
+                1.0
+              ],
+              "bar_color": [
+                0.8500000238418579,
+                0.8500000238418579,
+                0.8799999952316284,
+                1.0
+              ]
+            },
+            "privacy": {
+              "camera": "",
+              "microphone": "",
+              "photo_library": "",
+              "location": "",
+              "bluetooth": "",
+              "local_network": ""
+            }
+          },
+          "viewport": [
+            1280,
+            720
+          ],
+          "adapter_info": {
+            "name": "NVIDIA GeForce RTX 5080",
+            "vendor": 4318,
+            "device": 11266,
+            "backend": "Vulkan",
+            "device_type": "DiscreteGpu",
+            "driver": "NVIDIA",
+            "driver_info": "617.42"
+          },
+          "presentation": "AutoNoVsync",
+          "frame_pacing": {
+            "uncapped": false,
+            "configured_foreground_fps": 0.0,
+            "configured_background_fps": 0.0,
+            "focused": false
+          },
+          "debug_assertions": false,
+          "scenario": {
+            "owned": false,
+            "fixed_delta_seconds": null,
+            "uncapped": false,
+            "checkpoints": [],
+            "pending": null
+          },
+          "independent_gpu_profiling": false,
+          "cpu_allocations": "unavailable",
+          "measurement": "rendered development runtime; CPU/wall observations with explicitly selected GPU timestamp sampling",
+          "input": null,
+          "sampling": "cpu_only",
+          "gpu_timestamp_sampling": {
+            "requested": false,
+            "supported": true,
+            "enabled_recorded_frames": 0,
+            "status": "skipped",
+            "reason": "cpu_only requested; GPU measurements omitted; actual instrumentation state checked separately",
+            "scheduling": "CPU-only leaves the normal GPU-enable gate unchanged; GPU diagnostics opts into timestamp scheduling",
+            "cpu_only_contract_satisfied": true
+          }
+        },
+        "after": {
+          "session_id": "485f3f89c12eec60d25c7caa1e8d7868b28e45707f07e321c71b433c49affc9a",
+          "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-cold-project",
+          "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\bc54bb713000d88bf06a0c89c7f418c67da95bb5fe3371cc2eefd81f24018df9",
+          "executable_sha256": "4cc06ecf407a6966392fe7a801719f958bfb2fb2795d41e26188f2e11bfad855",
+          "adapter": "NVIDIA GeForce RTX 5080",
+          "driver": "Vulkan (NVIDIA 617.42)",
+          "os": "windows",
+          "arch": "x86_64",
+          "logical_processors": 16,
+          "launch_args": [],
+          "settings": {
+            "title": "Weva runtime audit",
+            "app_id": "com.agentic.game",
+            "retain_save_backup": true,
+            "version": "1.0.0",
+            "build_number": 1,
+            "icon": "",
+            "width": 1280,
+            "height": 720,
+            "physical_window_size": false,
+            "agent_activity_overlay": false,
+            "fullscreen": false,
+            "start_scene": "Scenes/audit.scene.ron",
+            "vsync": false,
+            "threaded_rendering": true,
+            "weva_ui": false,
+            "show_cursor": true,
+            "quality": "Auto",
+            "water_render_budget": null,
+            "white_primitives": false,
+            "white_materials": false,
+            "orientation": "Landscape",
+            "html_screen": "",
+            "loading_screen": {
+              "image": "",
+              "stretch_mode": "Cover",
+              "background": [
+                0.03500000014901161,
+                0.03500000014901161,
+                0.03999999910593033,
+                1.0
+              ],
+              "bar_color": [
+                0.8500000238418579,
+                0.8500000238418579,
+                0.8799999952316284,
+                1.0
+              ]
+            },
+            "privacy": {
+              "camera": "",
+              "microphone": "",
+              "photo_library": "",
+              "location": "",
+              "bluetooth": "",
+              "local_network": ""
+            }
+          },
+          "viewport": [
+            1280,
+            720
+          ],
+          "adapter_info": {
+            "name": "NVIDIA GeForce RTX 5080",
+            "vendor": 4318,
+            "device": 11266,
+            "backend": "Vulkan",
+            "device_type": "DiscreteGpu",
+            "driver": "NVIDIA",
+            "driver_info": "617.42"
+          },
+          "presentation": "AutoNoVsync",
+          "frame_pacing": {
+            "uncapped": false,
+            "configured_foreground_fps": 0.0,
+            "configured_background_fps": 0.0,
+            "focused": false
+          },
+          "debug_assertions": false,
+          "scenario": {
+            "owned": false,
+            "fixed_delta_seconds": null,
+            "uncapped": false,
+            "checkpoints": [],
+            "pending": null
+          },
+          "independent_gpu_profiling": false,
+          "cpu_allocations": "unavailable",
+          "measurement": "rendered development runtime; CPU/wall observations with explicitly selected GPU timestamp sampling",
+          "input": null,
+          "sampling": "cpu_only",
+          "gpu_timestamp_sampling": {
+            "requested": false,
+            "supported": true,
+            "enabled_recorded_frames": 0,
+            "status": "skipped",
+            "reason": "cpu_only requested; GPU measurements omitted; actual instrumentation state checked separately",
+            "scheduling": "CPU-only leaves the normal GPU-enable gate unchanged; GPU diagnostics opts into timestamp scheduling",
+            "cpu_only_contract_satisfied": true
+          }
+        }
+      }
+    },
+    "direct": {
+      "runs": [
+        {
+          "variant": "before",
+          "round": 0,
+          "input_tick": 598,
+          "main_cpu_ms": 28.3067,
+          "main_ui_ms": 0.0009,
+          "worker_ui_ms": null,
+          "next_interval_ms": 28.421500000000037,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\87df4f8ee04912f82f117031a112b5a3164c55725241e9346ef734bcb60b516e\\profiles\\52816-18e36fc8e9719594-7\\report.json",
+              "sha256": "38d1d0da97587cb3658d7c305a3f8d1c0a62511e76feba39029c57021361d36c"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\87df4f8ee04912f82f117031a112b5a3164c55725241e9346ef734bcb60b516e\\profiles\\52816-18e36fc8e9719594-7\\frames.jsonl",
+              "sha256": "f190d4ea03e0b2737b814080b3c9676304b3fe0fd48482e5df875da96eeafc38"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\87df4f8ee04912f82f117031a112b5a3164c55725241e9346ef734bcb60b516e\\captures\\52816-18e36fca8f8ce978-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\87df4f8ee04912f82f117031a112b5a3164c55725241e9346ef734bcb60b516e\\captures\\52816-18e36fca8f8ce978-14\\frame.json",
+              "sha256": "1ce23e89e7d91c872827077589dabac7c34063329818be4e8f3da7d1b37ae6cb"
+            }
+          ]
+        },
+        {
+          "variant": "after",
+          "round": 0,
+          "input_tick": 746,
+          "main_cpu_ms": 27.4724,
+          "main_ui_ms": 0.0009,
+          "worker_ui_ms": null,
+          "next_interval_ms": 27.599499999999978,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\c6a3380ab9d0723c9eed8b6ea299a00c26885f709249547efe3706e29d7d7baf\\profiles\\46520-18e36fcae77f7038-7\\report.json",
+              "sha256": "3d42175aa4e0dd9cd7c98bbaf6a92e60d73d3ec33c8fc4726a5194de65f3d422"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\c6a3380ab9d0723c9eed8b6ea299a00c26885f709249547efe3706e29d7d7baf\\profiles\\46520-18e36fcae77f7038-7\\frames.jsonl",
+              "sha256": "2f7d0f12b10482e2b1f5a7f6bc161c851df1eb5a8b09030798f2bd47a5217023"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\c6a3380ab9d0723c9eed8b6ea299a00c26885f709249547efe3706e29d7d7baf\\captures\\46520-18e36fcc9a4da008-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\c6a3380ab9d0723c9eed8b6ea299a00c26885f709249547efe3706e29d7d7baf\\captures\\46520-18e36fcc9a4da008-14\\frame.json",
+              "sha256": "51514283f45d1a3e2a26a78cf35aa01057ae048ba5b4624849e1d110f4a5c656"
+            }
+          ]
+        },
+        {
+          "variant": "after",
+          "round": 1,
+          "input_tick": 719,
+          "main_cpu_ms": 25.9949,
+          "main_ui_ms": 0.0007,
+          "worker_ui_ms": null,
+          "next_interval_ms": 26.115999999999985,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\36122018bb603648ea88b6b132744b682f02d00371670e572b83164c5dfba85d\\profiles\\48420-18e36fccf3b30688-7\\report.json",
+              "sha256": "66ffa9359b2d41a576459f650e1e8100543a3a9d328cee4459f0454562bf8efc"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\36122018bb603648ea88b6b132744b682f02d00371670e572b83164c5dfba85d\\profiles\\48420-18e36fccf3b30688-7\\frames.jsonl",
+              "sha256": "2d2757aebcf8c06c35c7f7bb2ff726c2bc391d0acb3a5a1535e2640e98984135"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\36122018bb603648ea88b6b132744b682f02d00371670e572b83164c5dfba85d\\captures\\48420-18e36fce9f0afdf0-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\36122018bb603648ea88b6b132744b682f02d00371670e572b83164c5dfba85d\\captures\\48420-18e36fce9f0afdf0-14\\frame.json",
+              "sha256": "32bf49f7fce70f70fe90f52076f6db55a7a41f82b2b178fa739fa62c916a9af4"
+            }
+          ]
+        },
+        {
+          "variant": "before",
+          "round": 1,
+          "input_tick": 683,
+          "main_cpu_ms": 26.5727,
+          "main_ui_ms": 0.0007999999999999999,
+          "worker_ui_ms": null,
+          "next_interval_ms": 26.82969999999989,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\69831ecdeb6d2ebdee7bb02ed8466a438b1beb987dd6d630d6a26c17bc845b51\\profiles\\21132-18e36fcf0c453674-7\\report.json",
+              "sha256": "c09dfe0017f33c60aadc482e14f4a9337f5dbf5e73199ed6ef3c3428ca65577e"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\69831ecdeb6d2ebdee7bb02ed8466a438b1beb987dd6d630d6a26c17bc845b51\\profiles\\21132-18e36fcf0c453674-7\\frames.jsonl",
+              "sha256": "2b4ad02b25d9af309ffe9c6ff002b7dc67f72bffcbf1069f23021ddb859c546d"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\69831ecdeb6d2ebdee7bb02ed8466a438b1beb987dd6d630d6a26c17bc845b51\\captures\\21132-18e36fd1031dca78-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\69831ecdeb6d2ebdee7bb02ed8466a438b1beb987dd6d630d6a26c17bc845b51\\captures\\21132-18e36fd1031dca78-14\\frame.json",
+              "sha256": "87c6ccca43a539361cac9655eedc9df330b54ce3b193aba897cfe00be062e3ef"
+            }
+          ]
+        },
+        {
+          "variant": "before",
+          "round": 2,
+          "input_tick": 701,
+          "main_cpu_ms": 29.1262,
+          "main_ui_ms": 0.001,
+          "worker_ui_ms": null,
+          "next_interval_ms": 29.28769999999986,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\fb62a6ee9c495fcb4a101df045b74ff041afbc427c67a20c97913236ea4f10e7\\profiles\\21288-18e36fd15bf171a4-7\\report.json",
+              "sha256": "a0966bc97e80c3739f9dd95f55a8abad29fc6a4779e701de668c95b3b28e283d"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\fb62a6ee9c495fcb4a101df045b74ff041afbc427c67a20c97913236ea4f10e7\\profiles\\21288-18e36fd15bf171a4-7\\frames.jsonl",
+              "sha256": "3917f90eaf3d5bd0753b9da1d7fbf785752146ee2ab2210c436e824bc287efee"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\fb62a6ee9c495fcb4a101df045b74ff041afbc427c67a20c97913236ea4f10e7\\captures\\21288-18e36fd3a4f054a4-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\fb62a6ee9c495fcb4a101df045b74ff041afbc427c67a20c97913236ea4f10e7\\captures\\21288-18e36fd3a4f054a4-14\\frame.json",
+              "sha256": "aed21117a3f4a2167c6770cab6f27ccda216e0beabcb268339e639a5c4ab2e20"
+            }
+          ]
+        },
+        {
+          "variant": "after",
+          "round": 2,
+          "input_tick": 747,
+          "main_cpu_ms": 33.839099999999995,
+          "main_ui_ms": 0.0009,
+          "worker_ui_ms": null,
+          "next_interval_ms": 33.99069999999995,
+          "entities": 243,
+          "frames": 6000,
+          "profile_artifacts": [
+            {
+              "kind": "profile_report",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\f85bc124817eb77e4fa9a9062d3120db061e1142e4fe8f597412d04f1a23ae7e\\profiles\\47188-18e36fd3f6d214d8-7\\report.json",
+              "sha256": "540541f334d832e51d791be5df92a2380876c316d7c141bcad6cff95cf7fb387"
+            },
+            {
+              "kind": "profile_frames",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\f85bc124817eb77e4fa9a9062d3120db061e1142e4fe8f597412d04f1a23ae7e\\profiles\\47188-18e36fd3f6d214d8-7\\frames.jsonl",
+              "sha256": "b01d763321258bb1c55cbc9fac3ea788066ad847dd8cb4d5ebc8313dda70958b"
+            }
+          ],
+          "capture_artifacts": [
+            {
+              "kind": "image",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\f85bc124817eb77e4fa9a9062d3120db061e1142e4fe8f597412d04f1a23ae7e\\captures\\47188-18e36fd588e5a0a0-14\\frame.png",
+              "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+            },
+            {
+              "kind": "capture_manifest",
+              "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-direct-paired-v2\\registry\\runs\\f85bc124817eb77e4fa9a9062d3120db061e1142e4fe8f597412d04f1a23ae7e\\captures\\47188-18e36fd588e5a0a0-14\\frame.json",
+              "sha256": "5768ddf297198325cd3af45bbfa8d8cb45c38b440c4893e0845487c269274658"
+            }
+          ]
+        }
+      ],
+      "median": {
+        "before": {
+          "main_cpu_ms": 28.3067,
+          "main_ui_ms": 0.0009,
+          "next_interval_ms": 28.421500000000037
+        },
+        "after": {
+          "main_cpu_ms": 27.4724,
+          "main_ui_ms": 0.0009,
+          "next_interval_ms": 27.599499999999978
+        }
+      },
+      "first_pair_rgb_identical": true,
+      "metadata": {
+        "before": {
+          "session_id": "87df4f8ee04912f82f117031a112b5a3164c55725241e9346ef734bcb60b516e",
+          "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-cold-direct-project",
+          "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\69d1a835fcaa3dc7ec4f5627ecce8d69a3e513058329f6e592ac24b1faa52ae2",
+          "executable_sha256": "3ea52566cb2b3ae54688bdf6b30dadf480f7856844804666cf8312293651ee67",
+          "adapter": "NVIDIA GeForce RTX 5080",
+          "driver": "Vulkan (NVIDIA 617.42)",
+          "os": "windows",
+          "arch": "x86_64",
+          "logical_processors": 16,
+          "launch_args": [],
+          "settings": {
+            "title": "Weva runtime audit",
+            "app_id": "com.agentic.game",
+            "retain_save_backup": true,
+            "version": "1.0.0",
+            "build_number": 1,
+            "icon": "",
+            "width": 1280,
+            "height": 720,
+            "physical_window_size": false,
+            "agent_activity_overlay": false,
+            "fullscreen": false,
+            "start_scene": "Scenes/audit.scene.ron",
+            "vsync": false,
+            "threaded_rendering": false,
+            "weva_ui": false,
+            "show_cursor": true,
+            "quality": "Auto",
+            "water_render_budget": null,
+            "white_primitives": false,
+            "white_materials": false,
+            "orientation": "Landscape",
+            "html_screen": "",
+            "loading_screen": {
+              "image": "",
+              "stretch_mode": "Cover",
+              "background": [
+                0.03500000014901161,
+                0.03500000014901161,
+                0.03999999910593033,
+                1.0
+              ],
+              "bar_color": [
+                0.8500000238418579,
+                0.8500000238418579,
+                0.8799999952316284,
+                1.0
+              ]
+            },
+            "privacy": {
+              "camera": "",
+              "microphone": "",
+              "photo_library": "",
+              "location": "",
+              "bluetooth": "",
+              "local_network": ""
+            }
+          },
+          "viewport": [
+            1280,
+            720
+          ],
+          "adapter_info": {
+            "name": "NVIDIA GeForce RTX 5080",
+            "vendor": 4318,
+            "device": 11266,
+            "backend": "Vulkan",
+            "device_type": "DiscreteGpu",
+            "driver": "NVIDIA",
+            "driver_info": "617.42"
+          },
+          "presentation": "AutoNoVsync",
+          "frame_pacing": {
+            "uncapped": false,
+            "configured_foreground_fps": 0.0,
+            "configured_background_fps": 0.0,
+            "focused": false
+          },
+          "debug_assertions": false,
+          "scenario": {
+            "owned": false,
+            "fixed_delta_seconds": null,
+            "uncapped": false,
+            "checkpoints": [],
+            "pending": null
+          },
+          "independent_gpu_profiling": false,
+          "cpu_allocations": "unavailable",
+          "measurement": "rendered development runtime; CPU/wall observations with explicitly selected GPU timestamp sampling",
+          "input": null,
+          "sampling": "cpu_only",
+          "gpu_timestamp_sampling": {
+            "requested": false,
+            "supported": true,
+            "enabled_recorded_frames": 0,
+            "status": "skipped",
+            "reason": "cpu_only requested; GPU measurements omitted; actual instrumentation state checked separately",
+            "scheduling": "CPU-only leaves the normal GPU-enable gate unchanged; GPU diagnostics opts into timestamp scheduling",
+            "cpu_only_contract_satisfied": true
+          }
+        },
+        "after": {
+          "session_id": "c6a3380ab9d0723c9eed8b6ea299a00c26885f709249547efe3706e29d7d7baf",
+          "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-cold-direct-project",
+          "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\bc54bb713000d88bf06a0c89c7f418c67da95bb5fe3371cc2eefd81f24018df9",
+          "executable_sha256": "4cc06ecf407a6966392fe7a801719f958bfb2fb2795d41e26188f2e11bfad855",
+          "adapter": "NVIDIA GeForce RTX 5080",
+          "driver": "Vulkan (NVIDIA 617.42)",
+          "os": "windows",
+          "arch": "x86_64",
+          "logical_processors": 16,
+          "launch_args": [],
+          "settings": {
+            "title": "Weva runtime audit",
+            "app_id": "com.agentic.game",
+            "retain_save_backup": true,
+            "version": "1.0.0",
+            "build_number": 1,
+            "icon": "",
+            "width": 1280,
+            "height": 720,
+            "physical_window_size": false,
+            "agent_activity_overlay": false,
+            "fullscreen": false,
+            "start_scene": "Scenes/audit.scene.ron",
+            "vsync": false,
+            "threaded_rendering": false,
+            "weva_ui": false,
+            "show_cursor": true,
+            "quality": "Auto",
+            "water_render_budget": null,
+            "white_primitives": false,
+            "white_materials": false,
+            "orientation": "Landscape",
+            "html_screen": "",
+            "loading_screen": {
+              "image": "",
+              "stretch_mode": "Cover",
+              "background": [
+                0.03500000014901161,
+                0.03500000014901161,
+                0.03999999910593033,
+                1.0
+              ],
+              "bar_color": [
+                0.8500000238418579,
+                0.8500000238418579,
+                0.8799999952316284,
+                1.0
+              ]
+            },
+            "privacy": {
+              "camera": "",
+              "microphone": "",
+              "photo_library": "",
+              "location": "",
+              "bluetooth": "",
+              "local_network": ""
+            }
+          },
+          "viewport": [
+            1280,
+            720
+          ],
+          "adapter_info": {
+            "name": "NVIDIA GeForce RTX 5080",
+            "vendor": 4318,
+            "device": 11266,
+            "backend": "Vulkan",
+            "device_type": "DiscreteGpu",
+            "driver": "NVIDIA",
+            "driver_info": "617.42"
+          },
+          "presentation": "AutoNoVsync",
+          "frame_pacing": {
+            "uncapped": false,
+            "configured_foreground_fps": 0.0,
+            "configured_background_fps": 0.0,
+            "focused": false
+          },
+          "debug_assertions": false,
+          "scenario": {
+            "owned": false,
+            "fixed_delta_seconds": null,
+            "uncapped": false,
+            "checkpoints": [],
+            "pending": null
+          },
+          "independent_gpu_profiling": false,
+          "cpu_allocations": "unavailable",
+          "measurement": "rendered development runtime; CPU/wall observations with explicitly selected GPU timestamp sampling",
+          "input": null,
+          "sampling": "cpu_only",
+          "gpu_timestamp_sampling": {
+            "requested": false,
+            "supported": true,
+            "enabled_recorded_frames": 0,
+            "status": "skipped",
+            "reason": "cpu_only requested; GPU measurements omitted; actual instrumentation state checked separately",
+            "scheduling": "CPU-only leaves the normal GPU-enable gate unchanged; GPU diagnostics opts into timestamp scheduling",
+            "cpu_only_contract_satisfied": true
+          }
+        }
+      }
+    }
+  }
+}

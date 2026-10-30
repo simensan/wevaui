@@ -5,6 +5,11 @@ adds 9,000 CPU-only rendered frames, input/binding checks and 339 reloads in an
 immutable SDK built with the current core. No engine code changes in this chunk;
 shared-host gate counts remain those in the nested-baseline receipt.
 
+The [Agentic cold renderer receipt](docs/verification/agentic-cold-render-20261030.md)
+adds lazy backdrop/local-renderer setup in Agentic, 13 renderer and 42 overlay
+tests, and paired cold opening in both runtime routes. The core and Unity/Godot
+are unchanged; cold-opening tails remain unresolved.
+
 Read this before changing anything. It is for **changing the engine or a
 host**; if you are being asked to *author UI* (write HTML/CSS and a
 controller), the manual is
