@@ -1,5 +1,10 @@
 # AI_REFERENCE.md — orientation for AI agents
 
+The [current Agentic SDK runtime check](docs/verification/current-runtime-20261031.md)
+passes 18,000 measured frames, click/actions and 716 reloads in a 240-cube world.
+Inventory frame median improves 10.7%, but p95 is mixed; this is not GPU or
+Chrome parity evidence. Shared Godot/Unity checks remain in the no-op receipt.
+
 The [unchanged-attribute follow-up](docs/verification/scoped-noop-20261031.md)
 avoids no-op restyles after sibling pruning: paired complete inventory CPU
 falls 7.3%. Windows/GCC main checks pass 493,402 (493,396 sanitized), all 340
