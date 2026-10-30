@@ -1,0 +1,186 @@
+{
+  "binaries": {
+    "before": {
+      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-bounded-textures.exe",
+      "sha256": "77230f73ca76264657e1d910e5fc8976ad67325583984c92639a7ff28bccc966"
+    },
+    "after": {
+      "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+      "sha256": "465533c9e705b9ef1caff15e7c2ebde0cd472fbb1dce89353ed94b17094c873c"
+    }
+  },
+  "arguments": [
+    "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\survival-fixtures/hud.html",
+    "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\survival-fixtures/hud.css",
+    "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\survival-fixtures/inventory.html",
+    "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\survival-fixtures/inventory.css",
+    "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\survival-fixtures/mutations.json"
+  ],
+  "rows": [
+    {
+      "round": 0,
+      "version": "before",
+      "case": "hud",
+      "core": 0.119,
+      "host": 0.193,
+      "frame": 0.312,
+      "controller": 0.14,
+      "complete_cpu": 0.333
+    },
+    {
+      "round": 0,
+      "version": "before",
+      "case": "inventory",
+      "core": 0.685,
+      "host": 0.259,
+      "frame": 0.944,
+      "controller": 0.821,
+      "complete_cpu": 1.08
+    },
+    {
+      "round": 0,
+      "version": "after",
+      "case": "hud",
+      "core": 0.124,
+      "host": 0.199,
+      "frame": 0.323,
+      "controller": 0.146,
+      "complete_cpu": 0.345
+    },
+    {
+      "round": 0,
+      "version": "after",
+      "case": "inventory",
+      "core": 0.778,
+      "host": 0.295,
+      "frame": 1.073,
+      "controller": 0.934,
+      "complete_cpu": 1.229
+    },
+    {
+      "round": 1,
+      "version": "after",
+      "case": "hud",
+      "core": 0.127,
+      "host": 0.195,
+      "frame": 0.322,
+      "controller": 0.15,
+      "complete_cpu": 0.345
+    },
+    {
+      "round": 1,
+      "version": "after",
+      "case": "inventory",
+      "core": 0.755,
+      "host": 0.274,
+      "frame": 1.029,
+      "controller": 0.904,
+      "complete_cpu": 1.178
+    },
+    {
+      "round": 1,
+      "version": "before",
+      "case": "hud",
+      "core": 0.129,
+      "host": 0.204,
+      "frame": 0.334,
+      "controller": 0.153,
+      "complete_cpu": 0.357
+    },
+    {
+      "round": 1,
+      "version": "before",
+      "case": "inventory",
+      "core": 0.801,
+      "host": 0.296,
+      "frame": 1.098,
+      "controller": 0.967,
+      "complete_cpu": 1.263
+    },
+    {
+      "round": 2,
+      "version": "before",
+      "case": "hud",
+      "core": 0.127,
+      "host": 0.21,
+      "frame": 0.337,
+      "controller": 0.151,
+      "complete_cpu": 0.361
+    },
+    {
+      "round": 2,
+      "version": "before",
+      "case": "inventory",
+      "core": 0.663,
+      "host": 0.252,
+      "frame": 0.915,
+      "controller": 0.794,
+      "complete_cpu": 1.046
+    },
+    {
+      "round": 2,
+      "version": "after",
+      "case": "hud",
+      "core": 0.127,
+      "host": 0.198,
+      "frame": 0.325,
+      "controller": 0.15,
+      "complete_cpu": 0.348
+    },
+    {
+      "round": 2,
+      "version": "after",
+      "case": "inventory",
+      "core": 0.659,
+      "host": 0.232,
+      "frame": 0.891,
+      "controller": 0.788,
+      "complete_cpu": 1.02
+    },
+    {
+      "round": 3,
+      "version": "after",
+      "case": "hud",
+      "core": 0.13,
+      "host": 0.198,
+      "frame": 0.329,
+      "controller": 0.155,
+      "complete_cpu": 0.354
+    },
+    {
+      "round": 3,
+      "version": "after",
+      "case": "inventory",
+      "core": 0.666,
+      "host": 0.238,
+      "frame": 0.904,
+      "controller": 0.797,
+      "complete_cpu": 1.035
+    },
+    {
+      "round": 3,
+      "version": "before",
+      "case": "hud",
+      "core": 0.122,
+      "host": 0.197,
+      "frame": 0.319,
+      "controller": 0.145,
+      "complete_cpu": 0.342
+    },
+    {
+      "round": 3,
+      "version": "before",
+      "case": "inventory",
+      "core": 0.68,
+      "host": 0.261,
+      "frame": 0.941,
+      "controller": 0.816,
+      "complete_cpu": 1.076
+    }
+  ],
+  "status": "rejected; full inventory CPU slower",
+  "baseline_core": "4c8bb0af",
+  "inactive_rgba_budget": 1048576,
+  "inactive_entry_cap": 128,
+  "verification": "Initial GCC 15-suite run passed. Later 300-cycle regression drafted but not run after performance rejection. All experiment source/tests reverted."
+}
