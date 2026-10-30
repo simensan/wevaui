@@ -1,0 +1,896 @@
+{
+  "runtime_agentic": "88e0e7f4b",
+  "core_last_changed": "faf04f31",
+  "runtime_medians": {
+    "cold": {
+      "main_cpu_ms": 19.562800000000003,
+      "main_ui_ms": 18.0848,
+      "worker_ui_ms": 1.3316000000000001,
+      "next_interval_ms": 19.73209999999989
+    },
+    "retained": {
+      "main_cpu_ms": 0.5301,
+      "main_ui_ms": 0.2617,
+      "worker_ui_ms": 0.13329999999999997,
+      "next_interval_ms": 0.5724999999999909
+    }
+  },
+  "same_content_rgb_identical_per_process": [
+    true,
+    true,
+    true
+  ],
+  "runtime_runs": [
+    {
+      "run": 0,
+      "phase": "cold",
+      "main_cpu_ms": 37.13,
+      "main_ui_ms": 26.453500000000002,
+      "worker_ui_ms": 1.3316000000000001,
+      "next_interval_ms": 37.36510000000004,
+      "profile_artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\8c4752b1c4e8d0bbd11ddb1dd7c7577c5eda00a8948c28c75e442417daf72814\\profiles\\16520-18e3706ef2a8a1d8-7\\report.json",
+          "sha256": "6838127283a386291b96e991b066a017cde5ed6c1a59e8fa3f9de75befee4916"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\8c4752b1c4e8d0bbd11ddb1dd7c7577c5eda00a8948c28c75e442417daf72814\\profiles\\16520-18e3706ef2a8a1d8-7\\frames.jsonl",
+          "sha256": "05b4fdd2539dfe3ee32a0f61a3222359b05bb3429f97f6edf89b4383c875b321"
+        }
+      ],
+      "capture_artifacts": [
+        {
+          "kind": "image",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\8c4752b1c4e8d0bbd11ddb1dd7c7577c5eda00a8948c28c75e442417daf72814\\captures\\16520-18e3706fdd7cda30-14\\frame.png",
+          "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+        },
+        {
+          "kind": "capture_manifest",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\8c4752b1c4e8d0bbd11ddb1dd7c7577c5eda00a8948c28c75e442417daf72814\\captures\\16520-18e3706fdd7cda30-14\\frame.json",
+          "sha256": "c2222af8772a784b7f65d4b7bf804f5bb4ad8f92b8f18618e7ddd9aad1b72545"
+        }
+      ],
+      "metadata": {
+        "session_id": "8c4752b1c4e8d0bbd11ddb1dd7c7577c5eda00a8948c28c75e442417daf72814",
+        "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-cold-project",
+        "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\f0da9c269542cfcb828793e7644d09d57a222103159fd90f6cf022a3c812bdcd",
+        "executable_sha256": "bb07682d8dbc765e16236305680a2611419b631bc8949f0ea50d94389183fc38",
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "Vulkan (NVIDIA 617.42)",
+        "os": "windows",
+        "arch": "x86_64",
+        "logical_processors": 16,
+        "launch_args": [],
+        "settings": {
+          "title": "Weva runtime audit",
+          "app_id": "com.agentic.game",
+          "retain_save_backup": true,
+          "version": "1.0.0",
+          "build_number": 1,
+          "icon": "",
+          "width": 1280,
+          "height": 720,
+          "physical_window_size": false,
+          "agent_activity_overlay": false,
+          "fullscreen": false,
+          "start_scene": "Scenes/audit.scene.ron",
+          "vsync": false,
+          "threaded_rendering": true,
+          "weva_ui": false,
+          "show_cursor": true,
+          "quality": "Auto",
+          "water_render_budget": null,
+          "white_primitives": false,
+          "white_materials": false,
+          "orientation": "Landscape",
+          "html_screen": "",
+          "loading_screen": {
+            "image": "",
+            "stretch_mode": "Cover",
+            "background": [
+              0.03500000014901161,
+              0.03500000014901161,
+              0.03999999910593033,
+              1.0
+            ],
+            "bar_color": [
+              0.8500000238418579,
+              0.8500000238418579,
+              0.8799999952316284,
+              1.0
+            ]
+          },
+          "privacy": {
+            "camera": "",
+            "microphone": "",
+            "photo_library": "",
+            "location": "",
+            "bluetooth": "",
+            "local_network": ""
+          }
+        },
+        "viewport": [
+          1280,
+          720
+        ],
+        "adapter_info": {
+          "name": "NVIDIA GeForce RTX 5080",
+          "vendor": 4318,
+          "device": 11266,
+          "backend": "Vulkan",
+          "device_type": "DiscreteGpu",
+          "driver": "NVIDIA",
+          "driver_info": "617.42"
+        },
+        "presentation": "AutoNoVsync",
+        "frame_pacing": {
+          "uncapped": false,
+          "configured_foreground_fps": 0.0,
+          "configured_background_fps": 0.0,
+          "focused": false
+        },
+        "debug_assertions": false,
+        "scenario": {
+          "owned": false,
+          "fixed_delta_seconds": null,
+          "uncapped": false,
+          "checkpoints": [],
+          "pending": null
+        },
+        "independent_gpu_profiling": false,
+        "cpu_allocations": "unavailable",
+        "measurement": "rendered development runtime; CPU/wall observations with explicitly selected GPU timestamp sampling",
+        "input": null,
+        "sampling": "cpu_only",
+        "gpu_timestamp_sampling": {
+          "requested": false,
+          "supported": true,
+          "enabled_recorded_frames": 0,
+          "status": "skipped",
+          "reason": "cpu_only requested; GPU measurements omitted; actual instrumentation state checked separately",
+          "scheduling": "CPU-only leaves the normal GPU-enable gate unchanged; GPU diagnostics opts into timestamp scheduling",
+          "cpu_only_contract_satisfied": true
+        }
+      }
+    },
+    {
+      "run": 0,
+      "phase": "retained",
+      "main_cpu_ms": 0.5833,
+      "main_ui_ms": 0.2617,
+      "worker_ui_ms": 0.13329999999999997,
+      "next_interval_ms": 0.6345999999999776,
+      "profile_artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\8c4752b1c4e8d0bbd11ddb1dd7c7577c5eda00a8948c28c75e442417daf72814\\profiles\\16520-18e3706fe26c81e4-21\\report.json",
+          "sha256": "c1da2f20f1229f1b9168e4ff44d2875227e774a6dbcc7a004fc8d47d8a6963a4"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\8c4752b1c4e8d0bbd11ddb1dd7c7577c5eda00a8948c28c75e442417daf72814\\profiles\\16520-18e3706fe26c81e4-21\\frames.jsonl",
+          "sha256": "82cc6d5f589054f3f309d1569d0e8b33a8616ee6360dbde35b2463892a557e04"
+        }
+      ],
+      "capture_artifacts": [
+        {
+          "kind": "image",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\8c4752b1c4e8d0bbd11ddb1dd7c7577c5eda00a8948c28c75e442417daf72814\\captures\\16520-18e37070cdaf41f0-28\\frame.png",
+          "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+        },
+        {
+          "kind": "capture_manifest",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\8c4752b1c4e8d0bbd11ddb1dd7c7577c5eda00a8948c28c75e442417daf72814\\captures\\16520-18e37070cdaf41f0-28\\frame.json",
+          "sha256": "0a740488d2743f6332112c1ee1007f172ee65a3d9821d81c079c207c7cc5a65a"
+        }
+      ],
+      "metadata": {
+        "session_id": "8c4752b1c4e8d0bbd11ddb1dd7c7577c5eda00a8948c28c75e442417daf72814",
+        "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-cold-project",
+        "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\f0da9c269542cfcb828793e7644d09d57a222103159fd90f6cf022a3c812bdcd",
+        "executable_sha256": "bb07682d8dbc765e16236305680a2611419b631bc8949f0ea50d94389183fc38",
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "Vulkan (NVIDIA 617.42)",
+        "os": "windows",
+        "arch": "x86_64",
+        "logical_processors": 16,
+        "launch_args": [],
+        "settings": {
+          "title": "Weva runtime audit",
+          "app_id": "com.agentic.game",
+          "retain_save_backup": true,
+          "version": "1.0.0",
+          "build_number": 1,
+          "icon": "",
+          "width": 1280,
+          "height": 720,
+          "physical_window_size": false,
+          "agent_activity_overlay": false,
+          "fullscreen": false,
+          "start_scene": "Scenes/audit.scene.ron",
+          "vsync": false,
+          "threaded_rendering": true,
+          "weva_ui": false,
+          "show_cursor": true,
+          "quality": "Auto",
+          "water_render_budget": null,
+          "white_primitives": false,
+          "white_materials": false,
+          "orientation": "Landscape",
+          "html_screen": "",
+          "loading_screen": {
+            "image": "",
+            "stretch_mode": "Cover",
+            "background": [
+              0.03500000014901161,
+              0.03500000014901161,
+              0.03999999910593033,
+              1.0
+            ],
+            "bar_color": [
+              0.8500000238418579,
+              0.8500000238418579,
+              0.8799999952316284,
+              1.0
+            ]
+          },
+          "privacy": {
+            "camera": "",
+            "microphone": "",
+            "photo_library": "",
+            "location": "",
+            "bluetooth": "",
+            "local_network": ""
+          }
+        },
+        "viewport": [
+          1280,
+          720
+        ],
+        "adapter_info": {
+          "name": "NVIDIA GeForce RTX 5080",
+          "vendor": 4318,
+          "device": 11266,
+          "backend": "Vulkan",
+          "device_type": "DiscreteGpu",
+          "driver": "NVIDIA",
+          "driver_info": "617.42"
+        },
+        "presentation": "AutoNoVsync",
+        "frame_pacing": {
+          "uncapped": false,
+          "configured_foreground_fps": 0.0,
+          "configured_background_fps": 0.0,
+          "focused": false
+        },
+        "debug_assertions": false,
+        "scenario": {
+          "owned": false,
+          "fixed_delta_seconds": null,
+          "uncapped": false,
+          "checkpoints": [],
+          "pending": null
+        },
+        "independent_gpu_profiling": false,
+        "cpu_allocations": "unavailable",
+        "measurement": "rendered development runtime; CPU/wall observations with explicitly selected GPU timestamp sampling",
+        "input": null,
+        "sampling": "cpu_only",
+        "gpu_timestamp_sampling": {
+          "requested": false,
+          "supported": true,
+          "enabled_recorded_frames": 0,
+          "status": "skipped",
+          "reason": "cpu_only requested; GPU measurements omitted; actual instrumentation state checked separately",
+          "scheduling": "CPU-only leaves the normal GPU-enable gate unchanged; GPU diagnostics opts into timestamp scheduling",
+          "cpu_only_contract_satisfied": true
+        }
+      }
+    },
+    {
+      "run": 1,
+      "phase": "cold",
+      "main_cpu_ms": 19.562800000000003,
+      "main_ui_ms": 18.0848,
+      "worker_ui_ms": 1.4507999999999999,
+      "next_interval_ms": 19.73209999999989,
+      "profile_artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\d34c2e21bb4cef5dc950e0277433d32bf25dcd7f74417b80ee58e18fcfe795ef\\profiles\\51352-18e370711b903230-7\\report.json",
+          "sha256": "d7de3d152fd4566799ec86546a0736f427053e7775c5f688d8bb00b0998b6256"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\d34c2e21bb4cef5dc950e0277433d32bf25dcd7f74417b80ee58e18fcfe795ef\\profiles\\51352-18e370711b903230-7\\frames.jsonl",
+          "sha256": "ff32c7a914a612059da23f14b80dfcc482c0e94e79ac5409f948eb33d0762947"
+        }
+      ],
+      "capture_artifacts": [
+        {
+          "kind": "image",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\d34c2e21bb4cef5dc950e0277433d32bf25dcd7f74417b80ee58e18fcfe795ef\\captures\\51352-18e370720740cfa0-14\\frame.png",
+          "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+        },
+        {
+          "kind": "capture_manifest",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\d34c2e21bb4cef5dc950e0277433d32bf25dcd7f74417b80ee58e18fcfe795ef\\captures\\51352-18e370720740cfa0-14\\frame.json",
+          "sha256": "826e1fc630743006e32b83fee67fe3378253c1aeaa5b0351c227e7514c5a0c11"
+        }
+      ],
+      "metadata": {
+        "session_id": "d34c2e21bb4cef5dc950e0277433d32bf25dcd7f74417b80ee58e18fcfe795ef",
+        "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-cold-project",
+        "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\f0da9c269542cfcb828793e7644d09d57a222103159fd90f6cf022a3c812bdcd",
+        "executable_sha256": "bb07682d8dbc765e16236305680a2611419b631bc8949f0ea50d94389183fc38",
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "Vulkan (NVIDIA 617.42)",
+        "os": "windows",
+        "arch": "x86_64",
+        "logical_processors": 16,
+        "launch_args": [],
+        "settings": {
+          "title": "Weva runtime audit",
+          "app_id": "com.agentic.game",
+          "retain_save_backup": true,
+          "version": "1.0.0",
+          "build_number": 1,
+          "icon": "",
+          "width": 1280,
+          "height": 720,
+          "physical_window_size": false,
+          "agent_activity_overlay": false,
+          "fullscreen": false,
+          "start_scene": "Scenes/audit.scene.ron",
+          "vsync": false,
+          "threaded_rendering": true,
+          "weva_ui": false,
+          "show_cursor": true,
+          "quality": "Auto",
+          "water_render_budget": null,
+          "white_primitives": false,
+          "white_materials": false,
+          "orientation": "Landscape",
+          "html_screen": "",
+          "loading_screen": {
+            "image": "",
+            "stretch_mode": "Cover",
+            "background": [
+              0.03500000014901161,
+              0.03500000014901161,
+              0.03999999910593033,
+              1.0
+            ],
+            "bar_color": [
+              0.8500000238418579,
+              0.8500000238418579,
+              0.8799999952316284,
+              1.0
+            ]
+          },
+          "privacy": {
+            "camera": "",
+            "microphone": "",
+            "photo_library": "",
+            "location": "",
+            "bluetooth": "",
+            "local_network": ""
+          }
+        },
+        "viewport": [
+          1280,
+          720
+        ],
+        "adapter_info": {
+          "name": "NVIDIA GeForce RTX 5080",
+          "vendor": 4318,
+          "device": 11266,
+          "backend": "Vulkan",
+          "device_type": "DiscreteGpu",
+          "driver": "NVIDIA",
+          "driver_info": "617.42"
+        },
+        "presentation": "AutoNoVsync",
+        "frame_pacing": {
+          "uncapped": false,
+          "configured_foreground_fps": 0.0,
+          "configured_background_fps": 0.0,
+          "focused": false
+        },
+        "debug_assertions": false,
+        "scenario": {
+          "owned": false,
+          "fixed_delta_seconds": null,
+          "uncapped": false,
+          "checkpoints": [],
+          "pending": null
+        },
+        "independent_gpu_profiling": false,
+        "cpu_allocations": "unavailable",
+        "measurement": "rendered development runtime; CPU/wall observations with explicitly selected GPU timestamp sampling",
+        "input": null,
+        "sampling": "cpu_only",
+        "gpu_timestamp_sampling": {
+          "requested": false,
+          "supported": true,
+          "enabled_recorded_frames": 0,
+          "status": "skipped",
+          "reason": "cpu_only requested; GPU measurements omitted; actual instrumentation state checked separately",
+          "scheduling": "CPU-only leaves the normal GPU-enable gate unchanged; GPU diagnostics opts into timestamp scheduling",
+          "cpu_only_contract_satisfied": true
+        }
+      }
+    },
+    {
+      "run": 1,
+      "phase": "retained",
+      "main_cpu_ms": 0.5301,
+      "main_ui_ms": 0.2642,
+      "worker_ui_ms": 0.13329999999999997,
+      "next_interval_ms": 0.5724999999999909,
+      "profile_artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\d34c2e21bb4cef5dc950e0277433d32bf25dcd7f74417b80ee58e18fcfe795ef\\profiles\\51352-18e370720cd29f0c-21\\report.json",
+          "sha256": "5da0a81131b753335120eb2d47c3b2210a605f2d3278da7803d6e54a9d383814"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\d34c2e21bb4cef5dc950e0277433d32bf25dcd7f74417b80ee58e18fcfe795ef\\profiles\\51352-18e370720cd29f0c-21\\frames.jsonl",
+          "sha256": "8cad18fe50d455eb67cd70bfb510349d626017da6c360ff5f0e61789df545ab4"
+        }
+      ],
+      "capture_artifacts": [
+        {
+          "kind": "image",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\d34c2e21bb4cef5dc950e0277433d32bf25dcd7f74417b80ee58e18fcfe795ef\\captures\\51352-18e37072f3bee768-28\\frame.png",
+          "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+        },
+        {
+          "kind": "capture_manifest",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\d34c2e21bb4cef5dc950e0277433d32bf25dcd7f74417b80ee58e18fcfe795ef\\captures\\51352-18e37072f3bee768-28\\frame.json",
+          "sha256": "52c2d29b1ed996fece9d6a011f781a35c9d8f422260d6f4a5416b8a89d36855b"
+        }
+      ],
+      "metadata": {
+        "session_id": "d34c2e21bb4cef5dc950e0277433d32bf25dcd7f74417b80ee58e18fcfe795ef",
+        "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-cold-project",
+        "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\f0da9c269542cfcb828793e7644d09d57a222103159fd90f6cf022a3c812bdcd",
+        "executable_sha256": "bb07682d8dbc765e16236305680a2611419b631bc8949f0ea50d94389183fc38",
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "Vulkan (NVIDIA 617.42)",
+        "os": "windows",
+        "arch": "x86_64",
+        "logical_processors": 16,
+        "launch_args": [],
+        "settings": {
+          "title": "Weva runtime audit",
+          "app_id": "com.agentic.game",
+          "retain_save_backup": true,
+          "version": "1.0.0",
+          "build_number": 1,
+          "icon": "",
+          "width": 1280,
+          "height": 720,
+          "physical_window_size": false,
+          "agent_activity_overlay": false,
+          "fullscreen": false,
+          "start_scene": "Scenes/audit.scene.ron",
+          "vsync": false,
+          "threaded_rendering": true,
+          "weva_ui": false,
+          "show_cursor": true,
+          "quality": "Auto",
+          "water_render_budget": null,
+          "white_primitives": false,
+          "white_materials": false,
+          "orientation": "Landscape",
+          "html_screen": "",
+          "loading_screen": {
+            "image": "",
+            "stretch_mode": "Cover",
+            "background": [
+              0.03500000014901161,
+              0.03500000014901161,
+              0.03999999910593033,
+              1.0
+            ],
+            "bar_color": [
+              0.8500000238418579,
+              0.8500000238418579,
+              0.8799999952316284,
+              1.0
+            ]
+          },
+          "privacy": {
+            "camera": "",
+            "microphone": "",
+            "photo_library": "",
+            "location": "",
+            "bluetooth": "",
+            "local_network": ""
+          }
+        },
+        "viewport": [
+          1280,
+          720
+        ],
+        "adapter_info": {
+          "name": "NVIDIA GeForce RTX 5080",
+          "vendor": 4318,
+          "device": 11266,
+          "backend": "Vulkan",
+          "device_type": "DiscreteGpu",
+          "driver": "NVIDIA",
+          "driver_info": "617.42"
+        },
+        "presentation": "AutoNoVsync",
+        "frame_pacing": {
+          "uncapped": false,
+          "configured_foreground_fps": 0.0,
+          "configured_background_fps": 0.0,
+          "focused": false
+        },
+        "debug_assertions": false,
+        "scenario": {
+          "owned": false,
+          "fixed_delta_seconds": null,
+          "uncapped": false,
+          "checkpoints": [],
+          "pending": null
+        },
+        "independent_gpu_profiling": false,
+        "cpu_allocations": "unavailable",
+        "measurement": "rendered development runtime; CPU/wall observations with explicitly selected GPU timestamp sampling",
+        "input": null,
+        "sampling": "cpu_only",
+        "gpu_timestamp_sampling": {
+          "requested": false,
+          "supported": true,
+          "enabled_recorded_frames": 0,
+          "status": "skipped",
+          "reason": "cpu_only requested; GPU measurements omitted; actual instrumentation state checked separately",
+          "scheduling": "CPU-only leaves the normal GPU-enable gate unchanged; GPU diagnostics opts into timestamp scheduling",
+          "cpu_only_contract_satisfied": true
+        }
+      }
+    },
+    {
+      "run": 2,
+      "phase": "cold",
+      "main_cpu_ms": 19.2021,
+      "main_ui_ms": 17.7119,
+      "worker_ui_ms": 1.2883,
+      "next_interval_ms": 19.334699999999884,
+      "profile_artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\2716aeb247f13d4d420f5ba0e4aa6987728236541c0e2ca95c2cefb08b8fd6e2\\profiles\\42992-18e370734320d9c4-7\\report.json",
+          "sha256": "ed41c87d022a41051bef387b34c135b5545fd25de6655da6f5d58075a04019c7"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\2716aeb247f13d4d420f5ba0e4aa6987728236541c0e2ca95c2cefb08b8fd6e2\\profiles\\42992-18e370734320d9c4-7\\frames.jsonl",
+          "sha256": "6cc2dc6381b73d69801359d88e82ec014788a0e38fc2191cc4d72338faeaa377"
+        }
+      ],
+      "capture_artifacts": [
+        {
+          "kind": "image",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\2716aeb247f13d4d420f5ba0e4aa6987728236541c0e2ca95c2cefb08b8fd6e2\\captures\\42992-18e3707432e7e074-14\\frame.png",
+          "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+        },
+        {
+          "kind": "capture_manifest",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\2716aeb247f13d4d420f5ba0e4aa6987728236541c0e2ca95c2cefb08b8fd6e2\\captures\\42992-18e3707432e7e074-14\\frame.json",
+          "sha256": "4e567f79b44371deb8cc9ceed88135c3f0943efcebcdc0f5596c2a852c0f33f1"
+        }
+      ],
+      "metadata": {
+        "session_id": "2716aeb247f13d4d420f5ba0e4aa6987728236541c0e2ca95c2cefb08b8fd6e2",
+        "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-cold-project",
+        "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\f0da9c269542cfcb828793e7644d09d57a222103159fd90f6cf022a3c812bdcd",
+        "executable_sha256": "bb07682d8dbc765e16236305680a2611419b631bc8949f0ea50d94389183fc38",
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "Vulkan (NVIDIA 617.42)",
+        "os": "windows",
+        "arch": "x86_64",
+        "logical_processors": 16,
+        "launch_args": [],
+        "settings": {
+          "title": "Weva runtime audit",
+          "app_id": "com.agentic.game",
+          "retain_save_backup": true,
+          "version": "1.0.0",
+          "build_number": 1,
+          "icon": "",
+          "width": 1280,
+          "height": 720,
+          "physical_window_size": false,
+          "agent_activity_overlay": false,
+          "fullscreen": false,
+          "start_scene": "Scenes/audit.scene.ron",
+          "vsync": false,
+          "threaded_rendering": true,
+          "weva_ui": false,
+          "show_cursor": true,
+          "quality": "Auto",
+          "water_render_budget": null,
+          "white_primitives": false,
+          "white_materials": false,
+          "orientation": "Landscape",
+          "html_screen": "",
+          "loading_screen": {
+            "image": "",
+            "stretch_mode": "Cover",
+            "background": [
+              0.03500000014901161,
+              0.03500000014901161,
+              0.03999999910593033,
+              1.0
+            ],
+            "bar_color": [
+              0.8500000238418579,
+              0.8500000238418579,
+              0.8799999952316284,
+              1.0
+            ]
+          },
+          "privacy": {
+            "camera": "",
+            "microphone": "",
+            "photo_library": "",
+            "location": "",
+            "bluetooth": "",
+            "local_network": ""
+          }
+        },
+        "viewport": [
+          1280,
+          720
+        ],
+        "adapter_info": {
+          "name": "NVIDIA GeForce RTX 5080",
+          "vendor": 4318,
+          "device": 11266,
+          "backend": "Vulkan",
+          "device_type": "DiscreteGpu",
+          "driver": "NVIDIA",
+          "driver_info": "617.42"
+        },
+        "presentation": "AutoNoVsync",
+        "frame_pacing": {
+          "uncapped": false,
+          "configured_foreground_fps": 0.0,
+          "configured_background_fps": 0.0,
+          "focused": false
+        },
+        "debug_assertions": false,
+        "scenario": {
+          "owned": false,
+          "fixed_delta_seconds": null,
+          "uncapped": false,
+          "checkpoints": [],
+          "pending": null
+        },
+        "independent_gpu_profiling": false,
+        "cpu_allocations": "unavailable",
+        "measurement": "rendered development runtime; CPU/wall observations with explicitly selected GPU timestamp sampling",
+        "input": null,
+        "sampling": "cpu_only",
+        "gpu_timestamp_sampling": {
+          "requested": false,
+          "supported": true,
+          "enabled_recorded_frames": 0,
+          "status": "skipped",
+          "reason": "cpu_only requested; GPU measurements omitted; actual instrumentation state checked separately",
+          "scheduling": "CPU-only leaves the normal GPU-enable gate unchanged; GPU diagnostics opts into timestamp scheduling",
+          "cpu_only_contract_satisfied": true
+        }
+      }
+    },
+    {
+      "run": 2,
+      "phase": "retained",
+      "main_cpu_ms": 0.5154,
+      "main_ui_ms": 0.2573,
+      "worker_ui_ms": 0.1304,
+      "next_interval_ms": 0.5684000000000538,
+      "profile_artifacts": [
+        {
+          "kind": "profile_report",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\2716aeb247f13d4d420f5ba0e4aa6987728236541c0e2ca95c2cefb08b8fd6e2\\profiles\\42992-18e37074387b9c10-21\\report.json",
+          "sha256": "077a93f098161c010bc28a3bb82f27a5c9179ea9612c03b519a0d3fb1d56538e"
+        },
+        {
+          "kind": "profile_frames",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\2716aeb247f13d4d420f5ba0e4aa6987728236541c0e2ca95c2cefb08b8fd6e2\\profiles\\42992-18e37074387b9c10-21\\frames.jsonl",
+          "sha256": "a4b3358c4e8106d6a76c71c2791b998f35fd42f5fccce19de24be1b6a6c995ff"
+        }
+      ],
+      "capture_artifacts": [
+        {
+          "kind": "image",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\2716aeb247f13d4d420f5ba0e4aa6987728236541c0e2ca95c2cefb08b8fd6e2\\captures\\42992-18e37075a00f305c-28\\frame.png",
+          "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+        },
+        {
+          "kind": "capture_manifest",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\cold-vs-retained\\registry\\runs\\2716aeb247f13d4d420f5ba0e4aa6987728236541c0e2ca95c2cefb08b8fd6e2\\captures\\42992-18e37075a00f305c-28\\frame.json",
+          "sha256": "a43ee06c0718f8a6aa09b861a15d17669cb7988ad9e396c1a82fafbd849e224c"
+        }
+      ],
+      "metadata": {
+        "session_id": "2716aeb247f13d4d420f5ba0e4aa6987728236541c0e2ca95c2cefb08b8fd6e2",
+        "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-cold-project",
+        "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\f0da9c269542cfcb828793e7644d09d57a222103159fd90f6cf022a3c812bdcd",
+        "executable_sha256": "bb07682d8dbc765e16236305680a2611419b631bc8949f0ea50d94389183fc38",
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "Vulkan (NVIDIA 617.42)",
+        "os": "windows",
+        "arch": "x86_64",
+        "logical_processors": 16,
+        "launch_args": [],
+        "settings": {
+          "title": "Weva runtime audit",
+          "app_id": "com.agentic.game",
+          "retain_save_backup": true,
+          "version": "1.0.0",
+          "build_number": 1,
+          "icon": "",
+          "width": 1280,
+          "height": 720,
+          "physical_window_size": false,
+          "agent_activity_overlay": false,
+          "fullscreen": false,
+          "start_scene": "Scenes/audit.scene.ron",
+          "vsync": false,
+          "threaded_rendering": true,
+          "weva_ui": false,
+          "show_cursor": true,
+          "quality": "Auto",
+          "water_render_budget": null,
+          "white_primitives": false,
+          "white_materials": false,
+          "orientation": "Landscape",
+          "html_screen": "",
+          "loading_screen": {
+            "image": "",
+            "stretch_mode": "Cover",
+            "background": [
+              0.03500000014901161,
+              0.03500000014901161,
+              0.03999999910593033,
+              1.0
+            ],
+            "bar_color": [
+              0.8500000238418579,
+              0.8500000238418579,
+              0.8799999952316284,
+              1.0
+            ]
+          },
+          "privacy": {
+            "camera": "",
+            "microphone": "",
+            "photo_library": "",
+            "location": "",
+            "bluetooth": "",
+            "local_network": ""
+          }
+        },
+        "viewport": [
+          1280,
+          720
+        ],
+        "adapter_info": {
+          "name": "NVIDIA GeForce RTX 5080",
+          "vendor": 4318,
+          "device": 11266,
+          "backend": "Vulkan",
+          "device_type": "DiscreteGpu",
+          "driver": "NVIDIA",
+          "driver_info": "617.42"
+        },
+        "presentation": "AutoNoVsync",
+        "frame_pacing": {
+          "uncapped": false,
+          "configured_foreground_fps": 0.0,
+          "configured_background_fps": 0.0,
+          "focused": false
+        },
+        "debug_assertions": false,
+        "scenario": {
+          "owned": false,
+          "fixed_delta_seconds": null,
+          "uncapped": false,
+          "checkpoints": [],
+          "pending": null
+        },
+        "independent_gpu_profiling": false,
+        "cpu_allocations": "unavailable",
+        "measurement": "rendered development runtime; CPU/wall observations with explicitly selected GPU timestamp sampling",
+        "input": null,
+        "sampling": "cpu_only",
+        "gpu_timestamp_sampling": {
+          "requested": false,
+          "supported": true,
+          "enabled_recorded_frames": 0,
+          "status": "skipped",
+          "reason": "cpu_only requested; GPU measurements omitted; actual instrumentation state checked separately",
+          "scheduling": "CPU-only leaves the normal GPU-enable gate unchanged; GPU diagnostics opts into timestamp scheduling",
+          "cpu_only_contract_satisfied": true
+        }
+      }
+    }
+  ],
+  "font_runs": [
+    {
+      "run": 0,
+      "glyphs": 252,
+      "scaler_ms": 1.4287,
+      "raster_ms": 5.972,
+      "glyph_preparation_ms": 8.35,
+      "paint_ms": 28.01,
+      "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\font-buffered-0.log",
+      "sha256": "9be9ce52e0af4aec588d4c452393b62f2845b16627ec28d819c74c302edf1ee4"
+    },
+    {
+      "run": 1,
+      "glyphs": 252,
+      "scaler_ms": 1.324,
+      "raster_ms": 5.8946000000000005,
+      "glyph_preparation_ms": 8.16,
+      "paint_ms": 20.13,
+      "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\font-buffered-1.log",
+      "sha256": "1dbbb418b553b609cfdae76df04a595bad50eb383d0c39804223cafc3f639cc7"
+    },
+    {
+      "run": 2,
+      "glyphs": 252,
+      "scaler_ms": 1.3465,
+      "raster_ms": 6.1814,
+      "glyph_preparation_ms": 8.46,
+      "paint_ms": 18.66,
+      "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\font-buffered-2.log",
+      "sha256": "b974161208f70a025aaab50321cac45bb882ce106a03a2384a30ae1b1ad10cc4"
+    },
+    {
+      "run": 3,
+      "glyphs": 252,
+      "scaler_ms": 1.4563,
+      "raster_ms": 6.3346,
+      "glyph_preparation_ms": 9.02,
+      "paint_ms": 14.52,
+      "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\font-buffered-3.log",
+      "sha256": "29bc7f9893ae4216e4b800e5b04ba6551dad33375015cab34aa696f459127455"
+    },
+    {
+      "run": 4,
+      "glyphs": 252,
+      "scaler_ms": 1.4902,
+      "raster_ms": 6.746899999999999,
+      "glyph_preparation_ms": 9.11,
+      "paint_ms": 16.31,
+      "log": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\font-buffered-4.log",
+      "sha256": "56eb421d57af4ecb56de14b5fa2541e60ea9ca738d6f22bd3f68b9d063656913"
+    }
+  ],
+  "font_median_combined_ms": 7.5279,
+  "font_unique_sizes": [
+    8.0,
+    9.0,
+    10.0,
+    11.0,
+    14.0,
+    16.0,
+    17.0,
+    18.0,
+    20.0,
+    24.0,
+    28.0,
+    48.0
+  ]
+}

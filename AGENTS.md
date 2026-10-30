@@ -15,6 +15,11 @@ Agentic direct UI attribution and defers hidden document work. Its 43 overlay
 tests and 6,000 paired runtime frames pass. The shared core and other hosts are
 unchanged; their automatic hidden-update policies need a separate audit.
 
+The [glyph preparation audit](docs/verification/glyph-preparation-20261030.md)
+adds bounded diagnostic font timing and verifies retained inventory reopening
+in three runtime processes. Eight font tests pass (one existing ignored).
+No shared engine or host behavior changes; cold glyph work remains open.
+
 Read this before changing anything. It is for **changing the engine or a
 host**; if you are being asked to *author UI* (write HTML/CSS and a
 controller), the manual is

@@ -274,6 +274,11 @@ correct direct HTML CPU attribution and eliminates hidden layout/upload work
 in Agentic direct rendering, matching its snapshot path. 43 overlay tests and
 6,000 paired frames pass; visible-workload and other-host gains are not implied.
 
+The [glyph preparation audit](docs/verification/glyph-preparation-20261030.md)
+attributes most cold glyph preparation to scaler/raster work and verifies
+same-content retained reopening at 0.530 ms median main CPU versus 19.563 ms
+cold. This is reuse evidence, not a first-time raster speedup or edit-time bake.
+
 The [Agentic packed-paint audit](docs/verification/agentic-packed-20261030.md)
 removes duplicate snapshot/upload copies in Agentic (ff1c9925b, not integrated
 into engine-main yet). Two paint and twelve renderer tests pass. It records
