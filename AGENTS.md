@@ -1,5 +1,10 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [Unity player timing audit](docs/verification/unity-player-timing-20261031.md)
+passes its opt-in Windows Mono/D3D12 diagnostic: 9000 presented frames at
+60 Hz, 8997 available GPU timings, all focused. Whole-player metrics are
+not isolated UI GPU time; production correctness counts remain unchanged.
+
 The [Unity interleaved upload pass](docs/verification/unity-interleaved-upload-20261031.md)
 passes 252 EditMode tests (two existing inconclusive), URP 7/7 and Windows
 Mono player 7/7. Paired inventory sync median improves 12.1%; tails are mixed.

@@ -1,5 +1,12 @@
 # Matched Weva and Chrome layout benchmarks
 
+For the opt-in Unity Windows player CPU/GPU frame diagnostic, use
+`run_unity_player_timing.py --unity EDITOR --fixtures FIXTURES --output NEW_OUTPUT --fps 60`.
+It records whole-player presented frames with a background control, GPU sample
+availability and post-timing captures. It is separate from the matched layout
+comparison below; see the [timing receipt](../../docs/verification/unity-player-timing-20261031.md)
+for boundaries, measured results and retained failed probes.
+
 Run identical, deterministic geometry-only HUD, inventory and settings fixtures
 through the native core benchmark and headless Chrome on the **same OS**.
 Both time an attribute mutation followed by completed synchronous layout and a

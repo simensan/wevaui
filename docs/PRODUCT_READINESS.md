@@ -10,7 +10,7 @@ Unity 2.0 adds retained `Visible`, CPU `Prepare()` and texture/mesh/material
 `PrepareRenderer()` loading controls, with 252 EditMode passes (two existing
 environment-gated inconclusive), seven URP render passes and seven Windows
 Mono player passes. Renderer preparation moves work into loading; first shader
-execution and player timing remain unverified. See the
+execution and cold-opening player timing remain unverified. See the
 [renderer preparation receipt](verification/unity-renderer-api-20261031.md).
 The [material preparation follow-up](verification/unity-material-preparation-20261031.md)
 moves lazy material setup into loading and reduces first command recording
@@ -66,7 +66,7 @@ Unity disabling releases the native document rather than retaining it.
 
 | Host | Requirements and tested scope | Start here |
 |---|---|---|
-| **Unity** — package 1.0.0 | Unity 6000.3+, URP 17 and Input System 1.7. Windows x64 editor tests and a Mono development player pass, including packaged PNG bytes, default fonts, bindings and URP rendering. | [Unity setup](../Packages/com.wevaui/Documentation~/getting-started.md) |
+| **Unity** — package 2.0.0 (unreleased) | Unity 6000.3+, URP 17 and Input System 1.7. Windows x64 editor tests and a Mono development player pass, including packaged PNG bytes, default fonts, bindings and URP rendering. | [Unity setup](../Packages/com.wevaui/Documentation~/getting-started.md) |
 | **Godot** | Godot 4.7, Windows/Linux x64. Sample projects, rendering and desktop exports have been tested with specific editor/template builds; see the text caveat below. Check the addon's `build.json` for included platforms. | [Godot setup and example](../hosts/godot/ADDON_README.md#install-and-run) |
 
 Other Unity platforms and Godot macOS, mobile and console builds are unverified.
@@ -141,6 +141,10 @@ and browser-level visual/text fidelity remain incomplete.
   adds CPU rendering-stage traces. Inventory selection remains more expensive
   in Weva. End-to-end/GPU parity, weaker hardware and busy 3D scenes remain
   unverified.
+  The [Unity player timing audit](verification/unity-player-timing-20261031.md)
+  adds 9,000 presented frames at 60 Hz on D3D12/RTX 5080. It reports whole-player
+  CPU/GPU timing with a background control and explicit GPU availability
+  (8,997/9,000), not isolated UI GPU time or uncapped FPS.
 
 - **Deep markup:** content nested more than 64 elements deep is not rendered,
   so layout stays within a 1 MB thread stack.
