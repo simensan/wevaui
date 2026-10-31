@@ -1,0 +1,215 @@
+{
+  "players": {
+    "il2cpp-player": {
+      "command": [
+        "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
+        "-batchmode",
+        "-projectPath",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui",
+        "-runTests",
+        "-testPlatform",
+        "StandaloneWindows64",
+        "-testFilter",
+        "Weva.Tests.Rendering.NativeRenderPassTests",
+        "-buildPlayerPath",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player\\player",
+        "-testResults",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player\\results.xml",
+        "-logFile",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player\\build.log",
+        "-testSettingsFile",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player\\test-settings.json"
+      ],
+      "requested_backend": "il2cpp",
+      "exit_code": 2,
+      "passed": false,
+      "test_run": {
+        "id": "2",
+        "testcasecount": "7",
+        "result": "Failed(Child)",
+        "total": "7",
+        "passed": "0",
+        "failed": "7",
+        "inconclusive": "0",
+        "skipped": "0",
+        "asserts": "0",
+        "engine-version": "3.5.0.0",
+        "clr-version": "4.0.30319.42000",
+        "start-time": "0001-01-01 00:00:00Z",
+        "end-time": "0001-01-01 00:00:00Z",
+        "duration": "2.0237056"
+      }
+    },
+    "il2cpp-player-fixed": {
+      "command": [
+        "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
+        "-batchmode",
+        "-projectPath",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui",
+        "-runTests",
+        "-testPlatform",
+        "StandaloneWindows64",
+        "-testFilter",
+        "Weva.Tests.Rendering.NativeRenderPassTests",
+        "-buildPlayerPath",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\player",
+        "-testResults",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\results.xml",
+        "-logFile",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\build.log",
+        "-testSettingsFile",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\test-settings.json"
+      ],
+      "requested_backend": "il2cpp",
+      "exit_code": 0,
+      "stopped_players": [],
+      "passed": true,
+      "test_run": {
+        "id": "2",
+        "testcasecount": "7",
+        "result": "Passed",
+        "total": "7",
+        "passed": "7",
+        "failed": "0",
+        "inconclusive": "0",
+        "skipped": "0",
+        "asserts": "0",
+        "engine-version": "3.5.0.0",
+        "clr-version": "4.0.30319.42000",
+        "start-time": "0001-01-01 00:00:00Z",
+        "end-time": "0001-01-01 00:00:00Z",
+        "duration": "2.5505034"
+      }
+    },
+    "il2cpp-player-release-local": {
+      "command": [
+        "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
+        "-batchmode",
+        "-projectPath",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui",
+        "-runTests",
+        "-testPlatform",
+        "StandaloneWindows64",
+        "-testFilter",
+        "Weva.Tests.Rendering.NativeRenderPassTests",
+        "-buildPlayerPath",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\player",
+        "-testResults",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\results.xml",
+        "-logFile",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\build.log",
+        "-testSettingsFile",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\test-settings.json"
+      ],
+      "requested_backend": "il2cpp",
+      "release": true,
+      "exit_code": 0,
+      "player_exit_code": 0,
+      "stopped_players": [
+        {
+          "pid": 39248,
+          "executable": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\player\\PlayerWithTests\\UnityCrashHandler64.exe"
+        }
+      ],
+      "passed": true,
+      "test_run": {
+        "type": "TestSuite",
+        "id": "1000",
+        "name": "weva",
+        "fullname": "weva",
+        "runstate": "Runnable",
+        "testcasecount": "8",
+        "result": "Passed",
+        "start-time": "2026-10-31 07:24:04Z",
+        "end-time": "2026-10-31 07:24:06Z",
+        "duration": "2.043883",
+        "total": "7",
+        "passed": "7",
+        "failed": "0",
+        "inconclusive": "0",
+        "skipped": "0",
+        "asserts": "0"
+      }
+    },
+    "interop-mono-player": {
+      "command": [
+        "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
+        "-batchmode",
+        "-projectPath",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui",
+        "-runTests",
+        "-testPlatform",
+        "StandaloneWindows64",
+        "-testFilter",
+        "Weva.Tests.Rendering.NativeRenderPassTests",
+        "-buildPlayerPath",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\interop-mono-player\\player",
+        "-testResults",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\interop-mono-player\\results.xml",
+        "-logFile",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\interop-mono-player\\build.log",
+        "-testSettingsFile",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\interop-mono-player\\test-settings.json"
+      ],
+      "requested_backend": "mono",
+      "release": false,
+      "exit_code": 0,
+      "player_exit_code": null,
+      "stopped_players": [
+        {
+          "pid": 16464,
+          "executable": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\interop-mono-player\\player\\PlayerWithTests\\PlayerWithTests.exe"
+        }
+      ],
+      "passed": true,
+      "test_run": {
+        "id": "2",
+        "testcasecount": "7",
+        "result": "Passed",
+        "total": "7",
+        "passed": "7",
+        "failed": "0",
+        "inconclusive": "0",
+        "skipped": "0",
+        "asserts": "0",
+        "engine-version": "3.5.0.0",
+        "clr-version": "4.0.30319.42000",
+        "start-time": "0001-01-01 00:00:00Z",
+        "end-time": "0001-01-01 00:00:00Z",
+        "duration": "2.2454794"
+      }
+    }
+  },
+  "editor": {
+    "id": "2",
+    "testcasecount": "257",
+    "result": "Passed",
+    "total": "257",
+    "passed": "255",
+    "failed": "0",
+    "inconclusive": "2",
+    "skipped": "0",
+    "asserts": "0",
+    "engine-version": "3.5.0.0",
+    "clr-version": "4.0.30319.42000",
+    "start-time": "2026-10-31 07:25:12Z",
+    "end-time": "2026-10-31 07:26:08Z",
+    "duration": "56.6656832"
+  },
+  "release_settings": {
+    "backend": "IL2CPP",
+    "stripping": "High",
+    "compiler": "Release",
+    "options": "ForceOptimizeScriptCompilation, Il2CPP, CompressTextures, StripDebugSymbols, ShaderLivelinkSupport, StrictMode, IncludeTestAssemblies",
+    "development": false
+  },
+  "sha256": {
+    ".utmp\\render-audit-20261030\\il2cpp-player\\results.xml": "ba6b75219bfce6e3b8ad446f963690290bc250b5d598b462cf4a182702f9e970",
+    ".utmp\\render-audit-20261030\\il2cpp-player-fixed\\results.xml": "4fc0280ba5927897b1dc052c2b42db15c5d64cb267342eb02a4759f4816c803a",
+    ".utmp\\render-audit-20261030\\il2cpp-player-release-local\\results.xml": "a1dbd4fcb4c60aef5e1f45c1219c333d00ce4b0fecc2e55ae37c02fd18cf39ee",
+    ".utmp\\render-audit-20261030\\interop-mono-player\\results.xml": "ff04ce79234d30392fb672a830e8525b9da097c2d6df11b76759c3c3c7cba259",
+    ".utmp\\render-audit-20261030\\il2cpp-editor\\results.xml": "e5e17abd5632798dc15a3f57483b78bf46621a842425573b5dcb36599d3afdb9",
+    ".utmp\\render-audit-20261030\\il2cpp-player-release-local\\build-settings.json": "86f8a5c4ca2489b2d851911c3354fcd904f6674e50858f52120fc33e33782ebe",
+    ".utmp\\render-audit-20261030\\il2cpp-player-release-local\\player\\PlayerWithTests\\GameAssembly.dll": "97dd2741cc3ce6f324dfa38499d3f19bc4eb1b54676643a46a3a06dd636a9cf9"
+  }
+}

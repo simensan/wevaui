@@ -1301,3 +1301,5 @@ in `OnDisable`, so re-enabling a menu is otherwise a cold open. The cache is
 bounded by bytes (32 MiB by default, 0 disables it), least recently used
 first, and guarded by a mutex. Tested in `test_background.cpp`
 (`test_shared_raster_cache`); neither host changes its default yet.
+
+Unity callback imports retain typed managed function-pointer wrappers but cross P/Invoke as raw pointers: IL2CPP cannot marshal C# function-pointer parameters. The generator owns these wrappers; the C ABI and native callback tables are unchanged. See docs/verification/il2cpp-qualification-20261031.md.

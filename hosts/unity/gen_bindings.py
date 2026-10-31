@@ -210,9 +210,23 @@ def generate(headers):
             out.append(f'        public const uint {name} = 0xFFFFFFFFu;')
     out.append('')
     for ret, name, params in functions:
-        args = ', '.join(f'{cs} {n}' for cs, n in split_params(params, enums, structs, cb_types))
-        out.append('        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]')
-        out.append(f'        public static extern {map_type(ret, enums, structs, cb_types)} {name}({args});')
+        parameters = split_params(params, enums, structs, cb_types)
+        args = ', '.join(f'{cs} {n}' for cs, n in parameters)
+        result = map_type(ret, enums, structs, cb_types)
+        if any(cs.startswith('delegate*') for cs, _ in parameters):
+            # IL2CPP rejects function-pointer metadata at the P/Invoke boundary.
+            # Keep the typed managed surface, but pass the callback address as
+            # a blittable raw pointer. The native C ABI is unchanged.
+            raw_args = ', '.join(f'{"void*" if cs.startswith("delegate*") else cs} {n}'
+                                 for cs, n in parameters)
+            values = ', '.join(('(void*)' if cs.startswith('delegate*') else '') + n
+                               for cs, n in parameters)
+            out.append(f'        [DllImport(Library, EntryPoint = "{name}", CallingConvention = CallingConvention.Cdecl)]')
+            out.append(f'        private static extern {result} {name}_native({raw_args});')
+            out.append(f'        public static {result} {name}({args}) => {name}_native({values});')
+        else:
+            out.append('        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]')
+            out.append(f'        public static extern {result} {name}({args});')
     out.extend(['    }', '}', ''])
     return '\n'.join(out), len(functions), len(structs), len(enums)
 

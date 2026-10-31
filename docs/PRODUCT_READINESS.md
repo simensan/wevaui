@@ -1,5 +1,7 @@
 # Product readiness
 
+The [IL2CPP qualification follow-up](verification/il2cpp-qualification-20261031.md) fixes callback registration and passes Windows development and high-stripping non-development test players. It also found leftover audit test players: earlier timing percentages need clean remeasurement because of uncontrolled background rendering load. Correctness and pixel comparisons remain applicable.
+
 The [completed rendering audit](verification/render-audit-final-20261031.md) consolidates verified improvements, current binary/test evidence and the remaining Chrome, cold-start and hardware qualification gaps. It does not change development-preview release status.
 
 The local Agentic audit branch adds explicit hidden CPU preparation through
@@ -95,7 +97,7 @@ Unity disabling releases the native document rather than retaining it.
 | **Godot** | Godot 4.7, Windows/Linux x64. Sample projects, rendering and desktop exports have been tested with specific editor/template builds; see the text caveat below. Check the addon's `build.json` for included platforms. | [Godot setup and example](../hosts/godot/ADDON_README.md#install-and-run) |
 
 Other Unity platforms and Godot macOS, mobile and console builds are unverified.
-Unity IL2CPP, release stripping and consumer asset-bundle/Addressables loading
+Consumer IL2CPP stripping graphs and asset-bundle/Addressables loading
 remain unverified; see the [player smoke audit](verification/unity-player-20261011.md).
 Unity 0.1.x users should follow the [1.0 migration notes](../Packages/com.wevaui/CHANGELOG.md#migrating-from-01x):
 there are breaking API changes, and migration of an existing consumer project

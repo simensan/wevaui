@@ -353,8 +353,9 @@ namespace Weva.Native
         public static extern void weva_document_set_render_backend(System.IntPtr doc, weva_render_backend* backend);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern void weva_document_set_font_backend(System.IntPtr doc, weva_font_backend* backend, ulong face);
-        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int weva_document_set_font_shaper(System.IntPtr doc, delegate* unmanaged[Cdecl]<void*, ulong, byte*, nuint, double, weva_shaped_glyph*, nuint, nuint> shape);
+        [DllImport(Library, EntryPoint = "weva_document_set_font_shaper", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int weva_document_set_font_shaper_native(System.IntPtr doc, void* shape);
+        public static int weva_document_set_font_shaper(System.IntPtr doc, delegate* unmanaged[Cdecl]<void*, ulong, byte*, nuint, double, weva_shaped_glyph*, nuint, nuint> shape) => weva_document_set_font_shaper_native(doc, (void*)shape);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern void weva_document_set_font_leading_rounding(System.IntPtr doc, int rounds);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
@@ -603,8 +604,9 @@ namespace Weva.Native
         public static extern nuint weva_element_matched_rules(System.IntPtr doc, uint element, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_element_computed_style_all(System.IntPtr doc, uint element, byte* buffer, nuint capacity);
-        [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int weva_document_set_asset_reader(System.IntPtr doc, delegate* unmanaged[Cdecl]<void*, byte*, byte*, nuint, nuint> reader, void* user_data);
+        [DllImport(Library, EntryPoint = "weva_document_set_asset_reader", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int weva_document_set_asset_reader_native(System.IntPtr doc, void* reader, void* user_data);
+        public static int weva_document_set_asset_reader(System.IntPtr doc, delegate* unmanaged[Cdecl]<void*, byte*, byte*, nuint, nuint> reader, void* user_data) => weva_document_set_asset_reader_native(doc, (void*)reader, user_data);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern nuint weva_element_computed_style(System.IntPtr doc, uint element, byte* property, byte* buffer, nuint capacity);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

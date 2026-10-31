@@ -505,3 +505,5 @@ The [integrated runtime verification](docs/verification/integrated-runtime-20261
 The [ordinary-draw bounds experiment](docs/verification/backdrop-bounds-20261031.md) was rejected after a fresh-baseline repeat failed to establish a runtime gain; accepted renderer source and binaries were restored.
 
 The [final rendering audit](docs/verification/render-audit-final-20261031.md) reconciles accepted changes against current source, installed host binaries and original test evidence, with remaining product qualifications explicit.
+
+The [IL2CPP qualification](docs/verification/il2cpp-qualification-20261031.md) fixes callback P/Invoke marshalling and verifies Windows development/high-stripping non-development players. It also records orphan audit players and the need to remeasure prior performance results without that background load.

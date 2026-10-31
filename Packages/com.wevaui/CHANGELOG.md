@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- IL2CPP document creation no longer fails when registering font shaping or
+  asset callbacks. Generated P/Invoke declarations use raw callback addresses
+  behind typed managed wrappers. Windows IL2CPP development and high-stripping
+  non-development test players pass the rendering/asset/binding suite.
+
 ### Added (2.0 API surface)
 - `WevaDocument.PrepareRenderer()` prepares CPU paint, textures, meshes and
   materials during loading, including while hidden. It does not draw or prewarm

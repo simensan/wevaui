@@ -30,6 +30,16 @@ namespace Weva.Tests.Rendering {
 
         [SetUp]
         public void SetUp() {
+#if !UNITY_EDITOR
+            string backend = System.Environment.GetEnvironmentVariable("WEVA_TEST_PLAYER_BACKEND");
+#if ENABLE_IL2CPP
+            if (backend == "mono") Assert.Fail("Expected Mono player, running IL2CPP.");
+#else
+            if (backend == "il2cpp") Assert.Fail("Expected IL2CPP player, running Mono.");
+#endif
+            if (System.Environment.GetEnvironmentVariable("WEVA_TEST_PLAYER_RELEASE") == "1")
+                Assert.That(Debug.isDebugBuild, Is.False, "Expected a non-development player.");
+#endif
             camGo = new GameObject("render-pass-camera") { tag = "MainCamera" };
             cam = camGo.AddComponent<Camera>();
             cam.clearFlags = CameraClearFlags.SolidColor;
