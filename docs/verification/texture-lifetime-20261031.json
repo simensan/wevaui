@@ -1,0 +1,25 @@
+{
+  "unity": {
+    "passed": 14,
+    "inconclusive": 1,
+    "failed": 0
+  },
+  "godot_rendered": {
+    "checks": 96,
+    "failures": 0
+  },
+  "godot_headless": {
+    "checks": 48,
+    "failures": 0
+  },
+  "sha256": {
+    ".utmp/render-audit-20261030/texture-lifetime-v2.xml": "ab78c08efa57884bcb2fa1a3c6a33306d02602ad9508c50f43bbd2b0e1f36604",
+    ".utmp/render-audit-20261030/texture-lifetime-v2.log": "01dce28c14292d839c8d941629a7cbe3be34c383056effb699307d582d21c35c",
+    ".utmp/render-audit-20261030/godot-texture-lifetime.log": "aa9a08557f69c5941256769557ea9cfc2599597131e45d62778f1ee05eb7f6c2",
+    ".utmp/render-audit-20261030/godot-texture-lifetime-headless.log": "babc8df19199db4d3e10ec3d2699a987ce6eaef5ecbb145417553b2dbecdccb8",
+    "Packages/com.wevaui/Tests/Editor/Native/NativeDocumentRenderTests.cs": "df653387a3e9afcc0c1234846a0ca511699373cab5196584ab0d50eeb9b80462",
+    "hosts/godot/project/texture_lifetime_tests.gd": "2f10a3d4f596503ef78fa05d1beb16770fc93a17fa648892df1d2ad786152199",
+    "hosts/godot/project/texture_lifetime_tests.tscn": "9f8c65c323dd74c3905a2fbad7ca5da83e245c50efdb1df11a9efe58ecf1e1e8",
+    "hosts/godot/run_host_suite.py": "c2ebc175ddd97cf7a7534ce9ab48e66d85a5056c6b328671db46ceb8b97b8f26"
+  }
+}

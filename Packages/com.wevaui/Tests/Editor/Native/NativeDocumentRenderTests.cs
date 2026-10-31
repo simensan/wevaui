@@ -63,6 +63,41 @@ namespace Weva.Tests.EditorTests.Native
             }
         }
 
+        [TestCase("")]
+        [TestCase("mix-blend-mode:multiply;")]
+        public void TextureReplacement_ReleasesRetiredTexturesAndMaterials(string blend)
+        {
+            Assume.That(HasGraphics, "a graphics device is required");
+            using var doc = new NativeDocument(40, 40);
+            using var renderer = new NativeDocumentRenderer();
+            for (int step = 0; step < 24; ++step)
+            {
+                // Resizing invalidates raster textures; reload also replaces the
+                // DOM while the renderer and native document remain alive.
+                if (step % 4 == 0) doc.LoadHtml("<div></div>");
+                doc.SetViewport(40 + step % 2, 40);
+                int red = 32 + step * 8;
+                doc.SetCss("body{margin:0}div{width:40px;height:40px;" + blend +
+                    "background:linear-gradient(rgb(" + red + ",64,128),rgb(" + red + ",64,128))}");
+                doc.Update(0);
+                Texture2D image = renderer.RenderToTexture(doc, 40, 40, Color.white);
+                try
+                {
+                    Assert.That(Near(PageTopDown(image, 20, 20), new Color32((byte)red, 64, 128, 255)),
+                        "replacement pixels at step " + step);
+                    Assert.That(renderer.TextureCount, Is.EqualTo(1), "only the published gradient remains");
+                    // Blend variants clone a normal base material for this texture.
+                    Assert.That(renderer.MaterialCount, Is.EqualTo(blend.Length == 0 ? 1 : 2),
+                        "retired texture materials must not accumulate");
+                    Assert.That(renderer.Sync(doc), Is.False, "settled replacement reuses its uploads");
+                }
+                finally { Object.DestroyImmediate(image); }
+            }
+            renderer.Dispose();
+            Assert.That(renderer.TextureCount, Is.Zero);
+            Assert.That(renderer.MaterialCount, Is.Zero);
+        }
+
         [TestCase("background:linear-gradient(red,blue)")]
         [TestCase("background:linear-gradient(red,blue);mix-blend-mode:multiply")]
         [TestCase("background:rgba(255,0,0,0.2);backdrop-filter:blur(3px)")]

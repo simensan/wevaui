@@ -22,7 +22,7 @@ import time
 from pathlib import Path
 
 SCENES = [
-    'form_baseline_tests', 'border_tests', 'item_context_tests', 'line_height_tests', 'font_inheritance_tests',
+    'texture_lifetime_tests', 'form_baseline_tests', 'border_tests', 'item_context_tests', 'line_height_tests', 'font_inheritance_tests',
     'theme_font_tests', 'font_size_tests', 'input_integration_tests', 'keyboard_integration_tests',
     'ime_integration_tests', 'text_editing_tests', 'text_autoscroll_tests', 'maxlength_tests', 'form_state_tests',
     'select_control_tests', 'select_autoscroll_tests', 'typeahead_tests', 'test_scene', 'binding_tests',

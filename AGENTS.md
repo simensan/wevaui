@@ -1,5 +1,11 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [texture lifetime audit](docs/verification/texture-lifetime-20261031.md) adds
+replacement regressions in both hosts: Unity renderer tests pass 14 with one
+existing environment-gated inconclusive; Godot passes 96 rendered and 48
+headless checks. No production behavior or performance claim changes.
+
+
 The [Unity player timing audit](docs/verification/unity-player-timing-20261031.md)
 passes its opt-in Windows Mono/D3D12 diagnostic: 9000 presented frames at
 60 Hz, 8997 available GPU timings, all focused. Whole-player metrics are
