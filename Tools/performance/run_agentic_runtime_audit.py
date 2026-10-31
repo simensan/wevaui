@@ -20,9 +20,17 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--engine', action='append', required=True)
     parser.add_argument('--rounds', type=int, default=3)
+    parser.add_argument('--viewport', type=int, nargs=2, default=[1280, 720],
+                        metavar=('WIDTH', 'HEIGHT'))
     args = parser.parse_args()
     if args.rounds < 1:
         parser.error('rounds must be positive')
+    if args.viewport[0] < 1280 or args.viewport[1] < 720:
+        parser.error('survival fixture requires at least 1280x720')
+    # The fixture's fixed-size satchel is centered, not scaled with the window.
+    def satchel_point(x, y):
+        return [x + (args.viewport[0] - 1280) / 2,
+                y + (args.viewport[1] - 720) / 2]
     engines = []
     for item in args.engine:
         label, separator, path = item.partition('=')
@@ -94,6 +102,8 @@ def main():
                     summary = response['data']['summary']
                     report_path = next(a['path'] for a in response['artifacts'] if a['kind'] == 'profile_report')
                     report = json.loads(Path(report_path).read_text(encoding='utf-8'))
+                    if report['metadata']['viewport'] != args.viewport:
+                        raise RuntimeError('Profile viewport differs from requested fixture size')
                     if summary['frames'] != 600 or summary['marked_frames'] != 0:
                         raise RuntimeError('Incomplete or marked profile')
                     if summary['configuration']['measured'] != 1 or summary['configuration']['missing_frames']:
@@ -109,13 +119,13 @@ def main():
                     (output / 'profiles.json').write_text(json.dumps(rows, indent=2), encoding='utf-8')
                 controls('interactive', {'keys': ['Num5']})
                 before = state('before-clicks')
-                controls('select-tool', {'pointer': [307, 295], 'buttons': [True, False, False]})
+                controls('select-tool', {'pointer': satchel_point(307, 295), 'buttons': [True, False, False]})
                 selected = state('selected')
                 if selected['audit_selected'] != 1 or selected['audit_clicks'] != before['audit_clicks'] + 1:
                     raise RuntimeError('Item selection did not reach the controller')
                 capture = call('selected-capture', ['capture'])
-                controls('use-tool', {'pointer': [1025, 545], 'buttons': [True, False, False]})
-                controls('close', {'pointer': [1135, 110], 'buttons': [True, False, False]})
+                controls('use-tool', {'pointer': satchel_point(1025, 545), 'buttons': [True, False, False]})
+                controls('close', {'pointer': satchel_point(1135, 110), 'buttons': [True, False, False]})
                 actions = state('actions')
                 if actions['audit_uses'] != before['audit_uses'] + 1 or actions['audit_mode'] != 1:
                     raise RuntimeError('Use/close actions did not reach the controller')
@@ -133,7 +143,7 @@ def main():
                     raise RuntimeError('Reload count not reached')
                 controls('reload-stop', {'keys': ['Num5']})
                 settled = state('reload-final')
-                controls('after-reload-click', {'pointer': [307, 295], 'buttons': [True, False, False]})
+                controls('after-reload-click', {'pointer': satchel_point(307, 295), 'buttons': [True, False, False]})
                 final = state('final')
                 if final['audit_clicks'] != settled['audit_clicks'] + 1 or final['audit_selected'] != 1:
                     raise RuntimeError('Post-reload click failed')

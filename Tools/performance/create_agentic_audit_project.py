@@ -15,9 +15,13 @@ def main():
     parser.add_argument('fixtures', type=Path)
     parser.add_argument('output', type=Path)
     parser.add_argument('--direct', action='store_true')
+    parser.add_argument('--viewport', type=int, nargs=2, default=[1280, 720],
+                        metavar=('WIDTH', 'HEIGHT'))
     parser.add_argument('--defer-ui', action='store_true',
                         help='Start without a UI; first key 2-7 loads it for cold-open profiling')
     args = parser.parse_args()
+    if args.viewport[0] < 1280 or args.viewport[1] < 720:
+        parser.error('survival fixture requires at least 1280x720')
     source = args.fixtures.resolve(strict=True)
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -138,7 +142,7 @@ engine.set_global("audit_uses",uses);engine.set_global("audit_reloads",reloads);
         (ui / 'main.css').rename(ui / 'audit.css')
         driver = driver.replace('assets/Ui/main.html', 'assets/Ui/audit.html')
     (scripts / 'audit.ts').write_text(driver, encoding='utf-8')
-    config = '(title:"Weva runtime audit",width:1280,height:720,fullscreen:false,vsync:false,' \
+    config = f'(title:"Weva runtime audit",width:{args.viewport[0]},height:{args.viewport[1]},fullscreen:false,vsync:false,' \
              'start_scene:"Scenes/audit.scene.ron",show_cursor:true,agent_activity_overlay:false,' \
              f'threaded_rendering:{str(not args.direct).lower()})'
     (output / 'assets/GameConfig.ron').write_text(config, encoding='utf-8')

@@ -1,5 +1,10 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [1080p/1440p runtime validation](docs/verification/resolution-runtime-20261031.md)
+passes 36,000 measured frames and 1,332 reloads. Combined Agentic submission
+and uniform changes reduce cycling-inventory worker CPU by 11.6-12.6%; frame
+medians improve 1.8-3.6%, with mixed static HUD tails. Core/other hosts unchanged.
+
 The [Agentic viewport-uniform follow-up](docs/verification/viewport-uniform-20261031.md)
 skips redundant changed-frame buffer writes. Fourteen renderer tests, 18,000
 measured runtime frames and 656 reloads pass. Observed worker savings are small
