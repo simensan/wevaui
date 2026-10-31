@@ -19,6 +19,8 @@ def main():
                         metavar=('WIDTH', 'HEIGHT'))
     parser.add_argument('--defer-ui', action='store_true',
                         help='Start without a UI; first key 2-7 loads it for cold-open profiling')
+    parser.add_argument('--prepare-input', action='store_true',
+                        help='Enable key 8 for explicit hidden preparation (requires html_prepare SDK)')
     args = parser.parse_args()
     if args.viewport[0] < 1280 or args.viewport[1] < 720:
         parser.error('survival fixture requires at least 1280x720')
@@ -136,6 +138,12 @@ engine.set_global("audit_uses",uses);engine.set_global("audit_reloads",reloads);
     events = ''.join(f'if(action=="select_{i}"){{select({i});clicks++;}}' for i in range(12))
     driver = driver.replace('SELECT_BODY', '\n'.join(select)).replace('EVENT_BODY', events)
     driver = driver.replace('INITIAL_MODE', '0' if args.defer_ui else '4')
+    if args.prepare_input:
+        driver = driver.replace('if(mode==2)', '''if(engine.get_key_down("8")){
+setMode(4);engine.html_show(false);engine.html_prepare();mode=0;
+engine.set_global("audit_mode",0);
+}
+if(mode==2)''')
     if args.defer_ui:
         # Avoid the host's conventional main.html startup load as well as init's.
         (ui / 'main.html').rename(ui / 'audit.html')

@@ -1,0 +1,880 @@
+{
+  "agentic": "f0a91651a",
+  "core": "d863b7d3",
+  "sdk": {
+    "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\08fe773f7018fd0ce5ad0486feac41e2aae181201d6db192bca1ec2e642680fe",
+    "key": "08fe773f7018fd0ce5ad0486feac41e2aae181201d6db192bca1ec2e642680fe",
+    "components": [
+      "cli",
+      "headless",
+      "runtime"
+    ],
+    "files": 42
+  },
+  "profiles": [
+    {
+      "variant": "cold",
+      "round": 0,
+      "phase": "cold",
+      "input_tick": 1067,
+      "main_cpu_ms": 91.3336,
+      "main_ui_ms": 74.1955,
+      "sections_ms": {
+        "scripts": 0.0363,
+        "physics_step": 0.0021,
+        "physics_kcc": 0.0,
+        "physics_wb": 0.0052,
+        "extract": 0.0346,
+        "models": 0.0018,
+        "render": 0.0,
+        "ui": 74.1955,
+        "vehicle": 0.0003,
+        "acquire": 0.0,
+        "present": 0.0,
+        "mesh_upload": 0.0,
+        "ui_hotreload": 0.0014,
+        "anim": 0.009099999999999999,
+        "audio": 0.0023,
+        "transforms": 0.0039,
+        "particles": 0.0011,
+        "terrain_sync": 9.999999999999999e-05,
+        "water_commands": 0.0,
+        "water_snapshots": 0.0,
+        "mesh_modifiers": 0.0,
+        "reflection_captures": 0.0003,
+        "render_wait": 0.0,
+        "surface_config": 0.0,
+        "ui_document": 73.9114,
+        "ui_capture": 0.2792,
+        "ui_worker_cpu": 1.3320999999999998,
+        "ui_screen_load": 16.897,
+        "ui_prepare": 0.0
+      },
+      "runtime_sha256": "3c4d7ad4f6a7a08aee1a0996188629827dcf7d3dc53df47d2bdab2389f4bc982",
+      "worker_ui_ms": 1.3320999999999998,
+      "next_interval_ms": 91.41739999999999,
+      "entities": 243,
+      "frames": 6000,
+      "opening_window": [
+        {
+          "tick_offset": 0,
+          "main_cpu_ms": 91.3336,
+          "interval_ms": 0.5749000000000706,
+          "worker_ui_ms": 1.3320999999999998
+        },
+        {
+          "tick_offset": 1,
+          "main_cpu_ms": 2.2404,
+          "interval_ms": 91.41739999999999,
+          "worker_ui_ms": 0.095
+        },
+        {
+          "tick_offset": 2,
+          "main_cpu_ms": 0.7372000000000001,
+          "interval_ms": 2.4671999999999343,
+          "worker_ui_ms": 0.101
+        },
+        {
+          "tick_offset": 3,
+          "main_cpu_ms": 0.4151,
+          "interval_ms": 1.0867000000000644,
+          "worker_ui_ms": 0.0891
+        },
+        {
+          "tick_offset": 4,
+          "main_cpu_ms": 0.6737,
+          "interval_ms": 0.46240000000000236,
+          "worker_ui_ms": 0.0752
+        },
+        {
+          "tick_offset": 5,
+          "main_cpu_ms": 0.5051,
+          "interval_ms": 0.7259999999999991,
+          "worker_ui_ms": 0.0876
+        },
+        {
+          "tick_offset": 6,
+          "main_cpu_ms": 0.6237,
+          "interval_ms": 0.5513999999999442,
+          "worker_ui_ms": 0.1025
+        },
+        {
+          "tick_offset": 7,
+          "main_cpu_ms": 0.5833,
+          "interval_ms": 0.6634000000000242,
+          "worker_ui_ms": 0.0791
+        }
+      ],
+      "following_seven_intervals_max_ms": 91.41739999999999,
+      "capture_sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+    },
+    {
+      "variant": "prepared",
+      "round": 0,
+      "phase": "prepare",
+      "input_tick": 1061,
+      "main_cpu_ms": 19.93,
+      "main_ui_ms": 0.0011,
+      "sections_ms": {
+        "scripts": 0.039,
+        "physics_step": 0.0026,
+        "physics_kcc": 0.0,
+        "physics_wb": 0.0051,
+        "extract": 0.0644,
+        "models": 0.002,
+        "render": 0.0,
+        "ui": 0.0011,
+        "vehicle": 0.0003,
+        "acquire": 0.0,
+        "present": 0.0,
+        "mesh_upload": 0.0,
+        "ui_hotreload": 0.0014,
+        "anim": 0.0096,
+        "audio": 0.0023,
+        "transforms": 0.0047,
+        "particles": 0.0007,
+        "terrain_sync": 9.999999999999999e-05,
+        "water_commands": 0.0,
+        "water_snapshots": 0.0,
+        "mesh_modifiers": 0.0,
+        "reflection_captures": 0.0006,
+        "render_wait": 0.0,
+        "surface_config": 0.0,
+        "ui_document": 0.0,
+        "ui_capture": 0.0,
+        "ui_worker_cpu": 0.06830000000000001,
+        "ui_screen_load": 2.6571,
+        "ui_prepare": 17.0315
+      },
+      "runtime_sha256": "3c4d7ad4f6a7a08aee1a0996188629827dcf7d3dc53df47d2bdab2389f4bc982",
+      "worker_ui_ms": 0.06830000000000001,
+      "next_interval_ms": 20.054700000000025,
+      "entities": 243,
+      "frames": 6000,
+      "opening_window": [
+        {
+          "tick_offset": 0,
+          "main_cpu_ms": 19.93,
+          "interval_ms": 0.7114999999999441,
+          "worker_ui_ms": 0.06830000000000001
+        },
+        {
+          "tick_offset": 1,
+          "main_cpu_ms": 0.5601,
+          "interval_ms": 20.054700000000025,
+          "worker_ui_ms": 0.0315
+        },
+        {
+          "tick_offset": 2,
+          "main_cpu_ms": 0.5391,
+          "interval_ms": 0.6187000000001035,
+          "worker_ui_ms": 0.024300000000000002
+        },
+        {
+          "tick_offset": 3,
+          "main_cpu_ms": 0.36160000000000003,
+          "interval_ms": 0.7458999999998923,
+          "worker_ui_ms": 0.0249
+        },
+        {
+          "tick_offset": 4,
+          "main_cpu_ms": 0.5379,
+          "interval_ms": 0.41990000000009786,
+          "worker_ui_ms": 0.0234
+        },
+        {
+          "tick_offset": 5,
+          "main_cpu_ms": 0.4534,
+          "interval_ms": 0.5951999999999771,
+          "worker_ui_ms": 0.039
+        },
+        {
+          "tick_offset": 6,
+          "main_cpu_ms": 0.5606,
+          "interval_ms": 0.48939999999993233,
+          "worker_ui_ms": 0.024300000000000002
+        },
+        {
+          "tick_offset": 7,
+          "main_cpu_ms": 0.14479999999999998,
+          "interval_ms": 0.9963000000000193,
+          "worker_ui_ms": 0.0236
+        }
+      ],
+      "following_seven_intervals_max_ms": 20.054700000000025,
+      "capture_sha256": "f11419847154276acc1c1c9156bb9cf4f774bdbcf996ef14a11c3897c84fd24b"
+    },
+    {
+      "variant": "prepared",
+      "round": 0,
+      "phase": "prepared-open",
+      "input_tick": 7740,
+      "main_cpu_ms": 0.7284999999999999,
+      "main_ui_ms": 0.0051,
+      "sections_ms": {
+        "scripts": 0.036399999999999995,
+        "physics_step": 0.0012,
+        "physics_kcc": 0.0,
+        "physics_wb": 0.0055,
+        "extract": 0.0242,
+        "models": 0.0013,
+        "render": 0.0,
+        "ui": 0.0051,
+        "vehicle": 9.999999999999999e-05,
+        "acquire": 0.0,
+        "present": 0.0,
+        "mesh_upload": 0.0,
+        "ui_hotreload": 0.0009,
+        "anim": 0.0049,
+        "audio": 0.0012,
+        "transforms": 0.0029000000000000002,
+        "particles": 0.0006,
+        "terrain_sync": 0.0,
+        "water_commands": 0.0,
+        "water_snapshots": 0.0,
+        "mesh_modifiers": 9.999999999999999e-05,
+        "reflection_captures": 0.00039999999999999996,
+        "render_wait": 0.5638000000000001,
+        "surface_config": 0.0,
+        "ui_document": 0.0040999999999999995,
+        "ui_capture": 0.0005,
+        "ui_worker_cpu": 1.3952,
+        "ui_screen_load": 0.0,
+        "ui_prepare": 0.0
+      },
+      "runtime_sha256": "3c4d7ad4f6a7a08aee1a0996188629827dcf7d3dc53df47d2bdab2389f4bc982",
+      "worker_ui_ms": 1.3952,
+      "next_interval_ms": 0.7774000000000569,
+      "entities": 243,
+      "frames": 6000,
+      "opening_window": [
+        {
+          "tick_offset": 0,
+          "main_cpu_ms": 0.7284999999999999,
+          "interval_ms": 0.6465999999999212,
+          "worker_ui_ms": 1.3952
+        },
+        {
+          "tick_offset": 1,
+          "main_cpu_ms": 2.0937,
+          "interval_ms": 0.7774000000000569,
+          "worker_ui_ms": 0.0876
+        },
+        {
+          "tick_offset": 2,
+          "main_cpu_ms": 0.616,
+          "interval_ms": 2.155599999999936,
+          "worker_ui_ms": 0.0803
+        },
+        {
+          "tick_offset": 3,
+          "main_cpu_ms": 0.40259999999999996,
+          "interval_ms": 0.7815000000001078,
+          "worker_ui_ms": 0.0803
+        },
+        {
+          "tick_offset": 4,
+          "main_cpu_ms": 0.6336,
+          "interval_ms": 0.44579999999990605,
+          "worker_ui_ms": 0.0748
+        },
+        {
+          "tick_offset": 5,
+          "main_cpu_ms": 0.4788,
+          "interval_ms": 0.7218000000000302,
+          "worker_ui_ms": 0.1371
+        },
+        {
+          "tick_offset": 6,
+          "main_cpu_ms": 0.7816000000000001,
+          "interval_ms": 0.5270999999999617,
+          "worker_ui_ms": 0.1384
+        },
+        {
+          "tick_offset": 7,
+          "main_cpu_ms": 0.8101,
+          "interval_ms": 0.829900000000066,
+          "worker_ui_ms": 0.0876
+        }
+      ],
+      "following_seven_intervals_max_ms": 2.155599999999936,
+      "capture_sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+    },
+    {
+      "variant": "prepared",
+      "round": 1,
+      "phase": "prepare",
+      "input_tick": 1056,
+      "main_cpu_ms": 19.1053,
+      "main_ui_ms": 0.0013,
+      "sections_ms": {
+        "scripts": 0.0387,
+        "physics_step": 0.0015,
+        "physics_kcc": 0.0,
+        "physics_wb": 0.0052,
+        "extract": 0.0266,
+        "models": 0.0014,
+        "render": 0.0,
+        "ui": 0.0013,
+        "vehicle": 0.00019999999999999998,
+        "acquire": 0.0,
+        "present": 0.0,
+        "mesh_upload": 0.0,
+        "ui_hotreload": 0.0014,
+        "anim": 0.0063,
+        "audio": 0.002,
+        "transforms": 0.0031,
+        "particles": 0.0006,
+        "terrain_sync": 9.999999999999999e-05,
+        "water_commands": 0.0,
+        "water_snapshots": 0.0,
+        "mesh_modifiers": 0.0,
+        "reflection_captures": 0.00039999999999999996,
+        "render_wait": 0.0,
+        "surface_config": 0.0,
+        "ui_document": 0.0,
+        "ui_capture": 0.0,
+        "ui_worker_cpu": 0.025,
+        "ui_screen_load": 2.6911,
+        "ui_prepare": 16.240299999999998
+      },
+      "runtime_sha256": "3c4d7ad4f6a7a08aee1a0996188629827dcf7d3dc53df47d2bdab2389f4bc982",
+      "worker_ui_ms": 0.025,
+      "next_interval_ms": 19.227800000000002,
+      "entities": 243,
+      "frames": 6000,
+      "opening_window": [
+        {
+          "tick_offset": 0,
+          "main_cpu_ms": 19.1053,
+          "interval_ms": 0.9239000000000033,
+          "worker_ui_ms": 0.025
+        },
+        {
+          "tick_offset": 1,
+          "main_cpu_ms": 0.44920000000000004,
+          "interval_ms": 19.227800000000002,
+          "worker_ui_ms": 0.0249
+        },
+        {
+          "tick_offset": 2,
+          "main_cpu_ms": 0.5201,
+          "interval_ms": 0.4964999999999691,
+          "worker_ui_ms": 0.0241
+        },
+        {
+          "tick_offset": 3,
+          "main_cpu_ms": 0.3266,
+          "interval_ms": 0.8445000000000391,
+          "worker_ui_ms": 0.023200000000000002
+        },
+        {
+          "tick_offset": 4,
+          "main_cpu_ms": 0.5287999999999999,
+          "interval_ms": 0.38390000000003965,
+          "worker_ui_ms": 0.0233
+        },
+        {
+          "tick_offset": 5,
+          "main_cpu_ms": 0.4713,
+          "interval_ms": 0.5718999999999141,
+          "worker_ui_ms": 0.0239
+        },
+        {
+          "tick_offset": 6,
+          "main_cpu_ms": 0.64,
+          "interval_ms": 0.5264000000000806,
+          "worker_ui_ms": 0.0244
+        },
+        {
+          "tick_offset": 7,
+          "main_cpu_ms": 0.4271,
+          "interval_ms": 0.8679999999999382,
+          "worker_ui_ms": 0.0216
+        }
+      ],
+      "following_seven_intervals_max_ms": 19.227800000000002,
+      "capture_sha256": "f11419847154276acc1c1c9156bb9cf4f774bdbcf996ef14a11c3897c84fd24b"
+    },
+    {
+      "variant": "prepared",
+      "round": 1,
+      "phase": "prepared-open",
+      "input_tick": 7823,
+      "main_cpu_ms": 0.5450999999999999,
+      "main_ui_ms": 0.0053,
+      "sections_ms": {
+        "scripts": 0.0361,
+        "physics_step": 0.0012,
+        "physics_kcc": 0.0,
+        "physics_wb": 0.0049,
+        "extract": 0.0242,
+        "models": 0.0013,
+        "render": 0.0,
+        "ui": 0.0053,
+        "vehicle": 9.999999999999999e-05,
+        "acquire": 0.0,
+        "present": 0.0,
+        "mesh_upload": 0.0,
+        "ui_hotreload": 0.0007999999999999999,
+        "anim": 0.0049,
+        "audio": 0.0011,
+        "transforms": 0.0028,
+        "particles": 0.0005,
+        "terrain_sync": 9.999999999999999e-05,
+        "water_commands": 0.0,
+        "water_snapshots": 0.0,
+        "mesh_modifiers": 0.0,
+        "reflection_captures": 0.00039999999999999996,
+        "render_wait": 0.3859,
+        "surface_config": 0.0,
+        "ui_document": 0.0043,
+        "ui_capture": 0.00039999999999999996,
+        "ui_worker_cpu": 1.2752,
+        "ui_screen_load": 0.0,
+        "ui_prepare": 0.0
+      },
+      "runtime_sha256": "3c4d7ad4f6a7a08aee1a0996188629827dcf7d3dc53df47d2bdab2389f4bc982",
+      "worker_ui_ms": 1.2752,
+      "next_interval_ms": 0.6031000000000404,
+      "entities": 243,
+      "frames": 6000,
+      "opening_window": [
+        {
+          "tick_offset": 0,
+          "main_cpu_ms": 0.5450999999999999,
+          "interval_ms": 0.5932999999999993,
+          "worker_ui_ms": 1.2752
+        },
+        {
+          "tick_offset": 1,
+          "main_cpu_ms": 1.7310999999999999,
+          "interval_ms": 0.6031000000000404,
+          "worker_ui_ms": 0.08449999999999999
+        },
+        {
+          "tick_offset": 2,
+          "main_cpu_ms": 0.6024999999999999,
+          "interval_ms": 1.7857999999999947,
+          "worker_ui_ms": 0.1692
+        },
+        {
+          "tick_offset": 3,
+          "main_cpu_ms": 0.5869,
+          "interval_ms": 0.8115000000000236,
+          "worker_ui_ms": 0.1538
+        },
+        {
+          "tick_offset": 4,
+          "main_cpu_ms": 0.4205,
+          "interval_ms": 0.889699999999948,
+          "worker_ui_ms": 0.075
+        },
+        {
+          "tick_offset": 5,
+          "main_cpu_ms": 0.7292000000000001,
+          "interval_ms": 0.467899999999986,
+          "worker_ui_ms": 0.07619999999999999
+        },
+        {
+          "tick_offset": 6,
+          "main_cpu_ms": 0.5601999999999999,
+          "interval_ms": 0.7753000000000156,
+          "worker_ui_ms": 0.0976
+        },
+        {
+          "tick_offset": 7,
+          "main_cpu_ms": 0.6468999999999999,
+          "interval_ms": 0.6165999999999485,
+          "worker_ui_ms": 0.0847
+        }
+      ],
+      "following_seven_intervals_max_ms": 1.7857999999999947,
+      "capture_sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+    },
+    {
+      "variant": "cold",
+      "round": 1,
+      "phase": "cold",
+      "input_tick": 1078,
+      "main_cpu_ms": 20.3705,
+      "main_ui_ms": 17.560200000000002,
+      "sections_ms": {
+        "scripts": 0.0366,
+        "physics_step": 0.0012,
+        "physics_kcc": 0.0,
+        "physics_wb": 0.0051,
+        "extract": 0.0259,
+        "models": 0.0012,
+        "render": 0.0,
+        "ui": 17.560200000000002,
+        "vehicle": 0.00019999999999999998,
+        "acquire": 0.0,
+        "present": 0.0,
+        "mesh_upload": 0.0,
+        "ui_hotreload": 0.0015,
+        "anim": 0.0056,
+        "audio": 0.0017000000000000001,
+        "transforms": 0.0029000000000000002,
+        "particles": 0.0006,
+        "terrain_sync": 9.999999999999999e-05,
+        "water_commands": 0.0,
+        "water_snapshots": 0.0,
+        "mesh_modifiers": 9.999999999999999e-05,
+        "reflection_captures": 0.0003,
+        "render_wait": 0.0,
+        "surface_config": 0.0,
+        "ui_document": 17.081599999999998,
+        "ui_capture": 0.4768,
+        "ui_worker_cpu": 1.2408000000000001,
+        "ui_screen_load": 2.6351999999999998,
+        "ui_prepare": 0.0
+      },
+      "runtime_sha256": "3c4d7ad4f6a7a08aee1a0996188629827dcf7d3dc53df47d2bdab2389f4bc982",
+      "worker_ui_ms": 1.2408000000000001,
+      "next_interval_ms": 20.49970000000002,
+      "entities": 243,
+      "frames": 6000,
+      "opening_window": [
+        {
+          "tick_offset": 0,
+          "main_cpu_ms": 20.3705,
+          "interval_ms": 0.4757000000000744,
+          "worker_ui_ms": 1.2408000000000001
+        },
+        {
+          "tick_offset": 1,
+          "main_cpu_ms": 1.6814,
+          "interval_ms": 20.49970000000002,
+          "worker_ui_ms": 0.09380000000000001
+        },
+        {
+          "tick_offset": 2,
+          "main_cpu_ms": 0.6162,
+          "interval_ms": 1.7210999999998648,
+          "worker_ui_ms": 0.0956
+        },
+        {
+          "tick_offset": 3,
+          "main_cpu_ms": 0.7067,
+          "interval_ms": 0.6633000000000493,
+          "worker_ui_ms": 0.0816
+        },
+        {
+          "tick_offset": 4,
+          "main_cpu_ms": 0.6214999999999999,
+          "interval_ms": 0.7557000000000471,
+          "worker_ui_ms": 0.0849
+        },
+        {
+          "tick_offset": 5,
+          "main_cpu_ms": 0.5254,
+          "interval_ms": 0.6916999999999689,
+          "worker_ui_ms": 0.19770000000000001
+        },
+        {
+          "tick_offset": 6,
+          "main_cpu_ms": 0.8344,
+          "interval_ms": 0.5817000000000689,
+          "worker_ui_ms": 0.1766
+        },
+        {
+          "tick_offset": 7,
+          "main_cpu_ms": 0.7195,
+          "interval_ms": 0.907100000000014,
+          "worker_ui_ms": 0.2993
+        }
+      ],
+      "following_seven_intervals_max_ms": 20.49970000000002,
+      "capture_sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+    },
+    {
+      "variant": "cold",
+      "round": 2,
+      "phase": "cold",
+      "input_tick": 1064,
+      "main_cpu_ms": 20.420299999999997,
+      "main_ui_ms": 17.492,
+      "sections_ms": {
+        "scripts": 0.0301,
+        "physics_step": 0.0012,
+        "physics_kcc": 0.0,
+        "physics_wb": 0.004,
+        "extract": 0.0251,
+        "models": 0.0013,
+        "render": 0.0,
+        "ui": 17.492,
+        "vehicle": 0.00019999999999999998,
+        "acquire": 0.0,
+        "present": 0.0,
+        "mesh_upload": 0.0,
+        "ui_hotreload": 0.0015,
+        "anim": 0.005699999999999999,
+        "audio": 0.0017000000000000001,
+        "transforms": 0.003,
+        "particles": 0.0006,
+        "terrain_sync": 0.0,
+        "water_commands": 0.0,
+        "water_snapshots": 0.0,
+        "mesh_modifiers": 9.999999999999999e-05,
+        "reflection_captures": 0.0003,
+        "render_wait": 0.0,
+        "surface_config": 0.0,
+        "ui_document": 17.1812,
+        "ui_capture": 0.3094,
+        "ui_worker_cpu": 1.2845,
+        "ui_screen_load": 2.7574,
+        "ui_prepare": 0.0
+      },
+      "runtime_sha256": "3c4d7ad4f6a7a08aee1a0996188629827dcf7d3dc53df47d2bdab2389f4bc982",
+      "worker_ui_ms": 1.2845,
+      "next_interval_ms": 20.54269999999991,
+      "entities": 243,
+      "frames": 6000,
+      "opening_window": [
+        {
+          "tick_offset": 0,
+          "main_cpu_ms": 20.420299999999997,
+          "interval_ms": 0.5287000000000148,
+          "worker_ui_ms": 1.2845
+        },
+        {
+          "tick_offset": 1,
+          "main_cpu_ms": 1.7676,
+          "interval_ms": 20.54269999999991,
+          "worker_ui_ms": 0.1451
+        },
+        {
+          "tick_offset": 2,
+          "main_cpu_ms": 0.7519,
+          "interval_ms": 1.8186000000000604,
+          "worker_ui_ms": 0.08339999999999999
+        },
+        {
+          "tick_offset": 3,
+          "main_cpu_ms": 0.6121,
+          "interval_ms": 0.9016000000000304,
+          "worker_ui_ms": 0.0782
+        },
+        {
+          "tick_offset": 4,
+          "main_cpu_ms": 0.7885,
+          "interval_ms": 0.7210999999998648,
+          "worker_ui_ms": 0.07669999999999999
+        },
+        {
+          "tick_offset": 5,
+          "main_cpu_ms": 0.6531,
+          "interval_ms": 0.878400000000056,
+          "worker_ui_ms": 0.0847
+        },
+        {
+          "tick_offset": 6,
+          "main_cpu_ms": 0.5705,
+          "interval_ms": 0.7390000000001464,
+          "worker_ui_ms": 0.0732
+        },
+        {
+          "tick_offset": 7,
+          "main_cpu_ms": 0.48210000000000003,
+          "interval_ms": 0.6307999999999083,
+          "worker_ui_ms": 0.07200000000000001
+        }
+      ],
+      "following_seven_intervals_max_ms": 20.54269999999991,
+      "capture_sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+    },
+    {
+      "variant": "prepared",
+      "round": 2,
+      "phase": "prepare",
+      "input_tick": 1106,
+      "main_cpu_ms": 19.5915,
+      "main_ui_ms": 0.0011,
+      "sections_ms": {
+        "scripts": 0.0376,
+        "physics_step": 0.0021,
+        "physics_kcc": 0.0,
+        "physics_wb": 0.0051,
+        "extract": 0.0296,
+        "models": 0.0015,
+        "render": 0.0,
+        "ui": 0.0011,
+        "vehicle": 0.0003,
+        "acquire": 0.0,
+        "present": 0.0,
+        "mesh_upload": 0.0,
+        "ui_hotreload": 0.0014,
+        "anim": 0.0078,
+        "audio": 0.0018,
+        "transforms": 0.0042,
+        "particles": 0.0007999999999999999,
+        "terrain_sync": 0.0,
+        "water_commands": 0.0,
+        "water_snapshots": 0.0,
+        "mesh_modifiers": 0.0,
+        "reflection_captures": 0.00039999999999999996,
+        "render_wait": 0.0,
+        "surface_config": 0.0,
+        "ui_document": 0.0,
+        "ui_capture": 0.0,
+        "ui_worker_cpu": 0.026,
+        "ui_screen_load": 2.7399999999999998,
+        "ui_prepare": 16.6611
+      },
+      "runtime_sha256": "3c4d7ad4f6a7a08aee1a0996188629827dcf7d3dc53df47d2bdab2389f4bc982",
+      "worker_ui_ms": 0.026,
+      "next_interval_ms": 19.647499999999866,
+      "entities": 243,
+      "frames": 6000,
+      "opening_window": [
+        {
+          "tick_offset": 0,
+          "main_cpu_ms": 19.5915,
+          "interval_ms": 0.5772000000000617,
+          "worker_ui_ms": 0.026
+        },
+        {
+          "tick_offset": 1,
+          "main_cpu_ms": 0.5745,
+          "interval_ms": 19.647499999999866,
+          "worker_ui_ms": 0.0247
+        },
+        {
+          "tick_offset": 2,
+          "main_cpu_ms": 0.5048,
+          "interval_ms": 0.6240000000001373,
+          "worker_ui_ms": 0.0259
+        },
+        {
+          "tick_offset": 3,
+          "main_cpu_ms": 0.5613,
+          "interval_ms": 0.5520000000000209,
+          "worker_ui_ms": 0.0241
+        },
+        {
+          "tick_offset": 4,
+          "main_cpu_ms": 0.5019,
+          "interval_ms": 0.6226999999998952,
+          "worker_ui_ms": 0.024
+        },
+        {
+          "tick_offset": 5,
+          "main_cpu_ms": 0.5265,
+          "interval_ms": 0.5632999999999129,
+          "worker_ui_ms": 0.0198
+        },
+        {
+          "tick_offset": 6,
+          "main_cpu_ms": 0.5226999999999999,
+          "interval_ms": 0.5941000000001395,
+          "worker_ui_ms": 0.0241
+        },
+        {
+          "tick_offset": 7,
+          "main_cpu_ms": 0.4818,
+          "interval_ms": 0.5806999999999789,
+          "worker_ui_ms": 0.0212
+        }
+      ],
+      "following_seven_intervals_max_ms": 19.647499999999866,
+      "capture_sha256": "f11419847154276acc1c1c9156bb9cf4f774bdbcf996ef14a11c3897c84fd24b"
+    },
+    {
+      "variant": "prepared",
+      "round": 2,
+      "phase": "prepared-open",
+      "input_tick": 8253,
+      "main_cpu_ms": 0.4206,
+      "main_ui_ms": 0.0048,
+      "sections_ms": {
+        "scripts": 0.0366,
+        "physics_step": 0.0011,
+        "physics_kcc": 0.0,
+        "physics_wb": 0.0115,
+        "extract": 0.0244,
+        "models": 0.0013,
+        "render": 0.0,
+        "ui": 0.0048,
+        "vehicle": 9.999999999999999e-05,
+        "acquire": 0.0,
+        "present": 0.0,
+        "mesh_upload": 0.0,
+        "ui_hotreload": 0.0011,
+        "anim": 0.0048,
+        "audio": 0.0012,
+        "transforms": 0.0028,
+        "particles": 0.0005,
+        "terrain_sync": 0.0,
+        "water_commands": 0.0,
+        "water_snapshots": 0.0,
+        "mesh_modifiers": 0.0,
+        "reflection_captures": 0.00039999999999999996,
+        "render_wait": 0.2475,
+        "surface_config": 0.0,
+        "ui_document": 0.0038,
+        "ui_capture": 0.0005,
+        "ui_worker_cpu": 1.256,
+        "ui_screen_load": 0.0,
+        "ui_prepare": 0.0
+      },
+      "runtime_sha256": "3c4d7ad4f6a7a08aee1a0996188629827dcf7d3dc53df47d2bdab2389f4bc982",
+      "worker_ui_ms": 1.256,
+      "next_interval_ms": 0.5761999999999148,
+      "entities": 243,
+      "frames": 6000,
+      "opening_window": [
+        {
+          "tick_offset": 0,
+          "main_cpu_ms": 0.4206,
+          "interval_ms": 0.6335000000000264,
+          "worker_ui_ms": 1.256
+        },
+        {
+          "tick_offset": 1,
+          "main_cpu_ms": 1.5587000000000002,
+          "interval_ms": 0.5761999999999148,
+          "worker_ui_ms": 0.0881
+        },
+        {
+          "tick_offset": 2,
+          "main_cpu_ms": 0.5794,
+          "interval_ms": 1.6082000000000676,
+          "worker_ui_ms": 0.08449999999999999
+        },
+        {
+          "tick_offset": 3,
+          "main_cpu_ms": 0.5444,
+          "interval_ms": 0.6636999999999489,
+          "worker_ui_ms": 0.0914
+        },
+        {
+          "tick_offset": 4,
+          "main_cpu_ms": 0.5963,
+          "interval_ms": 0.5849000000000046,
+          "worker_ui_ms": 0.0791
+        },
+        {
+          "tick_offset": 5,
+          "main_cpu_ms": 0.6426999999999999,
+          "interval_ms": 0.6507000000000289,
+          "worker_ui_ms": 0.0809
+        },
+        {
+          "tick_offset": 6,
+          "main_cpu_ms": 0.5513,
+          "interval_ms": 0.7259000000000242,
+          "worker_ui_ms": 0.0786
+        },
+        {
+          "tick_offset": 7,
+          "main_cpu_ms": 0.5173000000000001,
+          "interval_ms": 0.6108999999999583,
+          "worker_ui_ms": 0.0773
+        }
+      ],
+      "following_seven_intervals_max_ms": 1.6082000000000676,
+      "capture_sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
+    }
+  ]
+}

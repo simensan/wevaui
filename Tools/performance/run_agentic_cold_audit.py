@@ -21,6 +21,12 @@ def main():
     parser.add_argument('--rounds', type=int, default=5)
     parser.add_argument('--reopens', type=int, default=0,
                         help='Measured hide/show cycles after each first opening')
+    parser.add_argument('--prepare-hidden', action='store_true',
+                        help='Measure key-8 hidden preparation, then key-5 opening')
+    parser.add_argument('--prepare-engine', action='append', default=[], metavar='LABEL',
+                        help='Use hidden preparation only for this engine label; repeatable')
+    parser.add_argument('--check-actions', action='store_true',
+                        help='Verify selection, equip and close after the opening profiles (720p fixture)')
     args = parser.parse_args()
     if args.rounds < 1:
         parser.error('--rounds must be positive')
@@ -35,6 +41,8 @@ def main():
             parser.error('engine labels must be unique')
         engines.append((label, Path(path).resolve(strict=True)))
     project = args.project.resolve(strict=True)
+    if set(args.prepare_engine) - {label for label, _ in engines}:
+        parser.error('--prepare-engine must name an --engine label')
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     env = os.environ.copy()
@@ -66,11 +74,13 @@ def main():
             session = launch['data']['session']['id']
             profile_process = None
             try:
-                call('world', ['capture', '--session', session, '--ready', 'audit_mode',
+                world = call('world', ['capture', '--session', session, '--ready', 'audit_mode',
                                '--ready-value', '0', '--timeout', '30'])
-                for opening in range(args.reopens + 1):
-                    phase = 'cold' if opening == 0 else f'retained-{opening}'
-                    if opening:
+                prepare = args.prepare_hidden or label in args.prepare_engine
+                phases = ['prepare', 'prepared-open'] if prepare else ['cold']
+                phases += [f'retained-{n + 1}' for n in range(args.reopens)]
+                for phase in phases:
+                    if phase.startswith('retained-'):
                         call(phase + '-hide', ['session', 'input', '--session', session,
                              '--request-key', prefix + '-hide-' + phase, '--ticks', '2',
                              '--controls', json.dumps({'keys': ['Num1']})])
@@ -86,7 +96,7 @@ def main():
                         time.sleep(0.5)
                         applied = call(phase + '-open', ['session', 'input', '--session', session,
                                                '--request-key', prefix + '-' + phase, '--ticks', '2', '--controls',
-                                               json.dumps({'keys': ['Num5']})])
+                                               json.dumps({'keys': ['Num8' if phase == 'prepare' else 'Num5']})])
                         if profile_process.wait(timeout=100):
                             raise RuntimeError(f'{prefix}: profile failed; see retained evidence')
                     response = json.loads(profile_path.read_text(encoding='utf-8'))
@@ -106,26 +116,40 @@ def main():
                         raise RuntimeError('Marked profile or missing audit world')
                     tick = applied['data']['first_tick']
                     indices = [i for i, frame in enumerate(frames) if frame['tick'] == tick]
-                    if len(indices) != 1 or not 0 < indices[0] < len(frames) - 2:
+                    if len(indices) != 1 or not 0 < indices[0] < len(frames) - 8:
                         raise RuntimeError('Input opening tick is not inside the retained profile')
                     if not report['metadata']['gpu_timestamp_sampling']['cpu_only_contract_satisfied']:
                         raise RuntimeError('Normal renderer scheduling was not retained')
                     index = indices[0]
                     frame = frames[index]
                     ui_index = report['summary']['section_names'].index('ui')
+                    sections = dict(zip(report['summary']['section_names'], frame['sections_ms']))
+                    if phase == 'prepare' and sections.get('ui_prepare', 0) <= 0:
+                        raise RuntimeError('Hidden preparation did not execute at the injected tick')
                     opened = call(phase + '-opened', ['capture', '--session', session, '--ready', 'audit_mode',
-                                             '--ready-value', '4', '--timeout', '30'])
+                                             '--ready-value', '0' if phase == 'prepare' else '4', '--timeout', '30'])
                     for artifact in opened['artifacts']:
                         if hashlib.sha256(Path(artifact['path']).read_bytes()).hexdigest() != artifact['sha256']:
                             raise RuntimeError('Opening capture hash mismatch')
+                    if phase == 'prepare':
+                        initial = next(a['sha256'] for a in world['artifacts'] if a['kind'] == 'image')
+                        hidden = next(a['sha256'] for a in opened['artifacts'] if a['kind'] == 'image')
+                        if initial != hidden:
+                            raise RuntimeError('Hidden preparation changed the captured world image')
                     rows.append({
                         'variant': label, 'round': round_index, 'phase': phase, 'input_tick': tick,
                         'main_cpu_ms': frame['main_cpu_ms'],
                         'main_ui_ms': frame['sections_ms'][ui_index],
-                        'sections_ms': dict(zip(report['summary']['section_names'], frame['sections_ms'])),
+                        'sections_ms': sections,
                         'runtime_sha256': launch['data']['session']['executable_sha256'],
                         'worker_ui_ms': frame.get('worker_ms', {}).get('ui'),
                         'next_interval_ms': frames[index + 1]['interval_ms'],
+                        # Include following worker/backpressure costs rather than
+                        # presenting only the input tick as the opening latency.
+                        'opening_window': [dict(tick_offset=f['tick'] - tick,
+                            main_cpu_ms=f['main_cpu_ms'], interval_ms=f['interval_ms'],
+                            worker_ui_ms=f.get('worker_ms', {}).get('ui'))
+                            for f in frames[index:index + 8]],
                         'entities': frame['entities'],
                         'frames': report['summary']['frames'],
                         'metadata': report['metadata'],
@@ -134,6 +158,21 @@ def main():
                     })
                     (output / 'results.json').write_text(json.dumps(rows, indent=2) + '\n', encoding='utf-8')
                     print(prefix, phase, 'opening main CPU', round(frame['main_cpu_ms'], 3), 'ms', flush=True)
+                if args.check_actions:
+                    if report['metadata']['viewport'] != [1280, 720]:
+                        raise RuntimeError('Action coordinates require the 720p fixture')
+                    for action, point in [('select', [307, 295]), ('equip', [1025, 545]), ('close', [1135, 110])]:
+                        call(action, ['session', 'input', '--session', session,
+                             '--request-key', prefix + '-' + action, '--ticks', '2',
+                             '--controls', json.dumps({'pointer': point, 'buttons': [True, False, False]})])
+                    state = call('actions', ['snapshot', '--session', session, '--entity', 'probe',
+                        '--global', 'audit_selected', '--global', 'audit_clicks',
+                        '--global', 'audit_uses', '--global', 'audit_mode'])
+                    artifact = next(a for a in state['artifacts'] if a['kind'] == 'cpu_world_snapshot')
+                    values = json.loads(Path(artifact['path']).read_text(encoding='utf-8'))['globals']
+                    if any(values[k] != 1 for k in ['audit_selected', 'audit_clicks', 'audit_uses', 'audit_mode']):
+                        raise RuntimeError('Selection/equip/close did not reach the controller')
+                    print(prefix, 'selection, equip and close passed', flush=True)
             finally:
                 # Stop only this runner's session. A lost profile observation
                 # must never trigger a replacement runtime launch.

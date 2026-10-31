@@ -1,5 +1,9 @@
 # Explicit hidden preparation — October 31, 2026
 
+The subsequent [script integration and runtime comparison](script-preparation-20261031.md)
+connects this primitive to native scripts and verifies hidden preparation followed
+by opening. The remaining-work statements below describe this earlier chunk.
+
 Agentic's embedding `Overlay` now exposes `prepare_snapshot()`. It applies
 pending bindings and runs the existing document update at zero elapsed time,
 then captures immutable CPU paint data. Unlike ordinary `snapshot` it is an
