@@ -479,3 +479,9 @@ The [outline-neighbor experiment](docs/verification/outline-neighbors-20261031.m
 is rejected after six fixed-font pairs split three wins/three losses. Geometry
 checks stayed identical, but no useful runtime gain was established. Original
 source is restored and all 15 GCC suites pass; hosts are unchanged.
+
+The [Agentic pass-scissor follow-up](docs/verification/agentic-pass-scissor-20261031.md)
+fixes inherited clipping hiding canvas backgrounds. The leased audit branch
+passes 84 library tests with two existing ignored; the GPU regression fails
+before and passes after. This is adapter correctness, not a speedup or an
+upstream SDK release. Unity/Godot use different clipping paths and are unchanged.
