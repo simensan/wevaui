@@ -17,6 +17,8 @@ def main():
     parser.add_argument('--fixtures', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--rounds', type=int, default=3)
+    parser.add_argument('--renderer-prepared', action='store_true',
+                        help='Also measure explicit renderer synchronization during hidden loading')
     args = parser.parse_args()
     if args.rounds < 1:
         parser.error('rounds must be positive')
@@ -25,7 +27,14 @@ def main():
     output.mkdir(parents=True, exist_ok=False)
     rows = []
     for round_index in range(args.rounds):
-        for mode in (['cold', 'prepared'] if round_index % 2 == 0 else ['prepared', 'cold']):
+        modes = ['cold', 'prepared', 'renderer-prepared'] if args.renderer_prepared else ['cold', 'prepared']
+        # Rotate three modes so each occupies every position once.
+        if args.renderer_prepared:
+            offset = round_index % len(modes)
+            modes = modes[offset:] + modes[:offset]
+        elif round_index % 2:
+            modes.reverse()
+        for mode in modes:
             name = f'{mode}-{round_index}'
             destination = output / name
             env = dict(os.environ, WEVA_PREPARATION_FIXTURE=str(fixtures),
