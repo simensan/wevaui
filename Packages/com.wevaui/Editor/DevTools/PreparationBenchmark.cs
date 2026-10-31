@@ -19,8 +19,7 @@ namespace Weva.EditorTools
         // Unity -batchmode -executeMethod Weva.EditorTools.PreparationBenchmark.Run -quit
         // WEVA_PREPARATION_FIXTURE contains inventory.html and inventory.css;
         // WEVA_PREPARATION_OUTPUT is a new output directory; mode is
-        // cold/prepared/renderer-prepared. The last mode is an internal
-        // experiment, not a public component preparation option.
+        // cold/prepared/renderer-prepared.
         public static void Run()
         {
             string fixtures = Environment.GetEnvironmentVariable("WEVA_PREPARATION_FIXTURE");
@@ -64,7 +63,7 @@ namespace Weva.EditorTools
                     if (mode == "renderer-prepared")
                     {
                         long loadingSyncStart = Stopwatch.GetTimestamp();
-                        ui.Renderer.Sync(ui.Document);
+                        ui.PrepareRenderer();
                         result.loading_renderer_sync_cpu_ms = (Stopwatch.GetTimestamp() - loadingSyncStart) * 1000.0 / Stopwatch.Frequency;
                         result.loading_cpu_ms += result.loading_renderer_sync_cpu_ms;
                     }

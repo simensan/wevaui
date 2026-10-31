@@ -455,7 +455,7 @@ current data during your loading phase:
 ```csharp
 ui.Visible = false;
 ui.SetController(menuController);
-ui.Prepare();
+ui.PrepareRenderer(); // CPU paint plus texture/mesh upload; requires graphics
 // Later, when the player opens the menu:
 ui.Visible = true;
 ```
@@ -465,6 +465,13 @@ CPU layout, glyphs and paint data at zero elapsed time. It does not show the UI
 or upload GPU resources. Use the intended viewport and current data; changed
 content, fonts or dimensions can require more work later. This moves work into
 loading rather than eliminating it.
+
+`PrepareRenderer()` additionally synchronizes textures and meshes with Unity
+while retaining the current visibility. Use it during loading when a graphics
+device is available. It does not draw the UI or prewarm shader execution;
+the first rendered frame can still cost time. Repeat it after loading-phase
+data changes to prepare the new resources. Use `Prepare()` when only CPU
+preparation is wanted. Both calls require an enabled, initialized component.
 
 While hidden, automatic updates and input stop. Hiding clears focus and pointer
 gestures, but retains the document, form values, controller and render resources.

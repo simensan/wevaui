@@ -152,6 +152,42 @@ namespace Weva.Tests.EditorTests.Native
             Assert.That(_host.Query("#current").Text, Is.EqualTo("Latest settings"));
         }
 
+        [Test]
+        public void RendererPreparation_TracksBindingsReloadAndDisable()
+        {
+            var controller = new Controller();
+            _host.SetController(controller);
+            _host.Visible = false;
+            _host.PrepareRenderer();
+            var document = _host.Document;
+            var renderer = _host.Renderer;
+            Assert.That(renderer.TextureCount, Is.GreaterThan(0), "text textures are uploaded while hidden");
+            Assert.That(renderer.BatchCount, Is.GreaterThan(0));
+            Assert.That(renderer.Sync(document), Is.False);
+            controller.PlayerName = "Changed before opening";
+            _host.PrepareRenderer();
+            Assert.That(_host.Query("#title").Text, Is.EqualTo(controller.PlayerName));
+            Assert.That(renderer.Sync(document), Is.False);
+            _host.Visible = true;
+            _host.PrepareRenderer();
+            Assert.That(_host.Document, Is.SameAs(document));
+            Assert.That(renderer.Sync(document), Is.False);
+            _host.Visible = false;
+            _host.Reload();
+            _host.PrepareRenderer();
+            Assert.That(_host.Renderer.Sync(_host.Document), Is.False);
+            Assert.That(_host.Visible, Is.False);
+            _host.enabled = false;
+            Assert.That(_host.Document, Is.Null);
+            Assert.That(_host.Renderer, Is.Null);
+            Assert.DoesNotThrow(() => _host.PrepareRenderer());
+            _host.enabled = true;
+            _host.PrepareRenderer();
+            Assert.That(_host.Visible, Is.False);
+            Assert.That(_host.Renderer.TextureCount, Is.GreaterThan(0));
+            Assert.That(_host.Renderer.Sync(_host.Document), Is.False);
+        }
+
         private string Text(string selector) => _host.Document.ElementText(_host.Document.Query(selector));
         private string Value(string selector) => _host.Document.ElementValue(_host.Document.Query(selector));
         private string Class(string selector) => _host.Document.ElementAttribute(_host.Document.Query(selector), "class");

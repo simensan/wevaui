@@ -87,7 +87,8 @@ namespace Weva.Tests.Rendering {
             int generation = doc.Generation;
             try {
                 doc.Visible = false;
-                doc.Prepare();
+                doc.PrepareRenderer();
+                Assert.That(doc.Renderer.Sync(document), Is.False, "hidden preparation synchronized resources");
                 for (int i = 0; i < SettleFrames; i++) yield return null;
                 Capture();
                 AssertColour(Band(0, Width), 0, 0, 0, "hidden prepared UI is absent");
@@ -98,7 +99,8 @@ namespace Weva.Tests.Rendering {
                 Assert.That(document.DrawSerial, Is.EqualTo(serial));
                 doc.Visible = false;
                 doc.Query("#panel").SetAttribute("style", "background:blue");
-                doc.Prepare();
+                doc.PrepareRenderer();
+                Assert.That(doc.Renderer.Sync(document), Is.False, "changed hidden resources are synchronized");
                 Capture();
                 AssertColour(Band(0, Width), 0, 0, 0, "changed prepared UI stays hidden");
                 doc.Visible = true;

@@ -1,5 +1,10 @@
 # AI_REFERENCE.md — orientation for AI agents
 
+The [Unity renderer preparation pass](docs/verification/unity-renderer-api-20261031.md)
+adds explicit PrepareRenderer in unreleased 2.0: full EditMode 248 passes
+(two existing inconclusive), URP 7/7 and Windows Mono player 7/7.
+Texture/mesh setup can move into loading; player timing remains unverified.
+
 The [Unity retained preparation pass](docs/verification/unity-hidden-preparation-20261031.md)
 adds Visible/Prepare in package 2.0.0 and removes redundant enable-time reloads.
 Full EditMode passes 247 tests (Native 246), with two existing inconclusive;
