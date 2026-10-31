@@ -445,3 +445,12 @@ browser behavior checks with the existing IME exception. Full Unity
 EditMode passes 255 with two inconclusive; Windows Mono player rendering
 passes 7/7. Godot font, Unicode, renderer, scene and native export gates
 pass. See the receipt for accepted gains, rejected experiments and limits.
+
+The [flex-row allocation follow-up](docs/verification/flex-row-allocation-20261031.md)
+keeps proven text updates inside the flex item and fixes padding-dependent
+shrink weights in the shared core. Four paired Unity runs reduce full-inventory
+CPU by 14.9% (median paired), with unchanged renders. The qualified release
+gate passes 15 GCC and 17 sanitizer suites (706,127 / 706,121 main checks),
+341 Chrome captures, and the existing browser checks. Unity full EditMode
+passes 255 with two inconclusive; Windows Mono player passes 7/7; Godot font,
+Unicode, rendering, exports and scene checks pass. See the receipt for scope.

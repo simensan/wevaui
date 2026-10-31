@@ -297,6 +297,10 @@ struct Box {
     // fixed-width nonwrapping column flex. Incremental proof still checks
     // natural dimensions, frame floors and final outer geometry.
     bool parent_inline_contribution_independent = false;
+    // A definite row basis caps its automatic minimum, and every allocation
+    // step stayed above that cap. Descendant intrinsic widths cannot change
+    // this allocation; ancestor intrinsic exports still need comparison.
+    bool parent_row_intrinsics_independent = false;
     // Scratch-only reference to a retained layout subtree in the destination
     // tree. Its children stay there until the transaction is committed.
     BoxId retained_from = kNoBox;

@@ -356,6 +356,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
             : ResolvedLength{};
         b.parent_inline_contribution_independent = fixed_column &&
             (cross_width.kind == LengthKind::Length || cross_width.kind == LengthKind::Percent);
+        b.parent_row_intrinsics_independent = false;
 
         it.grow = std::max(0.0, number_or(is, kId_flex_grow, 0));
         it.shrink = std::max(0.0, number_or(is, kId_flex_shrink, 1));
@@ -500,6 +501,16 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
         if (it.hypothetical < it.min_main) it.hypothetical = it.min_main;
         if (it.max_main >= 0 && it.hypothetical > it.max_main) it.hypothetical = it.max_main;
         it.main = it.hypothetical;
+        // A specified width caps min-width:auto. With an auto basis and no
+        // maximum, changing descendants can only vary the minimum BELOW the
+        // same base. Record this input proof here, where the allocation is
+        // resolved, and revoke it if any solver step could consume that minimum.
+        b.parent_row_intrinsics_independent = !column && definite_main &&
+            is_auto(basis_raw) && is_auto(get(is, kId_min_width)) &&
+            get(is, kId_max_width) == "none" && get(is, aspect_ratio) == "auto" &&
+            resolve_length(is, kId_width, ctx, b.font_size, main_basis).kind == LengthKind::Length &&
+            b.parent_layout_input.available_width >= 0 &&
+            b.parent_layout_input.width == it.base && it.min_main <= it.base && it.max_main < 0;
     }
 
     // ---- Flex lines (§9.3) --------------------------------------------------
@@ -606,6 +617,7 @@ double layout_flex(BoxTree* tree, BoxId container, double content_width, double 
                 if (it.frozen) continue;
                 const double share = growing ? it.grow : it.shrink * std::max(0.0, it.base - it.main_frame);
                 const double target = it.base + (weight > 0 ? free_space * share / weight : 0);
+                if (target < it.base) (*tree)[it.box].parent_row_intrinsics_independent = false;
                 it.main = std::max(it.main_frame, target);
                 if (it.max_main >= 0) it.main = std::min(it.main, it.max_main);
                 it.main = std::max(it.main, it.min_main);

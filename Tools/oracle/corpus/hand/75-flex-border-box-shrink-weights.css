@@ -1,0 +1,9 @@
+* { box-sizing: border-box; }
+body { margin: 0; }
+.row { display: flex; width: 150px; align-items: flex-start; margin-bottom: 10px; }
+.row > div { width: 100px; height: 20px; background: #abc; }
+.row .weighted { padding-left: 100px; }
+.columns { display: flex; gap: 20px; }
+.column { display: flex; flex-direction: column; width: 150px; height: 150px; }
+.column > div { width: 100px; height: 100px; background: #abc; }
+.column .weighted { padding-top: 100px; }

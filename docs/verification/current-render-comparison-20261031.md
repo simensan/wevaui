@@ -1,9 +1,12 @@
 # Current-core prepared rendering comparison — 2026-10-31
 
-The current core still spends more CPU time on inventory style/layout than
+The measured `bcb337f1` baseline still spends more CPU time on inventory style/layout than
 Chrome in the prepared survival workload. HUD style/layout is smaller in this
-batch. This refresh replaces the earlier comparison as the current measurement;
+batch. This refresh replaces the earlier Chrome comparison;
 it is not a paired before/after optimization result or an overall speed ratio.
+
+The subsequent [flex-row allocation change](flex-row-allocation-20261031.md)
+has separate paired host measurements. This Chrome table predates that change.
 
 | Warm work, milliseconds/update | HUD | Full inventory selection |
 | --- | ---: | ---: |

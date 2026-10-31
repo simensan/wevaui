@@ -907,6 +907,16 @@ void test_abi_incremental_glyph_preparation() {
 }
 
 void test_abi_incremental_flex_intrinsics() {
+    const char* weighted_html = "<header>Before</header><main><div id=weighted></div>"
+                                "<div></div></main><footer>After</footer>";
+    check_with_sheet("border-box padding changes the flex shrink weight", weighted_html,
+        "*{box-sizing:border-box}main{display:flex;width:150px;align-items:flex-start}"
+        "main>div{width:100px;height:20px;background:#abc}#weighted{padding-left:100px}",
+        "#weighted", "style", "padding-left:0");
+    check_with_sheet("border-box padding changes the column shrink weight", weighted_html,
+        "*{box-sizing:border-box}main{display:flex;flex-direction:column;width:150px;height:150px}"
+        "main>div{width:100px;height:100px;background:#abc}#weighted{padding-top:100px}",
+        "#weighted", "style", "padding-top:0");
     // A stretched item can have identical measured/final widths but different
     // natural/final heights. Skipping its speculative probe must still let
     // the parent resize siblings, wrap text and reapply cross-axis bounds.
@@ -915,6 +925,17 @@ void test_abi_incremental_flex_intrinsics() {
             "aside{min-height:110px;max-height:150px}",
             "main{height:auto}section{height:140px}",
             "main{flex-wrap:wrap}aside{min-width:160px}",
+            "main{width:220px}section{width:160px;flex-shrink:0}",
+            "main{width:500px}aside{flex-grow:1}",
+            "main{width:auto;display:inline-flex}",
+            "aside{max-width:100px}",
+            "aside{min-width:min-content}",
+            "aside{flex-basis:content}",
+            "main{align-items:baseline}",
+            "aside{height:50%;padding:4px}",
+            "aside{display:flex;flex-direction:column}p{flex:1;min-height:0}",
+            "main{flex-direction:column}",
+            "main{width:280px}section{min-width:200px;max-width:20px;flex-grow:1}aside{flex-grow:1}",
             "main{display:grid;grid-template-columns:100px 140px}"}) {
         const std::string sheet = std::string(
             "body{margin:0}main{display:flex;width:320px;height:180px;gap:8px}"

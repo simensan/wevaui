@@ -1,0 +1,5178 @@
+{
+  "scope": "Unity editor CPU: update, mesh/texture sync, command recording; no GPU submission",
+  "core_commit": "bcb337f1 + flex-row candidate",
+  "pairs": [
+    {
+      "mode": "baseline",
+      "round": 0,
+      "binary_sha256": "b0bf74d7de0bd28d5c3b1d4ed5e53b894f7a783e0f22271b6f597e060c6af9b7",
+      "summaries": [
+        {
+          "run": 0,
+          "scenario": "idle-hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.00030000000000000003,
+            "p95": 0.0018000000000000002,
+            "max": 0.019
+          },
+          "sync_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0017000000000000001
+          },
+          "record_ms": {
+            "median": 0.0179,
+            "p95": 0.0465,
+            "max": 0.11130000000000001
+          },
+          "total_cpu_ms": {
+            "median": 0.0183,
+            "p95": 0.048100000000000004,
+            "max": 0.11230000000000001
+          },
+          "core_update_ms": {
+            "median": 0.0002,
+            "p95": 0.0006,
+            "max": 0.0102
+          },
+          "cascade_ms": {
+            "median": 0.0001,
+            "p95": 0.0003,
+            "max": 0.0036
+          },
+          "layout_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0004
+          },
+          "paint_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0083
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "uploaded_triangles": {
+            "median": 0.0,
+            "p95": 0,
+            "max": 0
+          },
+          "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+        },
+        {
+          "run": 0,
+          "scenario": "hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.15575,
+            "p95": 0.2409,
+            "max": 0.796
+          },
+          "sync_ms": {
+            "median": 0.06055000000000001,
+            "p95": 0.11040000000000001,
+            "max": 0.6736000000000001
+          },
+          "record_ms": {
+            "median": 0.033100000000000004,
+            "p95": 0.0625,
+            "max": 0.3981
+          },
+          "total_cpu_ms": {
+            "median": 0.25475000000000003,
+            "p95": 0.39080000000000004,
+            "max": 0.9659000000000001
+          },
+          "core_update_ms": {
+            "median": 0.1031,
+            "p95": 0.1664,
+            "max": 0.6975
+          },
+          "cascade_ms": {
+            "median": 0.0164,
+            "p95": 0.0336,
+            "max": 0.3317
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0003,
+            "max": 0.0189
+          },
+          "paint_ms": {
+            "median": 0.0407,
+            "p95": 0.079,
+            "max": 0.6386
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 56.0,
+            "p95": 56,
+            "max": 56
+          },
+          "uploaded_triangles": {
+            "median": 92.0,
+            "p95": 92,
+            "max": 94
+          },
+          "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.24780000000000002,
+            "p95": 0.389,
+            "max": 1.1720000000000002
+          },
+          "sync_ms": {
+            "median": 0.11565,
+            "p95": 0.2053,
+            "max": 0.42600000000000005
+          },
+          "record_ms": {
+            "median": 0.051250000000000004,
+            "p95": 0.1087,
+            "max": 0.2222
+          },
+          "total_cpu_ms": {
+            "median": 0.4313,
+            "p95": 0.6854,
+            "max": 1.5368000000000004
+          },
+          "core_update_ms": {
+            "median": 0.19269999999999998,
+            "p95": 0.3173,
+            "max": 1.1069
+          },
+          "cascade_ms": {
+            "median": 0.046,
+            "p95": 0.0856,
+            "max": 0.4808
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0003,
+            "max": 0.0106
+          },
+          "paint_ms": {
+            "median": 0.09755,
+            "p95": 0.1784,
+            "max": 0.5087
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 128.0,
+            "p95": 128,
+            "max": 128
+          },
+          "uploaded_triangles": {
+            "median": 1244.0,
+            "p95": 1244,
+            "max": 1550
+          },
+          "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory-full",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.7557,
+            "p95": 1.0198,
+            "max": 4.4492
+          },
+          "sync_ms": {
+            "median": 0.3272,
+            "p95": 0.6474000000000001,
+            "max": 1.57
+          },
+          "record_ms": {
+            "median": 0.10815,
+            "p95": 0.17,
+            "max": 6.2891
+          },
+          "total_cpu_ms": {
+            "median": 1.20915,
+            "p95": 1.7386000000000001,
+            "max": 11.0916
+          },
+          "core_update_ms": {
+            "median": 0.6625,
+            "p95": 0.8959,
+            "max": 4.3459
+          },
+          "cascade_ms": {
+            "median": 0.0807,
+            "p95": 0.1298,
+            "max": 0.5453
+          },
+          "layout_ms": {
+            "median": 0.0002,
+            "p95": 0.0003,
+            "max": 0.0097
+          },
+          "paint_ms": {
+            "median": 0.30325,
+            "p95": 0.4334,
+            "max": 3.9658
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 120.0,
+            "p95": 120,
+            "max": 120
+          },
+          "uploaded_triangles": {
+            "median": 1514.0,
+            "p95": 1546,
+            "max": 1546
+          },
+          "image_sha256": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091"
+        }
+      ]
+    },
+    {
+      "mode": "candidate",
+      "round": 0,
+      "binary_sha256": "895186f9a41378e1aed48c9e2b51c4e7a53fc0e4c352b5ca931b78982b603913",
+      "summaries": [
+        {
+          "run": 0,
+          "scenario": "idle-hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.00030000000000000003,
+            "p95": 0.0004,
+            "max": 0.0027
+          },
+          "sync_ms": {
+            "median": 0.0001,
+            "p95": 0.0001,
+            "max": 0.0005
+          },
+          "record_ms": {
+            "median": 0.0334,
+            "p95": 0.0374,
+            "max": 0.059800000000000006
+          },
+          "total_cpu_ms": {
+            "median": 0.033800000000000004,
+            "p95": 0.0379,
+            "max": 0.06010000000000001
+          },
+          "core_update_ms": {
+            "median": 0.0002,
+            "p95": 0.0002,
+            "max": 0.0009
+          },
+          "cascade_ms": {
+            "median": 0.0001,
+            "p95": 0.0001,
+            "max": 0.0004
+          },
+          "layout_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0001
+          },
+          "paint_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0001
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "uploaded_triangles": {
+            "median": 0.0,
+            "p95": 0,
+            "max": 0
+          },
+          "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+        },
+        {
+          "run": 0,
+          "scenario": "hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.12565,
+            "p95": 0.1683,
+            "max": 0.3417
+          },
+          "sync_ms": {
+            "median": 0.0516,
+            "p95": 0.0709,
+            "max": 0.1311
+          },
+          "record_ms": {
+            "median": 0.03405,
+            "p95": 0.042,
+            "max": 0.0959
+          },
+          "total_cpu_ms": {
+            "median": 0.20940000000000003,
+            "p95": 0.27630000000000005,
+            "max": 0.4815
+          },
+          "core_update_ms": {
+            "median": 0.0792,
+            "p95": 0.1119,
+            "max": 0.2615
+          },
+          "cascade_ms": {
+            "median": 0.0118,
+            "p95": 0.018,
+            "max": 0.1594
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0003
+          },
+          "paint_ms": {
+            "median": 0.035,
+            "p95": 0.047,
+            "max": 0.1306
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 56.0,
+            "p95": 56,
+            "max": 56
+          },
+          "uploaded_triangles": {
+            "median": 92.0,
+            "p95": 92,
+            "max": 94
+          },
+          "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.23750000000000002,
+            "p95": 0.28390000000000004,
+            "max": 0.6643
+          },
+          "sync_ms": {
+            "median": 0.13145,
+            "p95": 0.1577,
+            "max": 0.1965
+          },
+          "record_ms": {
+            "median": 0.0738,
+            "p95": 0.08900000000000001,
+            "max": 0.10880000000000001
+          },
+          "total_cpu_ms": {
+            "median": 0.43805000000000005,
+            "p95": 0.5231,
+            "max": 0.9009
+          },
+          "core_update_ms": {
+            "median": 0.1841,
+            "p95": 0.2236,
+            "max": 0.601
+          },
+          "cascade_ms": {
+            "median": 0.045,
+            "p95": 0.0541,
+            "max": 0.0864
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0003
+          },
+          "paint_ms": {
+            "median": 0.0985,
+            "p95": 0.1214,
+            "max": 0.3298
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 128.0,
+            "p95": 128,
+            "max": 129
+          },
+          "uploaded_triangles": {
+            "median": 1244.0,
+            "p95": 1244,
+            "max": 1376
+          },
+          "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory-full",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.5339,
+            "p95": 0.6291,
+            "max": 1.0948
+          },
+          "sync_ms": {
+            "median": 0.29800000000000004,
+            "p95": 0.5239,
+            "max": 1.3066
+          },
+          "record_ms": {
+            "median": 0.1068,
+            "p95": 0.13190000000000002,
+            "max": 0.2218
+          },
+          "total_cpu_ms": {
+            "median": 0.9472,
+            "p95": 1.2157,
+            "max": 2.0127
+          },
+          "core_update_ms": {
+            "median": 0.44935,
+            "p95": 0.5307,
+            "max": 0.959
+          },
+          "cascade_ms": {
+            "median": 0.0696,
+            "p95": 0.0891,
+            "max": 0.3774
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0003
+          },
+          "paint_ms": {
+            "median": 0.2331,
+            "p95": 0.2794,
+            "max": 0.5861
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 123.0,
+            "p95": 123,
+            "max": 123
+          },
+          "uploaded_triangles": {
+            "median": 1340.0,
+            "p95": 1372,
+            "max": 1372
+          },
+          "image_sha256": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091"
+        }
+      ]
+    },
+    {
+      "mode": "candidate",
+      "round": 1,
+      "binary_sha256": "895186f9a41378e1aed48c9e2b51c4e7a53fc0e4c352b5ca931b78982b603913",
+      "summaries": [
+        {
+          "run": 0,
+          "scenario": "idle-hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.0004,
+            "p95": 0.0024000000000000002,
+            "max": 0.0143
+          },
+          "sync_ms": {
+            "median": 0.0001,
+            "p95": 0.0005,
+            "max": 0.0362
+          },
+          "record_ms": {
+            "median": 0.0328,
+            "p95": 0.0449,
+            "max": 0.20270000000000002
+          },
+          "total_cpu_ms": {
+            "median": 0.0332,
+            "p95": 0.047900000000000005,
+            "max": 0.20390000000000003
+          },
+          "core_update_ms": {
+            "median": 0.0002,
+            "p95": 0.0007,
+            "max": 0.0138
+          },
+          "cascade_ms": {
+            "median": 0.0001,
+            "p95": 0.0004,
+            "max": 0.0005
+          },
+          "layout_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0001
+          },
+          "paint_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0136
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "uploaded_triangles": {
+            "median": 0.0,
+            "p95": 0,
+            "max": 0
+          },
+          "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+        },
+        {
+          "run": 0,
+          "scenario": "hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.12435000000000002,
+            "p95": 0.1652,
+            "max": 0.2048
+          },
+          "sync_ms": {
+            "median": 0.0523,
+            "p95": 0.0707,
+            "max": 0.1507
+          },
+          "record_ms": {
+            "median": 0.033350000000000005,
+            "p95": 0.0414,
+            "max": 0.056100000000000004
+          },
+          "total_cpu_ms": {
+            "median": 0.2076,
+            "p95": 0.2732,
+            "max": 0.3506
+          },
+          "core_update_ms": {
+            "median": 0.07815,
+            "p95": 0.1094,
+            "max": 0.1363
+          },
+          "cascade_ms": {
+            "median": 0.0113,
+            "p95": 0.0175,
+            "max": 0.0276
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0003
+          },
+          "paint_ms": {
+            "median": 0.0348,
+            "p95": 0.0461,
+            "max": 0.0704
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 56.0,
+            "p95": 56,
+            "max": 56
+          },
+          "uploaded_triangles": {
+            "median": 92.0,
+            "p95": 92,
+            "max": 94
+          },
+          "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.2358,
+            "p95": 0.2853,
+            "max": 0.6185
+          },
+          "sync_ms": {
+            "median": 0.13165,
+            "p95": 0.15760000000000002,
+            "max": 0.3534
+          },
+          "record_ms": {
+            "median": 0.07275000000000001,
+            "p95": 0.0888,
+            "max": 0.2826
+          },
+          "total_cpu_ms": {
+            "median": 0.43310000000000004,
+            "p95": 0.5249,
+            "max": 0.9203
+          },
+          "core_update_ms": {
+            "median": 0.1827,
+            "p95": 0.2236,
+            "max": 0.5572
+          },
+          "cascade_ms": {
+            "median": 0.04425,
+            "p95": 0.0542,
+            "max": 0.1378
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0003
+          },
+          "paint_ms": {
+            "median": 0.09715,
+            "p95": 0.121,
+            "max": 0.2937
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 128.0,
+            "p95": 128,
+            "max": 129
+          },
+          "uploaded_triangles": {
+            "median": 1244.0,
+            "p95": 1244,
+            "max": 1376
+          },
+          "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory-full",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.5406,
+            "p95": 0.6302,
+            "max": 1.1799
+          },
+          "sync_ms": {
+            "median": 0.29855,
+            "p95": 0.4904,
+            "max": 1.4304000000000001
+          },
+          "record_ms": {
+            "median": 0.1068,
+            "p95": 0.1322,
+            "max": 0.2451
+          },
+          "total_cpu_ms": {
+            "median": 0.94905,
+            "p95": 1.1384,
+            "max": 2.1646
+          },
+          "core_update_ms": {
+            "median": 0.4556,
+            "p95": 0.5331,
+            "max": 1.0509
+          },
+          "cascade_ms": {
+            "median": 0.0692,
+            "p95": 0.0886,
+            "max": 0.1698
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0004
+          },
+          "paint_ms": {
+            "median": 0.23615,
+            "p95": 0.2817,
+            "max": 0.6683
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 123.0,
+            "p95": 123,
+            "max": 123
+          },
+          "uploaded_triangles": {
+            "median": 1340.0,
+            "p95": 1372,
+            "max": 1372
+          },
+          "image_sha256": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091"
+        }
+      ]
+    },
+    {
+      "mode": "baseline",
+      "round": 1,
+      "binary_sha256": "b0bf74d7de0bd28d5c3b1d4ed5e53b894f7a783e0f22271b6f597e060c6af9b7",
+      "summaries": [
+        {
+          "run": 0,
+          "scenario": "idle-hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.00030000000000000003,
+            "p95": 0.0005,
+            "max": 0.003
+          },
+          "sync_ms": {
+            "median": 0.0001,
+            "p95": 0.0001,
+            "max": 0.0005
+          },
+          "record_ms": {
+            "median": 0.033800000000000004,
+            "p95": 0.0381,
+            "max": 0.0765
+          },
+          "total_cpu_ms": {
+            "median": 0.0342,
+            "p95": 0.0386,
+            "max": 0.0783
+          },
+          "core_update_ms": {
+            "median": 0.0002,
+            "p95": 0.0002,
+            "max": 0.0008
+          },
+          "cascade_ms": {
+            "median": 0.0001,
+            "p95": 0.0001,
+            "max": 0.001
+          },
+          "layout_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0002
+          },
+          "paint_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0001
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "uploaded_triangles": {
+            "median": 0.0,
+            "p95": 0,
+            "max": 0
+          },
+          "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+        },
+        {
+          "run": 0,
+          "scenario": "hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.12350000000000001,
+            "p95": 0.1646,
+            "max": 0.3355
+          },
+          "sync_ms": {
+            "median": 0.0521,
+            "p95": 0.0712,
+            "max": 0.20700000000000002
+          },
+          "record_ms": {
+            "median": 0.0346,
+            "p95": 0.0417,
+            "max": 0.09680000000000001
+          },
+          "total_cpu_ms": {
+            "median": 0.20785000000000003,
+            "p95": 0.27290000000000003,
+            "max": 0.4717
+          },
+          "core_update_ms": {
+            "median": 0.0783,
+            "p95": 0.1098,
+            "max": 0.2254
+          },
+          "cascade_ms": {
+            "median": 0.0118,
+            "p95": 0.018,
+            "max": 0.0667
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0003
+          },
+          "paint_ms": {
+            "median": 0.0347,
+            "p95": 0.0456,
+            "max": 0.151
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 56.0,
+            "p95": 56,
+            "max": 56
+          },
+          "uploaded_triangles": {
+            "median": 92.0,
+            "p95": 92,
+            "max": 94
+          },
+          "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.23370000000000002,
+            "p95": 0.2787,
+            "max": 0.8204
+          },
+          "sync_ms": {
+            "median": 0.1317,
+            "p95": 0.1549,
+            "max": 0.2373
+          },
+          "record_ms": {
+            "median": 0.0751,
+            "p95": 0.0884,
+            "max": 0.15710000000000002
+          },
+          "total_cpu_ms": {
+            "median": 0.4354,
+            "p95": 0.5156000000000001,
+            "max": 1.0937000000000001
+          },
+          "core_update_ms": {
+            "median": 0.18215,
+            "p95": 0.2195,
+            "max": 0.7602
+          },
+          "cascade_ms": {
+            "median": 0.0458,
+            "p95": 0.0551,
+            "max": 0.1107
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0004
+          },
+          "paint_ms": {
+            "median": 0.09625,
+            "p95": 0.1158,
+            "max": 0.372
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 128.0,
+            "p95": 128,
+            "max": 128
+          },
+          "uploaded_triangles": {
+            "median": 1244.0,
+            "p95": 1244,
+            "max": 1550
+          },
+          "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory-full",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.6919500000000001,
+            "p95": 0.7987000000000001,
+            "max": 1.6264
+          },
+          "sync_ms": {
+            "median": 0.31095,
+            "p95": 0.5184,
+            "max": 3.3467000000000002
+          },
+          "record_ms": {
+            "median": 0.1106,
+            "p95": 0.132,
+            "max": 0.2864
+          },
+          "total_cpu_ms": {
+            "median": 1.11165,
+            "p95": 1.3521000000000003,
+            "max": 4.165
+          },
+          "core_update_ms": {
+            "median": 0.607,
+            "p95": 0.7011,
+            "max": 1.4525
+          },
+          "cascade_ms": {
+            "median": 0.0724,
+            "p95": 0.0908,
+            "max": 0.2716
+          },
+          "layout_ms": {
+            "median": 0.0002,
+            "p95": 0.0003,
+            "max": 0.001
+          },
+          "paint_ms": {
+            "median": 0.2901,
+            "p95": 0.3374,
+            "max": 0.9438
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 120.0,
+            "p95": 120,
+            "max": 120
+          },
+          "uploaded_triangles": {
+            "median": 1514.0,
+            "p95": 1546,
+            "max": 1546
+          },
+          "image_sha256": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091"
+        }
+      ]
+    },
+    {
+      "mode": "baseline",
+      "round": 2,
+      "binary_sha256": "b0bf74d7de0bd28d5c3b1d4ed5e53b894f7a783e0f22271b6f597e060c6af9b7",
+      "summaries": [
+        {
+          "run": 0,
+          "scenario": "idle-hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.00030000000000000003,
+            "p95": 0.0016,
+            "max": 0.0165
+          },
+          "sync_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.016800000000000002
+          },
+          "record_ms": {
+            "median": 0.0302,
+            "p95": 0.046,
+            "max": 0.12390000000000001
+          },
+          "total_cpu_ms": {
+            "median": 0.0307,
+            "p95": 0.046700000000000005,
+            "max": 0.12430000000000001
+          },
+          "core_update_ms": {
+            "median": 0.0002,
+            "p95": 0.0006,
+            "max": 0.0147
+          },
+          "cascade_ms": {
+            "median": 0.0001,
+            "p95": 0.0003,
+            "max": 0.0005
+          },
+          "layout_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0001
+          },
+          "paint_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0002
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "uploaded_triangles": {
+            "median": 0.0,
+            "p95": 0,
+            "max": 0
+          },
+          "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+        },
+        {
+          "run": 0,
+          "scenario": "hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.17270000000000002,
+            "p95": 0.2449,
+            "max": 0.7781
+          },
+          "sync_ms": {
+            "median": 0.0698,
+            "p95": 0.1125,
+            "max": 0.3186
+          },
+          "record_ms": {
+            "median": 0.0383,
+            "p95": 0.0639,
+            "max": 0.19740000000000002
+          },
+          "total_cpu_ms": {
+            "median": 0.28200000000000003,
+            "p95": 0.38920000000000005,
+            "max": 0.9361
+          },
+          "core_update_ms": {
+            "median": 0.1134,
+            "p95": 0.1708,
+            "max": 0.5016
+          },
+          "cascade_ms": {
+            "median": 0.0181,
+            "p95": 0.0368,
+            "max": 0.1125
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0003,
+            "max": 0.016
+          },
+          "paint_ms": {
+            "median": 0.0454,
+            "p95": 0.082,
+            "max": 0.2569
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 56.0,
+            "p95": 56,
+            "max": 56
+          },
+          "uploaded_triangles": {
+            "median": 92.0,
+            "p95": 92,
+            "max": 94
+          },
+          "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.29075,
+            "p95": 0.4696,
+            "max": 1.2777
+          },
+          "sync_ms": {
+            "median": 0.15025,
+            "p95": 0.23240000000000002,
+            "max": 0.9539000000000001
+          },
+          "record_ms": {
+            "median": 0.0796,
+            "p95": 0.1227,
+            "max": 0.317
+          },
+          "total_cpu_ms": {
+            "median": 0.51925,
+            "p95": 0.7755000000000001,
+            "max": 1.7117
+          },
+          "core_update_ms": {
+            "median": 0.2264,
+            "p95": 0.3668,
+            "max": 1.192
+          },
+          "cascade_ms": {
+            "median": 0.0555,
+            "p95": 0.095,
+            "max": 0.7761
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0003,
+            "max": 0.0106
+          },
+          "paint_ms": {
+            "median": 0.11505,
+            "p95": 0.2078,
+            "max": 0.7796
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 128.0,
+            "p95": 128,
+            "max": 128
+          },
+          "uploaded_triangles": {
+            "median": 1244.0,
+            "p95": 1244,
+            "max": 1550
+          },
+          "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory-full",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.75565,
+            "p95": 1.0327,
+            "max": 1.6745
+          },
+          "sync_ms": {
+            "median": 0.31965,
+            "p95": 0.6564,
+            "max": 5.131
+          },
+          "record_ms": {
+            "median": 0.10350000000000001,
+            "p95": 0.16820000000000002,
+            "max": 0.34490000000000004
+          },
+          "total_cpu_ms": {
+            "median": 1.20045,
+            "p95": 1.7187000000000001,
+            "max": 5.8642
+          },
+          "core_update_ms": {
+            "median": 0.66375,
+            "p95": 0.9121,
+            "max": 1.5829
+          },
+          "cascade_ms": {
+            "median": 0.0794,
+            "p95": 0.1325,
+            "max": 0.3297
+          },
+          "layout_ms": {
+            "median": 0.0002,
+            "p95": 0.0003,
+            "max": 0.0146
+          },
+          "paint_ms": {
+            "median": 0.3083,
+            "p95": 0.447,
+            "max": 1.1548
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 120.0,
+            "p95": 120,
+            "max": 120
+          },
+          "uploaded_triangles": {
+            "median": 1514.0,
+            "p95": 1546,
+            "max": 1546
+          },
+          "image_sha256": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091"
+        }
+      ]
+    },
+    {
+      "mode": "candidate",
+      "round": 2,
+      "binary_sha256": "895186f9a41378e1aed48c9e2b51c4e7a53fc0e4c352b5ca931b78982b603913",
+      "summaries": [
+        {
+          "run": 0,
+          "scenario": "idle-hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.0004,
+            "p95": 0.0005,
+            "max": 0.0066
+          },
+          "sync_ms": {
+            "median": 0.0001,
+            "p95": 0.0001,
+            "max": 0.0005
+          },
+          "record_ms": {
+            "median": 0.0335,
+            "p95": 0.038400000000000004,
+            "max": 0.0455
+          },
+          "total_cpu_ms": {
+            "median": 0.034,
+            "p95": 0.038900000000000004,
+            "max": 0.0486
+          },
+          "core_update_ms": {
+            "median": 0.0002,
+            "p95": 0.0002,
+            "max": 0.0063
+          },
+          "cascade_ms": {
+            "median": 0.0001,
+            "p95": 0.0001,
+            "max": 0.0004
+          },
+          "layout_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0002
+          },
+          "paint_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0061
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "uploaded_triangles": {
+            "median": 0.0,
+            "p95": 0,
+            "max": 0
+          },
+          "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+        },
+        {
+          "run": 0,
+          "scenario": "hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.1427,
+            "p95": 0.1718,
+            "max": 0.29000000000000004
+          },
+          "sync_ms": {
+            "median": 0.0599,
+            "p95": 0.0728,
+            "max": 0.19010000000000002
+          },
+          "record_ms": {
+            "median": 0.0376,
+            "p95": 0.042800000000000005,
+            "max": 0.0881
+          },
+          "total_cpu_ms": {
+            "median": 0.23750000000000004,
+            "p95": 0.28200000000000003,
+            "max": 0.5226000000000001
+          },
+          "core_update_ms": {
+            "median": 0.0917,
+            "p95": 0.1142,
+            "max": 0.2194
+          },
+          "cascade_ms": {
+            "median": 0.0137,
+            "p95": 0.0179,
+            "max": 0.0738
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0004
+          },
+          "paint_ms": {
+            "median": 0.0401,
+            "p95": 0.0484,
+            "max": 0.1164
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 56.0,
+            "p95": 56,
+            "max": 56
+          },
+          "uploaded_triangles": {
+            "median": 92.0,
+            "p95": 92,
+            "max": 94
+          },
+          "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.2561,
+            "p95": 0.2891,
+            "max": 0.6183000000000001
+          },
+          "sync_ms": {
+            "median": 0.1441,
+            "p95": 0.1627,
+            "max": 0.31
+          },
+          "record_ms": {
+            "median": 0.0828,
+            "p95": 0.0912,
+            "max": 0.1759
+          },
+          "total_cpu_ms": {
+            "median": 0.47485,
+            "p95": 0.5364,
+            "max": 0.9043000000000001
+          },
+          "core_update_ms": {
+            "median": 0.1985,
+            "p95": 0.2264,
+            "max": 0.556
+          },
+          "cascade_ms": {
+            "median": 0.0491,
+            "p95": 0.0548,
+            "max": 0.1088
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0003
+          },
+          "paint_ms": {
+            "median": 0.1052,
+            "p95": 0.1241,
+            "max": 0.2958
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 128.0,
+            "p95": 128,
+            "max": 129
+          },
+          "uploaded_triangles": {
+            "median": 1244.0,
+            "p95": 1244,
+            "max": 1376
+          },
+          "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory-full",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.5864,
+            "p95": 0.6581,
+            "max": 1.1205
+          },
+          "sync_ms": {
+            "median": 0.3165,
+            "p95": 0.5439,
+            "max": 1.4511
+          },
+          "record_ms": {
+            "median": 0.1221,
+            "p95": 0.13570000000000002,
+            "max": 0.2926
+          },
+          "total_cpu_ms": {
+            "median": 1.0228000000000002,
+            "p95": 1.2826,
+            "max": 2.3916999999999997
+          },
+          "core_update_ms": {
+            "median": 0.4913,
+            "p95": 0.555,
+            "max": 0.9696
+          },
+          "cascade_ms": {
+            "median": 0.0749,
+            "p95": 0.0945,
+            "max": 0.1818
+          },
+          "layout_ms": {
+            "median": 0.0002,
+            "p95": 0.0002,
+            "max": 0.0005
+          },
+          "paint_ms": {
+            "median": 0.2568,
+            "p95": 0.2932,
+            "max": 0.5156
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 123.0,
+            "p95": 123,
+            "max": 123
+          },
+          "uploaded_triangles": {
+            "median": 1340.0,
+            "p95": 1372,
+            "max": 1372
+          },
+          "image_sha256": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091"
+        }
+      ]
+    },
+    {
+      "mode": "candidate",
+      "round": 3,
+      "binary_sha256": "895186f9a41378e1aed48c9e2b51c4e7a53fc0e4c352b5ca931b78982b603913",
+      "summaries": [
+        {
+          "run": 0,
+          "scenario": "idle-hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.0004,
+            "p95": 0.0005,
+            "max": 0.0061
+          },
+          "sync_ms": {
+            "median": 0.0001,
+            "p95": 0.0001,
+            "max": 0.0006000000000000001
+          },
+          "record_ms": {
+            "median": 0.0332,
+            "p95": 0.037200000000000004,
+            "max": 0.0526
+          },
+          "total_cpu_ms": {
+            "median": 0.033600000000000005,
+            "p95": 0.037700000000000004,
+            "max": 0.0531
+          },
+          "core_update_ms": {
+            "median": 0.0002,
+            "p95": 0.0002,
+            "max": 0.0008
+          },
+          "cascade_ms": {
+            "median": 0.0001,
+            "p95": 0.0001,
+            "max": 0.0005
+          },
+          "layout_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0001
+          },
+          "paint_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0001
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "uploaded_triangles": {
+            "median": 0.0,
+            "p95": 0,
+            "max": 0
+          },
+          "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+        },
+        {
+          "run": 0,
+          "scenario": "hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.1216,
+            "p95": 0.165,
+            "max": 0.1898
+          },
+          "sync_ms": {
+            "median": 0.0509,
+            "p95": 0.0709,
+            "max": 0.10550000000000001
+          },
+          "record_ms": {
+            "median": 0.033100000000000004,
+            "p95": 0.0412,
+            "max": 0.0567
+          },
+          "total_cpu_ms": {
+            "median": 0.2036,
+            "p95": 0.2725,
+            "max": 0.30700000000000005
+          },
+          "core_update_ms": {
+            "median": 0.0764,
+            "p95": 0.109,
+            "max": 0.1277
+          },
+          "cascade_ms": {
+            "median": 0.011,
+            "p95": 0.0176,
+            "max": 0.0246
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0001,
+            "max": 0.0003
+          },
+          "paint_ms": {
+            "median": 0.0341,
+            "p95": 0.0465,
+            "max": 0.0558
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 56.0,
+            "p95": 56,
+            "max": 56
+          },
+          "uploaded_triangles": {
+            "median": 92.0,
+            "p95": 92,
+            "max": 94
+          },
+          "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.24480000000000002,
+            "p95": 0.2837,
+            "max": 0.6352
+          },
+          "sync_ms": {
+            "median": 0.13440000000000002,
+            "p95": 0.1575,
+            "max": 0.2053
+          },
+          "record_ms": {
+            "median": 0.0757,
+            "p95": 0.0887,
+            "max": 0.12380000000000001
+          },
+          "total_cpu_ms": {
+            "median": 0.4478500000000001,
+            "p95": 0.5225000000000001,
+            "max": 0.91
+          },
+          "core_update_ms": {
+            "median": 0.18919999999999998,
+            "p95": 0.2235,
+            "max": 0.5648
+          },
+          "cascade_ms": {
+            "median": 0.0466,
+            "p95": 0.0545,
+            "max": 0.0845
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0004
+          },
+          "paint_ms": {
+            "median": 0.0998,
+            "p95": 0.1205,
+            "max": 0.293
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 128.0,
+            "p95": 128,
+            "max": 129
+          },
+          "uploaded_triangles": {
+            "median": 1244.0,
+            "p95": 1244,
+            "max": 1376
+          },
+          "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory-full",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.54155,
+            "p95": 0.6359,
+            "max": 1.1928
+          },
+          "sync_ms": {
+            "median": 0.30215000000000003,
+            "p95": 0.4908,
+            "max": 1.2821
+          },
+          "record_ms": {
+            "median": 0.10900000000000001,
+            "p95": 0.1321,
+            "max": 0.2634
+          },
+          "total_cpu_ms": {
+            "median": 0.9579,
+            "p95": 1.1623,
+            "max": 2.0144
+          },
+          "core_update_ms": {
+            "median": 0.4552,
+            "p95": 0.5376,
+            "max": 1.0581
+          },
+          "cascade_ms": {
+            "median": 0.0697,
+            "p95": 0.0889,
+            "max": 0.2032
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0013
+          },
+          "paint_ms": {
+            "median": 0.23735,
+            "p95": 0.282,
+            "max": 0.6291
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 123.0,
+            "p95": 123,
+            "max": 123
+          },
+          "uploaded_triangles": {
+            "median": 1340.0,
+            "p95": 1372,
+            "max": 1372
+          },
+          "image_sha256": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091"
+        }
+      ]
+    },
+    {
+      "mode": "baseline",
+      "round": 3,
+      "binary_sha256": "b0bf74d7de0bd28d5c3b1d4ed5e53b894f7a783e0f22271b6f597e060c6af9b7",
+      "summaries": [
+        {
+          "run": 0,
+          "scenario": "idle-hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.0004,
+            "p95": 0.0022,
+            "max": 0.11040000000000001
+          },
+          "sync_ms": {
+            "median": 0.0001,
+            "p95": 0.0004,
+            "max": 0.0006000000000000001
+          },
+          "record_ms": {
+            "median": 0.0333,
+            "p95": 0.044700000000000004,
+            "max": 0.11800000000000001
+          },
+          "total_cpu_ms": {
+            "median": 0.0338,
+            "p95": 0.0476,
+            "max": 0.15700000000000003
+          },
+          "core_update_ms": {
+            "median": 0.0002,
+            "p95": 0.0007,
+            "max": 0.0417
+          },
+          "cascade_ms": {
+            "median": 0.0001,
+            "p95": 0.0004,
+            "max": 0.0005
+          },
+          "layout_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0415
+          },
+          "paint_ms": {
+            "median": 0.0,
+            "p95": 0.0001,
+            "max": 0.0001
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "uploaded_triangles": {
+            "median": 0.0,
+            "p95": 0,
+            "max": 0
+          },
+          "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+        },
+        {
+          "run": 0,
+          "scenario": "hud",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.1285,
+            "p95": 0.1647,
+            "max": 0.194
+          },
+          "sync_ms": {
+            "median": 0.0553,
+            "p95": 0.07200000000000001,
+            "max": 0.1401
+          },
+          "record_ms": {
+            "median": 0.034,
+            "p95": 0.041600000000000005,
+            "max": 0.0636
+          },
+          "total_cpu_ms": {
+            "median": 0.21525,
+            "p95": 0.27380000000000004,
+            "max": 0.34120000000000006
+          },
+          "core_update_ms": {
+            "median": 0.08195,
+            "p95": 0.1091,
+            "max": 0.1455
+          },
+          "cascade_ms": {
+            "median": 0.0124,
+            "p95": 0.0178,
+            "max": 0.0253
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0077
+          },
+          "paint_ms": {
+            "median": 0.0349,
+            "p95": 0.0456,
+            "max": 0.0863
+          },
+          "batches": {
+            "median": 60.0,
+            "p95": 60,
+            "max": 60
+          },
+          "reused": {
+            "median": 56.0,
+            "p95": 56,
+            "max": 56
+          },
+          "uploaded_triangles": {
+            "median": 92.0,
+            "p95": 92,
+            "max": 94
+          },
+          "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.23395000000000002,
+            "p95": 0.2797,
+            "max": 0.8614
+          },
+          "sync_ms": {
+            "median": 0.1345,
+            "p95": 0.1595,
+            "max": 0.228
+          },
+          "record_ms": {
+            "median": 0.0726,
+            "p95": 0.0886,
+            "max": 0.10990000000000001
+          },
+          "total_cpu_ms": {
+            "median": 0.43355,
+            "p95": 0.519,
+            "max": 1.1356000000000002
+          },
+          "core_update_ms": {
+            "median": 0.1804,
+            "p95": 0.2184,
+            "max": 0.7544
+          },
+          "cascade_ms": {
+            "median": 0.0455,
+            "p95": 0.0551,
+            "max": 0.1078
+          },
+          "layout_ms": {
+            "median": 0.0001,
+            "p95": 0.0002,
+            "max": 0.0005
+          },
+          "paint_ms": {
+            "median": 0.0949,
+            "p95": 0.1169,
+            "max": 0.3642
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 128.0,
+            "p95": 128,
+            "max": 128
+          },
+          "uploaded_triangles": {
+            "median": 1244.0,
+            "p95": 1244,
+            "max": 1550
+          },
+          "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+        },
+        {
+          "run": 0,
+          "scenario": "inventory-full",
+          "unity": "6000.4.1f1",
+          "device": "NVIDIA GeForce RTX 5080",
+          "update_ms": {
+            "median": 0.6889500000000001,
+            "p95": 0.798,
+            "max": 1.2630000000000001
+          },
+          "sync_ms": {
+            "median": 0.32035,
+            "p95": 0.5285000000000001,
+            "max": 1.2751000000000001
+          },
+          "record_ms": {
+            "median": 0.10695000000000002,
+            "p95": 0.1318,
+            "max": 0.25830000000000003
+          },
+          "total_cpu_ms": {
+            "median": 1.12755,
+            "p95": 1.3593000000000002,
+            "max": 2.2073
+          },
+          "core_update_ms": {
+            "median": 0.6036,
+            "p95": 0.7014,
+            "max": 1.1394
+          },
+          "cascade_ms": {
+            "median": 0.0723,
+            "p95": 0.092,
+            "max": 0.1962
+          },
+          "layout_ms": {
+            "median": 0.0002,
+            "p95": 0.0003,
+            "max": 0.0004
+          },
+          "paint_ms": {
+            "median": 0.28545,
+            "p95": 0.3382,
+            "max": 0.6108
+          },
+          "batches": {
+            "median": 137.0,
+            "p95": 137,
+            "max": 137
+          },
+          "reused": {
+            "median": 120.0,
+            "p95": 120,
+            "max": 120
+          },
+          "uploaded_triangles": {
+            "median": 1514.0,
+            "p95": 1546,
+            "max": 1546
+          },
+          "image_sha256": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091"
+        }
+      ]
+    }
+  ],
+  "aggregate": {
+    "idle-hud": {
+      "update_ms": {
+        "median": {
+          "baseline": 0.00030000000000000003,
+          "candidate": 0.0004,
+          "median_paired_percent_change": 16.666666666666664,
+          "improved_pairs": 0
+        },
+        "p95": {
+          "baseline": 0.0017000000000000001,
+          "candidate": 0.0005,
+          "median_paired_percent_change": -73.01136363636363,
+          "improved_pairs": 3
+        }
+      },
+      "core_update_ms": {
+        "median": {
+          "baseline": 0.0002,
+          "candidate": 0.0002,
+          "median_paired_percent_change": 0.0,
+          "improved_pairs": 0
+        },
+        "p95": {
+          "baseline": 0.0006,
+          "candidate": 0.0002,
+          "median_paired_percent_change": -66.66666666666666,
+          "improved_pairs": 3
+        }
+      },
+      "sync_ms": {
+        "median": {
+          "baseline": 0.0001,
+          "candidate": 0.0001,
+          "median_paired_percent_change": 0.0,
+          "improved_pairs": 0
+        },
+        "p95": {
+          "baseline": 0.0002,
+          "candidate": 0.0001,
+          "median_paired_percent_change": -50.0,
+          "improved_pairs": 3
+        }
+      },
+      "record_ms": {
+        "median": {
+          "baseline": 0.03175,
+          "candidate": 0.033299999999999996,
+          "median_paired_percent_change": 5.313426008790245,
+          "improved_pairs": 2
+        },
+        "p95": {
+          "baseline": 0.04535,
+          "candidate": 0.0379,
+          "median_paired_percent_change": -16.65013131018383,
+          "improved_pairs": 3
+        }
+      },
+      "total_cpu_ms": {
+        "median": {
+          "baseline": 0.03225,
+          "candidate": 0.03370000000000001,
+          "median_paired_percent_change": 5.078734845710553,
+          "improved_pairs": 2
+        },
+        "p95": {
+          "baseline": 0.047150000000000004,
+          "candidate": 0.038400000000000004,
+          "median_paired_percent_change": -18.750337394058263,
+          "improved_pairs": 3
+        }
+      }
+    },
+    "hud": {
+      "update_ms": {
+        "median": {
+          "baseline": 0.142125,
+          "candidate": 0.125,
+          "median_paired_percent_change": -11.37040683671332,
+          "improved_pairs": 3
+        },
+        "p95": {
+          "baseline": 0.2028,
+          "candidate": 0.16675,
+          "median_paired_percent_change": -14.833384281603362,
+          "improved_pairs": 2
+        }
+      },
+      "core_update_ms": {
+        "median": {
+          "baseline": 0.092525,
+          "candidate": 0.078675,
+          "median_paired_percent_change": -12.954112338899808,
+          "improved_pairs": 4
+        },
+        "p95": {
+          "baseline": 0.1381,
+          "candidate": 0.11065,
+          "median_paired_percent_change": -16.558351285554153,
+          "improved_pairs": 4
+        }
+      },
+      "sync_ms": {
+        "median": {
+          "baseline": 0.057925000000000004,
+          "candidate": 0.051949999999999996,
+          "median_paired_percent_change": -11.069990725244434,
+          "improved_pairs": 3
+        },
+        "p95": {
+          "baseline": 0.0912,
+          "candidate": 0.0709,
+          "median_paired_percent_change": -18.40833333333334,
+          "improved_pairs": 4
+        }
+      },
+      "record_ms": {
+        "median": {
+          "baseline": 0.0343,
+          "candidate": 0.0337,
+          "median_paired_percent_change": -2.237367531869139,
+          "improved_pairs": 3
+        },
+        "p95": {
+          "baseline": 0.0521,
+          "candidate": 0.0417,
+          "median_paired_percent_change": -16.880769230769232,
+          "improved_pairs": 4
+        }
+      },
+      "total_cpu_ms": {
+        "median": {
+          "baseline": 0.23500000000000001,
+          "candidate": 0.20850000000000002,
+          "median_paired_percent_change": -10.596226554970716,
+          "improved_pairs": 4
+        },
+        "p95": {
+          "baseline": 0.3315,
+          "candidate": 0.27475000000000005,
+          "median_paired_percent_change": -14.009239232844134,
+          "improved_pairs": 3
+        }
+      }
+    },
+    "inventory": {
+      "update_ms": {
+        "median": {
+          "baseline": 0.240875,
+          "candidate": 0.24115000000000003,
+          "median_paired_percent_change": -1.628994976071846,
+          "improved_pairs": 2
+        },
+        "p95": {
+          "baseline": 0.33435000000000004,
+          "candidate": 0.2846,
+          "median_paired_percent_change": -12.79394558804741,
+          "improved_pairs": 2
+        }
+      },
+      "core_update_ms": {
+        "median": {
+          "baseline": 0.187425,
+          "candidate": 0.18664999999999998,
+          "median_paired_percent_change": -2.0804733748039985,
+          "improved_pairs": 2
+        },
+        "p95": {
+          "baseline": 0.2684,
+          "candidate": 0.2236,
+          "median_paired_percent_change": -13.8312656547593,
+          "improved_pairs": 2
+        }
+      },
+      "sync_ms": {
+        "median": {
+          "baseline": 0.1331,
+          "candidate": 0.133025,
+          "median_paired_percent_change": -0.05615725725641174,
+          "improved_pairs": 3
+        },
+        "p95": {
+          "baseline": 0.1824,
+          "candidate": 0.15765,
+          "median_paired_percent_change": -12.219750285154994,
+          "improved_pairs": 3
+        }
+      },
+      "record_ms": {
+        "median": {
+          "baseline": 0.07385,
+          "candidate": 0.07475000000000001,
+          "median_paired_percent_change": 4.1450364771515975,
+          "improved_pairs": 1
+        },
+        "p95": {
+          "baseline": 0.09865,
+          "candidate": 0.0889,
+          "median_paired_percent_change": -9.005204125920734,
+          "improved_pairs": 2
+        }
+      },
+      "total_cpu_ms": {
+        "median": {
+          "baseline": 0.434475,
+          "candidate": 0.44295000000000007,
+          "median_paired_percent_change": 0.5183930263496117,
+          "improved_pairs": 2
+        },
+        "p95": {
+          "baseline": 0.6022000000000001,
+          "candidate": 0.524,
+          "median_paired_percent_change": -11.502614677841661,
+          "improved_pairs": 2
+        }
+      }
+    },
+    "inventory-full": {
+      "update_ms": {
+        "median": {
+          "baseline": 0.7238,
+          "candidate": 0.541075,
+          "median_paired_percent_change": -22.135451626075977,
+          "improved_pairs": 4
+        },
+        "p95": {
+          "baseline": 0.9092500000000001,
+          "candidate": 0.63305,
+          "median_paired_percent_change": -28.68531376559438,
+          "improved_pairs": 4
+        }
+      },
+      "core_update_ms": {
+        "median": {
+          "baseline": 0.6347499999999999,
+          "candidate": 0.4554,
+          "median_paired_percent_change": -25.4617534911283,
+          "improved_pairs": 4
+        },
+        "p95": {
+          "baseline": 0.7986500000000001,
+          "candidate": 0.53535,
+          "median_paired_percent_change": -31.556876861678557,
+          "improved_pairs": 4
+        }
+      },
+      "sync_ms": {
+        "median": {
+          "baseline": 0.32,
+          "candidate": 0.30035,
+          "median_paired_percent_change": -4.834532739544379,
+          "improved_pairs": 4
+        },
+        "p95": {
+          "baseline": 0.5879500000000001,
+          "candidate": 0.50735,
+          "median_paired_percent_change": -12.136168037925977,
+          "improved_pairs": 4
+        }
+      },
+      "record_ms": {
+        "median": {
+          "baseline": 0.10755,
+          "candidate": 0.10790000000000001,
+          "median_paired_percent_change": 0.334258623451017,
+          "improved_pairs": 2
+        },
+        "p95": {
+          "baseline": 0.1501,
+          "candidate": 0.13215,
+          "median_paired_percent_change": -9.585360141245992,
+          "improved_pairs": 2
+        }
+      },
+      "total_cpu_ms": {
+        "median": {
+          "baseline": 1.1640000000000001,
+          "candidate": 0.953475,
+          "median_paired_percent_change": -14.922256577179411,
+          "improved_pairs": 4
+        },
+        "p95": {
+          "baseline": 1.5390000000000001,
+          "candidate": 1.189,
+          "median_paired_percent_change": -20.589436531233098,
+          "improved_pairs": 4
+        }
+      }
+    }
+  },
+  "installed_candidate_sha256": "895186f9a41378e1aed48c9e2b51c4e7a53fc0e4c352b5ca931b78982b603913",
+  "agentic": {
+    "rows": [
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "hud",
+        "cascade": 0.037,
+        "boxes": 0.084,
+        "layout": 0.0,
+        "paint": 0.087,
+        "core update, total": 0.212,
+        "host draw": 0.317,
+        "host prepare": 0.086,
+        "host capture": 0.032,
+        "host prepare GPU": 0.054,
+        "host encode": 0.117,
+        "host submit": 0.114,
+        "controller + update": 0.262,
+        "complete CPU path": 0.579,
+        "frame": 0.53,
+        "idle frame": 0.263,
+        "style_layout": 0.121
+      },
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "inventory",
+        "cascade": 0.128,
+        "boxes": 0.341,
+        "layout": 0.0,
+        "paint": 0.41,
+        "core update, total": 0.885,
+        "host draw": 0.489,
+        "host prepare": 0.204,
+        "host capture": 0.07,
+        "host prepare GPU": 0.134,
+        "host encode": 0.152,
+        "host submit": 0.133,
+        "controller + update": 1.077,
+        "complete CPU path": 1.567,
+        "frame": 1.374,
+        "idle frame": 0.337,
+        "style_layout": 0.46900000000000003
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "hud",
+        "cascade": 0.041,
+        "boxes": 0.092,
+        "layout": 0.0,
+        "paint": 0.094,
+        "core update, total": 0.232,
+        "host draw": 0.341,
+        "host prepare": 0.093,
+        "host capture": 0.037,
+        "host prepare GPU": 0.056,
+        "host encode": 0.128,
+        "host submit": 0.12,
+        "controller + update": 0.289,
+        "complete CPU path": 0.63,
+        "frame": 0.573,
+        "idle frame": 0.275,
+        "style_layout": 0.133
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "inventory",
+        "cascade": 0.14,
+        "boxes": 0.228,
+        "layout": 0.0,
+        "paint": 0.504,
+        "core update, total": 0.878,
+        "host draw": 0.626,
+        "host prepare": 0.313,
+        "host capture": 0.071,
+        "host prepare GPU": 0.243,
+        "host encode": 0.161,
+        "host submit": 0.151,
+        "controller + update": 1.149,
+        "complete CPU path": 1.775,
+        "frame": 1.504,
+        "idle frame": 0.289,
+        "style_layout": 0.368
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "hud",
+        "cascade": 0.037,
+        "boxes": 0.083,
+        "layout": 0.0,
+        "paint": 0.089,
+        "core update, total": 0.213,
+        "host draw": 0.313,
+        "host prepare": 0.086,
+        "host capture": 0.033,
+        "host prepare GPU": 0.053,
+        "host encode": 0.115,
+        "host submit": 0.112,
+        "controller + update": 0.264,
+        "complete CPU path": 0.578,
+        "frame": 0.526,
+        "idle frame": 0.245,
+        "style_layout": 0.12
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "inventory",
+        "cascade": 0.127,
+        "boxes": 0.214,
+        "layout": 0.0,
+        "paint": 0.352,
+        "core update, total": 0.698,
+        "host draw": 0.47,
+        "host prepare": 0.199,
+        "host capture": 0.07,
+        "host prepare GPU": 0.129,
+        "host encode": 0.145,
+        "host submit": 0.125,
+        "controller + update": 0.891,
+        "complete CPU path": 1.361,
+        "frame": 1.168,
+        "idle frame": 0.263,
+        "style_layout": 0.34099999999999997
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "hud",
+        "cascade": 0.039,
+        "boxes": 0.087,
+        "layout": 0.0,
+        "paint": 0.092,
+        "core update, total": 0.221,
+        "host draw": 0.322,
+        "host prepare": 0.087,
+        "host capture": 0.031,
+        "host prepare GPU": 0.056,
+        "host encode": 0.118,
+        "host submit": 0.117,
+        "controller + update": 0.273,
+        "complete CPU path": 0.595,
+        "frame": 0.543,
+        "idle frame": 0.26,
+        "style_layout": 0.126
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "inventory",
+        "cascade": 0.145,
+        "boxes": 0.377,
+        "layout": 0.0,
+        "paint": 0.457,
+        "core update, total": 0.984,
+        "host draw": 0.519,
+        "host prepare": 0.212,
+        "host capture": 0.072,
+        "host prepare GPU": 0.14,
+        "host encode": 0.171,
+        "host submit": 0.136,
+        "controller + update": 1.205,
+        "complete CPU path": 1.724,
+        "frame": 1.503,
+        "idle frame": 0.314,
+        "style_layout": 0.522
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "hud",
+        "cascade": 0.041,
+        "boxes": 0.094,
+        "layout": 0.0,
+        "paint": 0.101,
+        "core update, total": 0.24,
+        "host draw": 0.354,
+        "host prepare": 0.1,
+        "host capture": 0.035,
+        "host prepare GPU": 0.065,
+        "host encode": 0.128,
+        "host submit": 0.125,
+        "controller + update": 0.301,
+        "complete CPU path": 0.655,
+        "frame": 0.593,
+        "idle frame": 0.272,
+        "style_layout": 0.135
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "inventory",
+        "cascade": 0.139,
+        "boxes": 0.345,
+        "layout": 0.001,
+        "paint": 0.416,
+        "core update, total": 0.906,
+        "host draw": 0.483,
+        "host prepare": 0.202,
+        "host capture": 0.069,
+        "host prepare GPU": 0.133,
+        "host encode": 0.154,
+        "host submit": 0.127,
+        "controller + update": 1.106,
+        "complete CPU path": 1.589,
+        "frame": 1.389,
+        "idle frame": 0.294,
+        "style_layout": 0.485
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "hud",
+        "cascade": 0.037,
+        "boxes": 0.085,
+        "layout": 0.0,
+        "paint": 0.089,
+        "core update, total": 0.215,
+        "host draw": 0.329,
+        "host prepare": 0.086,
+        "host capture": 0.031,
+        "host prepare GPU": 0.055,
+        "host encode": 0.122,
+        "host submit": 0.121,
+        "controller + update": 0.266,
+        "complete CPU path": 0.594,
+        "frame": 0.544,
+        "idle frame": 0.277,
+        "style_layout": 0.122
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "inventory",
+        "cascade": 0.13,
+        "boxes": 0.211,
+        "layout": 0.0,
+        "paint": 0.342,
+        "core update, total": 0.688,
+        "host draw": 0.458,
+        "host prepare": 0.19,
+        "host capture": 0.066,
+        "host prepare GPU": 0.124,
+        "host encode": 0.145,
+        "host submit": 0.124,
+        "controller + update": 0.882,
+        "complete CPU path": 1.34,
+        "frame": 1.147,
+        "idle frame": 0.295,
+        "style_layout": 0.34099999999999997
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "hud",
+        "cascade": 0.036,
+        "boxes": 0.083,
+        "layout": 0.0,
+        "paint": 0.086,
+        "core update, total": 0.208,
+        "host draw": 0.307,
+        "host prepare": 0.082,
+        "host capture": 0.03,
+        "host prepare GPU": 0.052,
+        "host encode": 0.112,
+        "host submit": 0.113,
+        "controller + update": 0.257,
+        "complete CPU path": 0.563,
+        "frame": 0.515,
+        "idle frame": 0.235,
+        "style_layout": 0.119
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "inventory",
+        "cascade": 0.113,
+        "boxes": 0.189,
+        "layout": 0.0,
+        "paint": 0.313,
+        "core update, total": 0.619,
+        "host draw": 0.414,
+        "host prepare": 0.175,
+        "host capture": 0.061,
+        "host prepare GPU": 0.114,
+        "host encode": 0.127,
+        "host submit": 0.112,
+        "controller + update": 0.791,
+        "complete CPU path": 1.204,
+        "frame": 1.033,
+        "idle frame": 0.265,
+        "style_layout": 0.302
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "hud",
+        "cascade": 0.035,
+        "boxes": 0.08,
+        "layout": 0.0,
+        "paint": 0.083,
+        "core update, total": 0.202,
+        "host draw": 0.298,
+        "host prepare": 0.08,
+        "host capture": 0.029,
+        "host prepare GPU": 0.051,
+        "host encode": 0.109,
+        "host submit": 0.109,
+        "controller + update": 0.249,
+        "complete CPU path": 0.547,
+        "frame": 0.5,
+        "idle frame": 0.239,
+        "style_layout": 0.115
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "inventory",
+        "cascade": 0.113,
+        "boxes": 0.29,
+        "layout": 0.0,
+        "paint": 0.352,
+        "core update, total": 0.759,
+        "host draw": 0.404,
+        "host prepare": 0.17,
+        "host capture": 0.057,
+        "host prepare GPU": 0.113,
+        "host encode": 0.125,
+        "host submit": 0.109,
+        "controller + update": 0.926,
+        "complete CPU path": 1.33,
+        "frame": 1.164,
+        "idle frame": 0.265,
+        "style_layout": 0.40299999999999997
+      }
+    ],
+    "summary": {
+      "hud": {
+        "style_layout": {
+          "baseline": 0.1235,
+          "candidate": 0.121,
+          "paired_percent": -0.6418219461697849,
+          "wins": 2
+        },
+        "paint": {
+          "baseline": 0.0895,
+          "candidate": 0.089,
+          "paired_percent": 0.17679413305394243,
+          "wins": 2
+        },
+        "complete CPU path": {
+          "baseline": 0.587,
+          "candidate": 0.586,
+          "paired_percent": 0.03395142334812751,
+          "wins": 2
+        }
+      },
+      "inventory": {
+        "style_layout": {
+          "baseline": 0.477,
+          "candidate": 0.34099999999999997,
+          "paired_percent": -27.376378194469314,
+          "wins": 4
+        },
+        "paint": {
+          "baseline": 0.413,
+          "candidate": 0.347,
+          "paired_percent": -14.43400349650349,
+          "wins": 3
+        },
+        "complete CPU path": {
+          "baseline": 1.5779999999999998,
+          "candidate": 1.3505,
+          "paired_percent": -12.571958530687954,
+          "wins": 3
+        }
+      }
+    },
+    "geometry": [
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      }
+    ],
+    "cadence": [
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.9892555
+      },
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.985633
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.972614
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 17.2705345
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.9755
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.958109
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.9715305
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 17.0105115
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.9631475
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 17.052206
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.989160000000002
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.971566
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.9447405
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.987192
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.989005
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.952798
+      }
+    ],
+    "hashes": {
+      "baseline": "3a7a616f0b2b0741b003a2b17b765f8f65a4e8c56c45fa69fe9bed80ec997239",
+      "candidate": "d62b8c909448fe3a9c0dba7bd32dabf617613ec0f18716a79df08a4c15adcdeb"
+    }
+  },
+  "integration": {
+    "full_gate_exit": 0,
+    "gcc_suites": 15,
+    "sanitizer_suites": 17,
+    "main_core_checks": {
+      "gcc": 706127,
+      "asan_ubsan": 706121
+    },
+    "chrome_captures": 341,
+    "chrome_behavior": {
+      "passed": 66,
+      "known_failing": 1
+    },
+    "unity_editmode": {
+      "passed": 255,
+      "inconclusive": 2
+    },
+    "unity_player": {
+      "command": [
+        "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
+        "-batchmode",
+        "-projectPath",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui",
+        "-runTests",
+        "-testPlatform",
+        "StandaloneWindows64",
+        "-testFilter",
+        "Weva.Tests.Rendering.NativeRenderPassTests",
+        "-buildPlayerPath",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\flex-proof-gate\\unity-player\\player",
+        "-testResults",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\flex-proof-gate\\unity-player\\results.xml",
+        "-logFile",
+        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\flex-proof-gate\\unity-player\\build.log"
+      ],
+      "exit_code": 0,
+      "passed": true,
+      "test_run": {
+        "id": "2",
+        "testcasecount": "7",
+        "result": "Passed",
+        "total": "7",
+        "passed": "7",
+        "failed": "0",
+        "inconclusive": "0",
+        "skipped": "0",
+        "asserts": "0",
+        "engine-version": "3.5.0.0",
+        "clr-version": "4.0.30319.42000",
+        "start-time": "0001-01-01 00:00:00Z",
+        "end-time": "0001-01-01 00:00:00Z",
+        "duration": "1.7525432"
+      }
+    },
+    "player_pngs_identical": 16,
+    "godot_font_checks": 19833,
+    "godot": "Qualified Linux font/Unicode/render/export/live-scene gates passed; Windows extension rebuilt. No new Godot timing claim."
+  },
+  "evidence_hashes": {
+    ".utmp\\render-audit-20261030\\flex-proof-gate\\full-gate-verified.log": "db48a74ce461619ad80a975384e5c52c922fab4d109f64b6d684a327ea78e762",
+    ".utmp\\render-audit-20261030\\flex-proof-gate\\unity-full.xml": "c473ecf07c7926543db26ed003b016fdf9cba428c4562a1beb7e9be0d359b87f",
+    ".utmp\\render-audit-20261030\\flex-proof-gate\\unity-player\\results.xml": "6997a2bc85fd37dab76becf51942db992f688cd2cdcbcdafbc72f9d44a00316c",
+    ".utmp\\render-audit-20261030\\flex-proof-agentic\\receipt.json": "28ffa0b0ef7c3aad7e12639cd4c176e87282e674264deac17f7b5dc2de032832",
+    "libweva\\include\\weva\\box.h": "1a6f2f0b3a3dc79708d1bf79f8f0f7b8c2e7eb819196bb0119c51eed174cda05",
+    "libweva\\src\\flex.cpp": "e44e7c945cd4f1122b8b324756724d4a507e1cb17fe05a24b050f3ef2c337ea7",
+    "libweva\\src\\incremental_layout.cpp": "ae7f14bcee7cbdcae531a1620ec14bbe095b0522ffed3f44ac9499a8cdf8705f"
+  }
+}

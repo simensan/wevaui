@@ -659,6 +659,17 @@ old allocated width. Used widths alone are insufficient: shrinking can hide
 changed natural widths and otherwise leave neighbouring items stale. The
 record owns no pointers and follows the box's pool reset/copy contract.
 
+For a row item with a definite width, auto basis, auto minimum and no maximum,
+the flex solver records whether every allocation step stayed at or above its
+base. The specified width caps the automatic minimum, so descendant intrinsic
+width changes cannot affect that allocation. Incremental reuse still requires
+unchanged natural dimensions, final geometry, margins, baselines and exported
+intrinsic contributions. A previously stretched height is reapplied only after
+those natural inputs agree. This proof excludes layout changes to the item
+itself. More generally, flex-item edge changes that alter its padding/border
+frame return to parent layout: the inner flex base changes shrink weights even
+when natural and final outer dimensions happen to match.
+
 Parent input capture measures min-content and max-content in one recursive
 walk, sharing child classification and constraint resolution. Single-size
 queries specialize away the unused result. The calculation reads current
