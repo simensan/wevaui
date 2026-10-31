@@ -1,0 +1,622 @@
+{
+  "manifest": {
+    "weva_revision": "43f59689b2d9f5f51bb126c5fec47944d9350782",
+    "agentic_revision": "f0a91651ab7c52945b3e672451a73c2322c27496",
+    "binary_sha256": "3a7a616f0b2b0741b003a2b17b765f8f65a4e8c56c45fa69fe9bed80ec997239",
+    "completed": [
+      {
+        "round": 0,
+        "mode": "native"
+      },
+      {
+        "round": 0,
+        "mode": "chrome"
+      },
+      {
+        "round": 1,
+        "mode": "chrome"
+      },
+      {
+        "round": 1,
+        "mode": "native"
+      },
+      {
+        "round": 2,
+        "mode": "native"
+      },
+      {
+        "round": 2,
+        "mode": "chrome"
+      }
+    ]
+  },
+  "browser": "Chrome/152.0.7977.82",
+  "fixture_hashes": {
+    "ammo.svg.png": "d4520a84fd2b3fb782fff62a8db6309dcc73a01341283e86a878c9db48a2b4c9",
+    "bandage.svg.png": "21a0b64549df57ec47a4268213a6b6224c6b9fe8ba7397cba905f0c9e853f355",
+    "beans.svg.png": "cba3c4dc9418d7f358d2fa08ee84fabd465d4833024e39fc1512fe0df7b12eb4",
+    "bolt.svg.png": "b3377182cda4864d4e856bbafdc770cbdac253e87de7842346be45fc5b1e720a",
+    "campfire.svg.png": "5e041c7efcd01ebf13145c4a77d4e28b661d01f8d0551c330218705abcaac848",
+    "canteen.svg.png": "977f51dee7dff4001e396afe93a25d8111821b0b6317f4b15d9a9df79b276e86",
+    "cloth.svg.png": "2df601d83f95c1afc1196b852b4a41000d73155fdef701af74af5fffd638858b",
+    "drop.svg.png": "35271db3426bfd7e67188c7dc68684b1bf15508b12db0ccb6485c2afe9652424",
+    "food.svg.png": "ca655dfac85122ab568f6bb76c5d609447f10a3c5ad9916764803f6fbeb97e34",
+    "hatchet.svg.png": "02508c1e246f60fdab8b2af5afa217582cbd327198dd614de98148655408ed49",
+    "heart.svg.png": "30d3a74ae6b0ec0d310a5603fe8071e0ad8538a5e25647980f4eb8bca65ab146",
+    "hud.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    "hud.html": "b29a00ff8341aeec836f793fc988192149206931aa49e83f8895234b74f5ad10",
+    "inventory.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    "inventory.html": "f2f130a482259071b078107e9d1a734c88dd47809bde4f382faa1c3028032090",
+    "knife.svg.png": "ceda161ae3ae746f80250b104a9146972159dfe6dfc75a06b6c65f512e1daa21",
+    "mutations.json": "aa0ad5e6a9768b9ece2c00c3a0d5afbb68f167a5461ecc086c029be0f253e8bc",
+    "open-sans-semibold.ttf": "445ac29890c338bc293873ec8da462193755346499903133b1b4d6f16eb708ca",
+    "revolver.svg.png": "730e040dd4dc0f0ab0e0919c29a9e00fe293fdf4b2d89544a3135c73b191c692",
+    "rope.svg.png": "39d42acb1a7b28cc761e4c9c00512ea601627fb0674cf994d53bc6fe86fdf09d",
+    "stone.svg.png": "64403858edb3564e0b034cf7da6d652286a5b55785f94547f56cf361f08f639b",
+    "wood.svg.png": "cbb723754580f23cfdd5a47f1640058bee21c510d89f95e7cdb9d42aef95bd7d"
+  },
+  "native": [
+    {
+      "case": "hud",
+      "round": 0,
+      "cascade": 0.029,
+      "boxes": 0.065,
+      "layout": 0.0,
+      "paint": 0.067,
+      "core update, total": 0.164,
+      "host draw": 0.301,
+      "host prepare": 0.069,
+      "host capture": 0.023,
+      "host prepare GPU": 0.046,
+      "host encode": 0.094,
+      "host submit": 0.139,
+      "controller + update": 0.201,
+      "complete CPU path": 0.502,
+      "frame": 0.466,
+      "idle frame": 0.222,
+      "style_layout": 0.094
+    },
+    {
+      "case": "inventory",
+      "round": 0,
+      "cascade": 0.101,
+      "boxes": 0.27,
+      "layout": 0.0,
+      "paint": 0.306,
+      "core update, total": 0.682,
+      "host draw": 0.398,
+      "host prepare": 0.138,
+      "host capture": 0.043,
+      "host prepare GPU": 0.095,
+      "host encode": 0.104,
+      "host submit": 0.156,
+      "controller + update": 0.837,
+      "complete CPU path": 1.236,
+      "frame": 1.08,
+      "idle frame": 0.261,
+      "style_layout": 0.371
+    },
+    {
+      "case": "hud",
+      "round": 1,
+      "cascade": 0.026,
+      "boxes": 0.063,
+      "layout": 0.0,
+      "paint": 0.064,
+      "core update, total": 0.158,
+      "host draw": 0.303,
+      "host prepare": 0.065,
+      "host capture": 0.021,
+      "host prepare GPU": 0.044,
+      "host encode": 0.089,
+      "host submit": 0.149,
+      "controller + update": 0.191,
+      "complete CPU path": 0.494,
+      "frame": 0.461,
+      "idle frame": 0.238,
+      "style_layout": 0.089
+    },
+    {
+      "case": "inventory",
+      "round": 1,
+      "cascade": 0.099,
+      "boxes": 0.267,
+      "layout": 0.0,
+      "paint": 0.303,
+      "core update, total": 0.674,
+      "host draw": 0.393,
+      "host prepare": 0.138,
+      "host capture": 0.043,
+      "host prepare GPU": 0.095,
+      "host encode": 0.105,
+      "host submit": 0.15,
+      "controller + update": 0.828,
+      "complete CPU path": 1.221,
+      "frame": 1.067,
+      "idle frame": 0.421,
+      "style_layout": 0.366
+    },
+    {
+      "case": "hud",
+      "round": 2,
+      "cascade": 0.047,
+      "boxes": 0.11,
+      "layout": 0.0,
+      "paint": 0.114,
+      "core update, total": 0.276,
+      "host draw": 0.448,
+      "host prepare": 0.114,
+      "host capture": 0.041,
+      "host prepare GPU": 0.073,
+      "host encode": 0.158,
+      "host submit": 0.176,
+      "controller + update": 0.352,
+      "complete CPU path": 0.8,
+      "frame": 0.724,
+      "idle frame": 0.274,
+      "style_layout": 0.157
+    },
+    {
+      "case": "inventory",
+      "round": 2,
+      "cascade": 0.099,
+      "boxes": 0.254,
+      "layout": 0.0,
+      "paint": 0.293,
+      "core update, total": 0.65,
+      "host draw": 0.377,
+      "host prepare": 0.138,
+      "host capture": 0.044,
+      "host prepare GPU": 0.094,
+      "host encode": 0.102,
+      "host submit": 0.138,
+      "controller + update": 0.8,
+      "complete CPU path": 1.177,
+      "frame": 1.027,
+      "idle frame": 0.278,
+      "style_layout": 0.353
+    }
+  ],
+  "chrome": [
+    {
+      "case": "hud",
+      "round": 0,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.10481,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.11102000000000001,
+      "paint_recording_events": 1308,
+      "raster_workers_cpu_ms_per_update": 0.025915,
+      "raster_workers_events": 200,
+      "window_ms": 3304.965,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 0,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.00923,
+      "paint_recording_events": 867,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3311.201,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 0,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.163175,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.210305,
+      "paint_recording_events": 1664,
+      "raster_workers_cpu_ms_per_update": 0.091665,
+      "raster_workers_events": 600,
+      "window_ms": 3313.755,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 0,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.00962,
+      "paint_recording_events": 864,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3311.185,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 1,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.118765,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.11558500000000001,
+      "paint_recording_events": 1305,
+      "raster_workers_cpu_ms_per_update": 0.02624,
+      "raster_workers_events": 200,
+      "window_ms": 3308.193,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 1,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.01057,
+      "paint_recording_events": 859,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3308.266,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 1,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.16653500000000002,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.21625,
+      "paint_recording_events": 1676,
+      "raster_workers_cpu_ms_per_update": 0.09598000000000001,
+      "raster_workers_events": 600,
+      "window_ms": 3313.572,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 1,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.012355,
+      "paint_recording_events": 884,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3308.335,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 2,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.152205,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.145695,
+      "paint_recording_events": 1317,
+      "raster_workers_cpu_ms_per_update": 0.030455,
+      "raster_workers_events": 200,
+      "window_ms": 3304.75,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 2,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.010035,
+      "paint_recording_events": 909,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3306.913,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 2,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.21747,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.26947,
+      "paint_recording_events": 1699,
+      "raster_workers_cpu_ms_per_update": 0.10881500000000001,
+      "raster_workers_events": 600,
+      "window_ms": 3311.723,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 2,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.009985,
+      "paint_recording_events": 872,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3307.389,
+      "gpu_execution_ms": null
+    }
+  ],
+  "cadence": [
+    {
+      "round": 0,
+      "engine": "native",
+      "case": "Authored HUD",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.035832
+    },
+    {
+      "round": 0,
+      "engine": "native",
+      "case": "Authored inventory",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.037845
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.597989949748744
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.59748743718593
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.597487437185933
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.597989949748744
+    },
+    {
+      "round": 1,
+      "engine": "native",
+      "case": "Authored HUD",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.002083
+    },
+    {
+      "round": 1,
+      "engine": "native",
+      "case": "Authored inventory",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.023811000000002
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.597487437185933
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598492462311555
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.598492462311555
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598492462311558
+    },
+    {
+      "round": 2,
+      "engine": "native",
+      "case": "Authored HUD",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.0216695
+    },
+    {
+      "round": 2,
+      "engine": "native",
+      "case": "Authored inventory",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.0336805
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.597487437185933
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598994974874376
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.597989949748747
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598492462311555
+    }
+  ],
+  "geometry": [
+    {
+      "round": 0,
+      "case": "hud",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 0,
+      "case": "hud",
+      "phase": "final",
+      "max_difference_px": 0.753662109375
+    },
+    {
+      "round": 0,
+      "case": "inventory",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 0,
+      "case": "inventory",
+      "phase": "final",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 1,
+      "case": "hud",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 1,
+      "case": "hud",
+      "phase": "final",
+      "max_difference_px": 0.753662109375
+    },
+    {
+      "round": 1,
+      "case": "inventory",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 1,
+      "case": "inventory",
+      "phase": "final",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 2,
+      "case": "hud",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 2,
+      "case": "hud",
+      "phase": "final",
+      "max_difference_px": 0.753662109375
+    },
+    {
+      "round": 2,
+      "case": "inventory",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 2,
+      "case": "inventory",
+      "phase": "final",
+      "max_difference_px": 0.74365234375
+    }
+  ],
+  "medians": {
+    "hud": {
+      "cascade": 0.029,
+      "boxes": 0.065,
+      "layout": 0.0,
+      "paint": 0.067,
+      "core update, total": 0.164,
+      "host draw": 0.303,
+      "host prepare": 0.069,
+      "host capture": 0.023,
+      "host prepare GPU": 0.046,
+      "host encode": 0.094,
+      "host submit": 0.149,
+      "controller + update": 0.201,
+      "complete CPU path": 0.502,
+      "frame": 0.466,
+      "idle frame": 0.238,
+      "style_layout": 0.094,
+      "chrome": {
+        "mutating": {
+          "style_layout_cpu_ms_per_update": 0.118765,
+          "paint_recording_cpu_ms_per_update": 0.11558500000000001,
+          "raster_workers_cpu_ms_per_update": 0.02624
+        },
+        "retained": {
+          "style_layout_cpu_ms_per_update": 0.0,
+          "paint_recording_cpu_ms_per_update": 0.010035,
+          "raster_workers_cpu_ms_per_update": 0.0
+        }
+      }
+    },
+    "inventory": {
+      "cascade": 0.099,
+      "boxes": 0.267,
+      "layout": 0.0,
+      "paint": 0.303,
+      "core update, total": 0.674,
+      "host draw": 0.393,
+      "host prepare": 0.138,
+      "host capture": 0.043,
+      "host prepare GPU": 0.095,
+      "host encode": 0.104,
+      "host submit": 0.15,
+      "controller + update": 0.828,
+      "complete CPU path": 1.221,
+      "frame": 1.067,
+      "idle frame": 0.278,
+      "style_layout": 0.366,
+      "chrome": {
+        "mutating": {
+          "style_layout_cpu_ms_per_update": 0.16653500000000002,
+          "paint_recording_cpu_ms_per_update": 0.21625,
+          "raster_workers_cpu_ms_per_update": 0.09598000000000001
+        },
+        "retained": {
+          "style_layout_cpu_ms_per_update": 0.0,
+          "paint_recording_cpu_ms_per_update": 0.009985,
+          "raster_workers_cpu_ms_per_update": 0.0
+        }
+      }
+    }
+  },
+  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\current-chrome-comparison",
+  "scope": "CPU stage comparison, not GPU execution or presented-frame latency",
+  "evidence_sha256": {
+    "chrome-0.log": "1021f88a7f4a9850d279dd80de53be5ce5134b848be3c3a8cbcf00ee34465f4a",
+    "chrome-1.log": "1021f88a7f4a9850d279dd80de53be5ce5134b848be3c3a8cbcf00ee34465f4a",
+    "chrome-2.log": "1021f88a7f4a9850d279dd80de53be5ce5134b848be3c3a8cbcf00ee34465f4a",
+    "native-0.log": "15a33f12fbbb09991f652211990722c3cc122f7d1cb79e7d428b58927af2714c",
+    "native-1.log": "e07df9d3b1fa979a6ae0c0090c251dd5d912ede7cd7b7bcdccf2a41390ff8f7d",
+    "native-2.log": "93874c85717976651dce0fb8ce221d1e49ff0c57f6cd1327bdf2863fb8b30f85",
+    "chrome-0\\hud.png": "2a46ca2b01c4c285e7ef2c9fface7a62e8eb83912438661f5df8a56e6eee8be4",
+    "chrome-0\\inventory.png": "c796addd38ac8e50c05ec0da888bfc2ad4477e69d8767c9ef9feebab5f6bd423",
+    "chrome-0\\results.json": "2a3b0ee10a727bee4ba332d255e13041853f72276e0d58daeaf0164baaa7365e",
+    "chrome-1\\hud.png": "2a46ca2b01c4c285e7ef2c9fface7a62e8eb83912438661f5df8a56e6eee8be4",
+    "chrome-1\\inventory.png": "c796addd38ac8e50c05ec0da888bfc2ad4477e69d8767c9ef9feebab5f6bd423",
+    "chrome-1\\results.json": "412572abab5977e7aa3590fda415d22c5fd4419e29f776a591a8abb7b9d04ad9",
+    "chrome-2\\hud.png": "2a46ca2b01c4c285e7ef2c9fface7a62e8eb83912438661f5df8a56e6eee8be4",
+    "chrome-2\\inventory.png": "c796addd38ac8e50c05ec0da888bfc2ad4477e69d8767c9ef9feebab5f6bd423",
+    "chrome-2\\results.json": "ed6fa56f1d1b04f702541b3379921c26c5a531ab880a59fc34baafe1d328b32a"
+  },
+  "trace_accounting_tests": 3
+}

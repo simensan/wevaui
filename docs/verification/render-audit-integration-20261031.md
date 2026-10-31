@@ -34,7 +34,9 @@ cover pooled meshes, changing size, 16/32-bit indices and backdrop transitions.
 The [prepared Chrome comparison](prepared-render-comparison-20261031.md) uses
 matched content and mutations with clearly separated timing boundaries. It
 predates later shared-core changes and needs remeasurement before describing
-current relative speed. Chrome paint/raster CPU, host update elapsed time and
+current relative speed. That [current-core rerun](current-render-comparison-20261031.md)
+is now recorded separately and still identifies an inventory style/layout gap.
+Chrome paint/raster CPU, host update elapsed time and
 whole-player GPU timings are not interchangeable.
 
 The [Unity 3D scene diagnostic](unity-player-world-20261031.md) includes a modest

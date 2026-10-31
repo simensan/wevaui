@@ -1,5 +1,8 @@
 # Prepared rendering comparison — October 31, 2026
 
+The [current-core rerun](current-render-comparison-20261031.md) supersedes this
+table for current performance. Keep this receipt as historical evidence only.
+
 Follow-up: [sibling-subject invalidation](sibling-subjects-20261031.md) reduces
 shared cascade work. The table below predates that change and must not be
 presented as a newly measured comparison for the current core.
