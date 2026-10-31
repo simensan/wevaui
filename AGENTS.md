@@ -1,5 +1,10 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [Agentic submission follow-up](docs/verification/ui-submission-20261031.md)
+combines presentation and HTML encoding: inventory worker UI-phase CPU falls
+17.1% and frame median 3.3% in three pairs. 18,000 frames, 713 reloads and nine
+worker tests pass; static-mode frame tails remain mixed. No shared-core change.
+
 The [runtime accounting correction](docs/verification/runtime-accounting-20261031.md)
 separates worker UI from main-thread cost. Inventory main UI is 0.533 ms mean,
 including 0.511 ms document work; 9,000 frames and 355 reloads pass. Older
