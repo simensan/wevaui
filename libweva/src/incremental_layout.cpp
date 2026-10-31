@@ -664,6 +664,14 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             if (imposed_width) {
                 if (outer.display != DisplayKind::Flex && outer.display != DisplayKind::Grid)
                     continue;
+                // The probe must preserve the parent's natural height input
+                // and the item's final outer height. At the same natural/final
+                // width, relayout_at cannot produce a different height without
+                // imposing the parent's cross size (which this probe does not
+                // do). A previously stretched height makes both checks
+                // impossible to satisfy; go straight to the owning parent.
+                if (old.cross_size_imposed && old.parent_layout_input.width == old.width &&
+                    old.parent_layout_input.height != old.height) continue;
                 // Edge-only changes can be proved from the parent's measured
                 // inputs below. Sizing, placement and alignment directives
                 // still require the parent to allocate the item again.

@@ -907,6 +907,45 @@ void test_abi_incremental_glyph_preparation() {
 }
 
 void test_abi_incremental_flex_intrinsics() {
+    // A stretched item can have identical measured/final widths but different
+    // natural/final heights. Skipping its speculative probe must still let
+    // the parent resize siblings, wrap text and reapply cross-axis bounds.
+    for (const char* variant : {
+            "", "main{width:180px}aside{min-width:0}",
+            "aside{min-height:110px;max-height:150px}",
+            "main{height:auto}section{height:140px}",
+            "main{flex-wrap:wrap}aside{min-width:160px}",
+            "main{display:grid;grid-template-columns:100px 140px}"}) {
+        const std::string sheet = std::string(
+            "body{margin:0}main{display:flex;width:320px;height:180px;gap:8px}"
+            "section{width:100px;background:#234}aside{width:140px;background:#abc}"
+            "p{margin:0}footer{height:20px;background:#456}") + variant;
+        const char* markup = "<main><section>Sibling</section><aside><p id=title>A</p>"
+                             "<p>Details</p></aside></main><footer>Footer</footer>";
+        const auto cfg = config();
+        weva_document_t docs[2]{};
+        for (auto& doc : docs) {
+            doc = weva_document_create(&cfg);
+            CHECK(weva_document_add_css(doc, sheet.data(), sheet.size()) == WEVA_OK);
+            CHECK(weva_document_load_html(doc, markup, std::strlen(markup)) == WEVA_OK);
+            CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        }
+        for (const char* title : {"B", "Long title that wraps across several lines",
+                                  "unbreakable_title_changes_the_minimum_width", "A"}) {
+            for (auto doc : docs)
+                CHECK(weva_element_set_text(doc, weva_document_query(doc, "#title"), title) == WEVA_OK);
+            // Keep identical glyph histories while forcing a complete control layout.
+            weva_document_set_viewport(docs[1], 401, 300);
+            weva_document_set_viewport(docs[1], 400, 300);
+            CHECK(weva_document_update(docs[0], 0) == WEVA_OK);
+            CHECK(weva_document_update(docs[1], 0) == WEVA_OK);
+            const Frame live = capture(docs[0]), full = capture(docs[1]);
+            if (live != full) std::printf("  stretched probe [%s / %s]: %s\n", variant, title, live.diff(full).c_str());
+            CHECK(live == full);
+        }
+        for (auto doc : docs) weva_document_destroy(doc);
+    }
+
     const char* html =
         "<main><nav><span class=hint><span class=btn>A</span>Load</span>"
         "<span class=hint><span class=btn id=button>B</span>Back</span></nav>"

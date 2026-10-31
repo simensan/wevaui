@@ -1,0 +1,85 @@
+{
+  "baseline_commit": "7afc6f82",
+  "scope": "core update only, StubFont, setters excluded; not host or GPU timing",
+  "warmups_per_process": 120,
+  "updates_per_process": 20000,
+  "pairs": [
+    {
+      "pair": 0,
+      "mode": "baseline",
+      "mean_update_ms": 0.379173,
+      "sha256": "2b17349e7e8bf386624941bc43e78398891f44138258e7713f861eed9e3ffb6d"
+    },
+    {
+      "pair": 0,
+      "mode": "candidate",
+      "mean_update_ms": 0.354163,
+      "sha256": "8c8babac98315db26a8bcbfd03b1e9d48df4890bcf339633cf9830cba75d25ba"
+    },
+    {
+      "pair": 1,
+      "mode": "candidate",
+      "mean_update_ms": 0.373996,
+      "sha256": "8c8babac98315db26a8bcbfd03b1e9d48df4890bcf339633cf9830cba75d25ba"
+    },
+    {
+      "pair": 1,
+      "mode": "baseline",
+      "mean_update_ms": 0.388363,
+      "sha256": "2b17349e7e8bf386624941bc43e78398891f44138258e7713f861eed9e3ffb6d"
+    },
+    {
+      "pair": 2,
+      "mode": "baseline",
+      "mean_update_ms": 0.385491,
+      "sha256": "2b17349e7e8bf386624941bc43e78398891f44138258e7713f861eed9e3ffb6d"
+    },
+    {
+      "pair": 2,
+      "mode": "candidate",
+      "mean_update_ms": 0.342653,
+      "sha256": "8c8babac98315db26a8bcbfd03b1e9d48df4890bcf339633cf9830cba75d25ba"
+    },
+    {
+      "pair": 3,
+      "mode": "candidate",
+      "mean_update_ms": 0.373126,
+      "sha256": "8c8babac98315db26a8bcbfd03b1e9d48df4890bcf339633cf9830cba75d25ba"
+    },
+    {
+      "pair": 3,
+      "mode": "baseline",
+      "mean_update_ms": 0.362075,
+      "sha256": "2b17349e7e8bf386624941bc43e78398891f44138258e7713f861eed9e3ffb6d"
+    },
+    {
+      "pair": 4,
+      "mode": "baseline",
+      "mean_update_ms": 0.384181,
+      "sha256": "2b17349e7e8bf386624941bc43e78398891f44138258e7713f861eed9e3ffb6d"
+    },
+    {
+      "pair": 4,
+      "mode": "candidate",
+      "mean_update_ms": 0.351581,
+      "sha256": "8c8babac98315db26a8bcbfd03b1e9d48df4890bcf339633cf9830cba75d25ba"
+    },
+    {
+      "pair": 5,
+      "mode": "candidate",
+      "mean_update_ms": 0.35694,
+      "sha256": "8c8babac98315db26a8bcbfd03b1e9d48df4890bcf339633cf9830cba75d25ba"
+    },
+    {
+      "pair": 5,
+      "mode": "baseline",
+      "mean_update_ms": 0.373618,
+      "sha256": "2b17349e7e8bf386624941bc43e78398891f44138258e7713f861eed9e3ffb6d"
+    }
+  ],
+  "median_baseline_mean_ms": 0.381677,
+  "median_candidate_mean_ms": 0.3555515,
+  "median_paired_percent_change": -5.5299257367683765,
+  "candidate_faster_pairs": 5,
+  "evidence_root": ".utmp\\render-audit-20261030"
+}

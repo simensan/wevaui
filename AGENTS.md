@@ -431,3 +431,11 @@ The [nested first-baseline correction](docs/verification/nested-baseline-2026103
 resolves the retained 47px discrepancy. Main checks are 492,906 (492,900
 sanitized); 340 Chrome captures and affected host suites pass. Two paired
 batches show a 1.0–3.2% inventory CPU cost for this correctness fix.
+
+The [stretched-item probe follow-up](docs/verification/stretched-probe-20261031.md)
+skips doomed incremental probes in the shared core. Six paired fixed-font
+inventory runs show a 5.53% median paired CPU reduction (five wins, one loss),
+not a host frame-time claim. GCC passes 15 suites, Clang ASan/UBSan 17,
+and 340 Chrome captures pass the ceiling. Both hosts were rebuilt; Unity
+Native EditMode passes 254 with two inconclusive and rendering 7/7;
+Godot host/font/texture checks pass. See the receipt for scope and evidence.
