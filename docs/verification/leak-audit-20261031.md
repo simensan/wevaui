@@ -96,3 +96,6 @@ hashes of the preserved probes/logs under `.utmp/leak-audit-20261031/`.
 `lifecycle.cpp` and `lsan-positive.cpp` reproduce the native probes.
 The previous full release qualification remains the lazy-atlas receipt; this
 report is an additional audit, not a new full host-release qualification.
+
+Follow-up: both confirmed Unity findings are addressed by the
+[font-retention fix](font-retention-20261031.md), with the original probes rerun.

@@ -54,17 +54,24 @@ namespace Weva.Native
         // disposal: evicting it would give the next load a fresh native identity.
         private static readonly Dictionary<string, byte[]> s_fontBytes = new Dictionary<string, byte[]>(StringComparer.Ordinal);
 
-        private static byte[] SharedFontBytes(byte[] data)
+        private static string FontContentKey(byte[] data)
         {
-            string key;
-            using (var hash = SHA256.Create()) key = Convert.ToBase64String(hash.ComputeHash(data));
+            using (var hash = SHA256.Create()) return Convert.ToBase64String(hash.ComputeHash(data));
+        }
+
+        private static byte[] SharedFontBytes(byte[] data) => SharedFontBytes(data, out _);
+
+        private static byte[] SharedFontBytes(byte[] data, out string key)
+        {
+            key = FontContentKey(data);
             lock (s_fontBytes)
             {
                 if (s_fontBytes.TryGetValue(key, out byte[] shared)) return shared;
                 // A caller retaining its input must not be able to corrupt a
                 // buffer now shared by unrelated documents or their shapers.
                 shared = (byte[])data.Clone();
-                s_fontBytes.Add(key, shared);
+                // Publish only after FontEngine accepts this buffer. Failed
+                // content must not survive backend disposal in the static cache.
                 return shared;
             }
         }
@@ -74,6 +81,7 @@ namespace Weva.Native
         {
             public Font Asset;
             public byte[] Bytes;
+            public string ByteKey;
 #if UNITY_EDITOR
             public byte[] EditorAssetBytes;
 #endif
@@ -126,6 +134,7 @@ namespace Weva.Native
             var source = new Source { Asset = font, Index = index, Name = font.name };
 #if UNITY_EDITOR
             source.EditorAssetBytes = BytesForEditorAsset(font);
+            if (source.EditorAssetBytes != null) source.ByteKey = FontContentKey(source.EditorAssetBytes);
 #endif
             return Register(source);
         }
@@ -134,7 +143,8 @@ namespace Weva.Native
         public ulong Adopt(byte[] data, int index = 0, string name = null)
         {
             if (data == null || data.Length == 0) throw new ArgumentException("font data is empty", nameof(data));
-            return Register(new Source { Bytes = SharedFontBytes(data), Index = index, Name = name ?? "bytes" });
+            byte[] bytes = SharedFontBytes(data, out string key);
+            return Register(new Source { Bytes = bytes, ByteKey = key, Index = index, Name = name ?? "bytes" });
         }
 
         /// <summary>Adopts a font file by path.</summary>
@@ -579,6 +589,10 @@ namespace Weva.Native
             return !string.IsNullOrEmpty(path);
         }
 
+        // A URL may alternate among already accepted versions. Keep each face
+        // identity stable so returning to previous content reuses its metrics.
+        private readonly Dictionary<(string Url, string Content), ulong> _cssByteFaces = new Dictionary<(string, string), ulong>();
+
         private ulong AdoptCssUrl(NativeDocument doc, string source)
         {
             if (string.IsNullOrEmpty(source)) return 0;
@@ -596,6 +610,12 @@ namespace Weva.Native
             // data. Reuse the face only when the reader returned the same bytes.
             if (_cssFaces.TryGetValue(source, out ulong face) && _faces.TryGetValue(face, out Face cached) &&
                 cached.Sources[0].Bytes != null && cached.Sources[0].Bytes.AsSpan().SequenceEqual(bytes)) return face;
+            var content = (source, FontContentKey(bytes));
+            if (_cssByteFaces.TryGetValue(content, out face))
+            {
+                _cssFaces[source] = face;
+                return face;
+            }
             face = Adopt(bytes, 0, source);
             if (!Activate(_faces[face].Sources[0]))
             {
@@ -603,6 +623,7 @@ namespace Weva.Native
                 return 0;
             }
             _cssFaces[source] = face;
+            _cssByteFaces[content] = face;
             return face;
         }
 
@@ -639,6 +660,7 @@ namespace Weva.Native
                 _bitmapCapacity = 0;
             }
             _faces.Clear();
+            _cssByteFaces.Clear();
             Invalidate();
         }
 
@@ -875,6 +897,20 @@ namespace Weva.Native
             // into a collection is not exposed by these overloads; a non-zero
             // index is recorded as an error and the first face is used.
             if (source.Index != 0) LastError = "font collections are not supported; face index " + source.Index + " ignored";
+            // Another source may have validated identical content since Adopt.
+            // Load the accepted canonical buffer to preserve native identity.
+            if (source.ByteKey != null)
+            {
+                lock (s_fontBytes)
+                    if (s_fontBytes.TryGetValue(source.ByteKey, out byte[] canonical))
+                    {
+#if UNITY_EDITOR
+                        if (source.EditorAssetBytes != null) source.EditorAssetBytes = canonical;
+                        else
+#endif
+                        source.Bytes = canonical;
+                    }
+            }
             FontEngineError error;
 #if UNITY_EDITOR
             if (source.EditorAssetBytes != null) error = FontEngine.LoadFontFace(source.EditorAssetBytes);
@@ -888,6 +924,14 @@ namespace Weva.Native
                 LastError = "LoadFontFace(" + source.Name + "): " + error;
                 _active = null;
                 return false;
+            }
+            if (source.ByteKey != null)
+            {
+                byte[] accepted = source.Bytes;
+#if UNITY_EDITOR
+                accepted = source.EditorAssetBytes ?? accepted;
+#endif
+                lock (s_fontBytes) s_fontBytes[source.ByteKey] = accepted;
             }
             FaceLoads++;
             _active = source;

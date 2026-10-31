@@ -627,3 +627,9 @@ The [memory-leak audit](docs/verification/leak-audit-20261031.md) passes all
 post-warm core lifetimes with flat tracked storage. It confirms two open Unity
 font-retention defects (rejected static bytes and changing-content face records).
 This audit changes no runtime code and does not close the Agentic soak finding.
+
+The [Unity font-retention fix](docs/verification/font-retention-20261031.md)
+resolves both confirmed audit findings: rejected static payloads fall from
+6 MiB to zero, and 200 alternating font loads retain two faces instead of 200.
+Full Unity EditMode passes 257 plus two inconclusive, player 7/7, and all 16
+Unity captures match. Core/Godot sources are unchanged by this host-only fix.

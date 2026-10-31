@@ -733,6 +733,49 @@ namespace Weva.Tests.EditorTests.Native
         }
 
         [Test]
+        public void RejectedFontBytes_DoNotEnterTheDomainCache()
+        {
+            var cache = (System.Collections.IDictionary)typeof(UnityFontBackend).GetField("s_fontBytes",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).GetValue(null);
+            int before = cache.Count;
+            for (int i = 0; i < 24; ++i)
+            {
+                using (var backend = new UnityFontBackend())
+                {
+                    var bytes = new byte[256 * 1024];
+                    bytes[0] = 255; bytes[1] = (byte)i;
+                    ulong face = backend.Adopt(bytes);
+                    Assert.That(backend.TryFaceMetrics(face, 16, out _, out _, out _), Is.False);
+                }
+            }
+            Assert.That(cache.Count, Is.EqualTo(before), "failed loads must not retain their private font buffers");
+        }
+
+        [Test]
+        public void ChangingCssFontContent_ReusesPreviouslyAcceptedFaces()
+        {
+            byte[][] fonts = { File.ReadAllBytes(FontDir + "Weva-Default.ttf"), File.ReadAllBytes(FontDir + "Weva-Default-Bold.ttf") };
+            using (var doc = new NativeDocument(640, 480))
+            using (var backend = new UnityFontBackend())
+            {
+                backend.Install(doc, backend.Adopt(_regular));
+                int version = 0;
+                doc.AssetReader = _ => fonts[version];
+                doc.LoadHtml("<style>@font-face{font-family:Audit;src:url(changing.ttf)}</style><p style='font-family:Audit'>Hello</p>");
+                for (int i = 0; i < 200; ++i)
+                {
+                    version = i % 2;
+                    Assert.That(backend.SyncCssFontFaces(doc), Is.EqualTo(1), backend.LastError);
+                }
+                var faces = (System.Collections.IDictionary)typeof(UnityFontBackend).GetField("_faces",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).GetValue(backend);
+                Assert.That(faces.Count, Is.EqualTo(3), "the default plus two accepted versions need three stable face records");
+                backend.Dispose();
+                Assert.That(faces.Count, Is.Zero);
+            }
+        }
+
+        [Test]
         public void ByteFace_IsIndependentOfTheCallersBuffer()
         {
             byte[] bytes = File.ReadAllBytes(FontDir + "Weva-Default.ttf");

@@ -1356,3 +1356,11 @@ Paint obtains absolute and fixed containing-block status together through
 positioning's internal containing_block_kinds query. The shared CSS predicate
 is evaluated once per query; no cached state or C ABI change is involved.
 See docs/verification/paint-state-20261031.md.
+
+Unity canonical byte-backed font buffers enter the domain cache only after a
+successful FontEngine load. Pending sources look up the validated canonical
+buffer before activation, including editor asset bytes. CSS URL loaders retain
+a content-to-face index per URL, so returning to an accepted font version reuses
+its existing face rather than accumulating duplicate metrics and glyph maps.
+The index is cleared on backend disposal. See the
+[retention regression receipt](verification/font-retention-20261031.md).
