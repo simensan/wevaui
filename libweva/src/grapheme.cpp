@@ -10,6 +10,13 @@ struct PropertyRange { uint32_t first, last; uint16_t value; };
 #include "grapheme_data.inc"
 
 uint16_t properties(uint32_t cp) {
+    // ASCII has no combining, pictographic or Indic properties. Avoid the
+    // Unicode range search for the characters dominating ordinary UI text.
+    if (cp < 0x80) {
+        if (cp == '\r') return CR;
+        if (cp == '\n') return LF;
+        return cp < 0x20 || cp == 0x7F ? Control : Other;
+    }
     if (cp >= 0xAC00 && cp <= 0xD7A3) return (cp - 0xAC00) % 28 == 0 ? LV : LVT;
     const auto* end = std::end(kGraphemeProperties);
     const auto* range = std::lower_bound(std::begin(kGraphemeProperties), end, cp,
@@ -41,6 +48,16 @@ bool control(Property p) { return p == CR || p == LF || p == Control; }
 
 bool Graphemes::next(size_t* end) {
     if (at_ >= text_.size()) return false;
+    // Two printable ASCII bytes always have a boundary between them. Keep
+    // non-ASCII lookahead on the full path: e.g. an ASCII base followed by
+    // a combining accent, variation selector or ZWJ belongs to one cluster.
+    const auto printable_ascii = [](unsigned char c) { return c >= 0x20 && c < 0x7F; };
+    if (printable_ascii(static_cast<unsigned char>(text_[at_])) &&
+        (at_ + 1 == text_.size() || printable_ascii(static_cast<unsigned char>(text_[at_ + 1])))) {
+        ++at_;
+        if (end) *end = at_;
+        return true;
+    }
     uint16_t flags = properties(decode(text_, &at_));
     auto previous = static_cast<Property>(flags & 15);
     bool pictographic = (flags & 16) != 0;

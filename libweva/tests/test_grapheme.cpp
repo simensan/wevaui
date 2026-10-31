@@ -26,6 +26,31 @@ void append_utf8(std::string& text, unsigned cp) {
 }
 
 void test_grapheme_conformance() {
+    // The ASCII shortcut must include embedded NUL and preserve CR/LF as
+    // the sole joined ASCII pair. Exercise both editing profiles.
+    for (const auto profile : {weva::GraphemeProfile::Unicode, weva::GraphemeProfile::BrowserCaret}) {
+        for (int a = 0; a < 128; ++a) for (int b = 0; b < 128; ++b) {
+            const std::string pair{static_cast<char>(a), static_cast<char>(b)};
+            weva::Graphemes ascii(pair, profile);
+            size_t end = 0;
+            const bool joined = a == '\r' && b == '\n';
+            CHECK(ascii.next(&end) && end == (joined ? 2u : 1u));
+            if (!joined) CHECK(ascii.next(&end) && end == 2);
+            CHECK(!ascii.next(&end));
+        }
+        // Printable bases must still look ahead through Unicode suffixes.
+        for (int a = 0x20; a < 0x7F; ++a) for (unsigned suffix : {0x301u, 0xFE0Fu, 0x200Du}) {
+            std::string text(1, static_cast<char>(a));
+            append_utf8(text, suffix);
+            const size_t boundary = text.size();
+            text += 'x';
+            weva::Graphemes mixed(text, profile);
+            size_t end = 0;
+            CHECK(mixed.next(&end) && end == boundary);
+            CHECK(mixed.next(&end) && end == text.size());
+            CHECK(!mixed.next(&end));
+        }
+    }
     const auto path = std::filesystem::path(__FILE__).parent_path() / "data/GraphemeBreakTest-17.0.0.txt";
     std::ifstream file(path);
     CHECK(file.good());
