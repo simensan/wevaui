@@ -56,6 +56,18 @@ logs remain under `.utmp/inventory-chrome-20261031/`; the accepted candidate
 is `candidate-v7.exe`, measured in `comparison-v7/`. Diagnostic logging runs
 overlap builds and are attribution evidence only.
 
+A further experiment batched ancestor bookkeeping after disjoint replacements
+and checked fixed-width boundaries before measuring intrinsic contributions.
+It passed all 15 GCC suites, including simultaneous sibling text changes, but
+was **rejected**: three new paired rounds against accepted v7 measured identical
+inventory style/layout medians (0.202 ms), +2.6% paint and +4.6% complete CPU.
+Chrome in that batch measured 0.164 ms style/layout and 0.212 ms paint. HUD
+style/layout also increased. These results remain provisional with the other
+workspace running; they provide no evidence for retaining the added complexity.
+The patch, binaries and complete measurements remain in `rejected-v8.patch`
+and `comparison-v8/` under the evidence directory. The final source and Agentic
+benchmark build use the accepted v7 implementation.
+
 ## Verification
 
 GCC passes 15 suites (707,079 checks in the main suite); Clang ASan/UBSan passes
@@ -80,6 +92,15 @@ process API explicitly. The repaired Linux tooling suite passes **72 tests**,
 and both ownership tests pass on Windows. The original failed gate log is
 preserved; this is a repaired-stage receipt, not a claim that its exit code was 0.
 The final Godot render was inspected.
+
+After rejecting v8 and restoring the accepted core, the complete qualified
+release gate was rerun and **passed with exit code 0**. The fresh log, copied
+per-stage evidence and inspected Godot render are under `gate-final/`.
+This rerun includes the repaired tooling stage, both core configurations,
+Chrome, native plugin/extension checks and live Godot scenes; it supersedes
+the repaired-stage-only qualification above without deleting the original
+failure evidence. Unity's editor/player results above remain for this same
+accepted implementation.
 
 Raw evidence is under `.utmp/inventory-chrome-20261031/`, including the failed
 duplicate-class regression run, diagnostic logs, native build logs, Unity XML,
