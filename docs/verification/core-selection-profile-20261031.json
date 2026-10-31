@@ -1,0 +1,695 @@
+{
+  "attribution": {
+    "samples-self-all.log": {
+      "represented": 5733,
+      "sites": 2880,
+      "self": [
+        [
+          "weva::ComputedStyle::get(int) const",
+          543,
+          9.47
+        ],
+        [
+          "/lib/x86_64-linux-gnu/libc.so.6()",
+          510,
+          8.9
+        ],
+        [
+          "weva::GlyphAtlas::get(weva::FontInterface*, weva::FaceHandle, unsigned int, double)",
+          288,
+          5.02
+        ],
+        [
+          "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+          216,
+          3.77
+        ],
+        [
+          "weva::CssPropertyRegistry::id_of(std::basic_string_view<char, std::char_traits<char> >) const",
+          179,
+          3.12
+        ],
+        [
+          "update_document",
+          130,
+          2.27
+        ],
+        [
+          "weva::BoxTree::create(weva::BoxKind, weva::Element const*, weva::ComputedStyle const*)",
+          122,
+          2.13
+        ],
+        [
+          "/lib/x86_64-linux-gnu/libc.so.6(malloc)",
+          117,
+          2.04
+        ],
+        [
+          "weva::CascadeEngine::compute(weva::Element const&, weva::ElementStateProvider const&, weva::ComputedStyle const*, weva::ComputedStyle*) const",
+          108,
+          1.88
+        ],
+        [
+          "weva::layout_inline_items(weva::BoxTree*, int, std::vector<weva::InlineItem, std::allocator<weva::InlineItem> > const&, double, weva::LayoutContext const&, weva::FontMetrics const&, weva::InlineFloatEnv const*)",
+          102,
+          1.78
+        ],
+        [
+          "weva::BoxTree::import_subtree(int, weva::BoxTree const&, int)",
+          93,
+          1.62
+        ],
+        [
+          "weva::layout_flex(weva::BoxTree*, int, double, double, weva::LayoutContext const&, weva::BlockLayout*)",
+          83,
+          1.45
+        ],
+        [
+          "weva::(anonymous namespace)::has_token(std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >)",
+          78,
+          1.36
+        ],
+        [
+          "weva::IncrementalLayout::update(weva::BoxTree*, int, weva::StyleProvider*, weva::LayoutContext const&, weva::FontMetrics const*, std::vector<std::pair<weva::ComputedStyle const*, weva::Invalidation>, std::allocator<std::pair<weva::ComputedStyle const*, weva::Invalidation> > > const&)",
+          66,
+          1.15
+        ],
+        [
+          "weva::BoxTree::release_subtree(int)",
+          63,
+          1.1
+        ],
+        [
+          "(anonymous namespace)::CollectingBackend::relocate_ranges(int, unsigned long, unsigned long)",
+          63,
+          1.1
+        ],
+        [
+          "weva::layout_inline_items(weva::BoxTree*, int, std::vector<weva::InlineItem, std::allocator<weva::InlineItem> > const&, double, weva::LayoutContext const&, weva::FontMetrics const&, weva::InlineFloatEnv const*)::{lambda(bool, bool)#1}::operator()(bool, bool) const",
+          61,
+          1.06
+        ],
+        [
+          "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)",
+          61,
+          1.06
+        ],
+        [
+          "weva::ComputedStyle::parsed(int) const",
+          59,
+          1.03
+        ],
+        [
+          "std::_Rb_tree<int, std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<int>, std::allocator<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::erase(int const&) [clone .isra.0]",
+          56,
+          0.98
+        ]
+      ],
+      "largest_stacks": [
+        {
+          "count": 138,
+          "frames": [
+            "weva::GlyphAtlas::get(weva::FontInterface*, weva::FaceHandle, unsigned int, double)"
+          ]
+        },
+        {
+          "count": 59,
+          "frames": [
+            "/lib/x86_64-linux-gnu/libc.so.6()"
+          ]
+        },
+        {
+          "count": 54,
+          "frames": [
+            "weva::CssPropertyRegistry::id_of(std::basic_string_view<char, std::char_traits<char> >) const"
+          ]
+        },
+        {
+          "count": 46,
+          "frames": [
+            "weva::ComputedStyle::get(int) const"
+          ]
+        },
+        {
+          "count": 45,
+          "frames": [
+            "/lib/x86_64-linux-gnu/libc.so.6(malloc)"
+          ]
+        },
+        {
+          "count": 44,
+          "frames": [
+            "update_document"
+          ]
+        },
+        {
+          "count": 40,
+          "frames": [
+            "weva::ComputedStyle::get(int) const"
+          ]
+        },
+        {
+          "count": 39,
+          "frames": [
+            "weva::ComputedStyle::get(int) const"
+          ]
+        },
+        {
+          "count": 37,
+          "frames": [
+            "/lib/x86_64-linux-gnu/libc.so.6()"
+          ]
+        },
+        {
+          "count": 32,
+          "frames": [
+            "weva::CssPropertyRegistry::id_of(std::basic_string_view<char, std::char_traits<char> >) const"
+          ]
+        },
+        {
+          "count": 28,
+          "frames": [
+            "auto weva::tessellate_border(weva::Rect const&, weva::BorderRadii const&, double, double, double, double, weva::LinearColor const*, weva::Mesh*, int, bool)::{lambda(auto:1 const&, auto:2 const&, double, weva::LinearColor const&)#1}::operator()<std::pair<double, double>, std::pair<double, double> >(std::pair<double, double> const&, std::pair<double, double> const&, double, weva::LinearColor const&) const [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 28,
+          "frames": [
+            "weva::ComputedStyle::get(int) const"
+          ]
+        },
+        {
+          "count": 26,
+          "frames": [
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 25,
+          "frames": [
+            "/lib/x86_64-linux-gnu/libc.so.6()"
+          ]
+        },
+        {
+          "count": 23,
+          "frames": [
+            "weva::GlyphAtlas::get(weva::FontInterface*, weva::FaceHandle, unsigned int, double)"
+          ]
+        },
+        {
+          "count": 22,
+          "frames": [
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 22,
+          "frames": [
+            "weva::ComputedStyle::get(int) const"
+          ]
+        },
+        {
+          "count": 22,
+          "frames": [
+            "weva::ComputedStyle::get(int) const"
+          ]
+        },
+        {
+          "count": 22,
+          "frames": [
+            "/lib/x86_64-linux-gnu/libc.so.6()"
+          ]
+        },
+        {
+          "count": 20,
+          "frames": [
+            "weva::CascadeEngine::compute(weva::Element const&, weva::ElementStateProvider const&, weva::ComputedStyle const*, weva::ComputedStyle*) const"
+          ]
+        }
+      ]
+    },
+    "samples-callers-all.log": {
+      "represented": 5703,
+      "sites": 4096,
+      "self": [
+        [
+          "weva::ComputedStyle::get(int) const",
+          552,
+          9.68
+        ],
+        [
+          "/lib/x86_64-linux-gnu/libc.so.6()",
+          476,
+          8.35
+        ],
+        [
+          "weva::GlyphAtlas::get(weva::FontInterface*, weva::FaceHandle, unsigned int, double)",
+          272,
+          4.77
+        ],
+        [
+          "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+          235,
+          4.12
+        ],
+        [
+          "weva::CssPropertyRegistry::id_of(std::basic_string_view<char, std::char_traits<char> >) const",
+          182,
+          3.19
+        ],
+        [
+          "update_document",
+          122,
+          2.14
+        ],
+        [
+          "/lib/x86_64-linux-gnu/libc.so.6(malloc)",
+          118,
+          2.07
+        ],
+        [
+          "weva::BoxTree::create(weva::BoxKind, weva::Element const*, weva::ComputedStyle const*)",
+          108,
+          1.89
+        ],
+        [
+          "weva::CascadeEngine::compute(weva::Element const&, weva::ElementStateProvider const&, weva::ComputedStyle const*, weva::ComputedStyle*) const",
+          106,
+          1.86
+        ],
+        [
+          "weva::BoxTree::import_subtree(int, weva::BoxTree const&, int)",
+          93,
+          1.63
+        ],
+        [
+          "weva::layout_flex(weva::BoxTree*, int, double, double, weva::LayoutContext const&, weva::BlockLayout*)",
+          88,
+          1.54
+        ],
+        [
+          "weva::layout_inline_items(weva::BoxTree*, int, std::vector<weva::InlineItem, std::allocator<weva::InlineItem> > const&, double, weva::LayoutContext const&, weva::FontMetrics const&, weva::InlineFloatEnv const*)",
+          83,
+          1.46
+        ],
+        [
+          "(anonymous namespace)::CollectingBackend::relocate_ranges(int, unsigned long, unsigned long)",
+          71,
+          1.24
+        ],
+        [
+          "weva::BoxTree::release_subtree(int)",
+          64,
+          1.12
+        ],
+        [
+          "weva::IncrementalLayout::update(weva::BoxTree*, int, weva::StyleProvider*, weva::LayoutContext const&, weva::FontMetrics const*, std::vector<std::pair<weva::ComputedStyle const*, weva::Invalidation>, std::allocator<std::pair<weva::ComputedStyle const*, weva::Invalidation> > > const&)",
+          64,
+          1.12
+        ],
+        [
+          "weva::(anonymous namespace)::has_token(std::basic_string_view<char, std::char_traits<char> >, std::basic_string_view<char, std::char_traits<char> >)",
+          62,
+          1.09
+        ],
+        [
+          "/lib/x86_64-linux-gnu/libc.so.6(__libc_free)",
+          61,
+          1.07
+        ],
+        [
+          "weva::build_text_geometry(std::basic_string_view<char, std::char_traits<char> >, double, double, double, weva::LinearColor const&, weva::PaintContext const&, weva::Mesh*, double, weva::FaceHandle const*, weva::Transform2D const*)",
+          60,
+          1.05
+        ],
+        [
+          "auto weva::tessellate_border(weva::Rect const&, weva::BorderRadii const&, double, double, double, double, weva::LinearColor const*, weva::Mesh*, int, bool)::{lambda(auto:1 const&, auto:2 const&, double, weva::LinearColor const&)#1}::operator()<std::pair<double, double>, std::pair<double, double> >(std::pair<double, double> const&, std::pair<double, double> const&, double, weva::LinearColor const&) const [clone .isra.0]",
+          57,
+          1.0
+        ],
+        [
+          "std::_Rb_tree<int, std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<int>, std::allocator<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::erase(int const&) [clone .isra.0]",
+          52,
+          0.91
+        ]
+      ],
+      "largest_stacks": [
+        {
+          "count": 78,
+          "frames": [
+            "weva::GlyphAtlas::get(weva::FontInterface*, weva::FaceHandle, unsigned int, double)",
+            "weva::build_text_geometry(std::basic_string_view<char, std::char_traits<char> >, double, double, double, weva::LinearColor const&, weva::PaintContext const&, weva::Mesh*, double, weva::FaceHandle const*, weva::Transform2D const*)",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 57,
+          "frames": [
+            "weva::GlyphAtlas::get(weva::FontInterface*, weva::FaceHandle, unsigned int, double)",
+            "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)",
+            "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)",
+            "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)"
+          ]
+        },
+        {
+          "count": 41,
+          "frames": [
+            "update_document",
+            "weva_document_update",
+            "main",
+            "/lib/x86_64-linux-gnu/libc.so.6()"
+          ]
+        },
+        {
+          "count": 23,
+          "frames": [
+            "weva::BoxTree::release_subtree(int)",
+            "weva::BoxTree::release_subtree(int)",
+            "weva::BoxTree::release_subtree(int)",
+            "weva::BoxTree::release_subtree(int)"
+          ]
+        },
+        {
+          "count": 22,
+          "frames": [
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 21,
+          "frames": [
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 20,
+          "frames": [
+            "weva::CascadeEngine::compute(weva::Element const&, weva::ElementStateProvider const&, weva::ComputedStyle const*, weva::ComputedStyle*) const",
+            "(anonymous namespace)::StyleMap::walk(weva::Element const&, weva::ComputedStyle const*, bool)",
+            "update_document",
+            "weva_document_update"
+          ]
+        },
+        {
+          "count": 16,
+          "frames": [
+            "weva::IncrementalLayout::update(weva::BoxTree*, int, weva::StyleProvider*, weva::LayoutContext const&, weva::FontMetrics const*, std::vector<std::pair<weva::ComputedStyle const*, weva::Invalidation>, std::allocator<std::pair<weva::ComputedStyle const*, weva::Invalidation> > > const&)",
+            "update_document",
+            "weva_document_update",
+            "main"
+          ]
+        },
+        {
+          "count": 16,
+          "frames": [
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 15,
+          "frames": [
+            "weva::CascadeEngine::compute(weva::Element const&, weva::ElementStateProvider const&, weva::ComputedStyle const*, weva::ComputedStyle*) const",
+            "(anonymous namespace)::StyleMap::walk(weva::Element const&, weva::ComputedStyle const*, bool)",
+            "update_document",
+            "weva_document_update"
+          ]
+        },
+        {
+          "count": 14,
+          "frames": [
+            "weva::CascadeEngine::compute(weva::Element const&, weva::ElementStateProvider const&, weva::ComputedStyle const*, weva::ComputedStyle*) const",
+            "(anonymous namespace)::StyleMap::walk(weva::Element const&, weva::ComputedStyle const*, bool)",
+            "update_document",
+            "weva_document_update"
+          ]
+        },
+        {
+          "count": 13,
+          "frames": [
+            "weva::ChildPaintOrder::ChildPaintOrder(weva::BoxTree const&, int)",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 13,
+          "frames": [
+            "/lib/x86_64-linux-gnu/libc.so.6()",
+            "(anonymous namespace)::CollectingBackend::generate_texture(std::vector<unsigned char, std::allocator<unsigned char> > const&, weva::Vec2i)",
+            "weva::(anonymous namespace)::paint_layered_background(std::vector<weva::BackgroundLayer, std::allocator<weva::BackgroundLayer> > const&, weva::LinearColor const&, weva::Rect const&, weva::BorderRadii const&, weva::LayoutContext const&, double, weva::PaintContext const&, double, weva::Transform2D const*, weva::ClipNode const*, weva::ColorFilter const*, weva::ComputedStyle const*, weva::BackgroundLayer const*) [clone .part.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 12,
+          "frames": [
+            "(anonymous namespace)::CollectingBackend::relocate_ranges(int, unsigned long, unsigned long)",
+            "(anonymous namespace)::CollectingBackend::replay(int)",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 12,
+          "frames": [
+            "std::_Rb_tree<int, std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<int>, std::allocator<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::erase(int const&) [clone .isra.0]",
+            "weva::BoxTree::release_subtree(int)",
+            "weva::BoxTree::release_subtree(int)",
+            "weva::BoxTree::release_subtree(int)"
+          ]
+        },
+        {
+          "count": 12,
+          "frames": [
+            "weva::GlyphAtlas::get(weva::FontInterface*, weva::FaceHandle, unsigned int, double)",
+            "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)",
+            "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)",
+            "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)"
+          ]
+        },
+        {
+          "count": 11,
+          "frames": [
+            "/lib/x86_64-linux-gnu/libc.so.6(malloc)",
+            "operator new(unsigned long)",
+            "void std::vector<weva::ShapedGlyph, std::allocator<weva::ShapedGlyph> >::_M_realloc_insert<weva::ShapedGlyph const&>(__gnu_cxx::__normal_iterator<weva::ShapedGlyph*, std::vector<weva::ShapedGlyph, std::allocator<weva::ShapedGlyph> > >, weva::ShapedGlyph const&)",
+            "weva::StubFont::shape(weva::FaceHandle, std::basic_string_view<char, std::char_traits<char> >, double, std::vector<weva::ShapedGlyph, std::allocator<weva::ShapedGlyph> >*)"
+          ]
+        },
+        {
+          "count": 11,
+          "frames": [
+            "non-virtual thunk to (anonymous namespace)::CollectingBackend::reuse_glyphs(int) const",
+            "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)",
+            "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)",
+            "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)"
+          ]
+        },
+        {
+          "count": 10,
+          "frames": [
+            "(anonymous namespace)::CollectingBackend::relocate_ranges(int, unsigned long, unsigned long)",
+            "(anonymous namespace)::CollectingBackend::replay(int)",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 10,
+          "frames": [
+            "weva::TextureCache::retain(weva::TextureHandle)",
+            "(anonymous namespace)::CollectingBackend::replay(int)",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        }
+      ]
+    },
+    "allocations.log": {
+      "represented": 729,
+      "sites": 12,
+      "self": [
+        [
+          "void std::vector<weva::ShapedGlyph, std::allocator<weva::ShapedGlyph> >::_M_realloc_insert<weva::ShapedGlyph const&>(__gnu_cxx::__normal_iterator<weva::ShapedGlyph*, std::vector<weva::ShapedGlyph, std::allocator<weva::ShapedGlyph> > >, weva::ShapedGlyph const&)",
+          418,
+          57.34
+        ],
+        [
+          "weva::resolve_bidi_levels(std::vector<weva::InlineItem, std::allocator<weva::InlineItem> >*, weva::ComputedStyle const*)",
+          125,
+          17.15
+        ],
+        [
+          "weva::Mesh::reserve_append(unsigned long, unsigned long)",
+          110,
+          15.09
+        ],
+        [
+          "std::_Rb_tree_iterator<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > std::_Rb_tree<int, std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<int>, std::allocator<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::_M_emplace_hint_unique<std::piecewise_construct_t const&, std::tuple<int const&>, std::tuple<> >(std::_Rb_tree_const_iterator<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::piecewise_construct_t const&, std::tuple<int const&>&&, std::tuple<>&&) [clone .isra.0]",
+          41,
+          5.62
+        ],
+        [
+          "std::__cxx11::basic_string<char16_t, std::char_traits<char16_t>, std::allocator<char16_t> >::_M_mutate(unsigned long, unsigned long, char16_t const*, unsigned long)",
+          23,
+          3.16
+        ],
+        [
+          "void std::vector<weva::InlineItem, std::allocator<weva::InlineItem> >::_M_realloc_insert<weva::InlineItem const&>(__gnu_cxx::__normal_iterator<weva::InlineItem*, std::vector<weva::InlineItem, std::allocator<weva::InlineItem> > >, weva::InlineItem const&)",
+          12,
+          1.65
+        ]
+      ],
+      "largest_stacks": [
+        {
+          "count": 209,
+          "frames": [
+            "void std::vector<weva::ShapedGlyph, std::allocator<weva::ShapedGlyph> >::_M_realloc_insert<weva::ShapedGlyph const&>(__gnu_cxx::__normal_iterator<weva::ShapedGlyph*, std::vector<weva::ShapedGlyph, std::allocator<weva::ShapedGlyph> > >, weva::ShapedGlyph const&)",
+            "weva::StubFont::shape(weva::FaceHandle, std::basic_string_view<char, std::char_traits<char> >, double, std::vector<weva::ShapedGlyph, std::allocator<weva::ShapedGlyph> >*)",
+            "weva::build_text_geometry(std::basic_string_view<char, std::char_traits<char> >, double, double, double, weva::LinearColor const&, weva::PaintContext const&, weva::Mesh*, double, weva::FaceHandle const*, weva::Transform2D const*)",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 209,
+          "frames": [
+            "void std::vector<weva::ShapedGlyph, std::allocator<weva::ShapedGlyph> >::_M_realloc_insert<weva::ShapedGlyph const&>(__gnu_cxx::__normal_iterator<weva::ShapedGlyph*, std::vector<weva::ShapedGlyph, std::allocator<weva::ShapedGlyph> > >, weva::ShapedGlyph const&)",
+            "weva::StubFont::shape(weva::FaceHandle, std::basic_string_view<char, std::char_traits<char> >, double, std::vector<weva::ShapedGlyph, std::allocator<weva::ShapedGlyph> >*)",
+            "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)",
+            "weva::(anonymous namespace)::prepare_glyphs(weva::BoxTree const&, int, weva::LayoutContext const&, weva::PaintContext const&, weva::Transform2D)"
+          ]
+        },
+        {
+          "count": 55,
+          "frames": [
+            "weva::Mesh::reserve_append(unsigned long, unsigned long)",
+            "weva::build_text_geometry(std::basic_string_view<char, std::char_traits<char> >, double, double, double, weva::LinearColor const&, weva::PaintContext const&, weva::Mesh*, double, weva::FaceHandle const*, weva::Transform2D const*)",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 55,
+          "frames": [
+            "weva::Mesh::reserve_append(unsigned long, unsigned long)",
+            "weva::build_text_geometry(std::basic_string_view<char, std::char_traits<char> >, double, double, double, weva::LinearColor const&, weva::PaintContext const&, weva::Mesh*, double, weva::FaceHandle const*, weva::Transform2D const*)",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]",
+            "weva::(anonymous namespace)::paint_recursive(weva::BoxTree const&, int, weva::LayoutContext const&, double, double, weva::PaintContext const&, weva::TextureHandle, int, weva::(anonymous namespace)::PaintState, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*, std::optional<int>, bool, bool, bool, std::vector<weva::(anonymous namespace)::TablePositionedPaint, std::allocator<weva::(anonymous namespace)::TablePositionedPaint> >*) [clone .isra.0]"
+          ]
+        },
+        {
+          "count": 51,
+          "frames": [
+            "weva::resolve_bidi_levels(std::vector<weva::InlineItem, std::allocator<weva::InlineItem> >*, weva::ComputedStyle const*)",
+            "weva::collect_inline_items(weva::BoxTree const&, int, weva::LayoutContext const&, weva::FontMetrics const*)",
+            "weva::BlockLayout::layout_inline_content(int, double, weva::ComputedStyle const*)",
+            "weva::BlockLayout::layout_content(int, double, double, weva::ComputedStyle const*)"
+          ]
+        },
+        {
+          "count": 41,
+          "frames": [
+            "std::_Rb_tree_iterator<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > std::_Rb_tree<int, std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > >, std::_Select1st<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::less<int>, std::allocator<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > > >::_M_emplace_hint_unique<std::piecewise_construct_t const&, std::tuple<int const&>, std::tuple<> >(std::_Rb_tree_const_iterator<std::pair<int const, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> > > >, std::piecewise_construct_t const&, std::tuple<int const&>&&, std::tuple<>&&) [clone .isra.0]",
+            "weva::BoxTree::import_subtree(int, weva::BoxTree const&, int)",
+            "weva::BoxTree::import_subtree(int, weva::BoxTree const&, int)",
+            "weva::BoxTree::import_subtree(int, weva::BoxTree const&, int)"
+          ]
+        },
+        {
+          "count": 25,
+          "frames": [
+            "weva::resolve_bidi_levels(std::vector<weva::InlineItem, std::allocator<weva::InlineItem> >*, weva::ComputedStyle const*)",
+            "weva::collect_inline_items(weva::BoxTree const&, int, weva::LayoutContext const&, weva::FontMetrics const*)",
+            "weva::BlockLayout::layout_inline_content(int, double, weva::ComputedStyle const*)",
+            "weva::BlockLayout::layout_content(int, double, double, weva::ComputedStyle const*)"
+          ]
+        },
+        {
+          "count": 25,
+          "frames": [
+            "weva::resolve_bidi_levels(std::vector<weva::InlineItem, std::allocator<weva::InlineItem> >*, weva::ComputedStyle const*)",
+            "weva::collect_inline_items(weva::BoxTree const&, int, weva::LayoutContext const&, weva::FontMetrics const*)",
+            "weva::BlockLayout::layout_inline_content(int, double, weva::ComputedStyle const*)",
+            "weva::BlockLayout::layout_content(int, double, double, weva::ComputedStyle const*)"
+          ]
+        },
+        {
+          "count": 23,
+          "frames": [
+            "std::__cxx11::basic_string<char16_t, std::char_traits<char16_t>, std::allocator<char16_t> >::_M_mutate(unsigned long, unsigned long, char16_t const*, unsigned long)",
+            "weva::resolve_bidi_levels(std::vector<weva::InlineItem, std::allocator<weva::InlineItem> >*, weva::ComputedStyle const*)",
+            "weva::collect_inline_items(weva::BoxTree const&, int, weva::LayoutContext const&, weva::FontMetrics const*)",
+            "weva::BlockLayout::layout_inline_content(int, double, weva::ComputedStyle const*)"
+          ]
+        },
+        {
+          "count": 12,
+          "frames": [
+            "weva::resolve_bidi_levels(std::vector<weva::InlineItem, std::allocator<weva::InlineItem> >*, weva::ComputedStyle const*)",
+            "weva::collect_inline_items(weva::BoxTree const&, int, weva::LayoutContext const&, weva::FontMetrics const*)",
+            "weva::BlockLayout::layout_inline_content(int, double, weva::ComputedStyle const*)",
+            "weva::BlockLayout::layout_content(int, double, double, weva::ComputedStyle const*)"
+          ]
+        },
+        {
+          "count": 12,
+          "frames": [
+            "weva::resolve_bidi_levels(std::vector<weva::InlineItem, std::allocator<weva::InlineItem> >*, weva::ComputedStyle const*)",
+            "weva::collect_inline_items(weva::BoxTree const&, int, weva::LayoutContext const&, weva::FontMetrics const*)",
+            "weva::BlockLayout::layout_inline_content(int, double, weva::ComputedStyle const*)",
+            "weva::BlockLayout::layout_content(int, double, double, weva::ComputedStyle const*)"
+          ]
+        },
+        {
+          "count": 12,
+          "frames": [
+            "void std::vector<weva::InlineItem, std::allocator<weva::InlineItem> >::_M_realloc_insert<weva::InlineItem const&>(__gnu_cxx::__normal_iterator<weva::InlineItem*, std::vector<weva::InlineItem, std::allocator<weva::InlineItem> > >, weva::InlineItem const&)",
+            "weva::(anonymous namespace)::collect_recursive(weva::BoxTree const&, int, int, weva::LayoutContext const&, weva::ComputedStyle const*, weva::ComputedStyle const*, weva::FontMetrics const*, std::vector<weva::InlineItem, std::allocator<weva::InlineItem> >*)",
+            "weva::collect_inline_items(weva::BoxTree const&, int, weva::LayoutContext const&, weva::FontMetrics const*)",
+            "weva::BlockLayout::layout_inline_content(int, double, weva::ComputedStyle const*)"
+          ]
+        }
+      ]
+    }
+  },
+  "sampled_updates_per_run": 60000,
+  "warmups": 120,
+  "font": "core StubFont; not production host fonts",
+  "caller_site_table_capped": true,
+  "sha256": {
+    ".utmp/render-audit-20261030/core-selection-profile/allocations.log": "8274696f64b12e1e851df74f46be3fada875e59846ef1a6a4bbb8d0a609ae93d",
+    ".utmp/render-audit-20261030/core-selection-profile/attribution.json": "0bfd35f115901cdd726f4b532853116fab08e52f0faa78cd2eac6047d1b7d5f4",
+    ".utmp/render-audit-20261030/core-selection-profile/inventory.css": "c35341170a5bdfd9cb687aa54d850778b1578a9e5d6b5adb4d58e90af99f40bc",
+    ".utmp/render-audit-20261030/core-selection-profile/inventory.html": "9ded5aa6d941a88874bbb499fb1237946ddbbb6cc157a43a73a562f2169fcab9",
+    ".utmp/render-audit-20261030/core-selection-profile/main.cpp": "696d37197770bf2ad941f298ad1ccfbf3868beaf10501392ff2299a08a90c345",
+    ".utmp/render-audit-20261030/core-selection-profile/paint-stages.log": "a39703ab398242b8ed9362ca9cc5fc318ee7a36cbe973193be568aab51a97b11",
+    ".utmp/render-audit-20261030/core-selection-profile/preflight.log": "ed4dfbfba69aee0975352ae8a473c6f499663be7a655aaa0d23ff562a5c0655d",
+    ".utmp/render-audit-20261030/core-selection-profile/samples-callers-all.log": "364d61f111a98a22043e330d2c003d1588185d65f08d2e73291a86e772c86d1e",
+    ".utmp/render-audit-20261030/core-selection-profile/samples-self-all.log": "17b2bca22afe7570412acffb65dd1c94f7cdba533521d631cc7a768b30879738",
+    ".utmp/render-audit-20261030/core-selection-profile/samples-self.log": "2c7bb32a57ee8602537cc73f84fe52d75e46bfb4d201a6a590aadec8886ab06a",
+    ".utmp/render-audit-20261030/core-selection-profile/selection_profile": "2b17349e7e8bf386624941bc43e78398891f44138258e7713f861eed9e3ffb6d",
+    ".utmp/render-audit-20261030/core-selection-profile/summarize.py": "87ae86255b85a405f3f02844d2f429b4c0e23d6449e51ec57d93affe88f7ec06",
+    ".utmp/render-audit-20261030/core-selection-profile/symbols.txt": "ebe017622b25defa1a1c73a331cef45707429f4b495efeabb65afe1ec0418c3a",
+    ".utmp/render-audit-20261030/create_selection_profile.py": "136ba419e4533a93aa67d0afce40752b6f64f74c1209bbe8850cf69c865601f7",
+    "Tools/weva_bench/main.cpp": "fa54c4bad1d067f46c0bc6ebbf98d8dfedb4b3dbac8bfb8d0361aca73240edab",
+    "libweva/src/paint.cpp": "b27c525045d14465e33c0c14549152e3736a91fd75e8fac5d47cfe305de794e2",
+    "libweva/src/glyph_atlas.cpp": "45d5c6e3ef21bffde0cb5d7bc997ea22149fb5a7cac9f4474639cf26a86c0fc2",
+    "libweva/include/weva/glyph_atlas.h": "7db480b92bc10142aa11c22719317036bcf63fe7b519977f10ba8d13f1fa8313",
+    "libweva/src/computed_style.cpp": "f8a525014620e74eccfb8ed4476b62d6e823db49e507aa4782059299a912ce66",
+    "libweva/src/weva_c.cpp": "a9e69eae83eb457e6fdc64b6e60184537cb7fc7734d777b9f986f05d87d4c89c",
+    ".utmp/render-audit-20261030/core-selection-profile/link-inputs.sha256": "21291cea6e91b58b165671271c54c1160749c4988957c8b0e392f682ec1d959b"
+  },
+  "linked_libraries": "9ee47cba558a6e81486d1a4b38ddae0d9709116f64b8ca32a73bc8570f72903a  /root/weva/build-gcc/libweva/libweva.a\nf47a48976db7b3f60e3c91d912ebe3cc464738cbdeb7169efa57ab3140f87959  /root/weva/build-gcc/third_party/icu/libweva_icu_i18n.a\ne5a7b10400955193d588182502c9dbb1dca86dc57191c25803b4fc75f8e43849  /root/weva/build-gcc/third_party/icu/libweva_icu_common.a\n",
+  "source_commit": "e6249c3a12324447cc5a250ca228fe396b9f96b8"
+}

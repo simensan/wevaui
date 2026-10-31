@@ -1,5 +1,11 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [shared-core selection profile](docs/verification/core-selection-profile-20261031.md)
+attributes fixed-font native selection work: computed-style reads are 9.47%
+and glyph-atlas lookup 5.02% of self samples. No optimization or host-frame
+claim follows from this diagnostic; its deeper caller table was capped.
+
+
 The [direct vertex upload pass](docs/verification/unity-direct-vertices-20261031.md)
 reduces paired full-inventory Unity sync median 11.9%, with mixed total CPU tails.
 Full EditMode passes 255 tests (two existing inconclusive); URP and Windows
