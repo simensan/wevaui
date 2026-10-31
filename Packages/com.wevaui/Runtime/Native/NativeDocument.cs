@@ -619,12 +619,7 @@ namespace Weva.Native
         {
             // Native memory does not wait for a finalizer in ordinary use; this
             // only keeps a forgotten document from leaking.
-            if (_handle != IntPtr.Zero)
-            {
-                WevaNative.weva_document_destroy(_handle);
-                _handle = IntPtr.Zero;
-            }
-            if (_self.IsAllocated) _self.Free();
+            Dispose();
         }
 
         // ---- interaction: the same calls the Godot host's _gui_input makes ----

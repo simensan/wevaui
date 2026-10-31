@@ -1,5 +1,10 @@
 # Product readiness
 
+The [binding-lifetime fix](verification/binding-lifetime-20261031.md) removes
+a Unity callback root that prevented abandoned bound documents and models from
+being collected. Live documents keep adapters alive through managed ownership;
+finalization uses the same cleanup path as explicit disposal.
+
 The [Unity font-retention fix](verification/font-retention-20261031.md) addresses
 both findings from the memory-leak audit: rejected bytes are cached only after
 validation, and repeated accepted font versions reuse their face records.

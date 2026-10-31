@@ -1364,3 +1364,10 @@ a content-to-face index per URL, so returning to an accepted font version reuses
 its existing face rather than accumulating duplicate metrics and glyph maps.
 The index is cleared on backend disposal. See the
 [retention regression receipt](verification/font-retention-20261031.md).
+
+Unity binding callbacks use a weak GCHandle. NativeDocument.BindingOwner owns
+the adapter while the document is live; the adapter refers back to its document.
+That managed cycle can be collected when both become unreachable. Document
+finalization follows Dispose, detaching bindings and freeing callback handles
+before native document destruction. See the
+[binding-lifetime regression](verification/binding-lifetime-20261031.md).

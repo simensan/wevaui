@@ -65,7 +65,10 @@ namespace Weva.Native
             if (doc.BindingOwner != this) doc.BindingOwner?.Dispose();
             _doc = doc;
             doc.BindingOwner = this;
-            if (!_self.IsAllocated) _self = GCHandle.Alloc(this);
+            // BindingOwner keeps this adapter alive while the document is in
+            // use. A strong callback root would keep _doc alive too, preventing
+            // its finalizer from releasing an abandoned document and model.
+            if (!_self.IsAllocated) _self = GCHandle.Alloc(this, GCHandleType.Weak);
             var source = new weva_binding_source
             {
                 user = (void*)GCHandle.ToIntPtr(_self),

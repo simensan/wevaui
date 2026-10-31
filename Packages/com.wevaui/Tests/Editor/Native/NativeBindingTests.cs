@@ -99,6 +99,59 @@ namespace Weva.Tests.EditorTests.Native
         }
 
         [Test]
+        public void AbandonedBoundDocuments_ReleaseTheirAdaptersAndModels()
+        {
+            var abandoned = new System.WeakReference[12][];
+            for (int i = 0; i < abandoned.Length; ++i) abandoned[i] = AbandonBoundDocument();
+            CollectFinalizedDocuments();
+            foreach (var objects in abandoned)
+                foreach (var reference in objects) Assert.That(reference.IsAlive, Is.False);
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static System.WeakReference[] AbandonBoundDocument()
+        {
+            var doc = new NativeDocument(100, 100);
+            doc.LoadHtml("<p>{{name}}</p>");
+            var payload = new byte[256 * 1024];
+            var bindings = new NativeBindings(new Dictionary<string, object> { ["name"] = "audit", ["payload"] = payload });
+            bindings.Install(doc);
+            return new[] { new System.WeakReference(doc), new System.WeakReference(bindings), new System.WeakReference(payload) };
+        }
+
+        private static void CollectFinalizedDocuments()
+        {
+            System.GC.Collect(); System.GC.WaitForPendingFinalizers();
+            System.GC.Collect(); System.GC.WaitForPendingFinalizers(); System.GC.Collect();
+        }
+
+        [Test]
+        public void LiveDocument_KeepsItsBindingCallbacksAliveAcrossCollection()
+        {
+            using var doc = new NativeDocument(100, 100);
+            doc.LoadHtml("<p id=name>{{name}}</p><template data-each='items as item'><span>{{item}}</span></template>");
+            var model = new Dictionary<string, object> { ["name"] = "before", ["items"] = new List<object> { "one" } };
+            var adapter = InstallTemporaryAdapter(doc, model);
+            CollectFinalizedDocuments();
+            Assert.That(adapter.IsAlive, Is.True);
+            model["name"] = "after";
+            doc.BindingOwner.Refresh();
+            Assert.That(doc.ElementText(doc.Query("#name")), Is.EqualTo("after"));
+            Assert.That(doc.QueryAll("span").Length, Is.EqualTo(1));
+            doc.Dispose();
+            Assert.That(doc.BindingOwner, Is.Null);
+        }
+
+        [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+        private static System.WeakReference InstallTemporaryAdapter(NativeDocument doc, Dictionary<string, object> model)
+        {
+            var adapter = new NativeBindings(model);
+            adapter.Resolver = _ => { System.GC.Collect(); return null; };
+            adapter.Install(doc);
+            return new System.WeakReference(adapter);
+        }
+
+        [Test]
         public void DestroyingDocument_DetachesItsBindingAdapter()
         {
             _doc.Dispose();

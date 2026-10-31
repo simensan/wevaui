@@ -633,3 +633,9 @@ resolves both confirmed audit findings: rejected static payloads fall from
 6 MiB to zero, and 200 alternating font loads retain two faces instead of 200.
 Full Unity EditMode passes 257 plus two inconclusive, player 7/7, and all 16
 Unity captures match. Core/Godot sources are unchanged by this host-only fix.
+
+The [binding-lifetime audit/fix](docs/verification/binding-lifetime-20261031.md)
+removes a strong callback root that prevented abandoned bound documents from
+finalizing. The original 24-document probe now collects all documents, adapters
+and 6 MiB of model payloads. Full Unity EditMode passes 259 plus two inconclusive,
+player 7/7, and all 16 Unity captures match; core/Godot sources are unchanged.

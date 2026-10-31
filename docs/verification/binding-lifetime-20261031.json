@@ -1,0 +1,91 @@
+{
+  "baseline_commit": "62dae03c35d17568de0cff6176214bb7e151958c",
+  "before": {
+    "documentsAlive": 24,
+    "bindingsAlive": 24,
+    "payloadsAlive": 24
+  },
+  "after": {
+    "documentsAlive": 0,
+    "bindingsAlive": 0,
+    "payloadsAlive": 0
+  },
+  "retained_payload_bytes_before": 6291456,
+  "retained_payload_bytes_after": 0,
+  "unity_editor": {
+    "id": "2",
+    "testcasecount": "261",
+    "result": "Passed",
+    "total": "261",
+    "passed": "259",
+    "failed": "0",
+    "inconclusive": "2",
+    "skipped": "0",
+    "asserts": "0",
+    "engine-version": "3.5.0.0",
+    "clr-version": "4.0.30319.42000",
+    "start-time": "2026-10-31 22:10:25Z",
+    "end-time": "2026-10-31 22:11:06Z",
+    "duration": "41.1375433"
+  },
+  "unity_player": {
+    "id": "2",
+    "testcasecount": "7",
+    "result": "Passed",
+    "total": "7",
+    "passed": "7",
+    "failed": "0",
+    "inconclusive": "0",
+    "skipped": "0",
+    "asserts": "0",
+    "engine-version": "3.5.0.0",
+    "clr-version": "4.0.30319.42000",
+    "start-time": "0001-01-01 00:00:00Z",
+    "end-time": "0001-01-01 00:00:00Z",
+    "duration": "1.3484485"
+  },
+  "render_equivalence": {
+    "HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-0.png": true,
+    "HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-1.png": true,
+    "HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-2.png": true,
+    "HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-3.png": true,
+    "Pass_AppliesABackdropFilter_ToTheRightPixels-4.png": true,
+    "Pass_BlursTheBackdrop_AcrossAnEdge-5.png": true,
+    "Pass_DrawsText-6.png": true,
+    "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-10.png": true,
+    "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-11.png": true,
+    "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-12.png": true,
+    "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-7.png": true,
+    "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-8.png": true,
+    "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-9.png": true,
+    "Pass_FollowsAChange_WithoutAReload-13.png": true,
+    "Pass_FollowsAChange_WithoutAReload-14.png": true,
+    "Pass_LoadsPackagedImageAndFonts_AndUpdatesBindings-15.png": true
+  },
+  "source_hashes": {
+    "Packages/com.wevaui/Runtime/Native/NativeBindings.cs": "178a373064cbde3b633e522c623ca552526b78846499125253de5e28be60283c",
+    "Packages/com.wevaui/Runtime/Native/NativeDocument.cs": "7012adf617d798d03e38d3f5c3d3f49b4eec41a78623efcba57755487a985c4d",
+    "Packages/com.wevaui/Tests/Editor/Native/NativeBindingTests.cs": "4e9a0a6da1dbffa4264e2cff46f18721f7190f7697701097f6fe20d8c6b7c5b8"
+  },
+  "evidence_hashes": {
+    ".utmp\\binding-lifetime-20261031\\baseline-probe.log": "a760ae07c1b4862285d142f285cc410789783d04c5911e431a32d37472bc48b8",
+    ".utmp\\binding-lifetime-20261031\\first-unity-full.log": "64d4f042357b6abf6b7328f7d90673b38f981eb1c5d3d29959a673cb903778cf",
+    ".utmp\\binding-lifetime-20261031\\probe.log": "809d41e031cbaa418395303f2104f7cb29470df028c6bb1d0db0255ce564c06f",
+    ".utmp\\binding-lifetime-20261031\\unity-full.log": "3ae7fbac8d2b8d97a7110f2f3ab540c3c5a8a8e494d52b38ba7922f693d47f8e",
+    ".utmp\\binding-lifetime-20261031\\first-unity-full.xml": "fb33ad01c9ae0ea292cad8d34a278a021eb33167ab0de3e7fbc167ac26b22c61",
+    ".utmp\\binding-lifetime-20261031\\unity-full.xml": "1812b5f1de83e54a8d2d1fa78a0cde24f93ac407212e066e4dcafb43688ccebe",
+    ".utmp\\binding-lifetime-20261031\\baseline-probe.json": "44116ea0901f458de569ecd591d8eb1c7fd6205be859c6adfbe01a6c418b7095",
+    ".utmp\\binding-lifetime-20261031\\probe.json": "5b291921ee5b62a09c5333a49975abe90ef262e42befb0fc147171bdeb2c944a",
+    ".utmp\\binding-lifetime-20261031\\unity-editor-exit.json": "ecae1be21a41dce5e43674716c42e358705bebe920ca28a28ffcdd9b7e9e99d3",
+    ".utmp\\binding-lifetime-20261031\\WevaBindingLifetimeAudit.cs": "21df32da0a41d7e55c042402925a450467c3b6ed0641217c9f901faca730a66e",
+    ".utmp\\binding-lifetime-20261031\\add-tests.py": "030d5d62ad21dc37c34e66357ff5c077e01c5a52aebd2b2867bf9bd54f54e4c6",
+    ".utmp\\binding-lifetime-20261031\\docs.py": "7d84571e680e08ff542b03bdaec14747fdef265abc750664e1c4b8a52a9f9c04",
+    ".utmp\\binding-lifetime-20261031\\failure.py": "9f0c5b2b70405b76d801699a91887aa0b3a6a764716ccb1380d0e402dc7ffd7c",
+    ".utmp\\binding-lifetime-20261031\\images.py": "3061fc11939f911b15493f03204c2c0aa7d9d3d3da466106d2d5e4dc0059b8c6",
+    ".utmp\\binding-lifetime-20261031\\receipt.py": "70d6eb3d01531aa8e177ef8af0048375f7801389cfb193e8852453007ae35be7",
+    ".utmp\\binding-lifetime-20261031\\run-probe.py": "43196a52fb24a08e5f7cea93e00d0f87ee916867278d176ef55ea447d1542b63",
+    ".utmp\\binding-lifetime-20261031\\verify_unity.py": "67263e386b94ba74e38049546fb43fb8cdc53001bc38e8d4745afdff6fb6a627",
+    ".utmp\\binding-lifetime-20261031\\unity-player\\results.xml": "d5b41219eb5c5a2130534931d5680ecc93b0a452503eb59bd7eecc33da1eac17"
+  },
+  "initial_test_failure": "Live-callback test required immediate collection after checking adapter liveness in the same method; Mono retained a temporary reference. Replaced this redundant assertion with deterministic detachment; isolated abandoned-document collection regression passes."
+}
