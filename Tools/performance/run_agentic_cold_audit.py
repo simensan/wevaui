@@ -19,9 +19,13 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--engine', action='append', required=True)
     parser.add_argument('--rounds', type=int, default=5)
+    parser.add_argument('--reopens', type=int, default=0,
+                        help='Measured hide/show cycles after each first opening')
     args = parser.parse_args()
     if args.rounds < 1:
         parser.error('--rounds must be positive')
+    if args.reopens < 0:
+        parser.error('--reopens must be nonnegative')
     engines = []
     for value in args.engine:
         label, separator, path = value.partition('=')
@@ -64,57 +68,72 @@ def main():
             try:
                 call('world', ['capture', '--session', session, '--ready', 'audit_mode',
                                '--ready-value', '0', '--timeout', '30'])
-                profile_path = output / f'{prefix}-profile.json'
-                with profile_path.open('w', encoding='utf-8') as stdout, \
-                        (output / f'{prefix}-profile.stderr').open('w', encoding='utf-8') as stderr:
-                    profile_process = subprocess.Popen([
-                        str(cli), 'profile', '--session', session, '--sampling', 'cpu_only',
-                        '--frames', '6000', '--warmup', '0', '--label', prefix,
-                        '--timeout', '90', '--json'], env=env, stdout=stdout, stderr=stderr)
-                    # Coverage is proved below against the actual applied input
-                    # tick, not assumed from this scheduling delay.
-                    time.sleep(0.5)
-                    applied = call('open', ['session', 'input', '--session', session,
-                                           '--request-key', prefix, '--ticks', '2', '--controls',
-                                           json.dumps({'keys': ['Num5']})])
-                    if profile_process.wait(timeout=100):
-                        raise RuntimeError(f'{prefix}: profile failed; see retained evidence')
-                response = json.loads(profile_path.read_text(encoding='utf-8'))
-                if response['status'] != 'completed':
-                    raise RuntimeError(f'{prefix}: incomplete profile')
-                artifacts = {a['kind']: a for a in response['artifacts']}
-                for artifact in artifacts.values():
-                    digest = hashlib.sha256(Path(artifact['path']).read_bytes()).hexdigest()
-                    if digest != artifact['sha256']:
-                        raise RuntimeError(f'Artifact hash mismatch: {artifact["path"]}')
-                report = json.loads(Path(artifacts['profile_report']['path']).read_text(encoding='utf-8'))
-                frames = [json.loads(line) for line in
-                          Path(artifacts['profile_frames']['path']).read_text(encoding='utf-8').splitlines()]
-                tick = applied['data']['first_tick']
-                indices = [i for i, frame in enumerate(frames) if frame['tick'] == tick]
-                if len(indices) != 1 or not 0 < indices[0] < len(frames) - 2:
-                    raise RuntimeError('Input opening tick is not inside the retained profile')
-                if not report['metadata']['gpu_timestamp_sampling']['cpu_only_contract_satisfied']:
-                    raise RuntimeError('Normal renderer scheduling was not retained')
-                index = indices[0]
-                frame = frames[index]
-                ui_index = report['summary']['section_names'].index('ui')
-                opened = call('opened', ['capture', '--session', session, '--ready', 'audit_mode',
-                                         '--ready-value', '4', '--timeout', '30'])
-                rows.append({
-                    'variant': label, 'round': round_index, 'input_tick': tick,
-                    'main_cpu_ms': frame['main_cpu_ms'],
-                    'main_ui_ms': frame['sections_ms'][ui_index],
-                    'worker_ui_ms': frame.get('worker_ms', {}).get('ui'),
-                    'next_interval_ms': frames[index + 1]['interval_ms'],
-                    'entities': frame['entities'],
-                    'frames': report['summary']['frames'],
-                    'metadata': report['metadata'],
-                    'profile_artifacts': response['artifacts'],
-                    'capture_artifacts': opened['artifacts'],
-                })
-                (output / 'results.json').write_text(json.dumps(rows, indent=2) + '\n', encoding='utf-8')
-                print(prefix, 'opening main CPU', round(frame['main_cpu_ms'], 3), 'ms', flush=True)
+                for opening in range(args.reopens + 1):
+                    phase = 'cold' if opening == 0 else f'retained-{opening}'
+                    if opening:
+                        call(phase + '-hide', ['session', 'input', '--session', session,
+                             '--request-key', prefix + '-hide-' + phase, '--ticks', '2',
+                             '--controls', json.dumps({'keys': ['Num1']})])
+                    profile_path = output / f'{prefix}-{phase}-profile.json'
+                    with profile_path.open('w', encoding='utf-8') as stdout, \
+                            (output / f'{prefix}-{phase}-profile.stderr').open('w', encoding='utf-8') as stderr:
+                        profile_process = subprocess.Popen([
+                            str(cli), 'profile', '--session', session, '--sampling', 'cpu_only',
+                            '--frames', '6000', '--warmup', '0', '--label', prefix,
+                            '--timeout', '90', '--json'], env=env, stdout=stdout, stderr=stderr)
+                        # Coverage is proved below against the actual applied input
+                        # tick, not assumed from this scheduling delay.
+                        time.sleep(0.5)
+                        applied = call(phase + '-open', ['session', 'input', '--session', session,
+                                               '--request-key', prefix + '-' + phase, '--ticks', '2', '--controls',
+                                               json.dumps({'keys': ['Num5']})])
+                        if profile_process.wait(timeout=100):
+                            raise RuntimeError(f'{prefix}: profile failed; see retained evidence')
+                    response = json.loads(profile_path.read_text(encoding='utf-8'))
+                    if response['status'] != 'completed':
+                        raise RuntimeError(f'{prefix}: incomplete profile')
+                    artifacts = {a['kind']: a for a in response['artifacts']}
+                    for artifact in artifacts.values():
+                        digest = hashlib.sha256(Path(artifact['path']).read_bytes()).hexdigest()
+                        if digest != artifact['sha256']:
+                            raise RuntimeError(f'Artifact hash mismatch: {artifact["path"]}')
+                    report = json.loads(Path(artifacts['profile_report']['path']).read_text(encoding='utf-8'))
+                    frames = [json.loads(line) for line in
+                              Path(artifacts['profile_frames']['path']).read_text(encoding='utf-8').splitlines()]
+                    if len(frames) != 6000 or report['summary']['frames'] != 6000:
+                        raise RuntimeError('Incomplete cold profile')
+                    if report['summary']['marked_frames'] or any(f['entities'] != 243 for f in frames):
+                        raise RuntimeError('Marked profile or missing audit world')
+                    tick = applied['data']['first_tick']
+                    indices = [i for i, frame in enumerate(frames) if frame['tick'] == tick]
+                    if len(indices) != 1 or not 0 < indices[0] < len(frames) - 2:
+                        raise RuntimeError('Input opening tick is not inside the retained profile')
+                    if not report['metadata']['gpu_timestamp_sampling']['cpu_only_contract_satisfied']:
+                        raise RuntimeError('Normal renderer scheduling was not retained')
+                    index = indices[0]
+                    frame = frames[index]
+                    ui_index = report['summary']['section_names'].index('ui')
+                    opened = call(phase + '-opened', ['capture', '--session', session, '--ready', 'audit_mode',
+                                             '--ready-value', '4', '--timeout', '30'])
+                    for artifact in opened['artifacts']:
+                        if hashlib.sha256(Path(artifact['path']).read_bytes()).hexdigest() != artifact['sha256']:
+                            raise RuntimeError('Opening capture hash mismatch')
+                    rows.append({
+                        'variant': label, 'round': round_index, 'phase': phase, 'input_tick': tick,
+                        'main_cpu_ms': frame['main_cpu_ms'],
+                        'main_ui_ms': frame['sections_ms'][ui_index],
+                        'sections_ms': dict(zip(report['summary']['section_names'], frame['sections_ms'])),
+                        'runtime_sha256': launch['data']['session']['executable_sha256'],
+                        'worker_ui_ms': frame.get('worker_ms', {}).get('ui'),
+                        'next_interval_ms': frames[index + 1]['interval_ms'],
+                        'entities': frame['entities'],
+                        'frames': report['summary']['frames'],
+                        'metadata': report['metadata'],
+                        'profile_artifacts': response['artifacts'],
+                        'capture_artifacts': opened['artifacts'],
+                    })
+                    (output / 'results.json').write_text(json.dumps(rows, indent=2) + '\n', encoding='utf-8')
+                    print(prefix, phase, 'opening main CPU', round(frame['main_cpu_ms'], 3), 'ms', flush=True)
             finally:
                 # Stop only this runner's session. A lost profile observation
                 # must never trigger a replacement runtime launch.
