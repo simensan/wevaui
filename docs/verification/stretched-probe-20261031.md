@@ -1,5 +1,10 @@
 # Skip doomed stretched-item probes — 2026-10-31
 
+**Superseded:** the optimization was reverted after the
+[paired Unity follow-up](stretched-probe-host-20261031.md) failed to establish
+a host-level benefit. The regression tests remain. The measurements below
+describe the evaluated candidate, not the current production implementation.
+
 The shared core now skips a speculative incremental-layout probe when a
 previously stretched item has equal natural/final widths but different
 natural/final heights. The existing probe requires preserving both heights,
