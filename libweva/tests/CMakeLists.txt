@@ -100,6 +100,10 @@ add_executable(weva_intrinsic_allocations test_intrinsic_allocations.cpp)
 target_link_libraries(weva_intrinsic_allocations PRIVATE weva)
 add_test(NAME weva_intrinsic_allocations COMMAND weva_intrinsic_allocations)
 
+add_executable(weva_bidi_allocations test_bidi_allocations.cpp)
+target_link_libraries(weva_bidi_allocations PRIVATE weva)
+add_test(NAME weva_bidi_allocations COMMAND weva_bidi_allocations)
+
 add_executable(weva_paint_order_allocations test_paint_order_allocations.cpp)
 target_link_libraries(weva_paint_order_allocations PRIVATE weva)
 add_test(NAME weva_paint_order_allocations COMMAND weva_paint_order_allocations)

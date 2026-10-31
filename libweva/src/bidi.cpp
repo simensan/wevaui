@@ -43,6 +43,7 @@ void append_utf16(std::u16string* out, UChar32 c) {
 // A character that can change the outcome: anything right-to-left, an
 // Arabic number, or an explicit formatting character in the source.
 bool directional(UChar32 c) {
+    if (c < 0x80) return false;
     switch (u_charDirection(c)) {
         case U_RIGHT_TO_LEFT:
         case U_RIGHT_TO_LEFT_ARABIC:
@@ -101,6 +102,26 @@ bool resolve_bidi_levels(std::vector<InlineItem>* items, const ComputedStyle* co
     const Controls paragraph = controls_for(container_style);
     const bool plaintext = container_style && iequals(trim(container_style->get("unicode-bidi")), "plaintext");
 
+    // Decide whether ICU needs a paragraph before allocating its UTF-16 text
+    // and per-character mappings. Most UI paragraphs keep their zero levels.
+    bool needs = paragraph_rtl || !paragraph.open.empty();
+    for (const InlineItem& item : *items) {
+        if (needs) break;
+        if (item.is_inline_start()) {
+            needs = !controls_for(item.style).open.empty();
+        } else if (!item.is_inline_end() && !item.is_break() && !item.is_atom()) {
+            const auto* s = reinterpret_cast<const uint8_t*>(item.text.data());
+            const int32_t length = static_cast<int32_t>(item.text.size());
+            int32_t i = 0;
+            while (i < length) {
+                UChar32 c = 0;
+                U8_NEXT(s, i, length, c);
+                if (directional(c < 0 ? 0xFFFD : c)) { needs = true; break; }
+            }
+        }
+    }
+    if (!needs) return false;
+
     // The paragraph text in UTF-16, with each text item's code points mapped
     // to their unit index so a level change can be turned back into a byte
     // offset of the item's text.
@@ -109,7 +130,6 @@ bool resolve_bidi_levels(std::vector<InlineItem>* items, const ComputedStyle* co
     std::vector<std::vector<Piece>> pieces(items->size());
     std::vector<size_t> unit_of(items->size(), 0);        // a non-text item's place
     std::map<BoxId, std::u16string> closers;
-    bool needs = paragraph_rtl || !paragraph.open.empty();
     text += paragraph.open;
     for (size_t n = 0; n < items->size(); ++n) {
         const InlineItem& item = (*items)[n];
@@ -117,7 +137,6 @@ bool resolve_bidi_levels(std::vector<InlineItem>* items, const ComputedStyle* co
         if (item.is_inline_start()) {
             const Controls c = controls_for(item.style);
             if (!c.open.empty()) {
-                needs = true;
                 text += c.open;
                 closers[item.inline_box_start] = c.close;
             }
@@ -148,12 +167,10 @@ bool resolve_bidi_levels(std::vector<InlineItem>* items, const ComputedStyle* co
                 U8_NEXT(s, i, length, c);
                 if (c < 0) c = 0xFFFD;
                 pieces[n].push_back({static_cast<size_t>(at), text.size()});
-                if (!needs && directional(c)) needs = true;
                 append_utf16(&text, c);
             }
         }
     }
-    if (!needs) return false;
 
     UErrorCode error = U_ZERO_ERROR;
     UBiDi* bidi = ubidi_open();

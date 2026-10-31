@@ -1,0 +1,666 @@
+{
+  "manifest": {
+    "provisional": true,
+    "reason": "User requests keeping the other workspace active",
+    "binaries": {
+      "baseline": "41e96c2648b48d1867e5f84466e7e3930417a6bea0b8eb1645ecd19c2cf22d2b",
+      "candidate": "88f4b74f58d568f676da10a935fae2d9d8fe8e0ed6c7b5661d1f595e5262e9ac"
+    },
+    "source_hashes": {
+      "libweva\\src\\weva_c.cpp": "09fa2d9e7661b94e94a3923290caff7852c9230939bb15d23305800855b46898",
+      "libweva\\src\\incremental_layout.cpp": "4ece9d993fa74593b6aabb7b620ecf8418a3f9d0edc68fb478013794dcac87f8"
+    },
+    "runs": [
+      {
+        "round": 0,
+        "mode": "baseline",
+        "other_processes": [
+          {
+            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "name": "dev_runtime.exe",
+            "pid": 17296
+          }
+        ]
+      },
+      {
+        "round": 0,
+        "mode": "candidate",
+        "other_processes": [
+          {
+            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "name": "dev_runtime.exe",
+            "pid": 17296
+          }
+        ]
+      },
+      {
+        "round": 0,
+        "mode": "chrome",
+        "other_processes": [
+          {
+            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "name": "dev_runtime.exe",
+            "pid": 17296
+          }
+        ]
+      },
+      {
+        "round": 1,
+        "mode": "chrome",
+        "other_processes": [
+          {
+            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "name": "dev_runtime.exe",
+            "pid": 17296
+          }
+        ]
+      },
+      {
+        "round": 1,
+        "mode": "candidate",
+        "other_processes": [
+          {
+            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "name": "dev_runtime.exe",
+            "pid": 17296
+          }
+        ]
+      },
+      {
+        "round": 1,
+        "mode": "baseline",
+        "other_processes": [
+          {
+            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "name": "dev_runtime.exe",
+            "pid": 17296
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "mode": "baseline",
+        "other_processes": [
+          {
+            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "name": "dev_runtime.exe",
+            "pid": 17296
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "mode": "candidate",
+        "other_processes": [
+          {
+            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "name": "dev_runtime.exe",
+            "pid": 17296
+          }
+        ]
+      },
+      {
+        "round": 2,
+        "mode": "chrome",
+        "other_processes": [
+          {
+            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "name": "dev_runtime.exe",
+            "pid": 17296
+          }
+        ]
+      }
+    ]
+  },
+  "rows": [
+    {
+      "round": 0,
+      "mode": "baseline",
+      "case": "hud",
+      "cascade": 0.018,
+      "boxes": 0.051,
+      "layout": 0.0,
+      "paint": 0.051,
+      "core update, total": 0.124,
+      "host draw": 0.198,
+      "host prepare": 0.053,
+      "host capture": 0.016,
+      "host prepare GPU": 0.037,
+      "host encode": 0.068,
+      "host submit": 0.077,
+      "controller + update": 0.147,
+      "complete CPU path": 0.345,
+      "frame": 0.322,
+      "idle frame": 0.159,
+      "style_layout": 0.06899999999999999
+    },
+    {
+      "round": 0,
+      "mode": "baseline",
+      "case": "inventory",
+      "cascade": 0.053,
+      "boxes": 0.121,
+      "layout": 0.0,
+      "paint": 0.204,
+      "core update, total": 0.382,
+      "host draw": 0.275,
+      "host prepare": 0.12,
+      "host capture": 0.037,
+      "host prepare GPU": 0.084,
+      "host encode": 0.081,
+      "host submit": 0.073,
+      "controller + update": 0.521,
+      "complete CPU path": 0.796,
+      "frame": 0.657,
+      "idle frame": 0.183,
+      "style_layout": 0.174
+    },
+    {
+      "round": 0,
+      "mode": "candidate",
+      "case": "hud",
+      "cascade": 0.019,
+      "boxes": 0.053,
+      "layout": 0.0,
+      "paint": 0.055,
+      "core update, total": 0.13,
+      "host draw": 0.209,
+      "host prepare": 0.057,
+      "host capture": 0.018,
+      "host prepare GPU": 0.038,
+      "host encode": 0.074,
+      "host submit": 0.078,
+      "controller + update": 0.156,
+      "complete CPU path": 0.365,
+      "frame": 0.339,
+      "idle frame": 0.168,
+      "style_layout": 0.072
+    },
+    {
+      "round": 0,
+      "mode": "candidate",
+      "case": "inventory",
+      "cascade": 0.055,
+      "boxes": 0.118,
+      "layout": 0.0,
+      "paint": 0.207,
+      "core update, total": 0.384,
+      "host draw": 0.277,
+      "host prepare": 0.119,
+      "host capture": 0.035,
+      "host prepare GPU": 0.084,
+      "host encode": 0.084,
+      "host submit": 0.074,
+      "controller + update": 0.528,
+      "complete CPU path": 0.805,
+      "frame": 0.661,
+      "idle frame": 0.183,
+      "style_layout": 0.173
+    },
+    {
+      "round": 1,
+      "mode": "baseline",
+      "case": "hud",
+      "cascade": 0.019,
+      "boxes": 0.054,
+      "layout": 0.0,
+      "paint": 0.056,
+      "core update, total": 0.133,
+      "host draw": 0.208,
+      "host prepare": 0.056,
+      "host capture": 0.017,
+      "host prepare GPU": 0.039,
+      "host encode": 0.072,
+      "host submit": 0.08,
+      "controller + update": 0.158,
+      "complete CPU path": 0.365,
+      "frame": 0.34,
+      "idle frame": 0.155,
+      "style_layout": 0.073
+    },
+    {
+      "round": 1,
+      "mode": "baseline",
+      "case": "inventory",
+      "cascade": 0.055,
+      "boxes": 0.127,
+      "layout": 0.0,
+      "paint": 0.212,
+      "core update, total": 0.399,
+      "host draw": 0.288,
+      "host prepare": 0.124,
+      "host capture": 0.037,
+      "host prepare GPU": 0.087,
+      "host encode": 0.086,
+      "host submit": 0.078,
+      "controller + update": 0.544,
+      "complete CPU path": 0.831,
+      "frame": 0.687,
+      "idle frame": 0.185,
+      "style_layout": 0.182
+    },
+    {
+      "round": 1,
+      "mode": "candidate",
+      "case": "hud",
+      "cascade": 0.018,
+      "boxes": 0.05,
+      "layout": 0.0,
+      "paint": 0.052,
+      "core update, total": 0.122,
+      "host draw": 0.206,
+      "host prepare": 0.056,
+      "host capture": 0.017,
+      "host prepare GPU": 0.039,
+      "host encode": 0.072,
+      "host submit": 0.079,
+      "controller + update": 0.146,
+      "complete CPU path": 0.352,
+      "frame": 0.329,
+      "idle frame": 0.167,
+      "style_layout": 0.068
+    },
+    {
+      "round": 1,
+      "mode": "candidate",
+      "case": "inventory",
+      "cascade": 0.054,
+      "boxes": 0.114,
+      "layout": 0.0,
+      "paint": 0.207,
+      "core update, total": 0.38,
+      "host draw": 0.277,
+      "host prepare": 0.123,
+      "host capture": 0.038,
+      "host prepare GPU": 0.085,
+      "host encode": 0.08,
+      "host submit": 0.075,
+      "controller + update": 0.522,
+      "complete CPU path": 0.8,
+      "frame": 0.657,
+      "idle frame": 0.177,
+      "style_layout": 0.168
+    },
+    {
+      "round": 2,
+      "mode": "baseline",
+      "case": "hud",
+      "cascade": 0.018,
+      "boxes": 0.053,
+      "layout": 0.0,
+      "paint": 0.053,
+      "core update, total": 0.127,
+      "host draw": 0.235,
+      "host prepare": 0.066,
+      "host capture": 0.026,
+      "host prepare GPU": 0.039,
+      "host encode": 0.073,
+      "host submit": 0.096,
+      "controller + update": 0.153,
+      "complete CPU path": 0.387,
+      "frame": 0.362,
+      "idle frame": 0.167,
+      "style_layout": 0.071
+    },
+    {
+      "round": 2,
+      "mode": "baseline",
+      "case": "inventory",
+      "cascade": 0.057,
+      "boxes": 0.131,
+      "layout": 0.0,
+      "paint": 0.219,
+      "core update, total": 0.412,
+      "host draw": 0.308,
+      "host prepare": 0.134,
+      "host capture": 0.042,
+      "host prepare GPU": 0.092,
+      "host encode": 0.093,
+      "host submit": 0.081,
+      "controller + update": 0.557,
+      "complete CPU path": 0.866,
+      "frame": 0.72,
+      "idle frame": 0.183,
+      "style_layout": 0.188
+    },
+    {
+      "round": 2,
+      "mode": "candidate",
+      "case": "hud",
+      "cascade": 0.019,
+      "boxes": 0.052,
+      "layout": 0.0,
+      "paint": 0.055,
+      "core update, total": 0.128,
+      "host draw": 0.205,
+      "host prepare": 0.056,
+      "host capture": 0.018,
+      "host prepare GPU": 0.038,
+      "host encode": 0.074,
+      "host submit": 0.076,
+      "controller + update": 0.152,
+      "complete CPU path": 0.357,
+      "frame": 0.333,
+      "idle frame": 0.164,
+      "style_layout": 0.071
+    },
+    {
+      "round": 2,
+      "mode": "candidate",
+      "case": "inventory",
+      "cascade": 0.054,
+      "boxes": 0.112,
+      "layout": 0.0,
+      "paint": 0.21,
+      "core update, total": 0.38,
+      "host draw": 0.277,
+      "host prepare": 0.12,
+      "host capture": 0.035,
+      "host prepare GPU": 0.085,
+      "host encode": 0.083,
+      "host submit": 0.074,
+      "controller + update": 0.52,
+      "complete CPU path": 0.797,
+      "frame": 0.657,
+      "idle frame": 0.176,
+      "style_layout": 0.166
+    }
+  ],
+  "chrome": [
+    {
+      "round": 0,
+      "case": "hud",
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.09061999999999999,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.09769,
+      "paint_recording_events": 1429,
+      "raster_workers_cpu_ms_per_update": 0.023929999999999996,
+      "raster_workers_events": 200,
+      "window_ms": 3304.47,
+      "gpu_execution_ms": null
+    },
+    {
+      "round": 0,
+      "case": "hud",
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.00987,
+      "paint_recording_events": 957,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3314.291,
+      "gpu_execution_ms": null
+    },
+    {
+      "round": 0,
+      "case": "inventory",
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.179285,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.228765,
+      "paint_recording_events": 1774,
+      "raster_workers_cpu_ms_per_update": 0.09086,
+      "raster_workers_events": 600,
+      "window_ms": 3311.435,
+      "gpu_execution_ms": null
+    },
+    {
+      "round": 0,
+      "case": "inventory",
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.009825,
+      "paint_recording_events": 959,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3304.393,
+      "gpu_execution_ms": null
+    },
+    {
+      "round": 1,
+      "case": "hud",
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.081075,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.08843,
+      "paint_recording_events": 1399,
+      "raster_workers_cpu_ms_per_update": 0.01985,
+      "raster_workers_events": 200,
+      "window_ms": 3302.851,
+      "gpu_execution_ms": null
+    },
+    {
+      "round": 1,
+      "case": "hud",
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.010105,
+      "paint_recording_events": 949,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3306.895,
+      "gpu_execution_ms": null
+    },
+    {
+      "round": 1,
+      "case": "inventory",
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.13788,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.18675,
+      "paint_recording_events": 1790,
+      "raster_workers_cpu_ms_per_update": 0.08101000000000001,
+      "raster_workers_events": 600,
+      "window_ms": 3312.09,
+      "gpu_execution_ms": null
+    },
+    {
+      "round": 1,
+      "case": "inventory",
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.009985,
+      "paint_recording_events": 975,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3302.018,
+      "gpu_execution_ms": null
+    },
+    {
+      "round": 2,
+      "case": "hud",
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.091305,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.09361000000000001,
+      "paint_recording_events": 1408,
+      "raster_workers_cpu_ms_per_update": 0.022250000000000002,
+      "raster_workers_events": 200,
+      "window_ms": 3307.676,
+      "gpu_execution_ms": null
+    },
+    {
+      "round": 2,
+      "case": "hud",
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.009925,
+      "paint_recording_events": 974,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3303.552,
+      "gpu_execution_ms": null
+    },
+    {
+      "round": 2,
+      "case": "inventory",
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.139155,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.18547,
+      "paint_recording_events": 1785,
+      "raster_workers_cpu_ms_per_update": 0.08323499999999999,
+      "raster_workers_events": 600,
+      "window_ms": 3310.595,
+      "gpu_execution_ms": null
+    },
+    {
+      "round": 2,
+      "case": "inventory",
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.0096,
+      "paint_recording_events": 961,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3304.503,
+      "gpu_execution_ms": null
+    }
+  ],
+  "summary": {
+    "hud": {
+      "baseline": {
+        "cascade": 0.018,
+        "boxes": 0.053,
+        "style_layout": 0.071,
+        "paint": 0.053,
+        "complete CPU path": 0.365,
+        "idle frame": 0.159
+      },
+      "candidate": {
+        "cascade": 0.019,
+        "boxes": 0.052,
+        "style_layout": 0.071,
+        "paint": 0.055,
+        "complete CPU path": 0.357,
+        "idle frame": 0.167
+      },
+      "chrome": {
+        "style_layout_cpu_ms_per_update": 0.09061999999999999,
+        "paint_recording_cpu_ms_per_update": 0.09361000000000001,
+        "raster_workers_cpu_ms_per_update": 0.022250000000000002
+      },
+      "paired_percent": {
+        "style_layout": 0.0,
+        "paint": 3.7735849056603765,
+        "complete CPU path": -3.561643835616446
+      }
+    },
+    "inventory": {
+      "baseline": {
+        "cascade": 0.055,
+        "boxes": 0.127,
+        "style_layout": 0.182,
+        "paint": 0.212,
+        "complete CPU path": 0.831,
+        "idle frame": 0.183
+      },
+      "candidate": {
+        "cascade": 0.054,
+        "boxes": 0.114,
+        "style_layout": 0.168,
+        "paint": 0.207,
+        "complete CPU path": 0.8,
+        "idle frame": 0.177
+      },
+      "chrome": {
+        "style_layout_cpu_ms_per_update": 0.139155,
+        "paint_recording_cpu_ms_per_update": 0.18675,
+        "raster_workers_cpu_ms_per_update": 0.08323499999999999
+      },
+      "paired_percent": {
+        "style_layout": -7.692307692307687,
+        "paint": -2.358490566037741,
+        "complete CPU path": -3.730445246690728
+      }
+    }
+  },
+  "baseline_commit": "a4b6e31ec91bf9f38e8264828cbeee5a2e1475f3",
+  "source_hashes": {
+    "libweva/src/bidi.cpp": "8f7a22347150fb0782a656e52578219f31a5415ae69cb2493aee06c2b27c8216",
+    "libweva/tests/test_bidi_allocations.cpp": "18fc2a44fcd14caa17b6448da3134d5d799ee7308612674f705befb3952cf629",
+    "libweva/tests/CMakeLists.txt": "d95dc8f79ed12803594a0d202b1f25edb3c181e600cb6cda9a98114220633048"
+  },
+  "final_agentic_executable": {
+    "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+    "sha256": "88f4b74f58d568f676da10a935fae2d9d8fe8e0ed6c7b5661d1f595e5262e9ac"
+  },
+  "installed_native_builds": {
+    "Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll.build.json": {
+      "schema": 1,
+      "host": "unity",
+      "library_sha256": "4014a500cf3e312d26b8d189751cf813183034ed2fed07dada318934f7448ee3",
+      "source": {
+        "revision": "a4b6e31ec91bf9f38e8264828cbeee5a2e1475f3",
+        "dirty": true,
+        "sha256": "9cb7592e695ae6bc314a362a8caee0c68401158493454f0b3b2e8a63473870d6"
+      },
+      "abi": {
+        "major": 0,
+        "minor": 45
+      },
+      "configuration": "Release",
+      "compiler": {
+        "id": "MSVC",
+        "version": "19.44.35222.0"
+      },
+      "cmake_version": "4.3.2",
+      "sanitizers": false
+    },
+    "hosts/godot/project/addons/weva/bin/weva_godot.dll.build.json": {
+      "schema": 1,
+      "library_sha256": "3d6c72ffaa5bc1494af713d59eeef19a3570f1e43e160c9c8afac264b3587633",
+      "source": {
+        "revision": "a4b6e31ec91bf9f38e8264828cbeee5a2e1475f3",
+        "dirty": true,
+        "sha256": "a6e28cf9e7f7f3787673aaed7f881da70c484a0f5abbb34086fbfacf30d97eeb"
+      },
+      "godot_cpp": {
+        "revision": null,
+        "dirty": null,
+        "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+      },
+      "configuration": "Release",
+      "compiler": {
+        "id": "MSVC",
+        "version": "19.44.35222.0"
+      },
+      "cmake_version": "4.3.2",
+      "godot_api": "4.7",
+      "precision": "single",
+      "custom_api": null,
+      "sanitizers": false
+    }
+  },
+  "gates": {
+    "qualified_release_exit": 0,
+    "gcc_suites": 17,
+    "sanitizer_suites": 19,
+    "gcc_main_checks": 807102,
+    "sanitizer_main_checks": 807096,
+    "bidi_allocation_checks": 792,
+    "chrome_captures": 341,
+    "chrome_behaviors_passed": 66,
+    "chrome_behaviors_known_failure": 1,
+    "unity_full_passed": 255,
+    "unity_full_inconclusive": 2,
+    "unity_player_passed": 7,
+    "unity_rgb_identical": 16,
+    "godot_rgb_identical": true,
+    "godot_font_checks": 19833
+  },
+  "evidence_hashes": {
+    ".utmp\\inventory-bidi-20261031\\gate\\full-gate-verified.log": "55cb5aaf0e0e65469f82dd36d08d5d8d3b54839f8cdd5a1f87ab99d73c10a53e",
+    ".utmp\\inventory-bidi-20261031\\unity-full.xml": "61e1f4fcea09c37b655a93488564bbbcfc4a1c32624ce9b53c17d5a248e2d520",
+    ".utmp\\inventory-bidi-20261031\\unity-player\\results.xml": "e4d206402fd6c89cef30fcd90a2f7d0854209a244e0168f342f7166fb721cf60",
+    ".utmp\\inventory-bidi-20261031\\gate\\render-verified.png": "4efc04095bbb73e12ca28f10df27d099e6a23febdcb47c08d887f1f913b244c3",
+    ".utmp\\inventory-bidi-20261031\\render-equivalence.json": "fdef1e95db3fc4b770dbf20f4be8e63b10b47493ec1b12527ebe3109fbdadfe3"
+  }
+}
