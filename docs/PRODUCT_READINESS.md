@@ -35,6 +35,9 @@ runs and fixes padding-dependent flex shrink weights. The shared change is
 rebuilt into both hosts; the full gate, including 341 Chrome captures, passes.
 The [Godot follow-up](verification/flex-row-godot-20261031.md) measures a 10.49%
 median paired inventory-update reduction; HUD and frame-tail results are mixed.
+The [matched Chrome rerun](verification/optimized-render-comparison-20261031.md)
+still measures an inventory style/layout gap (0.336 versus 0.242 ms). Its
+separated CPU stages do not establish complete rendering or GPU parity.
 
 Scoped October 25 core/Agentic checks cover filtered downscaled icons and
 antialiased thin rounded borders; see the

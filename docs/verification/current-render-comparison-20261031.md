@@ -7,6 +7,8 @@ it is not a paired before/after optimization result or an overall speed ratio.
 
 The subsequent [flex-row allocation change](flex-row-allocation-20261031.md)
 has separate paired host measurements. This Chrome table predates that change.
+The [post-optimization Chrome rerun](optimized-render-comparison-20261031.md)
+now records the newer core separately; use it for the current scoped comparison.
 
 | Warm work, milliseconds/update | HUD | Full inventory selection |
 | --- | ---: | ---: |

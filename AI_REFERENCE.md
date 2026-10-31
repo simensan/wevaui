@@ -458,3 +458,8 @@ measures four rendered 60 Hz pairs: inventory controller/update median improves
 10.49% (median paired), with 40 RGB-identical captures. HUD and frame-tail
 results are mixed; this is not a GPU or FPS speedup claim. No production code
 changes in the follow-up.
+
+The [post-optimization Chrome comparison](docs/verification/optimized-render-comparison-20261031.md)
+uses the verified flex-row candidate in three fresh alternating engine pairs.
+Inventory style/layout remains 0.336 ms versus Chrome 0.242 ms; paint and host
+CPU stay separately reported. This is not full rendering or GPU parity.

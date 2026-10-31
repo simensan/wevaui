@@ -1,0 +1,604 @@
+{
+  "manifest": {
+    "weva_revision": "a22e5b63dd19d0f413be5976922a5b87bff9d4f2",
+    "agentic_revision": "f0a91651ab7c52945b3e672451a73c2322c27496",
+    "binary_sha256": "d62b8c909448fe3a9c0dba7bd32dabf617613ec0f18716a79df08a4c15adcdeb",
+    "completed": [
+      {
+        "round": 0,
+        "mode": "native"
+      },
+      {
+        "round": 0,
+        "mode": "chrome"
+      },
+      {
+        "round": 1,
+        "mode": "chrome"
+      },
+      {
+        "round": 1,
+        "mode": "native"
+      },
+      {
+        "round": 2,
+        "mode": "native"
+      },
+      {
+        "round": 2,
+        "mode": "chrome"
+      }
+    ]
+  },
+  "browser": "Chrome/152.0.7977.82",
+  "fixture_hashes": {
+    "ammo.svg.png": "d4520a84fd2b3fb782fff62a8db6309dcc73a01341283e86a878c9db48a2b4c9",
+    "bandage.svg.png": "21a0b64549df57ec47a4268213a6b6224c6b9fe8ba7397cba905f0c9e853f355",
+    "beans.svg.png": "cba3c4dc9418d7f358d2fa08ee84fabd465d4833024e39fc1512fe0df7b12eb4",
+    "bolt.svg.png": "b3377182cda4864d4e856bbafdc770cbdac253e87de7842346be45fc5b1e720a",
+    "campfire.svg.png": "5e041c7efcd01ebf13145c4a77d4e28b661d01f8d0551c330218705abcaac848",
+    "canteen.svg.png": "977f51dee7dff4001e396afe93a25d8111821b0b6317f4b15d9a9df79b276e86",
+    "cloth.svg.png": "2df601d83f95c1afc1196b852b4a41000d73155fdef701af74af5fffd638858b",
+    "drop.svg.png": "35271db3426bfd7e67188c7dc68684b1bf15508b12db0ccb6485c2afe9652424",
+    "food.svg.png": "ca655dfac85122ab568f6bb76c5d609447f10a3c5ad9916764803f6fbeb97e34",
+    "hatchet.svg.png": "02508c1e246f60fdab8b2af5afa217582cbd327198dd614de98148655408ed49",
+    "heart.svg.png": "30d3a74ae6b0ec0d310a5603fe8071e0ad8538a5e25647980f4eb8bca65ab146",
+    "hud.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    "hud.html": "b29a00ff8341aeec836f793fc988192149206931aa49e83f8895234b74f5ad10",
+    "inventory.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    "inventory.html": "f2f130a482259071b078107e9d1a734c88dd47809bde4f382faa1c3028032090",
+    "knife.svg.png": "ceda161ae3ae746f80250b104a9146972159dfe6dfc75a06b6c65f512e1daa21",
+    "mutations.json": "aa0ad5e6a9768b9ece2c00c3a0d5afbb68f167a5461ecc086c029be0f253e8bc",
+    "open-sans-semibold.ttf": "445ac29890c338bc293873ec8da462193755346499903133b1b4d6f16eb708ca",
+    "revolver.svg.png": "730e040dd4dc0f0ab0e0919c29a9e00fe293fdf4b2d89544a3135c73b191c692",
+    "rope.svg.png": "39d42acb1a7b28cc761e4c9c00512ea601627fb0674cf994d53bc6fe86fdf09d",
+    "stone.svg.png": "64403858edb3564e0b034cf7da6d652286a5b55785f94547f56cf361f08f639b",
+    "wood.svg.png": "cbb723754580f23cfdd5a47f1640058bee21c510d89f95e7cdb9d42aef95bd7d"
+  },
+  "native": [
+    {
+      "case": "hud",
+      "round": 0,
+      "cascade": 0.042,
+      "boxes": 0.091,
+      "layout": 0.001,
+      "paint": 0.093,
+      "core update, total": 0.231,
+      "host draw": 0.352,
+      "host prepare": 0.085,
+      "host capture": 0.032,
+      "host prepare GPU": 0.053,
+      "host encode": 0.121,
+      "host submit": 0.146,
+      "controller + update": 0.29,
+      "complete CPU path": 0.643,
+      "frame": 0.583,
+      "idle frame": 0.329,
+      "style_layout": 0.134
+    },
+    {
+      "case": "inventory",
+      "round": 0,
+      "cascade": 0.129,
+      "boxes": 0.215,
+      "layout": 0.0,
+      "paint": 0.348,
+      "core update, total": 0.698,
+      "host draw": 0.512,
+      "host prepare": 0.21,
+      "host capture": 0.077,
+      "host prepare GPU": 0.133,
+      "host encode": 0.148,
+      "host submit": 0.154,
+      "controller + update": 0.89,
+      "complete CPU path": 1.402,
+      "frame": 1.21,
+      "idle frame": 0.371,
+      "style_layout": 0.344
+    },
+    {
+      "case": "hud",
+      "round": 1,
+      "cascade": 0.04,
+      "boxes": 0.088,
+      "layout": 0.0,
+      "paint": 0.094,
+      "core update, total": 0.227,
+      "host draw": 0.339,
+      "host prepare": 0.083,
+      "host capture": 0.032,
+      "host prepare GPU": 0.051,
+      "host encode": 0.116,
+      "host submit": 0.141,
+      "controller + update": 0.283,
+      "complete CPU path": 0.622,
+      "frame": 0.566,
+      "idle frame": 0.281,
+      "style_layout": 0.128
+    },
+    {
+      "case": "inventory",
+      "round": 1,
+      "cascade": 0.124,
+      "boxes": 0.201,
+      "layout": 0.0,
+      "paint": 0.317,
+      "core update, total": 0.649,
+      "host draw": 0.46,
+      "host prepare": 0.181,
+      "host capture": 0.061,
+      "host prepare GPU": 0.12,
+      "host encode": 0.128,
+      "host submit": 0.151,
+      "controller + update": 0.834,
+      "complete CPU path": 1.294,
+      "frame": 1.109,
+      "idle frame": 0.321,
+      "style_layout": 0.325
+    },
+    {
+      "case": "hud",
+      "round": 2,
+      "cascade": 0.038,
+      "boxes": 0.09,
+      "layout": 0.0,
+      "paint": 0.09,
+      "core update, total": 0.223,
+      "host draw": 0.386,
+      "host prepare": 0.088,
+      "host capture": 0.033,
+      "host prepare GPU": 0.055,
+      "host encode": 0.13,
+      "host submit": 0.168,
+      "controller + update": 0.283,
+      "complete CPU path": 0.668,
+      "frame": 0.609,
+      "idle frame": 0.291,
+      "style_layout": 0.128
+    },
+    {
+      "case": "inventory",
+      "round": 2,
+      "cascade": 0.124,
+      "boxes": 0.212,
+      "layout": 0.0,
+      "paint": 0.345,
+      "core update, total": 0.687,
+      "host draw": 0.491,
+      "host prepare": 0.188,
+      "host capture": 0.062,
+      "host prepare GPU": 0.125,
+      "host encode": 0.146,
+      "host submit": 0.157,
+      "controller + update": 0.877,
+      "complete CPU path": 1.367,
+      "frame": 1.178,
+      "idle frame": 0.357,
+      "style_layout": 0.33599999999999997
+    }
+  ],
+  "chrome": [
+    {
+      "case": "hud",
+      "round": 0,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.18504,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.16714500000000002,
+      "paint_recording_events": 1320,
+      "raster_workers_cpu_ms_per_update": 0.032174999999999995,
+      "raster_workers_events": 200,
+      "window_ms": 3309.935,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 0,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.01171,
+      "paint_recording_events": 898,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3309.12,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 0,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.241615,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.286285,
+      "paint_recording_events": 1695,
+      "raster_workers_cpu_ms_per_update": 0.11419,
+      "raster_workers_events": 600,
+      "window_ms": 3312.51,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 0,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.0108,
+      "paint_recording_events": 912,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3310.244,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 1,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.18482500000000002,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.165205,
+      "paint_recording_events": 1340,
+      "raster_workers_cpu_ms_per_update": 0.036520000000000004,
+      "raster_workers_events": 200,
+      "window_ms": 3308.283,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 1,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.012715,
+      "paint_recording_events": 900,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3309.239,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 1,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.23358,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.283665,
+      "paint_recording_events": 1693,
+      "raster_workers_cpu_ms_per_update": 0.112995,
+      "raster_workers_events": 600,
+      "window_ms": 3313.374,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 1,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.012430000000000002,
+      "paint_recording_events": 908,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3310.333,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 2,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.175065,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.159775,
+      "paint_recording_events": 1341,
+      "raster_workers_cpu_ms_per_update": 0.035215,
+      "raster_workers_events": 200,
+      "window_ms": 3305.159,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 2,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.012555,
+      "paint_recording_events": 919,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3308.21,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 2,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.241895,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.2894,
+      "paint_recording_events": 1701,
+      "raster_workers_cpu_ms_per_update": 0.1151,
+      "raster_workers_events": 600,
+      "window_ms": 3313.459,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 2,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.01134,
+      "paint_recording_events": 891,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3309.74,
+      "gpu_execution_ms": null
+    }
+  ],
+  "cadence": [
+    {
+      "round": 0,
+      "engine": "native",
+      "case": "Authored HUD",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.00754
+    },
+    {
+      "round": 0,
+      "engine": "native",
+      "case": "Authored inventory",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.054123999999998
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.596984924623115
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.59949748743719
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.597989949748744
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.59798994974874
+    },
+    {
+      "round": 1,
+      "engine": "native",
+      "case": "Authored HUD",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 16.998207999999998
+    },
+    {
+      "round": 1,
+      "engine": "native",
+      "case": "Authored inventory",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.02225
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.597989949748744
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.599497487437183
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.597989949748744
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.597989949748747
+    },
+    {
+      "round": 2,
+      "engine": "native",
+      "case": "Authored HUD",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.0279515
+    },
+    {
+      "round": 2,
+      "engine": "native",
+      "case": "Authored inventory",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.0125865
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.59748743718593
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598492462311555
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.597989949748747
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598994974874373
+    }
+  ],
+  "geometry": [
+    {
+      "round": 0,
+      "case": "hud",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 0,
+      "case": "hud",
+      "phase": "final",
+      "max_difference_px": 0.753662109375
+    },
+    {
+      "round": 0,
+      "case": "inventory",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 0,
+      "case": "inventory",
+      "phase": "final",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 1,
+      "case": "hud",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 1,
+      "case": "hud",
+      "phase": "final",
+      "max_difference_px": 0.753662109375
+    },
+    {
+      "round": 1,
+      "case": "inventory",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 1,
+      "case": "inventory",
+      "phase": "final",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 2,
+      "case": "hud",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 2,
+      "case": "hud",
+      "phase": "final",
+      "max_difference_px": 0.753662109375
+    },
+    {
+      "round": 2,
+      "case": "inventory",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 2,
+      "case": "inventory",
+      "phase": "final",
+      "max_difference_px": 0.74365234375
+    }
+  ],
+  "medians": {
+    "hud": {
+      "cascade": 0.04,
+      "boxes": 0.09,
+      "layout": 0.0,
+      "paint": 0.093,
+      "core update, total": 0.227,
+      "host draw": 0.352,
+      "host prepare": 0.085,
+      "host capture": 0.032,
+      "host prepare GPU": 0.053,
+      "host encode": 0.121,
+      "host submit": 0.146,
+      "controller + update": 0.283,
+      "complete CPU path": 0.643,
+      "frame": 0.583,
+      "idle frame": 0.291,
+      "style_layout": 0.128,
+      "chrome": {
+        "mutating": {
+          "style_layout_cpu_ms_per_update": 0.18482500000000002,
+          "paint_recording_cpu_ms_per_update": 0.165205,
+          "raster_workers_cpu_ms_per_update": 0.035215
+        },
+        "retained": {
+          "style_layout_cpu_ms_per_update": 0.0,
+          "paint_recording_cpu_ms_per_update": 0.012555,
+          "raster_workers_cpu_ms_per_update": 0.0
+        }
+      }
+    },
+    "inventory": {
+      "cascade": 0.124,
+      "boxes": 0.212,
+      "layout": 0.0,
+      "paint": 0.345,
+      "core update, total": 0.687,
+      "host draw": 0.491,
+      "host prepare": 0.188,
+      "host capture": 0.062,
+      "host prepare GPU": 0.125,
+      "host encode": 0.146,
+      "host submit": 0.154,
+      "controller + update": 0.877,
+      "complete CPU path": 1.367,
+      "frame": 1.178,
+      "idle frame": 0.357,
+      "style_layout": 0.33599999999999997,
+      "chrome": {
+        "mutating": {
+          "style_layout_cpu_ms_per_update": 0.241615,
+          "paint_recording_cpu_ms_per_update": 0.286285,
+          "raster_workers_cpu_ms_per_update": 0.11419
+        },
+        "retained": {
+          "style_layout_cpu_ms_per_update": 0.0,
+          "paint_recording_cpu_ms_per_update": 0.01134,
+          "raster_workers_cpu_ms_per_update": 0.0
+        }
+      }
+    }
+  },
+  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\optimized-chrome-comparison",
+  "scope": "CPU stage comparison, not GPU execution or presented-frame latency"
+}
