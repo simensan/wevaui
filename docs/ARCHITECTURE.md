@@ -329,6 +329,14 @@ keep reconstruction. DOM queries use an order cache keyed by the document's
 structural input version, independently of stable element handles. The reverse
 handle map is updated on registration, removal and reload; removed elements
 lose their map entries before their addresses can be reused.
+Numeric element handles advance monotonically across subtree changes and full
+loads. A sparse ordered table stores 256 pointer slots per page; pages with no
+live elements are released. Retired IDs therefore need no lifetime-sized
+tombstone vector and cannot alias replacement nodes. The reserved invalid ID
+stops serial allocation instead of wrapping. Box snapshots borrow the existing
+reverse handle map rather than allocating a duplicate.
+The [handle-memory regression](verification/handle-memory-20261031.md) pins
+bounded retention during repeated subtree replacement and stale-handle safety.
 Removed rows lose pointer-keyed state before their addresses can be
 reused. Dead computed styles remain owned until the previous box/paint pass is
 replaced, then are released instead of accumulating across list refreshes.

@@ -1,0 +1,1062 @@
+{
+  "baseline_commit": "7fa65255b3866aff76e9aec6a6081a4110301fad",
+  "memory": {
+    "baseline": {
+      "replace": [
+        {
+          "phase": "warm",
+          "iteration": 0,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 201040,
+          "rss_kib": 6692
+        },
+        {
+          "phase": "loaded",
+          "iteration": 0,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8996
+        },
+        {
+          "phase": "replace",
+          "iteration": 500,
+          "live_cpp_bytes": 2615214,
+          "live_cpp_blocks": 1041,
+          "glibc_used_and_mapped_bytes": 2772352,
+          "rss_kib": 9380
+        },
+        {
+          "phase": "replace",
+          "iteration": 1000,
+          "live_cpp_bytes": 2746286,
+          "live_cpp_blocks": 1041,
+          "glibc_used_and_mapped_bytes": 2903840,
+          "rss_kib": 9636
+        },
+        {
+          "phase": "replace",
+          "iteration": 1500,
+          "live_cpp_bytes": 3008430,
+          "live_cpp_blocks": 1041,
+          "glibc_used_and_mapped_bytes": 3166016,
+          "rss_kib": 10020
+        },
+        {
+          "phase": "replace",
+          "iteration": 2000,
+          "live_cpp_bytes": 3008430,
+          "live_cpp_blocks": 1041,
+          "glibc_used_and_mapped_bytes": 3165760,
+          "rss_kib": 10148
+        },
+        {
+          "phase": "replace",
+          "iteration": 2500,
+          "live_cpp_bytes": 3532718,
+          "live_cpp_blocks": 1041,
+          "glibc_used_and_mapped_bytes": 3689744,
+          "rss_kib": 10788
+        },
+        {
+          "phase": "replace",
+          "iteration": 3000,
+          "live_cpp_bytes": 3532718,
+          "live_cpp_blocks": 1041,
+          "glibc_used_and_mapped_bytes": 3689968,
+          "rss_kib": 10916
+        },
+        {
+          "phase": "replace",
+          "iteration": 3500,
+          "live_cpp_bytes": 3532718,
+          "live_cpp_blocks": 1041,
+          "glibc_used_and_mapped_bytes": 3690064,
+          "rss_kib": 11044
+        },
+        {
+          "phase": "replace",
+          "iteration": 4000,
+          "live_cpp_bytes": 3532718,
+          "live_cpp_blocks": 1041,
+          "glibc_used_and_mapped_bytes": 3690176,
+          "rss_kib": 11172
+        },
+        {
+          "phase": "replace",
+          "iteration": 4500,
+          "live_cpp_bytes": 4581294,
+          "live_cpp_blocks": 1041,
+          "glibc_used_and_mapped_bytes": 4742768,
+          "rss_kib": 10316
+        },
+        {
+          "phase": "replace",
+          "iteration": 5000,
+          "live_cpp_bytes": 4581294,
+          "live_cpp_blocks": 1041,
+          "glibc_used_and_mapped_bytes": 4742768,
+          "rss_kib": 10444
+        },
+        {
+          "phase": "destroyed",
+          "iteration": 5000,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 218784,
+          "rss_kib": 9288
+        }
+      ],
+      "reload": [
+        {
+          "phase": "warm",
+          "iteration": 0,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 201040,
+          "rss_kib": 6696
+        },
+        {
+          "phase": "loaded",
+          "iteration": 0,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 500,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2632720,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 1000,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2632688,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 1500,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2632704,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 2000,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2632672,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 2500,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2632784,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 3000,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2632864,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 3500,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2632832,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 4000,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2632864,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 4500,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2632816,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 5000,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2632800,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "destroyed",
+          "iteration": 5000,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 215248,
+          "rss_kib": 7092
+        }
+      ],
+      "load": [
+        {
+          "phase": "warm",
+          "iteration": 0,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 201040,
+          "rss_kib": 6696
+        },
+        {
+          "phase": "loaded",
+          "iteration": 0,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 500,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2635696,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 1000,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2635760,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 1500,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2635648,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 2000,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2635808,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 2500,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2635856,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 3000,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2635680,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 3500,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2635728,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 4000,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2635712,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 4500,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2635760,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 5000,
+          "live_cpp_bytes": 2483870,
+          "live_cpp_blocks": 1039,
+          "glibc_used_and_mapped_bytes": 2635792,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "destroyed",
+          "iteration": 5000,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 218176,
+          "rss_kib": 6988
+        }
+      ],
+      "idle": [
+        {
+          "phase": "warm",
+          "iteration": 0,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 201040,
+          "rss_kib": 6460
+        },
+        {
+          "phase": "loaded",
+          "iteration": 0,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8764
+        },
+        {
+          "phase": "idle",
+          "iteration": 500,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8764
+        },
+        {
+          "phase": "idle",
+          "iteration": 1000,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8764
+        },
+        {
+          "phase": "idle",
+          "iteration": 1500,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8764
+        },
+        {
+          "phase": "idle",
+          "iteration": 2000,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8764
+        },
+        {
+          "phase": "idle",
+          "iteration": 2500,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8764
+        },
+        {
+          "phase": "idle",
+          "iteration": 3000,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8764
+        },
+        {
+          "phase": "idle",
+          "iteration": 3500,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8764
+        },
+        {
+          "phase": "idle",
+          "iteration": 4000,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8764
+        },
+        {
+          "phase": "idle",
+          "iteration": 4500,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8764
+        },
+        {
+          "phase": "idle",
+          "iteration": 5000,
+          "live_cpp_bytes": 2453166,
+          "live_cpp_blocks": 973,
+          "glibc_used_and_mapped_bytes": 2584848,
+          "rss_kib": 8764
+        },
+        {
+          "phase": "destroyed",
+          "iteration": 5000,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 205840,
+          "rss_kib": 6844
+        }
+      ]
+    },
+    "candidate": {
+      "replace": [
+        {
+          "phase": "warm",
+          "iteration": 0,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 201168,
+          "rss_kib": 6696
+        },
+        {
+          "phase": "loaded",
+          "iteration": 0,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "replace",
+          "iteration": 500,
+          "live_cpp_bytes": 2488382,
+          "live_cpp_blocks": 1044,
+          "glibc_used_and_mapped_bytes": 2645536,
+          "rss_kib": 9128
+        },
+        {
+          "phase": "replace",
+          "iteration": 1000,
+          "live_cpp_bytes": 2488382,
+          "live_cpp_blocks": 1044,
+          "glibc_used_and_mapped_bytes": 2646016,
+          "rss_kib": 9128
+        },
+        {
+          "phase": "replace",
+          "iteration": 1500,
+          "live_cpp_bytes": 2488382,
+          "live_cpp_blocks": 1044,
+          "glibc_used_and_mapped_bytes": 2645920,
+          "rss_kib": 9128
+        },
+        {
+          "phase": "replace",
+          "iteration": 2000,
+          "live_cpp_bytes": 2488382,
+          "live_cpp_blocks": 1044,
+          "glibc_used_and_mapped_bytes": 2645504,
+          "rss_kib": 9128
+        },
+        {
+          "phase": "replace",
+          "iteration": 2500,
+          "live_cpp_bytes": 2488382,
+          "live_cpp_blocks": 1044,
+          "glibc_used_and_mapped_bytes": 2645440,
+          "rss_kib": 9128
+        },
+        {
+          "phase": "replace",
+          "iteration": 3000,
+          "live_cpp_bytes": 2488382,
+          "live_cpp_blocks": 1044,
+          "glibc_used_and_mapped_bytes": 2646096,
+          "rss_kib": 9128
+        },
+        {
+          "phase": "replace",
+          "iteration": 3500,
+          "live_cpp_bytes": 2488382,
+          "live_cpp_blocks": 1044,
+          "glibc_used_and_mapped_bytes": 2645664,
+          "rss_kib": 9128
+        },
+        {
+          "phase": "replace",
+          "iteration": 4000,
+          "live_cpp_bytes": 2488382,
+          "live_cpp_blocks": 1044,
+          "glibc_used_and_mapped_bytes": 2646096,
+          "rss_kib": 9128
+        },
+        {
+          "phase": "replace",
+          "iteration": 4500,
+          "live_cpp_bytes": 2488382,
+          "live_cpp_blocks": 1044,
+          "glibc_used_and_mapped_bytes": 2646304,
+          "rss_kib": 9128
+        },
+        {
+          "phase": "replace",
+          "iteration": 5000,
+          "live_cpp_bytes": 2488382,
+          "live_cpp_blocks": 1044,
+          "glibc_used_and_mapped_bytes": 2645712,
+          "rss_kib": 9128
+        },
+        {
+          "phase": "destroyed",
+          "iteration": 5000,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 218784,
+          "rss_kib": 9128
+        }
+      ],
+      "reload": [
+        {
+          "phase": "warm",
+          "iteration": 0,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 201168,
+          "rss_kib": 6696
+        },
+        {
+          "phase": "loaded",
+          "iteration": 0,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 500,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2634368,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 1000,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2634432,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 1500,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2634320,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 2000,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2634432,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 2500,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2634400,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 3000,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2634384,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 3500,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2634400,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 4000,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2634416,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 4500,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2634384,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "reload",
+          "iteration": 5000,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2634336,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "destroyed",
+          "iteration": 5000,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 215248,
+          "rss_kib": 7092
+        }
+      ],
+      "load": [
+        {
+          "phase": "warm",
+          "iteration": 0,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 201168,
+          "rss_kib": 6696
+        },
+        {
+          "phase": "loaded",
+          "iteration": 0,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 500,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2637280,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 1000,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2637296,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 1500,
+          "live_cpp_bytes": 2487598,
+          "live_cpp_blocks": 1042,
+          "glibc_used_and_mapped_bytes": 2639488,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 2000,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2637312,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 2500,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2637216,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 3000,
+          "live_cpp_bytes": 2487598,
+          "live_cpp_blocks": 1042,
+          "glibc_used_and_mapped_bytes": 2639456,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 3500,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2637264,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 4000,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2637264,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 4500,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2637280,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "load",
+          "iteration": 5000,
+          "live_cpp_bytes": 2485494,
+          "live_cpp_blocks": 1040,
+          "glibc_used_and_mapped_bytes": 2637312,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "destroyed",
+          "iteration": 5000,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 218176,
+          "rss_kib": 7164
+        }
+      ],
+      "idle": [
+        {
+          "phase": "warm",
+          "iteration": 0,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 201168,
+          "rss_kib": 6696
+        },
+        {
+          "phase": "loaded",
+          "iteration": 0,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "idle",
+          "iteration": 500,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "idle",
+          "iteration": 1000,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "idle",
+          "iteration": 1500,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "idle",
+          "iteration": 2000,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "idle",
+          "iteration": 2500,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "idle",
+          "iteration": 3000,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "idle",
+          "iteration": 3500,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "idle",
+          "iteration": 4000,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "idle",
+          "iteration": 4500,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "idle",
+          "iteration": 5000,
+          "live_cpp_bytes": 2454790,
+          "live_cpp_blocks": 974,
+          "glibc_used_and_mapped_bytes": 2586528,
+          "rss_kib": 9000
+        },
+        {
+          "phase": "destroyed",
+          "iteration": 5000,
+          "live_cpp_bytes": 75832,
+          "live_cpp_blocks": 446,
+          "glibc_used_and_mapped_bytes": 205808,
+          "rss_kib": 7080
+        }
+      ]
+    }
+  },
+  "baseline_regression": "FAIL retired handles do not retain lifetime-sized storage\nFAIL full load does not recycle old handles\nFAIL old full-load handle cannot mutate its replacement\nhandle memory: settled 2623226 bytes, after 4096 replacements 4589306 bytes, destroyed 76932 bytes (warm 76932)\nhandle memory: 8352 checks, 3 failures\n",
+  "source_hashes": {
+    "libweva/src/weva_c.cpp": "8f96cf83394961444e367aa74333144ae21d576e68782ac91aa617e25ccc5f8f",
+    "libweva/tests/test_handle_memory.cpp": "d542293b199ca7f05ecb9c5c707d0842071fe0ac299c272021c95866d5bc5f1f",
+    "libweva/tests/CMakeLists.txt": "74113fb46b6ffb1828f40794466b091b233682d6d56ff5e470630581eca452e9"
+  },
+  "unity_editor": {
+    "id": "2",
+    "testcasecount": "257",
+    "result": "Passed",
+    "total": "257",
+    "passed": "255",
+    "failed": "0",
+    "inconclusive": "2",
+    "skipped": "0",
+    "asserts": "0",
+    "engine-version": "3.5.0.0",
+    "clr-version": "4.0.30319.42000",
+    "start-time": "2026-10-31 20:41:13Z",
+    "end-time": "2026-10-31 20:41:46Z",
+    "duration": "33.0678098"
+  },
+  "unity_player": {
+    "id": "2",
+    "testcasecount": "7",
+    "result": "Passed",
+    "total": "7",
+    "passed": "7",
+    "failed": "0",
+    "inconclusive": "0",
+    "skipped": "0",
+    "asserts": "0",
+    "engine-version": "3.5.0.0",
+    "clr-version": "4.0.30319.42000",
+    "start-time": "0001-01-01 00:00:00Z",
+    "end-time": "0001-01-01 00:00:00Z",
+    "duration": "1.3841669"
+  },
+  "render_equivalence": {
+    "unity": {
+      "HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-0.png": true,
+      "HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-1.png": true,
+      "HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-2.png": true,
+      "HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-3.png": true,
+      "Pass_AppliesABackdropFilter_ToTheRightPixels-4.png": true,
+      "Pass_BlursTheBackdrop_AcrossAnEdge-5.png": true,
+      "Pass_DrawsText-6.png": true,
+      "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-10.png": true,
+      "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-11.png": true,
+      "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-12.png": true,
+      "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-7.png": true,
+      "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-8.png": true,
+      "Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-9.png": true,
+      "Pass_FollowsAChange_WithoutAReload-13.png": true,
+      "Pass_FollowsAChange_WithoutAReload-14.png": true,
+      "Pass_LoadsPackagedImageAndFonts_AndUpdatesBindings-15.png": true
+    },
+    "godot": true
+  },
+  "qualified_release_exit": 0,
+  "installed_native_builds": {
+    "Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll.build.json": {
+      "schema": 1,
+      "host": "unity",
+      "library_sha256": "04519d5833ae70320c9e63efd3df4627f175d0d491a7125eb7bd85835bd1313d",
+      "source": {
+        "revision": "7fa65255b3866aff76e9aec6a6081a4110301fad",
+        "dirty": true,
+        "sha256": "1f360a92d388ffee0f18567cc80e8be45d5c689dec24eeccb778e837d8e88eec"
+      },
+      "abi": {
+        "major": 0,
+        "minor": 45
+      },
+      "configuration": "Release",
+      "compiler": {
+        "id": "MSVC",
+        "version": "19.44.35222.0"
+      },
+      "cmake_version": "4.3.2",
+      "sanitizers": false
+    },
+    "hosts/godot/project/addons/weva/bin/weva_godot.dll.build.json": {
+      "schema": 1,
+      "library_sha256": "9b37284b48dbae912f0955565ab10899e32f7f32e3f31600cfdf6b150e6568c3",
+      "source": {
+        "revision": "7fa65255b3866aff76e9aec6a6081a4110301fad",
+        "dirty": true,
+        "sha256": "fac80a4772383c41503a9fddb97b1a58f91ba70eb79706900f5640a741f94ef1"
+      },
+      "godot_cpp": {
+        "revision": null,
+        "dirty": null,
+        "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+      },
+      "configuration": "Release",
+      "compiler": {
+        "id": "MSVC",
+        "version": "19.44.35222.0"
+      },
+      "cmake_version": "4.3.2",
+      "godot_api": "4.7",
+      "precision": "single",
+      "custom_api": null,
+      "sanitizers": false
+    }
+  },
+  "evidence_hashes": {
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\bidi.log": "6790ba15b598376f99e2aaa00d54c93a76d26819e0283960c25e38823a71e8a0",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\block-margins.log": "ab6776c5ba543741014b51844f2c63eb4c025391e312c3e5683448eec385880d",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\build.log": "8c35b1682f73592d30612d7b0fabdb384fcfff35cb5a076cb48b85b1368aa794",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\cached-ids.log": "b1868310c3d8bb09d480d872ede9d5be69529da2b9a31fd95a95c2dc5d04eaa9",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\chrome-checks.log": "42d879d5ce0fbe76e451318c8786dfd6f4061a0b2d88b9a04563560eb4828622",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\chrome-hand.log": "4530311246e0371d8b518440c2e9f73a684fdd9f485bdf7a00febeace40bb391",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\chrome-harvest.log": "fa18f8c89321e9c0cee1ced9a8d728586ce1befd55d8b2631e5880e70c0d4447",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\chrome-samples.log": "7ada9f967343f9fe3712394eda90a7131d9e67a91a2e8be9df3d6ed14af6f90a",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\clang-last-test.log": "6e99105126194bb851eed270569a7b373681741f21173c8b6c87ebf79d08383c",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\core.log": "43a9f66236bc864e95580406b55dc71f81bc67b37c7f7f9537387e2b12a1a949",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\css-diagnostics.log": "d2fb764e3512629d32b8ea6d3fece47df12133e2c957f35c22e919d4acdbf89d",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\delayed-transitions.log": "8c29e0e42afea0529bbed29ea523c338ece70e9281a4ad39421081203d054d6f",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\dialog-cancel.log": "32a085fd9f4bdb0d4a8d554adcc447ba192f11c857fdaf19f78ea6c5d770531a",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\export.log": "aba9eaeaee2aedeaa40004fd1f42a02a2a8925f368d3e063bce3ca1a19b5f353",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\font-face.log": "07f70cfbe4820a39478092d5f3a743a930633767f64d1674a08a146a9785c110",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\font-inheritance.log": "87f5efe40266c3f7b973e73c37d17da260efb8259f09fd7b1177dc5b6ea0c13e",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\font-shaping.log": "19a51bd468b5f804b32c61c6349e50694b810eacacffe573c09db04d7903c946",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\font-size.log": "82ab9ca7ca048a6ba48c76cb18bf494e7c3ad383e322b3cb3fed4c0c6e387c5c",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\font-warmup.log": "d110d1c53bcdde46f2da65a4c8e8168d2659a1f2622915301036828bfd16c744",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\form-state.log": "c501a78c45c36d415f0a95a8870d93fb391b362982a5e5b05e8b0f7e24483d5b",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\form-validation.log": "2da5d843bc24e07d2a256eabb53a8db3c63a91c60d737b98c11c926e5fe72126",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\gallery-clock.log": "6b3f86e6eac1021a4d4478270e64294f5bd0147f3d122ee9556a4203413c0ce0",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\gamepad.log": "f120495625a4d5560bcb8cc497c824c5496005dbad1ce5d57d79a3c94181b2a0",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\gcc-last-test.log": "b8446b99347fa877785e2de4c039fdad52d543b1e13b8bd7cbea92ffc3376204",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\glyph-reuse.log": "81f0bde532b2bf4e7d9c882f5c91152a6c5244095ce635e5a207ea97f0ecd5af",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\hidden-transitions.log": "83888f48427b30ddff4c20fbfd1c84e80c251f45285a921fab455004ed8c6d15",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\host-build.log": "e0e16131618b3456fdc756a44698f2448f8ae3dabadddc26d8b846e8ac782ae2",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\host.log": "7b3ebf369b6b054cb02bc8f9f1114441b58b990c53593c1f747ea7b975164218",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\ime.log": "57ad24c55212fd5f6a368c99b311ab574f50b5ea223266db5b25475ffc73233f",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\input-geometry.log": "91f477b9df6bcbbbb276e4e8d0bd888e8718b834028dc77f4fb8c1841db98518",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\input.log": "7e546480462863cd1e791301748ca743ce164535ec50fb74bed8ae4c6dd1347e",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\intrinsic-size.log": "2d88eb75a23d9341548a807bbf27df0bc10707498e43b5dae5eb2f4346504431",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\keyboard.log": "39beb7b5fe7a081c6a7072d6b2f320b66ccbbc4b26a00c13d20fbd148c452382",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\keyframes.log": "7b5b10330f82f8afb120e08b1045b71b6859a21f20d65bd06ff4df910a21aa86",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\layer-order.log": "2e5d1e64e0e2354520d7d882e9d904df2d41082792183c483ee88561e962d45d",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\line-height.log": "25afe842e1a584d75d09a12fbb606cae0ce6efe9198910bb9305a7d73455c5d6",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\live-reload.log": "7fb4a58cfa50747c5f012e704ba1954637fb2cea2bc92d32ee8fcb63da203195",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\long-effects.log": "22c881b7af1a801d75e6e9def4c93f1f74d8e21ff8e7f6eea66b4f493225ad02",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\maxlength.log": "748dd093b32231eb42056c36b4924d76e34812ea339e847facc45b511fe53c30",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\multicol-sizing.log": "809f27a9c8308369565312f3300d3da63ac153e7357205e53d0d842fe130f1e6",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\number-steps.log": "30241d2515af0e0d2d30a46f9c3cf26bcd4815c0f53aa2f0fa69784009280b06",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\onscreen-keyboard.log": "6cda55142eddd4b1b30c692ac1f497e1fa45046f9ecc63a661df73e999f151f4",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\packed-draws.log": "695ec68ad121f4a2018338df2f477a402a05cb1f488a112ebdfd0c54711cd575",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\popover-beforetoggle.log": "4b989342addfa40645d3619b64a591bf9ebf33229654f9be3078971233d3b792",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\range-direction.log": "9c8db5133dfaa7e5b0462ad21b07970e4c6a18e54ca41f98d6b28fd0d122b69d",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\san-build.log": "2c931f8db5d2017f2114456647627ab769965e3f289fadb03eadabaa4fa0a0c2",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\sanitizers.log": "c62f15ac5150ddf0c01e08af1bb4bea60f54c5c2ab57a028d653a90813f822f7",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\scene-binding_tests.log": "508861497f091f95a3ce7a22672a510ff66c041bcce0e4c336ccac4be7852716",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\scene-demo_smoke.log": "085bb7ad42bd17c3176741ade0a2c082152848ced886f361059a1a45e71685fb",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\scene-gallery_hover_test.log": "dc0eaa88cc278b5ce84f9142e073d898cf01ce915afea6b0b3ec54fab2e61011",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\scene-hover_tests.log": "04f40f151b4a81f272ee32bc9a304de60781fbfc3e1d799b16974120f20f48f7",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\scene-inventory_demo.log": "5d934dcf35441248289122a973418365dd05d5d876922d5ca3360f79e1244876",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\select-autoscroll.log": "fa51f9274b513648d0a126d2d7e7d08355197b133fbafdd6f5021cbd12f7fdbf",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\select-controls.log": "16e5559130ea465709f92eb038fc04b938bd89d35f5e4322e434b21fe8f86b6e",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\text-autoscroll.log": "eb8d25a4a61341068f659b3e1c40f3216a0d65662e8cf3033f69d2de42f8b8d5",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\text-editing.log": "fc97d25b52780c72287c130943bbc7c683b411ca54379313a18a57290aefdd69",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\theme-font.log": "4fec3ac3a12cf73d60f88ca69c98c757261b79c644b5cd3ef70d90647c8a0378",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\timing.log": "ed6ad6ed6011b88419891c3d805c19e8b04fcb8f1487d8413bbbee96b3c3db79",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\transition-cancellation.log": "f0c468dbde5f735616f7981fe1c3593849b2dd4488eed058bc957d4d2e69aee7",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\transition-reversal.log": "b712fbff00cd7238c4af92692156c6680f2b79bc2fde48027c049b09e8669f38",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\triangle-batching.log": "099222a23b436156bb4a5f5a57e003305b28f5c384ff20abc997a39b8275d8b7",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\typeahead.log": "0dd242d60d6c41a8f048af4fa1e00df506446faaa6ed9b169a2c251cdba2311a",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\unity-build.log": "240dead0de152df609ccae65a5d4f003bf2142109084f0c36bb09e280bef2f7e",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\unknown-at-rules.log": "0156d832e99bf0e66671ba5be6a1b401b88756326f6b5704a078c87cbc2baf6b",
+    ".utmp\\memory-20261031\\gate\\linux-gate-verified-logs\\validity-selectors.log": "0a15d7d262b67d4fc9f45648eafad5334f1ffffba009e9fb393b48687959023d",
+    ".utmp\\memory-20261031\\baseline2-idle.csv": "70e5eed23bbfa52ccbaeadcfde989c047cf8fab2faee981958fd96f36c2f11f2",
+    ".utmp\\memory-20261031\\baseline2-load.csv": "710ec10cdc3f9df44874d1afb2fffd1b9254f54fe473616ee69774cffe86cf71",
+    ".utmp\\memory-20261031\\baseline2-reload.csv": "4d79afe7c0bed8ecbdf8d24c33e48367af738846bc4e6bbf390b39108a1ecaf1",
+    ".utmp\\memory-20261031\\baseline2-replace.csv": "f731d1be161059379d04e0a1863a2ef115ddbae153659c6629be92e6e12cf4dc",
+    ".utmp\\memory-20261031\\candidate2-idle.csv": "9ea59152a151028452d4e03c427ac4975da7b981f8cc75f285edffcfb47219e7",
+    ".utmp\\memory-20261031\\candidate2-load.csv": "a42c7f68021f03dea719c62c764b04386b4a9f6c0a56a36b85d7b79bed5cba76",
+    ".utmp\\memory-20261031\\candidate2-reload.csv": "cd345e10712a2b7fa88c4abf94f97e1e6baa7769dbfb1fe03d18b682edbbdec9",
+    ".utmp\\memory-20261031\\candidate2-replace.csv": "77f6bdc6d336aef4f5ae2a19e72c98541593d7cc4678a5f501ec9a00bb05b2ea",
+    ".utmp\\memory-20261031\\unity-player\\renders\\HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-0.png": "77c469cf8bb2fa944d7fbd0ee29fd95353364ff205449abd5058aa521fbd58eb",
+    ".utmp\\memory-20261031\\unity-player\\renders\\HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-1.png": "7a19c77169035a2e9c3c4f8b771a4fc0b8465fa1517ae5d3de11c3369f0d4e0f",
+    ".utmp\\memory-20261031\\unity-player\\renders\\HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-2.png": "77c469cf8bb2fa944d7fbd0ee29fd95353364ff205449abd5058aa521fbd58eb",
+    ".utmp\\memory-20261031\\unity-player\\renders\\HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-3.png": "75e0aa28f0afb40e37e2b09e5c6de9b8d1ecbc61afb644b7d988db67153cca5a",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_AppliesABackdropFilter_ToTheRightPixels-4.png": "adaf641cd21147df86bb749689da89a39e77fa51d0ef1adf9c74ead793c99abe",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_BlursTheBackdrop_AcrossAnEdge-5.png": "09057293cb5c14cd899a46dd386cb0e739c0554f6b5fd7563cebb92f893ede50",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_DrawsText-6.png": "b3534b2b7b1dcd356878b06bf5e716cd37a4c3f01173ded673163ca91160a5be",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-10.png": "ab618c52b3df540c2083d9e2a85018b2cd6f1d38a34a67fc86a44ecda203445f",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-11.png": "b8f2ba4e2357278e4ddafb17ddc585c31a277c57d5228a6bdc69f2a74c746b60",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-12.png": "77c469cf8bb2fa944d7fbd0ee29fd95353364ff205449abd5058aa521fbd58eb",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-7.png": "ab618c52b3df540c2083d9e2a85018b2cd6f1d38a34a67fc86a44ecda203445f",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-8.png": "4d12c6ad4027abe1c770b75cfc27df63211275123557f28fa9f71f891dc4021a",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_DrawsTheDocument_StacksBySortingOrder_AndDropsADisabledOne-9.png": "b8f2ba4e2357278e4ddafb17ddc585c31a277c57d5228a6bdc69f2a74c746b60",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_FollowsAChange_WithoutAReload-13.png": "ab618c52b3df540c2083d9e2a85018b2cd6f1d38a34a67fc86a44ecda203445f",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_FollowsAChange_WithoutAReload-14.png": "b220033609be4b0f92a856a6d205c81a84af37d35889cd8ae8a1e0d30f2008f1",
+    ".utmp\\memory-20261031\\unity-player\\renders\\Pass_LoadsPackagedImageAndFonts_AndUpdatesBindings-15.png": "ddf16ccc5bcf6aa8e4ff0df92dd9523a6cb7767a691fe89d98224846aac858e0",
+    ".utmp\\memory-20261031\\probe.cpp": "1aa9403e7b271d9444a13bbe1b89ec7d6a360515f8c192ff81e76627a4515b4e",
+    ".utmp\\memory-20261031\\baseline-regression.log": "4ac7410a038f20d12cc1d55c0a4591d26e49583db351e9af7dbef46c947d1b81",
+    ".utmp\\memory-20261031\\final-tests.log": "314371ea7ac767b6893de3164b16839bc4c42396afcad7875d70f6b861313a97",
+    ".utmp\\memory-20261031\\gate\\full-gate-verified.log": "8352f9e989012f51d9a12f43439b6a3fd95375eb6553abc4ea2a4f53645c836b",
+    ".utmp\\memory-20261031\\unity-full.xml": "2376b14ff28b6ab94c2ff834f9b1c3616c919bc62f3c77a676018ce21e0e9cc5",
+    ".utmp\\memory-20261031\\unity-player\\results.xml": "6a13edfa69c636000e1966e713ca9b1a583fa8d0fae6342f4d48f5b07a063860",
+    ".utmp\\memory-20261031\\gate\\render-verified.png": "4efc04095bbb73e12ca28f10df27d099e6a23febdcb47c08d887f1f913b244c3"
+  }
+}

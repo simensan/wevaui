@@ -1,5 +1,12 @@
 # Product readiness
 
+The [handle-memory fix](verification/handle-memory-20261031.md) removes
+document-lifetime growth from retired element handles. In a core-only test
+with 32 live children and 5,000 subtree replacements, tracked live C++ storage
+is 2,488,382 bytes versus 4,581,294 before (45.7% lower). This is a synthetic
+retention result, not a host-process or GPU memory reduction. The earlier
+Agentic soak growth remains unattributed.
+
 The [matched property-ID pass](verification/inventory-property-ids-20261031.md)
 measures a provisional 4.3% paired reduction in inventory style/layout CPU
 after the [bidi mapping pass](verification/inventory-bidi-20261031.md).

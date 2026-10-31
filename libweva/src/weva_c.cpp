@@ -43,6 +43,7 @@
 #include "weva/user_agent_stylesheet.h"
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <memory>
 #include <unordered_map>
@@ -2033,7 +2034,50 @@ private:
 
 } // namespace
 
-// The one type the opaque handle points at.
+// Numeric handles are never recycled within a document. Empty pages can be
+// released without keeping one pointer-sized tombstone for every past element.
+class ElementHandleTable {
+    static constexpr uint32_t page_size = 256;
+    struct Page {
+        std::array<Element*, page_size> slots{};
+        size_t live = 0;
+    };
+    std::map<uint32_t, std::unique_ptr<Page>> pages_;
+    weva_element_t next_ = 0;
+public:
+    weva_element_t add(Element* element) {
+        if (next_ == WEVA_ELEMENT_NONE) return WEVA_ELEMENT_NONE;
+        const auto id = next_++;
+        auto& page = pages_[id / page_size];
+        if (!page) page = std::make_unique<Page>();
+        page->slots[id % page_size] = element;
+        ++page->live;
+        return id;
+    }
+    Element* operator[](weva_element_t id) const {
+        const auto page = pages_.find(id / page_size);
+        return page == pages_.end() ? nullptr : page->second->slots[id % page_size];
+    }
+    void erase(weva_element_t id) {
+        const auto page = pages_.find(id / page_size);
+        if (page == pages_.end()) return;
+        auto& slot = page->second->slots[id % page_size];
+        if (!slot) return;
+        slot = nullptr;
+        if (--page->second->live == 0) pages_.erase(page);
+    }
+    // Keep the serial across full markup loads too: an old host reference
+    // must not become a handle to an unrelated replacement element.
+    void clear() { pages_.clear(); }
+    template<class Predicate> Element* find(Predicate predicate) const {
+        for (const auto& page : pages_)
+            for (Element* element : page.second->slots)
+                if (element && predicate(*element)) return element;
+        return nullptr;
+    }
+};
+
+// The one type the opaque document handle points at.
 struct weva_document {
     weva_config config{};
     SymbolTable symbols;
@@ -2485,10 +2529,9 @@ struct weva_document {
         return host_metrics ? static_cast<const FontMetrics&>(*host_metrics) : metrics;
     }
 
-    // Element handles are indices into this, rebuilt on every load. A stale
-    // handle indexes out of range and is rejected; a stale pointer would be
-    // undefined behaviour.
-    std::vector<Element*> elements;
+    // Sparse storage reclaims retired pages without recycling numeric handles.
+    // Stale host references resolve to null, including across full loads.
+    ElementHandleTable elements;
 
     // The POD views handed across the boundary. Members, so they outlive the
     // call that returns them and are replaced wholesale on the next update.
@@ -2523,10 +2566,7 @@ struct weva_document {
     void reindex_new_elements() {
         const std::function<void(Element&)> visit = [&](Element& e) {
             if (!element_handles.count(&e)) {
-                ++structure_version;
-                element_handles.emplace(&e, static_cast<weva_element_t>(elements.size()));
-                elements.push_back(&e);
-                sync_dialog_open(&e);
+                index_element(e);
             }
             for (const Ref<Node>& c : e.children()) {
                 if (c->node_type() == NodeType::Element) {
@@ -2541,11 +2581,16 @@ struct weva_document {
         }
     }
 
-    void index_elements(Element& e) {
+    void index_element(Element& e) {
         ++structure_version;
-        element_handles.emplace(&e, static_cast<weva_element_t>(elements.size()));
-        elements.push_back(&e);
-        sync_dialog_open(&e);
+        const auto handle = elements.add(&e);
+        if (handle != WEVA_ELEMENT_NONE) {
+            element_handles.emplace(&e, handle);
+            sync_dialog_open(&e);
+        }
+    }
+    void index_elements(Element& e) {
+        index_element(e);
         for (const Ref<Node>& c : e.children()) {
             if (c->node_type() == NodeType::Element) {
                 index_elements(static_cast<Element&>(const_cast<Node&>(*c)));
@@ -2553,7 +2598,7 @@ struct weva_document {
         }
     }
     Element* element_at(weva_element_t h) const {
-        return h < elements.size() ? elements[h] : nullptr;
+        return elements[h];
     }
 };
 
@@ -2790,10 +2835,7 @@ BoxId box_of(const weva_document* doc, const Element* e) {
 // other.
 Element* element_by_id(weva_document* doc, const std::string& id) {
     if (id.empty()) return nullptr;
-    for (Element* e : doc->elements) {
-        if (e && e->get_attribute("id") == id) return e;
-    }
-    return nullptr;
+    return doc->elements.find([&](const Element& e) { return e.get_attribute("id") == id; });
 }
 
 // Auto/hint popovers close on outside clicks and Escape. Invalid keywords
@@ -5499,11 +5541,7 @@ weva_element_t weva_document_element_at_devtools(weva_document_t doc, double x, 
 size_t weva_document_boxes(weva_document_t doc, weva_box* out, size_t capacity) {
     if (!doc || !doc->tree.valid(doc->root)) return 0;
     // Element pointers to handles, once, rather than a scan per box.
-    std::unordered_map<const Element*, weva_element_t> handles;
-    handles.reserve(doc->elements.size());
-    for (size_t i = 0; i < doc->elements.size(); ++i) {
-        if (doc->elements[i]) handles.emplace(doc->elements[i], static_cast<weva_element_t>(i));
-    }
+    const auto& handles = doc->element_handles;
     size_t count = 0;
     struct Frame { BoxId id; uint32_t parent; double ax, ay; };
     std::vector<Frame> stack;
@@ -8216,12 +8254,11 @@ static void forget_element(weva_document* doc, const Element* e) {
         [e](const auto& entry) { return entry.dialog == e; }), doc->dialog_focus_history.end());
     for (auto& entry : doc->dialog_focus_history) if (entry.previous_focus == e) entry.previous_focus = nullptr;
     if (doc->styles.state.vertical_owner == e) doc->styles.state.vertical_owner = nullptr;
-    // Handles stay tombstoned so stale host references never name a new node.
-    // The reverse index identifies this slot directly: scanning the growing
-    // lifetime table for every removed node made repeated panel closes quadratic.
+    // Retired handles never name new nodes. The reverse index locates their
+    // slot directly, and removing the last live slot releases its page.
     const auto handle = doc->element_handles.find(e);
     if (handle != doc->element_handles.end()) {
-        doc->elements[handle->second] = nullptr;
+        doc->elements.erase(handle->second);
         doc->element_handles.erase(handle);
     }
     ++doc->structure_version;
@@ -8384,8 +8421,8 @@ static weva_element_t adopt(weva_document* doc, const std::vector<Ref<Node>>& ad
     for (const Ref<Node>& c : added) {
         if (c->node_type() != NodeType::Element) continue;
         Element& e = static_cast<Element&>(const_cast<Node&>(*c));
-        if (first == WEVA_ELEMENT_NONE) first = static_cast<weva_element_t>(doc->elements.size());
         doc->index_elements(e);
+        if (first == WEVA_ELEMENT_NONE) first = doc->handle_of(&e);
     }
     // A new element has no style yet, so the cascade has to reach it and boxes
     // have to be built for it. The scoped restyle is not the path: it starts

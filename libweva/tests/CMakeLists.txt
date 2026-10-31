@@ -146,6 +146,10 @@ add_executable(weva_binding_path_allocations test_binding_path_allocations.cpp)
 target_link_libraries(weva_binding_path_allocations PRIVATE weva)
 add_test(NAME weva_binding_path_allocations COMMAND weva_binding_path_allocations)
 
+add_executable(weva_handle_memory test_handle_memory.cpp)
+target_link_libraries(weva_handle_memory PRIVATE weva)
+add_test(NAME weva_handle_memory COMMAND weva_handle_memory)
+
 # Force the portable conversion path even on standard libraries with charconv.
 add_executable(weva_charconv_fallback test_charconv_fallback.cpp)
 target_link_libraries(weva_charconv_fallback PRIVATE weva)

@@ -607,3 +607,10 @@ sanitized), 17 GCC/19 sanitizer suites, 341 Chrome captures and 67 browser
 checks plus the existing known failure. Both Windows hosts are rebuilt;
 Unity passes 255 EditMode tests/two inconclusive and 7/7 Mono player checks.
 All 17 render comparisons match the accepted baseline.
+
+The [handle-memory follow-up](docs/verification/handle-memory-20261031.md)
+reclaims retired element-handle pages and prevents stale IDs aliasing nodes after
+full loads. Its 8,352-check retention regression adds one suite: 18 GCC and
+20 Clang sanitizer suites pass. Unity remains 255 pass plus two inconclusive;
+Mono player 7/7 and 17 host render comparisons pass. The 32-child replacement
+probe saves 1.996 MiB after 5,000 replacements; this is not a host-RSS claim.
