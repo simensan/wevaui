@@ -1,0 +1,763 @@
+{
+  "status": "all candidates rejected; accepted core restored",
+  "baseline_commit": "144d63e4252585a9abe6ea88e48ad070989396fc",
+  "timings": "provisional; unrelated Agentic runtime left active",
+  "baseline_binary": {
+    "sha256": "c59e7f5b1c2e7e8c4b281f58c23c8530332da6dba11c4be1835e6c32c5f8b4ce",
+    "sections": {
+      ".text": "26758d9eebe1095f76ae486ec720c4633c44d4a2b49abb3408b511073ded82f4",
+      ".rdata": "60e5cad81c4d8da622fd16bb4bbe9b6c5289ca06ec42a7026b304a5fbc9e8c52",
+      ".data": "30a350ab7f99065de3f9423e427269d14b5fe2cc3f1cb9bd47390e4690e9ab4e",
+      ".pdata": "558622de8ec98e3b8bbeb10b527bb9c44952ac20e8631709b2222fddca74c57e",
+      ".tls": "2e32128a6d93cea5cb21b5af45eb0895a0261b128e88d9e4d8e01fbc8dca3ec6",
+      ".reloc": "72b6110d4afba84fade45342106a28e200e2b64231673a35e98fe28f1756eed0"
+    }
+  },
+  "restored_binary": {
+    "sha256": "215d7159e4b8ca1861f7941bcd8b0efcd12f0221b7b3ff0cef15de57ee163e90",
+    "sections": {
+      ".text": "26758d9eebe1095f76ae486ec720c4633c44d4a2b49abb3408b511073ded82f4",
+      ".rdata": "60e5cad81c4d8da622fd16bb4bbe9b6c5289ca06ec42a7026b304a5fbc9e8c52",
+      ".data": "30a350ab7f99065de3f9423e427269d14b5fe2cc3f1cb9bd47390e4690e9ab4e",
+      ".pdata": "558622de8ec98e3b8bbeb10b527bb9c44952ac20e8631709b2222fddca74c57e",
+      ".tls": "2e32128a6d93cea5cb21b5af45eb0895a0261b128e88d9e4d8e01fbc8dca3ec6",
+      ".reloc": "72b6110d4afba84fade45342106a28e200e2b64231673a35e98fe28f1756eed0"
+    }
+  },
+  "experiments": {
+    "13": {
+      "name": "vector inline metric cache",
+      "evidence": ".utmp\\inventory-chrome-20261031\\comparison-v13\\summary.json",
+      "patch_sha256": "64392dae5da4ee16e182da12e109e50343e50eb8f79111f0a9514e89a6893f89",
+      "manifest": {
+        "provisional": true,
+        "reason": "User requests keeping the other workspace active",
+        "binaries": {
+          "baseline": "c59e7f5b1c2e7e8c4b281f58c23c8530332da6dba11c4be1835e6c32c5f8b4ce",
+          "candidate": "113d24a292052d2dbafe68973edcdcca849ac58e3cd82ad2a27b063fb280aaea"
+        },
+        "source_hashes": {
+          "libweva\\src\\weva_c.cpp": "09fa2d9e7661b94e94a3923290caff7852c9230939bb15d23305800855b46898",
+          "libweva\\src\\incremental_layout.cpp": "4ece9d993fa74593b6aabb7b620ecf8418a3f9d0edc68fb478013794dcac87f8"
+        },
+        "runs": [
+          {
+            "round": 0,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 40956,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          }
+        ]
+      },
+      "summary": {
+        "hud": {
+          "baseline": {
+            "cascade": 0.021,
+            "boxes": 0.06,
+            "style_layout": 0.081,
+            "paint": 0.058,
+            "complete CPU path": 0.389,
+            "idle frame": 0.186
+          },
+          "candidate": {
+            "cascade": 0.021,
+            "boxes": 0.06,
+            "style_layout": 0.081,
+            "paint": 0.058,
+            "complete CPU path": 0.391,
+            "idle frame": 0.184
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.10268000000000001,
+            "paint_recording_cpu_ms_per_update": 0.10346999999999999,
+            "raster_workers_cpu_ms_per_update": 0.02429
+          },
+          "paired_percent": {
+            "style_layout": 0.0,
+            "paint": 0.0,
+            "complete CPU path": 0.5141388174807249
+          }
+        },
+        "inventory": {
+          "baseline": {
+            "cascade": 0.06,
+            "boxes": 0.132,
+            "style_layout": 0.192,
+            "paint": 0.217,
+            "complete CPU path": 0.923,
+            "idle frame": 0.203
+          },
+          "candidate": {
+            "cascade": 0.061,
+            "boxes": 0.134,
+            "style_layout": 0.195,
+            "paint": 0.22,
+            "complete CPU path": 0.882,
+            "idle frame": 0.214
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.15207,
+            "paint_recording_cpu_ms_per_update": 0.19485499999999997,
+            "raster_workers_cpu_ms_per_update": 0.08380000000000001
+          },
+          "paired_percent": {
+            "style_layout": 1.5625,
+            "paint": 0.0,
+            "complete CPU path": 0.45977011494253706
+          }
+        }
+      }
+    },
+    "14": {
+      "name": "stack inline metric cache",
+      "evidence": ".utmp\\inventory-chrome-20261031\\comparison-v14\\summary.json",
+      "patch_sha256": "0757bd65a0f6488d4e0f27ac4bb0b4961735b8e5053c18f82a962016b5f3b2ff",
+      "manifest": {
+        "provisional": true,
+        "reason": "User requests keeping the other workspace active",
+        "binaries": {
+          "baseline": "c59e7f5b1c2e7e8c4b281f58c23c8530332da6dba11c4be1835e6c32c5f8b4ce",
+          "candidate": "b6074c31705b42d188c2f2c8a3235fde4092f0ab52406488f524b7c188945c46"
+        },
+        "source_hashes": {
+          "libweva\\src\\weva_c.cpp": "09fa2d9e7661b94e94a3923290caff7852c9230939bb15d23305800855b46898",
+          "libweva\\src\\incremental_layout.cpp": "4ece9d993fa74593b6aabb7b620ecf8418a3f9d0edc68fb478013794dcac87f8"
+        },
+        "runs": [
+          {
+            "round": 0,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 22384,
+                "name": "dev_runtime.exe"
+              },
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 4124,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "pid": 4124,
+                "name": "dev_runtime.exe"
+              }
+            ]
+          }
+        ]
+      },
+      "summary": {
+        "hud": {
+          "baseline": {
+            "cascade": 0.019,
+            "boxes": 0.055,
+            "style_layout": 0.074,
+            "paint": 0.054,
+            "complete CPU path": 0.363,
+            "idle frame": 0.174
+          },
+          "candidate": {
+            "cascade": 0.02,
+            "boxes": 0.055,
+            "style_layout": 0.074,
+            "paint": 0.055,
+            "complete CPU path": 0.365,
+            "idle frame": 0.177
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.08943,
+            "paint_recording_cpu_ms_per_update": 0.09592,
+            "raster_workers_cpu_ms_per_update": 0.02092
+          },
+          "paired_percent": {
+            "style_layout": 2.77777777777779,
+            "paint": 0.0,
+            "complete CPU path": 1.9718309859154903
+          }
+        },
+        "inventory": {
+          "baseline": {
+            "cascade": 0.059,
+            "boxes": 0.135,
+            "style_layout": 0.194,
+            "paint": 0.218,
+            "complete CPU path": 0.859,
+            "idle frame": 0.194
+          },
+          "candidate": {
+            "cascade": 0.062,
+            "boxes": 0.133,
+            "style_layout": 0.196,
+            "paint": 0.223,
+            "complete CPU path": 0.895,
+            "idle frame": 0.192
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.15028,
+            "paint_recording_cpu_ms_per_update": 0.198245,
+            "raster_workers_cpu_ms_per_update": 0.08141999999999999
+          },
+          "paired_percent": {
+            "style_layout": 1.546391752577314,
+            "paint": 2.2935779816513735,
+            "complete CPU path": 4.190919674039595
+          }
+        }
+      }
+    },
+    "15": {
+      "name": "direct subtree import",
+      "evidence": ".utmp\\inventory-chrome-20261031\\comparison-v15\\summary.json",
+      "patch_sha256": "426019d2748f2df54a44b7cd8929ac83ac777476dbcc665669b5be39c7e4b49e",
+      "manifest": {
+        "provisional": true,
+        "reason": "User requests keeping the other workspace active",
+        "binaries": {
+          "baseline": "c59e7f5b1c2e7e8c4b281f58c23c8530332da6dba11c4be1835e6c32c5f8b4ce",
+          "candidate": "284462f04b741ad316059063d00be136055e128c70828e65c9f4008c68c66f09"
+        },
+        "source_hashes": {
+          "libweva\\src\\weva_c.cpp": "09fa2d9e7661b94e94a3923290caff7852c9230939bb15d23305800855b46898",
+          "libweva\\src\\incremental_layout.cpp": "4ece9d993fa74593b6aabb7b620ecf8418a3f9d0edc68fb478013794dcac87f8"
+        },
+        "runs": [
+          {
+            "round": 0,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe",
+                "pid": 4124
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe",
+                "pid": 4124
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe",
+                "pid": 4124
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe",
+                "pid": 4124
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe",
+                "pid": 4124
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe",
+                "pid": 4124
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe",
+                "pid": 4124
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe",
+                "pid": 4124
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe",
+                "pid": 4124
+              }
+            ]
+          }
+        ]
+      },
+      "summary": {
+        "hud": {
+          "baseline": {
+            "cascade": 0.019,
+            "boxes": 0.055,
+            "style_layout": 0.074,
+            "paint": 0.054,
+            "complete CPU path": 0.362,
+            "idle frame": 0.171
+          },
+          "candidate": {
+            "cascade": 0.018,
+            "boxes": 0.053,
+            "style_layout": 0.071,
+            "paint": 0.054,
+            "complete CPU path": 0.355,
+            "idle frame": 0.166
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.08921,
+            "paint_recording_cpu_ms_per_update": 0.09412000000000001,
+            "raster_workers_cpu_ms_per_update": 0.02191
+          },
+          "paired_percent": {
+            "style_layout": -4.054054054054057,
+            "paint": 1.81818181818183,
+            "complete CPU path": 1.139601139601143
+          }
+        },
+        "inventory": {
+          "baseline": {
+            "cascade": 0.057,
+            "boxes": 0.128,
+            "style_layout": 0.185,
+            "paint": 0.207,
+            "complete CPU path": 0.828,
+            "idle frame": 0.188
+          },
+          "candidate": {
+            "cascade": 0.058,
+            "boxes": 0.128,
+            "style_layout": 0.186,
+            "paint": 0.214,
+            "complete CPU path": 0.851,
+            "idle frame": 0.19
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.14453,
+            "paint_recording_cpu_ms_per_update": 0.19288,
+            "raster_workers_cpu_ms_per_update": 0.08027
+          },
+          "paired_percent": {
+            "style_layout": 0.5586592178770999,
+            "paint": 2.9999999999999805,
+            "complete CPU path": 0.9913258983890838
+          }
+        }
+      }
+    },
+    "16": {
+      "name": "stable scratch tree ownership",
+      "evidence": ".utmp\\inventory-chrome-20261031\\comparison-v16\\summary.json",
+      "patch_sha256": "220f0500ab7b152c9b6e37e8bec51cb64c6b0e3849a1661336185fd5b6dd7027",
+      "manifest": {
+        "provisional": true,
+        "reason": "User requests keeping the other workspace active",
+        "binaries": {
+          "baseline": "c59e7f5b1c2e7e8c4b281f58c23c8530332da6dba11c4be1835e6c32c5f8b4ce",
+          "candidate": "7bdde04f3b6351cfd00848959f065808404cd349b96bb451b330052df1be36f0"
+        },
+        "source_hashes": {
+          "libweva\\src\\weva_c.cpp": "09fa2d9e7661b94e94a3923290caff7852c9230939bb15d23305800855b46898",
+          "libweva\\src\\incremental_layout.cpp": "61b3cec0f0b620b9c71a1b67cc21b97b5416c0c7aefcc405efdf79d19c717bf9"
+        },
+        "runs": [
+          {
+            "round": 0,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "pid": 13776,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "pid": 13776,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "pid": 13776,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "pid": 13776,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "pid": 13776,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "pid": 13776,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "pid": 13776,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "pid": 13776,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "pid": 13776,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              },
+              {
+                "pid": 21228,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              },
+              {
+                "pid": 49448,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              },
+              {
+                "pid": 50780,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              },
+              {
+                "pid": 54768,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              },
+              {
+                "pid": 24880,
+                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "name": "dev_runtime.exe"
+              }
+            ]
+          }
+        ]
+      },
+      "summary": {
+        "hud": {
+          "baseline": {
+            "cascade": 0.019,
+            "boxes": 0.055,
+            "style_layout": 0.074,
+            "paint": 0.056,
+            "complete CPU path": 0.372,
+            "idle frame": 0.182
+          },
+          "candidate": {
+            "cascade": 0.022,
+            "boxes": 0.059,
+            "style_layout": 0.08099999999999999,
+            "paint": 0.061,
+            "complete CPU path": 0.391,
+            "idle frame": 0.181
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.109215,
+            "paint_recording_cpu_ms_per_update": 0.11143499999999999,
+            "raster_workers_cpu_ms_per_update": 0.02418
+          },
+          "paired_percent": {
+            "style_layout": 9.459459459459453,
+            "paint": 8.92857142857142,
+            "complete CPU path": 5.107526881720426
+          }
+        },
+        "inventory": {
+          "baseline": {
+            "cascade": 0.058,
+            "boxes": 0.134,
+            "style_layout": 0.192,
+            "paint": 0.211,
+            "complete CPU path": 0.87,
+            "idle frame": 0.196
+          },
+          "candidate": {
+            "cascade": 0.062,
+            "boxes": 0.136,
+            "style_layout": 0.198,
+            "paint": 0.222,
+            "complete CPU path": 0.889,
+            "idle frame": 0.197
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.16968,
+            "paint_recording_cpu_ms_per_update": 0.21438500000000002,
+            "raster_workers_cpu_ms_per_update": 0.08421
+          },
+          "paired_percent": {
+            "style_layout": 3.125,
+            "paint": 5.213270142180093,
+            "complete CPU path": 2.183908045977012
+          }
+        }
+      }
+    }
+  }
+}
