@@ -14,17 +14,43 @@ import time
 import psutil
 
 
+def gpu_memory(pid):
+    """Windows per-process GPU allocations, summed across reported adapters."""
+    command = ("Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUProcessMemory "
+               "-ErrorAction Stop | Where-Object { $_.Name -like 'pid_" + str(int(pid)) +
+               "_*' } | Select-Object Name,DedicatedUsage,SharedUsage | ConvertTo-Json -Compress")
+    result = subprocess.run(['powershell', '-NoProfile', '-NonInteractive', '-Command', command],
+                            capture_output=True, text=True, check=True, timeout=30)
+    if not result.stdout.strip():
+        raise RuntimeError('No GPU memory counters for the live runtime process')
+    counters = json.loads(result.stdout)
+    if isinstance(counters, dict):
+        counters = [counters]
+    return dict(dedicated_bytes=sum(int(row['DedicatedUsage']) for row in counters),
+                shared_bytes=sum(int(row['SharedUsage']) for row in counters), counters=counters)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--project', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--engine', action='append', required=True)
     parser.add_argument('--rounds', type=int, default=3)
+    parser.add_argument('--reload-seconds', type=float, default=0,
+                        help='Minimum reload-soak duration per process (default: 100 reloads only)')
+    parser.add_argument('--gpu-memory', action='store_true',
+                        help='Record Windows per-process GPU allocation counters during reloads')
+    parser.add_argument('--skip-profiles', action='store_true',
+                        help='Run interactions and lifecycle checks without timing profiles')
     parser.add_argument('--viewport', type=int, nargs=2, default=[1280, 720],
                         metavar=('WIDTH', 'HEIGHT'))
     args = parser.parse_args()
     if args.rounds < 1:
         parser.error('rounds must be positive')
+    if not 0 <= args.reload_seconds <= 86400:
+        parser.error('reload-seconds must be between 0 and 86400')
+    if args.gpu_memory and os.name != 'nt':
+        parser.error('gpu-memory requires Windows GPU performance counters')
     if args.viewport[0] < 1280 or args.viewport[1] < 720:
         parser.error('survival fixture requires at least 1280x720')
     # The fixture's fixed-size satchel is centered, not scaled with the window.
@@ -97,6 +123,8 @@ def main():
                     controls(name, {'keys': ['Num' + str(mode + 1)]})
                     if state(name + '-state')['audit_mode'] != mode:
                         raise RuntimeError('Wrong profile mode')
+                    if args.skip_profiles:
+                        continue
                     response = call(name + '-profile', ['profile', '--sampling', 'cpu_only',
                         '--frames', '600', '--warmup', '120', '--label', prefix + '-' + name, '--timeout', '90'])
                     summary = response['data']['summary']
@@ -131,16 +159,36 @@ def main():
                     raise RuntimeError('Use/close actions did not reach the controller')
                 controls('reload-start', {'keys': ['Num6'], 'pointer': [20, 20]})
                 memory_before = process.memory_info()._asdict()
-                deadline = time.monotonic() + 30
-                for poll in range(120):
+                started = time.monotonic()
+                deadline = started + args.reload_seconds + 30
+                samples = []
+                poll = 0
+                last_reload = actions['audit_reloads']
+                last_progress = started
+                while True:
                     current = state(f'reload-{poll}')
-                    if current['audit_reloads'] >= actions['audit_reloads'] + 100:
+                    if current['audit_mode'] != 5 or current['audit_reloads'] < last_reload:
+                        raise RuntimeError('Reload soak left its mode or its counter moved backwards')
+                    if current['audit_reloads'] > last_reload:
+                        last_progress = time.monotonic()
+                        last_reload = current['audit_reloads']
+                    elif time.monotonic() - last_progress > 30:
+                        raise RuntimeError('Reload soak stopped making progress for 30 seconds')
+                    elapsed = time.monotonic() - started
+                    sample = dict(elapsed_seconds=elapsed, globals=current,
+                                  memory=process.memory_info()._asdict())
+                    if args.gpu_memory:
+                        sample['gpu_memory'] = gpu_memory(process.pid)
+                    samples.append(sample)
+                    (output / f'{prefix}-reload-memory.json').write_text(
+                        json.dumps(samples, indent=2), encoding='utf-8')
+                    if (current['audit_reloads'] >= actions['audit_reloads'] + 100
+                            and elapsed >= args.reload_seconds):
                         break
                     if time.monotonic() >= deadline:
                         raise RuntimeError('Reload deadline')
-                    time.sleep(.25)
-                else:
-                    raise RuntimeError('Reload count not reached')
+                    time.sleep(5 if args.reload_seconds else .25)
+                    poll += 1
                 controls('reload-stop', {'keys': ['Num5']})
                 settled = state('reload-final')
                 controls('after-reload-click', {'pointer': satchel_point(307, 295), 'buttons': [True, False, False]})
@@ -149,9 +197,11 @@ def main():
                     raise RuntimeError('Post-reload click failed')
                 lifecycle.append(dict(variant=label, round=round_index, before=before, actions=actions,
                     final=final, memory_before=memory_before, memory_after=process.memory_info()._asdict(),
+                    reload_seconds=elapsed, memory_samples=len(samples),
                     capture_artifacts=capture['artifacts'], launch=launch['data']['session']))
                 (output / 'lifecycle.json').write_text(json.dumps(lifecycle, indent=2), encoding='utf-8')
-                print(prefix, 'five modes, clicks, actions and reloads passed', flush=True)
+                print(prefix, 'five modes, clicks, actions and reloads passed',
+                      '(profiles skipped)' if args.skip_profiles else '(profiles recorded)', flush=True)
             finally:
                 call('stop', ['session', 'stop'])
 

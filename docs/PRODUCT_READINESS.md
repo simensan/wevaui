@@ -10,8 +10,9 @@ by moving layout/glyph/paint work into loading; GPU first-use work remains.
 This is now integrated into local Agentic main; see the [integration receipt](verification/agentic-integration-20261031.md). See the
 [October 31 preparation receipt](verification/script-preparation-20261031.md).
 The [Agentic scissor follow-up](verification/agentic-scissor-dedup-20261031.md)
-reduces command-encoding CPU by roughly 4–5% in four paired survival-UI runs,
-with unchanged captures. It also remains on the unpublished audit branch.
+preserves captures and is integrated into local Agentic main. Its historical
+4–5% command-encoding result needs clean remeasurement after the leftover-player
+discovery; no remote publication is claimed.
 The [resolution audit](verification/resolution-audit-20261031.md) measures
 native 720p/1080p/4K targets on RTX 5080. Retained inventory GPU draw time
 reaches 0.034 ms at 4K; this excludes target clear, presentation and the game

@@ -1,5 +1,13 @@
 # Rendering audit results — 2026-10-31
 
+**Follow-up qualification:** the [IL2CPP run](il2cpp-qualification-20261031.md)
+fixed a real callback-marshalling startup failure. It also discovered five
+leftover audit players rendering during earlier benchmarks. Timing percentages
+below are historical and require clean remeasurement; correctness evidence
+remains applicable. [Agentic is now integrated locally](agentic-integration-20261031.md).
+The [30-minute lifecycle soak](lifecycle-soak-20261031.md) passes interaction
+checks but shows unresolved CPU-memory growth.
+
 The deep rendering audit and optimization work is complete. It identified and
 fixed shared-core and host costs, verified measurable improvements with real
 fonts and rendered UI, and checked the resulting integration. This does **not**

@@ -1,0 +1,157 @@
+{
+  "elapsed_seconds": 1800.4068536999985,
+  "samples": 317,
+  "reloads": 111587.0,
+  "lifecycle": {
+    "variant": "current",
+    "round": 0,
+    "before": {
+      "audit_mode": 4.0,
+      "audit_selected": 1.0,
+      "audit_clicks": 0.0,
+      "audit_uses": 0.0,
+      "audit_reloads": 0.0
+    },
+    "actions": {
+      "audit_mode": 1.0,
+      "audit_selected": 1.0,
+      "audit_clicks": 1.0,
+      "audit_uses": 1.0,
+      "audit_reloads": 0.0
+    },
+    "final": {
+      "audit_mode": 4.0,
+      "audit_selected": 1.0,
+      "audit_clicks": 2.0,
+      "audit_uses": 1.0,
+      "audit_reloads": 111587.0
+    },
+    "memory_before": {
+      "rss": 362647552,
+      "vms": 875765760,
+      "num_page_faults": 130069,
+      "peak_wset": 364494848,
+      "wset": 362647552,
+      "peak_paged_pool": 1504032,
+      "paged_pool": 1439576,
+      "peak_nonpaged_pool": 63764,
+      "nonpaged_pool": 54168,
+      "pagefile": 875765760,
+      "peak_pagefile": 878321664,
+      "private": 875765760
+    },
+    "memory_after": {
+      "rss": 386285568,
+      "vms": 890118144,
+      "num_page_faults": 143987,
+      "peak_wset": 386334720,
+      "wset": 386285568,
+      "peak_paged_pool": 1504032,
+      "paged_pool": 1439608,
+      "peak_nonpaged_pool": 120676,
+      "nonpaged_pool": 53080,
+      "pagefile": 890118144,
+      "peak_pagefile": 890241024,
+      "private": 890118144
+    },
+    "reload_seconds": 1800.4068536999985,
+    "memory_samples": 317,
+    "capture_artifacts": [
+      {
+        "kind": "image",
+        "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\lifecycle-soak-30min\\registry\\runs\\21385377a7c97fe7417ecede27d6e8f06911a930a9e61f848542762d039c2efd\\captures\\41356-18e38bd405704390-57\\frame.png",
+        "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
+      },
+      {
+        "kind": "capture_manifest",
+        "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\lifecycle-soak-30min\\registry\\runs\\21385377a7c97fe7417ecede27d6e8f06911a930a9e61f848542762d039c2efd\\captures\\41356-18e38bd405704390-57\\frame.json",
+        "sha256": "36e345a76e77c5ce6a48d49cd0bed408e0376ed1080822de21017e627c07d5a7"
+      }
+    ],
+    "launch": {
+      "schema_version": 1,
+      "id": "21385377a7c97fe7417ecede27d6e8f06911a930a9e61f848542762d039c2efd",
+      "name": "current-0",
+      "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-runtime-project-v2",
+      "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248",
+      "executable": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248\\target\\fast\\dev_runtime.exe",
+      "executable_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b",
+      "pid": 41356,
+      "process_birth": 134379044048259214,
+      "endpoint": "127.0.0.1:60297",
+      "started_ms": 1793430809750,
+      "run_dir": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\lifecycle-soak-30min\\registry\\runs\\21385377a7c97fe7417ecede27d6e8f06911a930a9e61f848542762d039c2efd",
+      "capabilities": [
+        "status",
+        "stop",
+        "inspect",
+        "snapshot",
+        "events",
+        "watch",
+        "reload",
+        "scenario",
+        "scenario_initial_inputs_v1",
+        "project_command",
+        "input",
+        "rendered_simulation",
+        "capture",
+        "profile",
+        "agent_activity_v1",
+        "request_keys",
+        "request_result"
+      ],
+      "watch": false
+    }
+  },
+  "windows": [
+    {
+      "start_seconds": 0,
+      "samples": 56,
+      "private_mib_median": 840.697265625,
+      "dedicated_gpu_mib_median": 531.5,
+      "shared_gpu_mib_median": 125.06640625
+    },
+    {
+      "start_seconds": 300,
+      "samples": 42,
+      "private_mib_median": 842.4609375,
+      "dedicated_gpu_mib_median": 523.63671875,
+      "shared_gpu_mib_median": 125.06640625
+    },
+    {
+      "start_seconds": 600,
+      "samples": 53,
+      "private_mib_median": 844.33984375,
+      "dedicated_gpu_mib_median": 523.63671875,
+      "shared_gpu_mib_median": 125.06640625
+    },
+    {
+      "start_seconds": 900,
+      "samples": 54,
+      "private_mib_median": 846.59765625,
+      "dedicated_gpu_mib_median": 523.63671875,
+      "shared_gpu_mib_median": 125.06640625
+    },
+    {
+      "start_seconds": 1200,
+      "samples": 56,
+      "private_mib_median": 847.51953125,
+      "dedicated_gpu_mib_median": 523.63671875,
+      "shared_gpu_mib_median": 125.06640625
+    },
+    {
+      "start_seconds": 1500,
+      "samples": 55,
+      "private_mib_median": 848.8828125,
+      "dedicated_gpu_mib_median": 523.63671875,
+      "shared_gpu_mib_median": 125.06640625
+    }
+  ],
+  "sample_sha256": "9903e907e1a79399b92f396c86c7a1d96215fbc3406541ae513c6679b9ba3426",
+  "private_mib_first": 835.1953125,
+  "private_mib_last": 848.8828125,
+  "dedicated_gpu_mib_first": 531.49609375,
+  "dedicated_gpu_mib_last": 523.63671875,
+  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\lifecycle-soak-30min",
+  "scope": "Correctness and process allocation counters during concurrent builds; no speed or leak-free claim"
+}
