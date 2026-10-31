@@ -1,0 +1,624 @@
+{
+  "measured_updates": 75000,
+  "groups": {
+    "0": {
+      "mean_update_ms_median": 0.394123,
+      "frames": [
+        {
+          "group": 0,
+          "state": 0,
+          "draws": 299,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 0,
+          "state": 1,
+          "draws": 300,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 0,
+          "state": 2,
+          "draws": 299,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 0,
+          "state": 3,
+          "draws": 301,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 0,
+          "state": 4,
+          "draws": 296,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 0,
+          "state": 5,
+          "draws": 300,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 0,
+          "state": 6,
+          "draws": 295,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 0,
+          "state": 7,
+          "draws": 301,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 0,
+          "state": 8,
+          "draws": 294,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 0,
+          "state": 9,
+          "draws": 296,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 0,
+          "state": 10,
+          "draws": 293,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 0,
+          "state": 11,
+          "draws": 295,
+          "reused": 236,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        }
+      ]
+    },
+    "1": {
+      "mean_update_ms_median": 0.080322,
+      "frames": [
+        {
+          "group": 1,
+          "state": 0,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 1,
+          "state": 1,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 1,
+          "state": 2,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 1,
+          "state": 3,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 1,
+          "state": 4,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 1,
+          "state": 5,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 1,
+          "state": 6,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 1,
+          "state": 7,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 1,
+          "state": 8,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 1,
+          "state": 9,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 1,
+          "state": 10,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 1,
+          "state": 11,
+          "draws": 299,
+          "reused": 292,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        }
+      ]
+    },
+    "2": {
+      "mean_update_ms_median": 0.28199,
+      "frames": [
+        {
+          "group": 2,
+          "state": 0,
+          "draws": 299,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 2,
+          "state": 1,
+          "draws": 300,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 2,
+          "state": 2,
+          "draws": 299,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 2,
+          "state": 3,
+          "draws": 301,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 2,
+          "state": 4,
+          "draws": 296,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 2,
+          "state": 5,
+          "draws": 300,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 2,
+          "state": 6,
+          "draws": 295,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 2,
+          "state": 7,
+          "draws": 301,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 2,
+          "state": 8,
+          "draws": 294,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 2,
+          "state": 9,
+          "draws": 296,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 2,
+          "state": 10,
+          "draws": 293,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 2,
+          "state": 11,
+          "draws": 295,
+          "reused": 242,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        }
+      ]
+    },
+    "3": {
+      "mean_update_ms_median": 0.039702,
+      "frames": [
+        {
+          "group": 3,
+          "state": 0,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 3,
+          "state": 1,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 3,
+          "state": 2,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 3,
+          "state": 3,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 3,
+          "state": 4,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 3,
+          "state": 5,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 3,
+          "state": 6,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 3,
+          "state": 7,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 3,
+          "state": 8,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 3,
+          "state": 9,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 3,
+          "state": 10,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        },
+        {
+          "group": 3,
+          "state": 11,
+          "draws": 299,
+          "reused": 295,
+          "textures": 25,
+          "new_textures": 1,
+          "cache_misses": 1
+        }
+      ]
+    },
+    "4": {
+      "mean_update_ms_median": 0.006303,
+      "frames": [
+        {
+          "group": 4,
+          "state": 0,
+          "draws": 299,
+          "reused": 299,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 4,
+          "state": 1,
+          "draws": 299,
+          "reused": 299,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 4,
+          "state": 2,
+          "draws": 299,
+          "reused": 299,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 4,
+          "state": 3,
+          "draws": 299,
+          "reused": 299,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 4,
+          "state": 4,
+          "draws": 299,
+          "reused": 299,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 4,
+          "state": 5,
+          "draws": 299,
+          "reused": 294,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 4,
+          "state": 6,
+          "draws": 299,
+          "reused": 294,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 4,
+          "state": 7,
+          "draws": 299,
+          "reused": 299,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 4,
+          "state": 8,
+          "draws": 299,
+          "reused": 299,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 4,
+          "state": 9,
+          "draws": 299,
+          "reused": 299,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 4,
+          "state": 10,
+          "draws": 299,
+          "reused": 299,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        },
+        {
+          "group": 4,
+          "state": 11,
+          "draws": 299,
+          "reused": 299,
+          "textures": 25,
+          "new_textures": 0,
+          "cache_misses": 0
+        }
+      ]
+    }
+  },
+  "title_rectangles": {
+    ".inventory-view": [
+      101.0,
+      210.0,
+      1078.0,
+      401.0
+    ],
+    ".item-details": [
+      877.0,
+      234.0,
+      274.0,
+      361.0
+    ],
+    "#item-name": [
+      904.0,
+      374.6,
+      247.0,
+      24.0
+    ]
+  },
+  "sha256": {
+    ".utmp/render-audit-20261030/core-selection-profile/group-0.log": "d286b6d5825ce1f677e6fc3de48beca2e1a5019c98c060f47046a67ee9aac1d1",
+    ".utmp/render-audit-20261030/core-selection-profile/group-1.log": "f19c2cb1f3991a773bb8fe64529b47827d361f3871b13df33e180aec98b13247",
+    ".utmp/render-audit-20261030/core-selection-profile/group-2.log": "d11bc2095fa05b1f14c69dc8722e1c16993beacfcfffad2e0f4257e16a44fcd3",
+    ".utmp/render-audit-20261030/core-selection-profile/group-3.log": "5c8648c4ea1e8493af284136c476b8c39bde8bdd1cca05675fc8098e8ef15098",
+    ".utmp/render-audit-20261030/core-selection-profile/group-4.log": "70aa64c6dc3c3668f8206215f8f663e422917cb773117724634e8016172c9e53",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/0-0.log": "5787ff7b532abf35915e6ff006319ef89b4ec9fd5d9f6f45ee059e620c4d6a26",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/0-1.log": "19ef06249b371f4da829c40ff016f74ea13f00209679ed1005372cf73f708737",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/0-2.log": "91dce49bf3fa311e63273c43f823faddd8d3e33db0f25c0628f2ae2a9ea60289",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/0-3.log": "d94c3a3e3b9203d02320c9458e3c0490a95cae451617ccc6f5a400b19cd8ad55",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/0-4.log": "d92902ef9230a7a26fbd7f558e8617c6c587127f737710333987de69239c7435",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/1-0.log": "756acd3010ca96b7bf48510d5b79bbedc975cd2f40111b2e1f54d869e2f8d5cb",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/1-1.log": "b16f2d408f55c8bbb28c60fdd938eb29d00cee2fb12ffd0a4bf24d46781cfbb5",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/1-2.log": "835ba11daea8dc7523370ada1f8012383450b8a7f9f75bebf5858cb4fcfc424e",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/1-3.log": "2c5ca2acb4a992b456fa09a21a7b2bdb9ca0aa6ec7bea026e3429decdfc80aac",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/1-4.log": "2e780f06a2b29a585a1c7b8578a201f8b13a20fabf5b75c8495de6fc201e6994",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/2-0.log": "172625bcd0d50e47bfc49b989b821cad7c1a76b6144299c48c4466f78fba3aae",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/2-1.log": "2eb942a2c21dcf898e12f8fd52ef0899722e1d43505579a4fdd1564d4e9e9e9c",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/2-2.log": "f68ebc536efc1144140fae48e174b3265b108e5a94bb139afc638be0424cd294",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/2-3.log": "0f0ac23fe686792d718ed98ddaa9391201d01be5429499ff3a3241787f691e9c",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/2-4.log": "d4ebd8bbe9d3eb450cc7891856b8dc10a6f2e5dddd344ee38b4debd675a525a3",
+    ".utmp/render-audit-20261030/core-selection-profile/group-timings/results.json": "69d56cd92ab4b7b7007205de3768b16712488f1da66e8b4f01191dfa3d854604",
+    ".utmp/render-audit-20261030/core-selection-profile/text-layout-trace.log": "890b0bda5620c9da31e598c754804fb8b8f94ef690bd99cfd293e057e8e4e6c4",
+    ".utmp/render-audit-20261030/core-selection-profile/title-layout-trace.log": "56a731c6a9b4aed3f0586401f2234d3f13b5bd4080a9a17093df09429651beac",
+    ".utmp/render-audit-20261030/core-selection-profile/title-bounds.log": "1a9b613f9d0817165dd9b0d10e59ce2a272ea557c925717543f9bf774b5fb2bb",
+    ".utmp/render-audit-20261030/core-selection-profile/invalidation.cpp": "ee0e733f7b0daf2038b297c8bf40a0836e60403b5d618f49f3d6ca4698a62a19",
+    ".utmp/render-audit-20261030/core-selection-profile/invalidation-groups.cpp": "8bb363f939b667ae5a42fccdf8bf96da0ac7d1f5b802f2a8b2acf573fca533e4",
+    ".utmp/render-audit-20261030/core-selection-profile/invalidation-single.cpp": "31046e57be2e9292b2e52084e81879def24ae512fe94693d4254134337567fd2",
+    ".utmp/render-audit-20261030/core-selection-profile/create_invalidation_probe.py": "1083e7101d17532adc335eb7003f5b92849c3964173ac01482d9ffc5c0e58308",
+    ".utmp/render-audit-20261030/core-selection-profile/run_invalidation_groups.py": "6b82c6020af1539dab1c392d1c14adca83091ee6beef59c4be85042b589da1ca",
+    ".utmp/render-audit-20261030/core-selection-profile/invalidation_probe": "262d56557718216a234f23103f0869a0dfc30734252916098ecdfe34b047977c",
+    ".utmp/render-audit-20261030/core-selection-profile/invalidation_single_probe": "dec4451922bb080853ae0b9bd9bced132637019296f007e7aa5f05543caec25d",
+    ".utmp/render-audit-20261030/core-selection-profile/invalidation_bounds_probe": "7a936d1e1a3addc2ebfc37f8341ad5f55a15cdb2e59089eef4fb0930ddd959c7"
+  }
+}
