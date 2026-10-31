@@ -1,0 +1,249 @@
+{
+  "experiment": "Rejected registered paint-property ID caching; production source restored",
+  "binaries": {
+    "before": {
+      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-paint-ids.exe",
+      "sha256": "2c55ca701675f662b303952eec8822d0b894aeeb6e0640a4f9c8b21605d0ac10"
+    },
+    "after": {
+      "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+      "sha256": "59134b07f1b4998750fc24203a5df87b7ba5999cf83ec5b7eb7ffb285a26076e"
+    }
+  },
+  "paired_runs": [
+    {
+      "round": 0,
+      "variant": "after",
+      "case": "HUD",
+      "cascade": 0.024,
+      "boxes": 0.056,
+      "layout": 0.0,
+      "paint": 0.052,
+      "core update, total": 0.135,
+      "host draw": 0.215,
+      "complete CPU path": 0.376
+    },
+    {
+      "round": 0,
+      "variant": "after",
+      "case": "inventory",
+      "cascade": 0.12,
+      "boxes": 0.339,
+      "layout": 0.0,
+      "paint": 0.292,
+      "core update, total": 0.755,
+      "host draw": 0.459,
+      "complete CPU path": 1.42
+    },
+    {
+      "round": 0,
+      "variant": "before",
+      "case": "HUD",
+      "cascade": 0.026,
+      "boxes": 0.059,
+      "layout": 0.0,
+      "paint": 0.058,
+      "core update, total": 0.146,
+      "host draw": 0.35,
+      "complete CPU path": 0.524
+    },
+    {
+      "round": 0,
+      "variant": "before",
+      "case": "inventory",
+      "cascade": 0.113,
+      "boxes": 0.298,
+      "layout": 0.0,
+      "paint": 0.292,
+      "core update, total": 0.707,
+      "host draw": 0.285,
+      "complete CPU path": 1.171
+    },
+    {
+      "round": 1,
+      "variant": "after",
+      "case": "HUD",
+      "cascade": 0.026,
+      "boxes": 0.061,
+      "layout": 0.0,
+      "paint": 0.058,
+      "core update, total": 0.148,
+      "host draw": 0.239,
+      "complete CPU path": 0.419
+    },
+    {
+      "round": 1,
+      "variant": "after",
+      "case": "inventory",
+      "cascade": 0.123,
+      "boxes": 0.338,
+      "layout": 0.0,
+      "paint": 0.295,
+      "core update, total": 0.761,
+      "host draw": 0.466,
+      "complete CPU path": 1.435
+    },
+    {
+      "round": 1,
+      "variant": "before",
+      "case": "HUD",
+      "cascade": 0.024,
+      "boxes": 0.057,
+      "layout": 0.0,
+      "paint": 0.055,
+      "core update, total": 0.138,
+      "host draw": 0.214,
+      "complete CPU path": 0.378
+    },
+    {
+      "round": 1,
+      "variant": "before",
+      "case": "inventory",
+      "cascade": 0.123,
+      "boxes": 0.324,
+      "layout": 0.0,
+      "paint": 0.305,
+      "core update, total": 0.756,
+      "host draw": 0.466,
+      "complete CPU path": 1.421
+    },
+    {
+      "round": 2,
+      "variant": "after",
+      "case": "HUD",
+      "cascade": 0.021,
+      "boxes": 0.05,
+      "layout": 0.0,
+      "paint": 0.048,
+      "core update, total": 0.122,
+      "host draw": 0.204,
+      "complete CPU path": 0.349
+    },
+    {
+      "round": 2,
+      "variant": "after",
+      "case": "inventory",
+      "cascade": 0.107,
+      "boxes": 0.291,
+      "layout": 0.0,
+      "paint": 0.267,
+      "core update, total": 0.669,
+      "host draw": 0.322,
+      "complete CPU path": 1.168
+    },
+    {
+      "round": 2,
+      "variant": "before",
+      "case": "HUD",
+      "cascade": 0.026,
+      "boxes": 0.06,
+      "layout": 0.0,
+      "paint": 0.06,
+      "core update, total": 0.149,
+      "host draw": 0.232,
+      "complete CPU path": 0.409
+    },
+    {
+      "round": 2,
+      "variant": "before",
+      "case": "inventory",
+      "cascade": 0.12,
+      "boxes": 0.302,
+      "layout": 0.0,
+      "paint": 0.298,
+      "core update, total": 0.724,
+      "host draw": 0.451,
+      "complete CPU path": 1.372
+    },
+    {
+      "round": 3,
+      "variant": "after",
+      "case": "HUD",
+      "cascade": 0.025,
+      "boxes": 0.058,
+      "layout": 0.0,
+      "paint": 0.053,
+      "core update, total": 0.139,
+      "host draw": 0.222,
+      "complete CPU path": 0.388
+    },
+    {
+      "round": 3,
+      "variant": "after",
+      "case": "inventory",
+      "cascade": 0.117,
+      "boxes": 0.31,
+      "layout": 0.0,
+      "paint": 0.286,
+      "core update, total": 0.718,
+      "host draw": 0.454,
+      "complete CPU path": 1.364
+    },
+    {
+      "round": 3,
+      "variant": "before",
+      "case": "HUD",
+      "cascade": 0.028,
+      "boxes": 0.063,
+      "layout": 0.0,
+      "paint": 0.064,
+      "core update, total": 0.158,
+      "host draw": 0.241,
+      "complete CPU path": 0.44
+    },
+    {
+      "round": 3,
+      "variant": "before",
+      "case": "inventory",
+      "cascade": 0.103,
+      "boxes": 0.268,
+      "layout": 0.0,
+      "paint": 0.273,
+      "core update, total": 0.648,
+      "host draw": 0.451,
+      "complete CPU path": 1.253
+    }
+  ],
+  "core_traces": [
+    {
+      "path": ".utmp\\render-audit-20261030\\inventory-core-trace\\registry\\runs\\b4320412a29351e46bcfe208bb2b0851a5de14f521546ec38cd7650dc8cac86d\\runtime.log",
+      "total_records": 872,
+      "excluded_initial_records": 20,
+      "means_ms": {
+        "cascade": 0.05907793427230047,
+        "animate": 0.00022230046948356808,
+        "boxes_including_incremental_layout": 0.1742482394366197,
+        "layout_after_incremental": 0.00015610328638497654,
+        "paint": 0.20371924882629108,
+        "total": 0.4401431924882629
+      }
+    },
+    {
+      "path": ".utmp\\render-audit-20261030\\inventory-core-trace\\registry\\runs\\d8052b363a41d2510e74e8d3a90b3bbc5868dee6b9f01b274248abe75964c838\\runtime.log",
+      "total_records": 911,
+      "excluded_initial_records": 20,
+      "means_ms": {
+        "cascade": 0.06129685746352413,
+        "animate": 0.00021829405162738496,
+        "boxes_including_incremental_layout": 0.17585207631874297,
+        "layout_after_incremental": 0.00016307519640852976,
+        "paint": 0.20554927048260382,
+        "total": 0.4456591470258137
+      }
+    },
+    {
+      "path": ".utmp\\render-audit-20261030\\inventory-core-trace\\registry\\runs\\fc4829b8fddb478277cf507a29aec61202d9881978df05c00ed939d0aa583f59\\runtime.log",
+      "total_records": 889,
+      "excluded_initial_records": 20,
+      "means_ms": {
+        "cascade": 0.08332577675489068,
+        "animate": 0.00024948216340621405,
+        "boxes_including_incremental_layout": 0.23857307249712312,
+        "layout_after_incremental": 0.0001952819332566168,
+        "paint": 0.2814741081703107,
+        "total": 0.6071065592635213
+      }
+    }
+  ],
+  "scope": "Core traces are warmed attribution samples, not aligned one-to-one to measured profile frames; buffered until exit. Paint logging adds synchronous diagnostic overhead."
+}
