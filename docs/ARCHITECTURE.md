@@ -329,6 +329,12 @@ keep reconstruction. DOM queries use an order cache keyed by the document's
 structural input version, independently of stable element handles. The reverse
 handle map is updated on registration, removal and reload; removed elements
 lose their map entries before their addresses can be reused.
+Glyph atlas pixels are allocated only when the first nonempty raster fits in
+the atlas. Text-free documents and successful empty glyphs need no bitmap or
+blank atlas upload, including after font/renderer setup. Once populated, the
+fixed-size atlas keeps its storage across clears to avoid repeated allocation
+and preserve existing text UV behavior. See the
+[lazy-atlas measurements](verification/lazy-atlas-20261031.md).
 Numeric element handles advance monotonically across subtree changes and full
 loads. A sparse ordered table stores 256 pointer slots per page; pages with no
 live elements are released. Retired IDs therefore need no lifetime-sized

@@ -26,8 +26,7 @@ struct GlyphSlot {
 
 class GlyphAtlas {
 public:
-    GlyphAtlas(int width = 512, int height = 512) : width_(width), height_(height),
-                                                    pixels_(static_cast<size_t>(width) * height * 4, 0) {}
+    GlyphAtlas(int width = 512, int height = 512) : width_(width), height_(height) {}
 
     // Returns the slot for a glyph at a size, rasterizing and packing it on
     // first request. Null when the glyph has no bitmap (a space, or a missing
@@ -49,7 +48,8 @@ public:
 
     int width() const { return width_; }
     int height() const { return height_; }
-    // The packed pixels, RGBA. Read access so a caller can composite a run
+    // The packed pixels, RGBA; empty until the first glyph with ink is packed.
+    // Read access so a caller can composite a run
     // into its own buffer -- which is what a blurred text-shadow needs, since
     // blurring means having the run's coverage somewhere it can be filtered.
     const std::vector<uint8_t>& pixels() const { return pixels_; }

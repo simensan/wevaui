@@ -614,3 +614,10 @@ full loads. Its 8,352-check retention regression adds one suite: 18 GCC and
 20 Clang sanitizer suites pass. Unity remains 255 pass plus two inconclusive;
 Mono player 7/7 and 17 host render comparisons pass. The 32-child replacement
 probe saves 1.996 MiB after 5,000 replacements; this is not a host-RSS claim.
+
+The [lazy-atlas follow-up](docs/verification/lazy-atlas-20261031.md) defers
+glyph pixels and blank uploads until needed. It saves 1 MiB per unused document
+and 2 MiB of measured core CPU storage for a text-free panel after font setup;
+text-bearing storage is unchanged. The full gate passes 18 GCC and 20 sanitizer
+suites; main checks are 808,791 / 808,785 sanitized. Unity remains 255 plus two
+inconclusive, player 7/7, and all 17 host renders match the prior build.

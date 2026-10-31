@@ -81,14 +81,29 @@ void test_glyph_atlas() {
     StubFont font;
     GlyphAtlas atlas(64, 64);
     const FaceHandle face = StubFont::builtin();
-    const uint64_t slot_version = atlas.slot_version();
     uint32_t a = 0, b = 0, space = 0;
     font.glyph_index(face, 'A', &a);
     font.glyph_index(face, 'B', &b);
     font.glyph_index(face, ' ', &space);
 
+    // No bitmap or upload for text-free documents, even after font/renderer
+    // changes. Spaces, failed rasters and oversized glyphs do not allocate it.
+    SoftwareRenderer unused_renderer(4, 4);
+    CHECK(atlas.pixels().capacity() == 0);
+    CHECK(!atlas.texture(&unused_renderer));
+    atlas.clear();
+    CHECK(atlas.pixels().capacity() == 0);
+    CHECK(!atlas.texture(&unused_renderer));
+    CHECK(atlas.get(&font, face, space, 16) == nullptr);
+    CHECK(atlas.get(&font, face, a, 256) == nullptr);
+    CHECK(atlas.pixels().capacity() == 0);
+    atlas.release_texture(&unused_renderer);
+    CHECK(!atlas.texture(&unused_renderer));
+    const uint64_t slot_version = atlas.slot_version();
+
     const GlyphSlot* sa = atlas.get(&font, face, a, 16);
     CHECK(sa != nullptr && sa->width > 0);
+    CHECK(atlas.pixels().size() == 64 * 64 * 4);
     // A second request is cached, not re-packed.
     CHECK(atlas.get(&font, face, a, 16) == sa);
     CHECK(atlas.slot_count() == 1);
@@ -160,6 +175,7 @@ void test_glyph_atlas() {
     CHECK(empty_atlas.get(&empty_font, face, space + 2, 16) == nullptr);
     CHECK(empty_atlas.get(&empty_font, face, space + 2, 16) == nullptr);
     CHECK(empty_font.rasters == 6);
+    CHECK(empty_atlas.pixels().capacity() == 0);
     empty_font.fail = false;
     empty_font.ink = true;
     CHECK(empty_atlas.get(&empty_font, face, space + 2, 16) != nullptr);

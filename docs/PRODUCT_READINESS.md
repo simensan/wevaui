@@ -1,5 +1,10 @@
 # Product readiness
 
+The [lazy glyph atlas](verification/lazy-atlas-20261031.md) saves 1 MiB of
+core CPU storage per newly created document and 2 MiB in the measured text-free
+panel after font setup. Text-bearing UI uses the same storage as before; this
+is not a general text-UI reduction or a fix for the earlier Agentic soak growth.
+
 The [handle-memory fix](verification/handle-memory-20261031.md) removes
 document-lifetime growth from retired element handles. In a core-only test
 with 32 live children and 5,000 subtree replacements, tracked live C++ storage

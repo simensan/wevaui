@@ -61,6 +61,10 @@ const GlyphSlot* GlyphAtlas::get(FontInterface* font, FaceHandle face, uint32_t 
     }
     if (shelf_y_ + bmp.height + 2 * pad > height_) return nullptr;   // full
 
+    // Documents without visible glyphs need neither CPU atlas storage nor an
+    // uploaded blank texture. Keep dimensions fixed so existing UVs stay valid.
+    if (pixels_.empty()) pixels_.resize(static_cast<size_t>(width_) * height_ * 4, 0);
+
     GlyphSlot slot;
     slot.x = shelf_x_ + pad;
     slot.y = shelf_y_ + pad;
@@ -124,7 +128,8 @@ TextureHandle GlyphAtlas::texture(RenderInterface* backend) {
         // has no partial-upload call, and adding one would push work back onto
         // every backend for a case that happens a handful of times per document.
         if (texture_) backend->release_texture(texture_);
-        texture_ = backend->generate_texture(pixels_, {width_, height_});
+        texture_ = pixels_.empty() ? TextureHandle{} :
+                   backend->generate_texture(pixels_, {width_, height_});
         dirty_ = false;
     }
     return texture_;
