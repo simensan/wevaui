@@ -55,7 +55,7 @@ pending changes on show, and explicit hidden preparation.
 Unity `Visible=false` unregisters rendering and input, pauses automatic updates,
 and clears core focus/pointer gestures while retaining the document. `Prepare()`
 applies bindings and CPU paint explicitly without showing it. The component
-method `PrepareRenderer()` additionally synchronizes textures and meshes while
+method `PrepareRenderer()` additionally synchronizes textures, meshes and materials while
 hidden; `RendererPreparation_TracksBindingsReloadAndDisable` pins resource reuse
 across loading changes and lifecycle transitions. Godot explicit updates already
 upload newly published textures. Neither path guarantees first GPU execution

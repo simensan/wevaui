@@ -8,8 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added (2.0 API surface)
-- `WevaDocument.PrepareRenderer()` prepares CPU paint and uploads textures and
-  meshes during loading, including while hidden. It does not draw or prewarm
+- `WevaDocument.PrepareRenderer()` prepares CPU paint, textures, meshes and
+  materials during loading, including while hidden. It does not draw or prewarm
   shader execution. Requires a graphics device; subsequent changes may rebuild.
 - `WevaDocument.Visible` hides rendering, automatic updates and input while
   retaining the native document, bindings and render resources. Hiding clears

@@ -79,8 +79,8 @@ namespace Weva.EditorTools
             string fixtures = Environment.GetEnvironmentVariable("WEVA_PREPARATION_FIXTURE");
             string output = Environment.GetEnvironmentVariable("WEVA_PREPARATION_OUTPUT");
             string mode = Environment.GetEnvironmentVariable("WEVA_PREPARATION_MODE");
-            if (mode != "cold" && mode != "prepared" && mode != "renderer-prepared")
-                throw new ArgumentException("mode must be cold, prepared or renderer-prepared");
+            if (mode != "cold" && mode != "prepared" && mode != "renderer-prepared" && mode != "textures-prepared")
+                throw new ArgumentException("mode must be cold, prepared, textures-prepared or renderer-prepared");
             if (string.IsNullOrEmpty(output) || Directory.Exists(output)) throw new ArgumentException("output must be a new directory");
             string html = Path.GetFullPath(Path.Combine(fixtures, "inventory.html"));
             string css = Path.GetFullPath(Path.Combine(fixtures, "inventory.css"));
@@ -114,10 +114,11 @@ namespace Weva.EditorTools
                 if (mode != "cold")
                 {
                     result.loading_cpu_ms = result.activation_cpu_ms;
-                    if (mode == "renderer-prepared")
+                    if (mode == "renderer-prepared" || mode == "textures-prepared")
                     {
                         long loadingSyncStart = Stopwatch.GetTimestamp();
-                        ui.PrepareRenderer();
+                        if (mode == "renderer-prepared") ui.PrepareRenderer();
+                        else { ui.Prepare(); ui.Renderer.Sync(ui.Document); }
                         result.loading_renderer_sync_cpu_ms = (Stopwatch.GetTimestamp() - loadingSyncStart) * 1000.0 / Stopwatch.Frequency;
                         result.loading_cpu_ms += result.loading_renderer_sync_cpu_ms;
                     }
@@ -132,7 +133,7 @@ namespace Weva.EditorTools
                 long syncStart = Stopwatch.GetTimestamp();
                 bool rebuilt = ui.Renderer.Sync(ui.Document);
                 result.renderer_sync_cpu_ms = (Stopwatch.GetTimestamp() - syncStart) * 1000.0 / Stopwatch.Frequency;
-                if (mode == "renderer-prepared" && rebuilt)
+                if ((mode == "renderer-prepared" || mode == "textures-prepared") && rebuilt)
                     throw new InvalidOperationException("show rebuilt prepared renderer resources");
                 result.opening_cpu_ms = timer.Elapsed.TotalMilliseconds;
                 result.shown_draw_serial = (long)ui.Document.DrawSerial;

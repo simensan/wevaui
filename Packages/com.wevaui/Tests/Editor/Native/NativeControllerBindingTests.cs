@@ -163,6 +163,7 @@ namespace Weva.Tests.EditorTests.Native
             var renderer = _host.Renderer;
             Assert.That(renderer.TextureCount, Is.GreaterThan(0), "text textures are uploaded while hidden");
             Assert.That(renderer.BatchCount, Is.GreaterThan(0));
+            Assert.That(renderer.MaterialCount, Is.GreaterThan(0));
             Assert.That(renderer.Sync(document), Is.False);
             controller.PlayerName = "Changed before opening";
             _host.PrepareRenderer();

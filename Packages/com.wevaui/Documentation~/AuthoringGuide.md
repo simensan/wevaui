@@ -455,7 +455,7 @@ current data during your loading phase:
 ```csharp
 ui.Visible = false;
 ui.SetController(menuController);
-ui.PrepareRenderer(); // CPU paint plus texture/mesh upload; requires graphics
+ui.PrepareRenderer(); // CPU paint, textures, meshes and materials; requires graphics
 // Later, when the player opens the menu:
 ui.Visible = true;
 ```
@@ -466,7 +466,7 @@ or upload GPU resources. Use the intended viewport and current data; changed
 content, fonts or dimensions can require more work later. This moves work into
 loading rather than eliminating it.
 
-`PrepareRenderer()` additionally synchronizes textures and meshes with Unity
+`PrepareRenderer()` additionally synchronizes textures, meshes and materials with Unity
 while retaining the current visibility. Use it during loading when a graphics
 device is available. It does not draw the UI or prewarm shader execution;
 the first rendered frame can still cost time. Repeat it after loading-phase

@@ -63,6 +63,43 @@ namespace Weva.Tests.EditorTests.Native
             }
         }
 
+        [TestCase("background:linear-gradient(red,blue)")]
+        [TestCase("background:linear-gradient(red,blue);mix-blend-mode:multiply")]
+        [TestCase("background:rgba(255,0,0,0.2);backdrop-filter:blur(3px)")]
+        public void PreparedMaterials_MatchLazyRenderingAndAreReused(string style)
+        {
+            Assume.That(HasGraphics, "a graphics device is required");
+            using var doc = new NativeDocument(64, 64);
+            using var prepared = new NativeDocumentRenderer();
+            using var lazy = new NativeDocumentRenderer();
+            doc.LoadHtml("<body><div></div></body>");
+            doc.SetCss("body{margin:0;background:linear-gradient(white,black)}div{width:48px;height:48px;" + style + "}");
+            doc.Update(0);
+            prepared.Sync(doc);
+            Assert.That(prepared.MaterialCount, Is.Zero, "normal sync remains lazy");
+            prepared.PrepareMaterials();
+            int count = prepared.MaterialCount;
+            Assert.That(count, Is.GreaterThan(0));
+            if (style.Contains("backdrop-filter")) Assert.That(prepared.BackdropDraws, Is.EqualTo(1));
+            prepared.PrepareMaterials();
+            Assert.That(prepared.MaterialCount, Is.EqualTo(count));
+            Texture2D actual = null, expected = null;
+            try
+            {
+                actual = prepared.RenderToTexture(doc, 64, 64, Color.black);
+                expected = lazy.RenderToTexture(doc, 64, 64, Color.black);
+                Assert.That(actual.GetPixels32(), Is.EqualTo(expected.GetPixels32()));
+                Assert.That(prepared.MaterialCount, Is.EqualTo(count), "drawing creates no further materials");
+            }
+            finally
+            {
+                if (actual != null) Object.DestroyImmediate(actual);
+                if (expected != null) Object.DestroyImmediate(expected);
+            }
+            prepared.Dispose();
+            Assert.That(prepared.MaterialCount, Is.Zero);
+        }
+
         [Test]
         public void Sync_BuildsBatchesOnlyWhenTheDrawListChanges()
         {

@@ -19,6 +19,8 @@ def main():
     parser.add_argument('--rounds', type=int, default=3)
     parser.add_argument('--renderer-prepared', action='store_true',
                         help='Also measure explicit renderer synchronization during hidden loading')
+    parser.add_argument('--material-comparison', action='store_true',
+                        help='Compare texture/mesh preparation against full renderer preparation')
     args = parser.parse_args()
     if args.rounds < 1:
         parser.error('rounds must be positive')
@@ -29,7 +31,11 @@ def main():
     for round_index in range(args.rounds):
         modes = ['cold', 'prepared', 'renderer-prepared'] if args.renderer_prepared else ['cold', 'prepared']
         # Rotate three modes so each occupies every position once.
-        if args.renderer_prepared:
+        if args.material_comparison:
+            modes = ['textures-prepared', 'renderer-prepared']
+            if round_index % 2:
+                modes.reverse()
+        elif args.renderer_prepared:
             offset = round_index % len(modes)
             modes = modes[offset:] + modes[:offset]
         elif round_index % 2:

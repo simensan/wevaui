@@ -6,12 +6,15 @@ by moving layout/glyph/paint work into loading; GPU first-use work remains.
 This is not yet an upstream Agentic integration. See the
 [October 31 preparation receipt](verification/script-preparation-20261031.md).
 
-Unity 2.0 adds retained `Visible`, CPU `Prepare()` and texture/mesh
-`PrepareRenderer()` loading controls, with 248 EditMode passes (two existing
+Unity 2.0 adds retained `Visible`, CPU `Prepare()` and texture/mesh/material
+`PrepareRenderer()` loading controls, with 251 EditMode passes (two existing
 environment-gated inconclusive), seven URP render passes and seven Windows
 Mono player passes. Renderer preparation moves work into loading; first shader
 execution and player timing remain unverified. See the
 [renderer preparation receipt](verification/unity-renderer-api-20261031.md).
+The [material preparation follow-up](verification/unity-material-preparation-20261031.md)
+moves lazy material setup into loading and reduces first command recording
+in the paired editor benchmark; it does not warm GPU shader execution.
 Godot's existing hidden manual-update workflow is verified on Windows
 and the rebuilt qualified Linux addon. See the
 [host preparation receipt](verification/unity-hidden-preparation-20261031.md).

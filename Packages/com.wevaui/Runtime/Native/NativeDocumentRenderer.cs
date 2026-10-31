@@ -112,6 +112,7 @@ namespace Weva.Native
         public ulong Serial => _serial;
         public int BatchCount => _batches.Count;
         public int TextureCount => _textures.Count;
+        public int MaterialCount => _materials.Count + _blendMaterials.Count + (_untextured != null ? 1 : 0) + (_backdrop != null ? 1 : 0);
         public int DrawsSkipped { get; private set; }
         public int TrianglesUploaded { get; private set; }
 
@@ -150,6 +151,16 @@ namespace Weva.Native
             _serial = serial;
             _synced = true;
             return true;
+        }
+
+        // Explicit loading only: ordinary Sync keeps material creation lazy.
+        public void PrepareMaterials()
+        {
+            foreach (Batch batch in _batches)
+            {
+                if (batch.Backdrop) EnsureBackdropMaterial();
+                else MaterialFor(batch.Texture, batch.Blend);
+            }
         }
 
         private void SyncTextures(NativeDocument doc)
@@ -441,7 +452,7 @@ namespace Weva.Native
         // frames after, and the Blitter wants a Texture behind the handle,
         // which the camera colour is not. Offscreen, with no graph, a
         // temporary RT and a Blit do.
-        private void DrawBackdrop(CommandBuffer cmd, Batch b, in NativeRenderTarget target)
+        private void EnsureBackdropMaterial()
         {
             EnsureShader();
             if (_backdrop == null)
@@ -451,6 +462,12 @@ namespace Weva.Native
                 if (shader == null) return;
                 _backdrop = new Material(shader) { hideFlags = HideFlags.HideAndDontSave };
             }
+        }
+
+        private void DrawBackdrop(CommandBuffer cmd, Batch b, in NativeRenderTarget target)
+        {
+            EnsureBackdropMaterial();
+            if (_backdrop == null) return;
             // Inside the render graph without a copy: the backdrop appeared
             // after the feature decided this frame needed none. The legacy
             // Blit fallback must not run in a graph pass (see above); the

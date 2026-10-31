@@ -1,5 +1,10 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [Unity material preparation pass](docs/verification/unity-material-preparation-20261031.md)
+adds materials to explicit loading preparation. Full EditMode passes 251
+(two existing inconclusive), URP 7/7 and Windows Mono player 7/7. Paired
+editor first recording falls from 3.09 to 1.31 ms by moving work into loading.
+
 The [Unity renderer preparation pass](docs/verification/unity-renderer-api-20261031.md)
 adds explicit PrepareRenderer in unreleased 2.0: full EditMode 248 passes
 (two existing inconclusive), URP 7/7 and Windows Mono player 7/7.

@@ -126,11 +126,15 @@ namespace Weva
             _doc?.Update(0, 0);
         }
 
-        /// <summary>Prepares current CPU paint and synchronizes renderer textures and meshes, including while hidden. Requires an enabled component and a graphics device. Does not draw or warm GPU shader execution; later viewport/content changes can require more work.</summary>
+        /// <summary>Prepares current CPU paint, renderer textures, meshes and materials, including while hidden. Requires an enabled component and a graphics device. Does not draw or warm GPU shader execution; later viewport/content changes can require more work.</summary>
         public void PrepareRenderer()
         {
             Prepare();
-            if (_doc != null) _renderer?.Sync(_doc);
+            if (_doc != null && _renderer != null)
+            {
+                _renderer.Sync(_doc);
+                _renderer.PrepareMaterials();
+            }
         }
 
         /// <summary>Bumped whenever the tree is replaced (Reload, enable): an element handle from an earlier generation is stale.</summary>
