@@ -1,0 +1,3388 @@
+{
+  "manifest": {
+    "weva_revision": "dfb31d8eacb84e8c36c68c8bca28dee9eb10a00f",
+    "agentic_revision": "c2288c71cd360ea558457763f036f201b9e4a15f",
+    "binary_sha256": "685bc633d84d7bc84204da41011676633457ad6a7f2a6c5bfdf34f4b3bc1b683",
+    "completed": [
+      {
+        "round": 0,
+        "mode": "native"
+      },
+      {
+        "round": 0,
+        "mode": "chrome"
+      },
+      {
+        "round": 1,
+        "mode": "chrome"
+      },
+      {
+        "round": 1,
+        "mode": "native"
+      },
+      {
+        "round": 2,
+        "mode": "native"
+      },
+      {
+        "round": 2,
+        "mode": "chrome"
+      }
+    ],
+    "quiet_before": {
+      "audit_render_processes": [],
+      "cpu_percent": 12.1
+    },
+    "quiet_after": {
+      "audit_render_processes": [],
+      "cpu_percent": 7.6
+    }
+  },
+  "browser": "Chrome/152.0.7977.82",
+  "fixture_hashes": {
+    "ammo.svg.png": "d4520a84fd2b3fb782fff62a8db6309dcc73a01341283e86a878c9db48a2b4c9",
+    "bandage.svg.png": "21a0b64549df57ec47a4268213a6b6224c6b9fe8ba7397cba905f0c9e853f355",
+    "beans.svg.png": "cba3c4dc9418d7f358d2fa08ee84fabd465d4833024e39fc1512fe0df7b12eb4",
+    "bolt.svg.png": "b3377182cda4864d4e856bbafdc770cbdac253e87de7842346be45fc5b1e720a",
+    "campfire.svg.png": "5e041c7efcd01ebf13145c4a77d4e28b661d01f8d0551c330218705abcaac848",
+    "canteen.svg.png": "977f51dee7dff4001e396afe93a25d8111821b0b6317f4b15d9a9df79b276e86",
+    "cloth.svg.png": "2df601d83f95c1afc1196b852b4a41000d73155fdef701af74af5fffd638858b",
+    "drop.svg.png": "35271db3426bfd7e67188c7dc68684b1bf15508b12db0ccb6485c2afe9652424",
+    "food.svg.png": "ca655dfac85122ab568f6bb76c5d609447f10a3c5ad9916764803f6fbeb97e34",
+    "hatchet.svg.png": "02508c1e246f60fdab8b2af5afa217582cbd327198dd614de98148655408ed49",
+    "heart.svg.png": "30d3a74ae6b0ec0d310a5603fe8071e0ad8538a5e25647980f4eb8bca65ab146",
+    "hud.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    "hud.html": "b29a00ff8341aeec836f793fc988192149206931aa49e83f8895234b74f5ad10",
+    "inventory.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    "inventory.html": "f2f130a482259071b078107e9d1a734c88dd47809bde4f382faa1c3028032090",
+    "knife.svg.png": "ceda161ae3ae746f80250b104a9146972159dfe6dfc75a06b6c65f512e1daa21",
+    "mutations.json": "aa0ad5e6a9768b9ece2c00c3a0d5afbb68f167a5461ecc086c029be0f253e8bc",
+    "open-sans-semibold.ttf": "445ac29890c338bc293873ec8da462193755346499903133b1b4d6f16eb708ca",
+    "revolver.svg.png": "730e040dd4dc0f0ab0e0919c29a9e00fe293fdf4b2d89544a3135c73b191c692",
+    "rope.svg.png": "39d42acb1a7b28cc761e4c9c00512ea601627fb0674cf994d53bc6fe86fdf09d",
+    "stone.svg.png": "64403858edb3564e0b034cf7da6d652286a5b55785f94547f56cf361f08f639b",
+    "wood.svg.png": "cbb723754580f23cfdd5a47f1640058bee21c510d89f95e7cdb9d42aef95bd7d"
+  },
+  "native": [
+    {
+      "case": "hud",
+      "round": 0,
+      "cascade": 0.026,
+      "boxes": 0.06,
+      "layout": 0.0,
+      "paint": 0.058,
+      "core update, total": 0.147,
+      "host draw": 0.303,
+      "host prepare": 0.082,
+      "host capture": 0.016,
+      "host prepare GPU": 0.066,
+      "host encode": 0.088,
+      "host submit": 0.133,
+      "controller + update": 0.173,
+      "complete CPU path": 0.476,
+      "frame": 0.45,
+      "idle frame": 0.199,
+      "style_layout": 0.086
+    },
+    {
+      "case": "inventory",
+      "round": 0,
+      "cascade": 0.113,
+      "boxes": 0.184,
+      "layout": 0.0,
+      "paint": 0.255,
+      "core update, total": 0.557,
+      "host draw": 0.456,
+      "host prepare": 0.275,
+      "host capture": 0.034,
+      "host prepare GPU": 0.241,
+      "host encode": 0.088,
+      "host submit": 0.093,
+      "controller + update": 0.74,
+      "complete CPU path": 1.196,
+      "frame": 1.013,
+      "idle frame": 0.219,
+      "style_layout": 0.297
+    },
+    {
+      "case": "hud",
+      "round": 1,
+      "cascade": 0.025,
+      "boxes": 0.06,
+      "layout": 0.0,
+      "paint": 0.059,
+      "core update, total": 0.146,
+      "host draw": 0.219,
+      "host prepare": 0.056,
+      "host capture": 0.016,
+      "host prepare GPU": 0.041,
+      "host encode": 0.076,
+      "host submit": 0.087,
+      "controller + update": 0.172,
+      "complete CPU path": 0.391,
+      "frame": 0.366,
+      "idle frame": 0.193,
+      "style_layout": 0.08499999999999999
+    },
+    {
+      "case": "inventory",
+      "round": 1,
+      "cascade": 0.104,
+      "boxes": 0.176,
+      "layout": 0.0,
+      "paint": 0.255,
+      "core update, total": 0.539,
+      "host draw": 0.431,
+      "host prepare": 0.259,
+      "host capture": 0.034,
+      "host prepare GPU": 0.225,
+      "host encode": 0.088,
+      "host submit": 0.084,
+      "controller + update": 0.707,
+      "complete CPU path": 1.138,
+      "frame": 0.97,
+      "idle frame": 0.217,
+      "style_layout": 0.27999999999999997
+    },
+    {
+      "case": "hud",
+      "round": 2,
+      "cascade": 0.025,
+      "boxes": 0.06,
+      "layout": 0.0,
+      "paint": 0.058,
+      "core update, total": 0.146,
+      "host draw": 0.221,
+      "host prepare": 0.056,
+      "host capture": 0.015,
+      "host prepare GPU": 0.041,
+      "host encode": 0.077,
+      "host submit": 0.088,
+      "controller + update": 0.173,
+      "complete CPU path": 0.394,
+      "frame": 0.368,
+      "idle frame": 0.179,
+      "style_layout": 0.08499999999999999
+    },
+    {
+      "case": "inventory",
+      "round": 2,
+      "cascade": 0.101,
+      "boxes": 0.171,
+      "layout": 0.0,
+      "paint": 0.253,
+      "core update, total": 0.529,
+      "host draw": 0.459,
+      "host prepare": 0.292,
+      "host capture": 0.035,
+      "host prepare GPU": 0.257,
+      "host encode": 0.085,
+      "host submit": 0.082,
+      "controller + update": 0.687,
+      "complete CPU path": 1.146,
+      "frame": 0.988,
+      "idle frame": 0.21,
+      "style_layout": 0.272
+    }
+  ],
+  "chrome": [
+    {
+      "case": "hud",
+      "round": 0,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.070335,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.0842,
+      "paint_recording_events": 1285,
+      "raster_workers_cpu_ms_per_update": 0.020644999999999997,
+      "raster_workers_events": 200,
+      "window_ms": 3304.388,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 0,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.009365,
+      "paint_recording_events": 865,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3305.222,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 0,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.12862500000000002,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.183885,
+      "paint_recording_events": 1664,
+      "raster_workers_cpu_ms_per_update": 0.07781500000000001,
+      "raster_workers_events": 600,
+      "window_ms": 3313.881,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 0,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.00983,
+      "paint_recording_events": 860,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3310.15,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 1,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.075685,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.08997999999999999,
+      "paint_recording_events": 1314,
+      "raster_workers_cpu_ms_per_update": 0.021905,
+      "raster_workers_events": 200,
+      "window_ms": 3308.558,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 1,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.00987,
+      "paint_recording_events": 875,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3308.587,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 1,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.15266,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.20242000000000002,
+      "paint_recording_events": 1671,
+      "raster_workers_cpu_ms_per_update": 0.081845,
+      "raster_workers_events": 600,
+      "window_ms": 3313.403,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 1,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.009805000000000001,
+      "paint_recording_events": 877,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3305.809,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 2,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.06961,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.082405,
+      "paint_recording_events": 1296,
+      "raster_workers_cpu_ms_per_update": 0.020819999999999998,
+      "raster_workers_events": 200,
+      "window_ms": 3307.429,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "hud",
+      "round": 2,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.009055,
+      "paint_recording_events": 859,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3306.095,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 2,
+      "phase": "mutating",
+      "style_layout_cpu_ms_per_update": 0.142255,
+      "style_layout_events": 400,
+      "paint_recording_cpu_ms_per_update": 0.200715,
+      "paint_recording_events": 1677,
+      "raster_workers_cpu_ms_per_update": 0.085405,
+      "raster_workers_events": 600,
+      "window_ms": 3313.697,
+      "gpu_execution_ms": null
+    },
+    {
+      "case": "inventory",
+      "round": 2,
+      "phase": "retained",
+      "style_layout_cpu_ms_per_update": 0.0,
+      "style_layout_events": 0,
+      "paint_recording_cpu_ms_per_update": 0.009205,
+      "paint_recording_events": 847,
+      "raster_workers_cpu_ms_per_update": 0.0,
+      "raster_workers_events": 0,
+      "window_ms": 3308.255,
+      "gpu_execution_ms": null
+    }
+  ],
+  "cadence": [
+    {
+      "round": 0,
+      "engine": "native",
+      "case": "Authored HUD",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 16.981995
+    },
+    {
+      "round": 0,
+      "engine": "native",
+      "case": "Authored inventory",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.017678
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.598492462311558
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598492462311555
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.597989949748744
+    },
+    {
+      "round": 0,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598492462311555
+    },
+    {
+      "round": 1,
+      "engine": "native",
+      "case": "Authored HUD",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 16.971915
+    },
+    {
+      "round": 1,
+      "engine": "native",
+      "case": "Authored inventory",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 16.9973075
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.598994974874373
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598492462311558
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.597989949748747
+    },
+    {
+      "round": 1,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598492462311558
+    },
+    {
+      "round": 2,
+      "engine": "native",
+      "case": "Authored HUD",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 16.980994
+    },
+    {
+      "round": 2,
+      "engine": "native",
+      "case": "Authored inventory",
+      "requested_interval_ms": 16.666666666666668,
+      "observed_mean_interval_ms": 17.0076045
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.598492462311558
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "hud",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598994974874376
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "mutating",
+      "observed_mean_interval_ms": 16.59748743718593
+    },
+    {
+      "round": 2,
+      "engine": "chrome",
+      "case": "inventory",
+      "phase": "retained",
+      "observed_mean_interval_ms": 16.598994974874365
+    }
+  ],
+  "geometry": [
+    {
+      "round": 0,
+      "case": "hud",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 0,
+      "case": "hud",
+      "phase": "final",
+      "max_difference_px": 0.753662109375
+    },
+    {
+      "round": 0,
+      "case": "inventory",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 0,
+      "case": "inventory",
+      "phase": "final",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 1,
+      "case": "hud",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 1,
+      "case": "hud",
+      "phase": "final",
+      "max_difference_px": 0.753662109375
+    },
+    {
+      "round": 1,
+      "case": "inventory",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 1,
+      "case": "inventory",
+      "phase": "final",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 2,
+      "case": "hud",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 2,
+      "case": "hud",
+      "phase": "final",
+      "max_difference_px": 0.753662109375
+    },
+    {
+      "round": 2,
+      "case": "inventory",
+      "phase": "initial",
+      "max_difference_px": 0.74365234375
+    },
+    {
+      "round": 2,
+      "case": "inventory",
+      "phase": "final",
+      "max_difference_px": 0.74365234375
+    }
+  ],
+  "medians": {
+    "hud": {
+      "cascade": 0.025,
+      "boxes": 0.06,
+      "layout": 0.0,
+      "paint": 0.058,
+      "core update, total": 0.146,
+      "host draw": 0.221,
+      "host prepare": 0.056,
+      "host capture": 0.016,
+      "host prepare GPU": 0.041,
+      "host encode": 0.077,
+      "host submit": 0.088,
+      "controller + update": 0.173,
+      "complete CPU path": 0.394,
+      "frame": 0.368,
+      "idle frame": 0.193,
+      "style_layout": 0.08499999999999999,
+      "chrome": {
+        "mutating": {
+          "style_layout_cpu_ms_per_update": 0.070335,
+          "paint_recording_cpu_ms_per_update": 0.0842,
+          "raster_workers_cpu_ms_per_update": 0.020819999999999998
+        },
+        "retained": {
+          "style_layout_cpu_ms_per_update": 0.0,
+          "paint_recording_cpu_ms_per_update": 0.009365,
+          "raster_workers_cpu_ms_per_update": 0.0
+        }
+      }
+    },
+    "inventory": {
+      "cascade": 0.104,
+      "boxes": 0.176,
+      "layout": 0.0,
+      "paint": 0.255,
+      "core update, total": 0.539,
+      "host draw": 0.456,
+      "host prepare": 0.275,
+      "host capture": 0.034,
+      "host prepare GPU": 0.241,
+      "host encode": 0.088,
+      "host submit": 0.084,
+      "controller + update": 0.707,
+      "complete CPU path": 1.146,
+      "frame": 0.988,
+      "idle frame": 0.217,
+      "style_layout": 0.27999999999999997,
+      "chrome": {
+        "mutating": {
+          "style_layout_cpu_ms_per_update": 0.142255,
+          "paint_recording_cpu_ms_per_update": 0.200715,
+          "raster_workers_cpu_ms_per_update": 0.081845
+        },
+        "retained": {
+          "style_layout_cpu_ms_per_update": 0.0,
+          "paint_recording_cpu_ms_per_update": 0.009805000000000001,
+          "raster_workers_cpu_ms_per_update": 0.0
+        }
+      }
+    }
+  },
+  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\clean-chrome-comparison",
+  "scope": "CPU stage comparison, not GPU execution or presented-frame latency",
+  "excluded_flex_recheck": {
+    "rows": [
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "hud",
+        "cascade": 0.025,
+        "boxes": 0.058,
+        "layout": 0.0,
+        "paint": 0.056,
+        "core update, total": 0.141,
+        "host draw": 0.213,
+        "host prepare": 0.054,
+        "host capture": 0.015,
+        "host prepare GPU": 0.039,
+        "host encode": 0.077,
+        "host submit": 0.082,
+        "controller + update": 0.168,
+        "complete CPU path": 0.381,
+        "frame": 0.354,
+        "idle frame": 0.202,
+        "style_layout": 0.083
+      },
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "inventory",
+        "cascade": 0.109,
+        "boxes": 0.287,
+        "layout": 0.0,
+        "paint": 0.341,
+        "core update, total": 0.741,
+        "host draw": 0.436,
+        "host prepare": 0.245,
+        "host capture": 0.035,
+        "host prepare GPU": 0.21,
+        "host encode": 0.092,
+        "host submit": 0.099,
+        "controller + update": 0.923,
+        "complete CPU path": 1.359,
+        "frame": 1.177,
+        "idle frame": 0.227,
+        "style_layout": 0.39599999999999996
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "hud",
+        "cascade": 0.027,
+        "boxes": 0.06,
+        "layout": 0.0,
+        "paint": 0.062,
+        "core update, total": 0.152,
+        "host draw": 0.229,
+        "host prepare": 0.058,
+        "host capture": 0.016,
+        "host prepare GPU": 0.042,
+        "host encode": 0.081,
+        "host submit": 0.089,
+        "controller + update": 0.18,
+        "complete CPU path": 0.408,
+        "frame": 0.38,
+        "idle frame": 0.194,
+        "style_layout": 0.087
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "inventory",
+        "cascade": 0.113,
+        "boxes": 0.182,
+        "layout": 0.0,
+        "paint": 0.267,
+        "core update, total": 0.567,
+        "host draw": 0.288,
+        "host prepare": 0.118,
+        "host capture": 0.033,
+        "host prepare GPU": 0.085,
+        "host encode": 0.089,
+        "host submit": 0.082,
+        "controller + update": 0.742,
+        "complete CPU path": 1.03,
+        "frame": 0.855,
+        "idle frame": 0.226,
+        "style_layout": 0.295
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "hud",
+        "cascade": 0.026,
+        "boxes": 0.06,
+        "layout": 0.0,
+        "paint": 0.06,
+        "core update, total": 0.148,
+        "host draw": 0.22,
+        "host prepare": 0.056,
+        "host capture": 0.016,
+        "host prepare GPU": 0.04,
+        "host encode": 0.08,
+        "host submit": 0.084,
+        "controller + update": 0.176,
+        "complete CPU path": 0.396,
+        "frame": 0.368,
+        "idle frame": 0.189,
+        "style_layout": 0.086
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "inventory",
+        "cascade": 0.098,
+        "boxes": 0.159,
+        "layout": 0.0,
+        "paint": 0.246,
+        "core update, total": 0.507,
+        "host draw": 0.283,
+        "host prepare": 0.12,
+        "host capture": 0.036,
+        "host prepare GPU": 0.083,
+        "host encode": 0.086,
+        "host submit": 0.078,
+        "controller + update": 0.658,
+        "complete CPU path": 0.941,
+        "frame": 0.79,
+        "idle frame": 0.202,
+        "style_layout": 0.257
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "hud",
+        "cascade": 0.027,
+        "boxes": 0.064,
+        "layout": 0.0,
+        "paint": 0.063,
+        "core update, total": 0.157,
+        "host draw": 0.229,
+        "host prepare": 0.06,
+        "host capture": 0.018,
+        "host prepare GPU": 0.042,
+        "host encode": 0.081,
+        "host submit": 0.088,
+        "controller + update": 0.187,
+        "complete CPU path": 0.416,
+        "frame": 0.386,
+        "idle frame": 0.19,
+        "style_layout": 0.091
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "inventory",
+        "cascade": 0.111,
+        "boxes": 0.291,
+        "layout": 0.0,
+        "paint": 0.294,
+        "core update, total": 0.7,
+        "host draw": 0.295,
+        "host prepare": 0.122,
+        "host capture": 0.037,
+        "host prepare GPU": 0.086,
+        "host encode": 0.09,
+        "host submit": 0.083,
+        "controller + update": 0.872,
+        "complete CPU path": 1.167,
+        "frame": 0.995,
+        "idle frame": 0.198,
+        "style_layout": 0.40199999999999997
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "hud",
+        "cascade": 0.023,
+        "boxes": 0.054,
+        "layout": 0.0,
+        "paint": 0.053,
+        "core update, total": 0.133,
+        "host draw": 0.2,
+        "host prepare": 0.053,
+        "host capture": 0.016,
+        "host prepare GPU": 0.037,
+        "host encode": 0.071,
+        "host submit": 0.076,
+        "controller + update": 0.159,
+        "complete CPU path": 0.358,
+        "frame": 0.333,
+        "idle frame": 0.178,
+        "style_layout": 0.077
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "inventory",
+        "cascade": 0.103,
+        "boxes": 0.272,
+        "layout": 0.0,
+        "paint": 0.287,
+        "core update, total": 0.666,
+        "host draw": 0.279,
+        "host prepare": 0.116,
+        "host capture": 0.034,
+        "host prepare GPU": 0.082,
+        "host encode": 0.085,
+        "host submit": 0.079,
+        "controller + update": 0.831,
+        "complete CPU path": 1.11,
+        "frame": 0.946,
+        "idle frame": 0.201,
+        "style_layout": 0.375
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "hud",
+        "cascade": 0.025,
+        "boxes": 0.062,
+        "layout": 0.0,
+        "paint": 0.061,
+        "core update, total": 0.151,
+        "host draw": 0.218,
+        "host prepare": 0.056,
+        "host capture": 0.017,
+        "host prepare GPU": 0.039,
+        "host encode": 0.077,
+        "host submit": 0.085,
+        "controller + update": 0.18,
+        "complete CPU path": 0.399,
+        "frame": 0.369,
+        "idle frame": 0.178,
+        "style_layout": 0.087
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "inventory",
+        "cascade": 0.097,
+        "boxes": 0.162,
+        "layout": 0.0,
+        "paint": 0.249,
+        "core update, total": 0.512,
+        "host draw": 0.296,
+        "host prepare": 0.121,
+        "host capture": 0.035,
+        "host prepare GPU": 0.086,
+        "host encode": 0.092,
+        "host submit": 0.084,
+        "controller + update": 0.661,
+        "complete CPU path": 0.958,
+        "frame": 0.809,
+        "idle frame": 0.203,
+        "style_layout": 0.259
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "hud",
+        "cascade": 0.027,
+        "boxes": 0.062,
+        "layout": 0.0,
+        "paint": 0.061,
+        "core update, total": 0.152,
+        "host draw": 0.224,
+        "host prepare": 0.058,
+        "host capture": 0.018,
+        "host prepare GPU": 0.04,
+        "host encode": 0.08,
+        "host submit": 0.086,
+        "controller + update": 0.181,
+        "complete CPU path": 0.405,
+        "frame": 0.376,
+        "idle frame": 0.189,
+        "style_layout": 0.089
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "inventory",
+        "cascade": 0.103,
+        "boxes": 0.17,
+        "layout": 0.0,
+        "paint": 0.25,
+        "core update, total": 0.528,
+        "host draw": 0.293,
+        "host prepare": 0.122,
+        "host capture": 0.037,
+        "host prepare GPU": 0.085,
+        "host encode": 0.089,
+        "host submit": 0.081,
+        "controller + update": 0.689,
+        "complete CPU path": 0.981,
+        "frame": 0.821,
+        "idle frame": 0.207,
+        "style_layout": 0.273
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "hud",
+        "cascade": 0.024,
+        "boxes": 0.056,
+        "layout": 0.0,
+        "paint": 0.056,
+        "core update, total": 0.139,
+        "host draw": 0.206,
+        "host prepare": 0.055,
+        "host capture": 0.017,
+        "host prepare GPU": 0.038,
+        "host encode": 0.073,
+        "host submit": 0.078,
+        "controller + update": 0.166,
+        "complete CPU path": 0.371,
+        "frame": 0.345,
+        "idle frame": 0.183,
+        "style_layout": 0.08
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "inventory",
+        "cascade": 0.103,
+        "boxes": 0.269,
+        "layout": 0.0,
+        "paint": 0.282,
+        "core update, total": 0.658,
+        "host draw": 0.284,
+        "host prepare": 0.12,
+        "host capture": 0.036,
+        "host prepare GPU": 0.083,
+        "host encode": 0.086,
+        "host submit": 0.079,
+        "controller + update": 0.817,
+        "complete CPU path": 1.101,
+        "frame": 0.942,
+        "idle frame": 0.204,
+        "style_layout": 0.372
+      }
+    ],
+    "summary": {
+      "hud": {
+        "style_layout": {
+          "baseline": 0.0815,
+          "candidate": 0.087,
+          "paired_percent": 8.034638554216855,
+          "wins": 1
+        },
+        "paint": {
+          "baseline": 0.056,
+          "candidate": 0.061,
+          "paired_percent": 9.82142857142857,
+          "wins": 1
+        },
+        "complete CPU path": {
+          "baseline": 0.376,
+          "candidate": 0.402,
+          "paired_percent": 8.12551732920177,
+          "wins": 1
+        }
+      },
+      "inventory": {
+        "style_layout": {
+          "baseline": 0.38549999999999995,
+          "candidate": 0.266,
+          "paired_percent": -28.773118279569893,
+          "wins": 4
+        },
+        "paint": {
+          "baseline": 0.2905,
+          "candidate": 0.2495,
+          "paired_percent": -14.783474365355893,
+          "wins": 4
+        },
+        "complete CPU path": {
+          "baseline": 1.1385,
+          "candidate": 0.9695,
+          "paired_percent": -16.529794576067083,
+          "wins": 4
+        }
+      }
+    },
+    "geometry": [
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored HUD",
+        "phase": "initial",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            127.0,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            649.74365234375,
+            25.0,
+            0.0
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored HUD",
+        "phase": "final",
+        "bounds": {
+          "#stamina-fill": [
+            130.0,
+            647.74365234375,
+            49.53,
+            4.0
+          ],
+          "#stamina-value": [
+            267.0,
+            642.253662109375,
+            25.0,
+            14.97998046875
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored inventory",
+        "phase": "initial",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            525.6435546875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1151.0,
+            499.7490234375,
+            0.0,
+            10.89453125
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored inventory",
+        "phase": "final",
+        "bounds": {
+          "#detail-icon": [
+            980.0,
+            260.39453125,
+            95.0,
+            95.0
+          ],
+          "#item-0": [
+            129.0,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-1": [
+            250.16666666666669,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-10": [
+            613.6666666666667,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-11": [
+            734.8333333333334,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-2": [
+            371.33333333333337,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-3": [
+            492.5,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-4": [
+            613.6666666666667,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-5": [
+            734.8333333333334,
+            261.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-6": [
+            129.0,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-7": [
+            250.16666666666669,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-8": [
+            371.33333333333337,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-9": [
+            492.5,
+            335.25634765625,
+            114.16666666666667,
+            67.0
+          ],
+          "#item-action": [
+            904.0,
+            528.3671875,
+            247.0,
+            37.0
+          ],
+          "#item-category": [
+            904.0,
+            234.0,
+            247.0,
+            10.89453125
+          ],
+          "#item-description": [
+            904.0,
+            412.130859375,
+            247.0,
+            51.0
+          ],
+          "#item-name": [
+            904.0,
+            375.89453125,
+            247.0,
+            27.236328125
+          ],
+          "#item-quantity": [
+            1144.4822265625,
+            499.7490234375,
+            6.5177734375,
+            13.6181640625
+          ],
+          "#item-weight": [
+            1118.1580078125,
+            478.130859375,
+            32.8419921875,
+            13.6181640625
+          ]
+        }
+      }
+    ],
+    "cadence": [
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.972482
+      },
+      {
+        "mode": "baseline",
+        "round": 0,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 17.2244155
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.9717765
+      },
+      {
+        "mode": "candidate",
+        "round": 0,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.9923475
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 17.003231
+      },
+      {
+        "mode": "candidate",
+        "round": 1,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 17.002105999999998
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.992437499999998
+      },
+      {
+        "mode": "baseline",
+        "round": 1,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.996413500000003
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 17.021794
+      },
+      {
+        "mode": "baseline",
+        "round": 2,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.989082500000002
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.994857500000002
+      },
+      {
+        "mode": "candidate",
+        "round": 2,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.999686
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 16.977297
+      },
+      {
+        "mode": "candidate",
+        "round": 3,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 17.0049035
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored HUD",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 17.008146
+      },
+      {
+        "mode": "baseline",
+        "round": 3,
+        "case": "Authored inventory",
+        "requested_interval_ms": 16.666666666666668,
+        "observed_mean_interval_ms": 17.0277495
+      }
+    ],
+    "hashes": {
+      "baseline": "3a7a616f0b2b0741b003a2b17b765f8f65a4e8c56c45fa69fe9bed80ec997239",
+      "candidate": "d62b8c909448fe3a9c0dba7bd32dabf617613ec0f18716a79df08a4c15adcdeb"
+    },
+    "accepted_performance_evidence": false,
+    "reason": "Unrelated engine-6 dev_runtime.exe PID 20208 started at 2026-10-31 08:46:17.674 local, after Chrome comparison ended 08:45:45.432 but during flex pairs. Process was not stopped."
+  }
+}

@@ -509,3 +509,5 @@ The [IL2CPP qualification](docs/verification/il2cpp-qualification-20261031.md) f
 The [Agentic integration](docs/verification/agentic-integration-20261031.md) merges the audit into local Agentic main, passes eleven integration targets and three editor queue tests, and validates an immutable merged SDK with runtime actions and reloads. No push or default native SDK pin change.
 
 The [October 31 lifecycle soak](docs/verification/lifecycle-soak-20261031.md) completes 111,587 reloads over 30 minutes with post-reload interaction passing. Dedicated GPU allocation settles; private CPU memory rises 13.7 MiB and remains an open qualification issue. Both Unity runners now stop owned players to prevent background rendering from contaminating measurements.
+
+The [clean October 31 Chrome comparison](docs/verification/clean-render-comparison-20261031.md) repeats three alternating rounds with no audit renderers/builds: inventory style/layout is 0.280 ms versus Chrome 0.142 ms, paint recording 0.255 versus 0.201 ms. Sampled geometry stays within 0.754 px. A subsequent flex replay overlapped another workspace runtime and is explicitly excluded from accepted timing evidence.

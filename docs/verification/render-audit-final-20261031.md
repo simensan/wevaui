@@ -7,6 +7,8 @@ below are historical and require clean remeasurement; correctness evidence
 remains applicable. [Agentic is now integrated locally](agentic-integration-20261031.md).
 The [30-minute lifecycle soak](lifecycle-soak-20261031.md) passes interaction
 checks but shows unresolved CPU-memory growth.
+The [clean CPU comparison](clean-render-comparison-20261031.md) replaces the
+old current-build comparison and still shows an inventory gap against Chrome.
 
 The deep rendering audit and optimization work is complete. It identified and
 fixed shared-core and host costs, verified measurable improvements with real
@@ -65,18 +67,21 @@ and combined runtime check are identified in the integrated-runtime receipt.
 
 ## Remaining product work, in priority order
 
-1. Inventory style/layout and paint remain the principal CPU costs. A larger
-   structural improvement is needed to close the measured Chrome gap; recent
-   small renderer-loop experiments do not justify further speed claims.
+1. Inventory style/layout and paint remain the principal CPU costs. The clean
+   rerun measures 0.280/0.255 ms against Chrome's 0.142/0.201 ms. A structural
+   improvement is still needed; recent small renderer-loop experiments do not
+   justify further speed claims.
 2. Qualify a GPU-busy production scene on target hardware, including weaker
    devices. Current RTX 5080 synthetic scenes and native-resolution tests do
    not establish that result or high-DPI readability.
-3. Qualify cold player/shader first use, long-duration GPU memory/lifecycle
-   behavior, and target shipping configurations such as Unity IL2CPP/release
-   stripping and macOS. Short reload checks are not a long soak.
-4. Integrate the reviewed Agentic branch upstream when requested. Changes are
-   committed on `codex/weva-render-audit` in the leased `engine-9` worktree and
-   a local immutable SDK; nothing was pushed or globally retargeted.
+3. Qualify cold player/shader first use and macOS. Windows IL2CPP development
+   and high-stripping release test players now pass 7/7; production consumer
+   stripping graphs still need their own checks. The 30-minute reload soak
+   passes interactions, but its 13.7 MiB private-memory growth needs attribution.
+4. Local Agentic integration is complete at `c2288c71c`, with an explicitly
+   sourced immutable SDK and runtime check. No push or global retarget occurred.
+   The default published native pin still needs a cross-platform release update;
+   it does not automatically include the current local shared core.
 
 These remaining items prevent a universal performance or production-release
 claim. They do not erase the measured and verified improvements delivered by

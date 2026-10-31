@@ -1,5 +1,10 @@
 # Product readiness
 
+The [clean Chrome comparison](verification/clean-render-comparison-20261031.md)
+still finds an inventory CPU gap: style/layout 0.280 vs 0.142 ms, paint recording
+0.255 vs 0.201 ms. The [30-minute reload soak](verification/lifecycle-soak-20261031.md)
+passes interaction checks but leaves 13.7 MiB of CPU-memory growth unexplained.
+
 The [IL2CPP qualification follow-up](verification/il2cpp-qualification-20261031.md) fixes callback registration and passes Windows development and high-stripping non-development test players. It also found leftover audit test players: earlier timing percentages need clean remeasurement because of uncontrolled background rendering load. Correctness and pixel comparisons remain applicable.
 
 The [completed rendering audit](verification/render-audit-final-20261031.md) consolidates verified improvements, current binary/test evidence and the remaining Chrome, cold-start and hardware qualification gaps. It does not change development-preview release status.
