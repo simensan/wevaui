@@ -196,3 +196,40 @@ void test_box_tree_replace() {
         CHECK(t[b].parent == kNoBox);
     }
 }
+
+void test_box_tree_replacement_recycles_storage() {
+    BoxTree tree, replacement;
+    const auto parent=tree.create(BoxKind::Block);
+    const auto before=tree.create(BoxKind::Block);
+    const auto root=tree.create(BoxKind::Block);
+    const auto after=tree.create(BoxKind::Block);
+    tree.append_child(parent,before); tree.append_child(parent,root); tree.append_child(parent,after);
+    const auto discarded=tree.create(BoxKind::Text);
+    const auto retained=tree.create(BoxKind::Block);
+    const auto leaf=tree.create(BoxKind::Text);
+    tree.append_child(root,discarded); tree.append_child(root,retained); tree.append_child(retained,leaf);
+    tree[discarded].text=tree.own_text("discarded"); tree[discarded].width=90;
+    tree[discarded].column_sets={{1,2},{3,4}};
+    tree[leaf].text=tree.own_text("retained text");
+    const auto source=replacement.create(BoxKind::Block);
+    const auto keep=replacement.create(BoxKind::Block);
+    replacement[keep]=tree[retained];
+    replacement[keep].parent=replacement[keep].first_child=replacement[keep].last_child=kNoBox;
+    replacement[keep].retained_from=retained;
+    replacement[keep].column_sets={{5,6}};
+    replacement.append_child(source,keep);
+    tree.replace_subtree(root,replacement,source);
+    replacement.reset();
+    CHECK(links_consistent(tree,parent));
+    CHECK((forward(tree,parent)==std::vector<BoxId>{before,root,after}));
+    CHECK(links_consistent(tree,root));
+    CHECK(tree[root].first_child==retained && tree[root].last_child==retained);
+    CHECK(tree[retained].first_child==leaf && tree[retained].last_child==leaf);
+    CHECK(tree[leaf].text=="retained text");
+    CHECK(tree[retained].column_sets.size()==1 && tree[retained].column_sets[0].first==5);
+    const auto recycled=tree.create(BoxKind::AnonymousBlock);
+    CHECK(recycled==discarded);
+    CHECK(tree[recycled].contains_inlines && tree[recycled].kind==BoxKind::AnonymousBlock);
+    CHECK(tree[recycled].text.empty() && tree[recycled].width==0 && tree[recycled].column_sets.empty());
+    CHECK(tree[recycled].parent==kNoBox && tree[recycled].first_child==kNoBox);
+}

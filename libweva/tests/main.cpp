@@ -131,6 +131,7 @@ void test_box_tree();
 void test_box_tree_removal();
 void test_box_tree_replace();
 void test_box_tree_move_owns_text();
+void test_box_tree_replacement_recycles_storage();
 void test_box_builder_display();
 void test_box_builder_blockification();
 void test_anonymous_block_wrapping();
@@ -612,6 +613,7 @@ int main() {
     test_box_tree_removal();
     test_box_tree_replace();
     test_box_tree_move_owns_text();
+    test_box_tree_replacement_recycles_storage();
     test_box_builder_display();
     test_box_builder_blockification();
     test_anonymous_block_wrapping();

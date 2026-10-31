@@ -4,15 +4,18 @@ namespace weva {
 
 BoxId BoxTree::create(BoxKind kind, const Element* element, const ComputedStyle* style) {
     const BoxId id = free_boxes_.empty() ? static_cast<BoxId>(boxes_.size()) : free_boxes_.back();
-    Box b;
+    if (free_boxes_.empty()) boxes_.emplace_back();
+    else {
+        free_boxes_.pop_back();
+        boxes_[static_cast<size_t>(id)] = Box{};
+    }
+    Box& b = boxes_[static_cast<size_t>(id)];
     b.kind = kind;
     b.element = element;
     b.style = style;
     // An anonymous block wrapper exists precisely to hold inline content, so
     // the invariant is established at creation rather than by every caller.
     if (kind == BoxKind::AnonymousBlock) b.contains_inlines = true;
-    if (free_boxes_.empty()) boxes_.push_back(b);
-    else { free_boxes_.pop_back(); boxes_[static_cast<size_t>(id)] = b; }
     return id;
 }
 
@@ -56,11 +59,12 @@ void BoxTree::import_subtree(BoxId into, const BoxTree& source, BoxId from) {
     for (BoxId c : source.children(from)) {
         if (source[c].retained_from != kNoBox) {
             const BoxId child = source[c].retained_from;
-            const Box prior = (*this)[child];
+            const BoxId first = (*this)[child].first_child;
+            const BoxId last = (*this)[child].last_child;
             (*this)[child] = source[c];
             (*this)[child].retained_from = kNoBox;
-            (*this)[child].first_child = prior.first_child;
-            (*this)[child].last_child = prior.last_child;
+            (*this)[child].first_child = first;
+            (*this)[child].last_child = last;
             (*this)[child].parent = (*this)[child].prev_sibling = (*this)[child].next_sibling = kNoBox;
             append_child(into, child);
             continue;
@@ -82,17 +86,19 @@ void BoxTree::replace_subtree(BoxId root, const BoxTree& source, BoxId source_ro
         for (BoxId c : source.children(id)) self(self, c);
     };
     detach_retained(detach_retained, source_root);
-    const Box old = (*this)[root];
-    for (BoxId c = old.first_child; c != kNoBox;) {
+    const BoxId parent = (*this)[root].parent;
+    const BoxId previous = (*this)[root].prev_sibling;
+    const BoxId next_sibling = (*this)[root].next_sibling;
+    for (BoxId c = (*this)[root].first_child; c != kNoBox;) {
         const BoxId next = (*this)[c].next_sibling;
         release_subtree(c);
         c = next;
     }
     imported_text_.erase(root);
     import_subtree(root, source, source_root);
-    (*this)[root].parent = old.parent;
-    (*this)[root].prev_sibling = old.prev_sibling;
-    (*this)[root].next_sibling = old.next_sibling;
+    (*this)[root].parent = parent;
+    (*this)[root].prev_sibling = previous;
+    (*this)[root].next_sibling = next_sibling;
 }
 
 void BoxTree::append_child(BoxId parent, BoxId child) {

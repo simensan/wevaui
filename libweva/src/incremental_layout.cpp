@@ -659,7 +659,8 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
         if (covered) continue;
         bool proved = false;
         for (BoxId id = candidate; id != root && id != kNoBox; id = (*tree)[id].parent) {
-            const Box old = (*tree)[id];
+            // The live tree remains unchanged until every probe is proved.
+            const Box& old = (*tree)[id];
             if (!old.element || old.kind != BoxKind::Block || old.is_inline_block ||
                 old.parent == kNoBox) continue;
             const Box& outer = (*tree)[old.parent];
