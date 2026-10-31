@@ -46,6 +46,10 @@ experiments remain rejected; these samples do not overturn their paired results.
 Any proposed runtime change must preserve exact renders and demonstrate a
 real-font host benefit before retention.
 
+Follow-up: the [pass-local shaping-buffer experiment](shaping-scratch-20261031.md)
+reduced allocations but slowed five of six fixed-font pairs, so it was removed
+before host rollout. Do not treat fewer allocations as a measured speedup.
+
 ## Verification and scope
 
 The benchmark target builds without warnings on GCC and Clang. A real GCC

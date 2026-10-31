@@ -469,3 +469,8 @@ benchmark stack output that silently stopped at four frames. GCC and Clang
 tool builds and smokes pass. The uncapped fixed-font diagnostic attributes
 remaining paint work without claiming host latency or a new runtime speedup;
 Unity and Godot runtime code are unchanged.
+
+The [paint shaping-buffer experiment](docs/verification/shaping-scratch-20261031.md)
+is rejected: 45.2% fewer diagnostic allocations but 4.76% slower median paired
+core update, losing five of six pairs. Original source is restored; all 15 GCC
+suites pass. Neither host received the experiment.

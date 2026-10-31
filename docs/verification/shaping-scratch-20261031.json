@@ -1,0 +1,95 @@
+{
+  "rows": [
+    {
+      "mode": "baseline",
+      "round": 0,
+      "mean": 0.247184,
+      "allocations": 604
+    },
+    {
+      "mode": "candidate",
+      "round": 0,
+      "mean": 0.268277,
+      "allocations": 331
+    },
+    {
+      "mode": "candidate",
+      "round": 1,
+      "mean": 0.28356,
+      "allocations": 331
+    },
+    {
+      "mode": "baseline",
+      "round": 1,
+      "mean": 0.276405,
+      "allocations": 604
+    },
+    {
+      "mode": "baseline",
+      "round": 2,
+      "mean": 0.235508,
+      "allocations": 604
+    },
+    {
+      "mode": "candidate",
+      "round": 2,
+      "mean": 0.255865,
+      "allocations": 331
+    },
+    {
+      "mode": "candidate",
+      "round": 3,
+      "mean": 0.279209,
+      "allocations": 331
+    },
+    {
+      "mode": "baseline",
+      "round": 3,
+      "mean": 0.261104,
+      "allocations": 604
+    },
+    {
+      "mode": "baseline",
+      "round": 4,
+      "mean": 0.256265,
+      "allocations": 604
+    },
+    {
+      "mode": "candidate",
+      "round": 4,
+      "mean": 0.254915,
+      "allocations": 331
+    },
+    {
+      "mode": "candidate",
+      "round": 5,
+      "mean": 0.267537,
+      "allocations": 331
+    },
+    {
+      "mode": "baseline",
+      "round": 5,
+      "mean": 0.262382,
+      "allocations": 604
+    }
+  ],
+  "paired_percent": 4.761305727168629,
+  "wins": 1,
+  "baseline_revision": "5f2d12f8",
+  "decision": "rejected; original source restored; no host binary changed",
+  "scope": "Fixed-font core update, setters outside timing; 6 alternating pairs; 6000 updates each after 120 warmups",
+  "restored_gcc_suites": 15,
+  "restored_gcc_failures": 0,
+  "hashes": {
+    "baseline": "af759275ca085e7d9daec746b36973b05064c7a74eac56b216209c16590ce31e",
+    "candidate": "ffbfbea570aab5c6875ed0ff5c6f9d73db03d380f1a6d4ff29d41a7c7c2ee411",
+    "paint.cpp.baseline": "b27c525045d14465e33c0c14549152e3736a91fd75e8fac5d47cfe305de794e2",
+    "paint.cpp.candidate": "907c7d0ba75d0b8b2c9ba6a369e1ccf17c6697ea7c45c65443300904b0cdc1bf",
+    "paint.h.baseline": "1b1d204e7d9af1ff53581e995bf6edf8cf483debf803f46a1f85146fcc743d38",
+    "paint.h.candidate": "79f21141d57f27750b448e67585c2ae2c876d5dda51cbb70aebca2a10c341e2c",
+    "run.py": "f2a1b7e53100d1d2d9681299ac99d90f7fa3e1bbe1ae425924d83e33a8ed89ae",
+    "build.log": "3f74baacbafed0e89f6757f4e2eb27e6d72a94a121cc2cf24f927eb9fc4ee81c",
+    "restored-build.log": "12d7e2d56e0a7ffe1118f666f414f0ae21fe87997c278c9cc18f6b2697ad726c",
+    "restored-tests.log": "ff2731d25be5a2b193a71c17f4ed56930f0b12a889b5f748ab3aba39564c69cf"
+  }
+}
