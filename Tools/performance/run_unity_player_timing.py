@@ -6,8 +6,11 @@ import os
 from pathlib import Path
 import subprocess
 import statistics
+import sys
 import xml.etree.ElementTree as ET
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+from unity_player_processes import stop_owned_players
 
 def summarize_measurements(output):
     summaries = []
@@ -56,9 +59,18 @@ def main():
                '-testPlatform', 'StandaloneWindows64', '-testFilter', 'Weva.Tests.Rendering.PlayerTimingAudit',
                '-buildPlayerPath', str(output/'player'), '-testResults', str(output/'results.xml'),
                '-logFile', str(output/'build.log')]
-    result = subprocess.run(command, env=env, timeout=600,
-                            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
-    receipt = {'command': command, 'exit_code': result.returncode, 'passed': False}
+    settings_path = root / 'ProjectSettings/ProjectSettings.asset'
+    original_settings = settings_path.read_bytes()
+    try:
+        result = subprocess.run(command, env=env, timeout=600,
+                                creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
+    finally:
+        try:
+            stopped = stop_owned_players(output)
+        finally:
+            settings_path.write_bytes(original_settings)
+    receipt = {'command': command, 'exit_code': result.returncode,
+               'stopped_players': stopped, 'passed': False}
     if (output/'results.xml').exists():
         xml = ET.parse(output/'results.xml').getroot()
         receipt['tests'] = xml.attrib

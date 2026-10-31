@@ -10,6 +10,7 @@ spec = importlib.util.spec_from_file_location(
     'unity_player_runner', Path(__file__).resolve().parents[1] / 'run_unity_player_tests.py')
 runner = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(runner)
+import unity_player_processes
 
 
 class PlayerOwnershipTests(unittest.TestCase):
@@ -19,7 +20,7 @@ class PlayerOwnershipTests(unittest.TestCase):
             owned = Mock(pid=101, info={'exe': str(output / 'player' / 'game.exe')})
             neighbor = Mock(pid=102, info={'exe': str(output / 'player-other' / 'game.exe')})
             inaccessible = Mock(pid=103, info={'exe': None})
-            with patch.object(runner.psutil, 'process_iter', return_value=[owned, neighbor, inaccessible]):
+            with patch.object(unity_player_processes.psutil, 'process_iter', return_value=[owned, neighbor, inaccessible]):
                 stopped = runner.stop_owned_players(output)
             self.assertEqual([101], [row['pid'] for row in stopped])
             owned.terminate.assert_called_once()
@@ -31,7 +32,7 @@ class PlayerOwnershipTests(unittest.TestCase):
             output = Path(directory)
             owned = Mock(pid=101, info={'exe': str(output / 'player' / 'game.exe')})
             owned.wait.side_effect = [psutil.TimeoutExpired(5), 0]
-            with patch.object(runner.psutil, 'process_iter', return_value=[owned]):
+            with patch.object(unity_player_processes.psutil, 'process_iter', return_value=[owned]):
                 runner.stop_owned_players(output)
             owned.kill.assert_called_once()
             self.assertEqual(2, owned.wait.call_count)
