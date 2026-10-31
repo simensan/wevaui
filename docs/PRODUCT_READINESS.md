@@ -8,6 +8,10 @@ This is not yet an upstream Agentic integration. See the
 The [Agentic scissor follow-up](verification/agentic-scissor-dedup-20261031.md)
 reduces command-encoding CPU by roughly 4–5% in four paired survival-UI runs,
 with unchanged captures. It also remains on the unpublished audit branch.
+The [resolution audit](verification/resolution-audit-20261031.md) measures
+native 720p/1080p/4K targets on RTX 5080. Retained inventory GPU draw time
+reaches 0.034 ms at 4K; this excludes target clear, presentation and the game
+world, and does not qualify high-DPI UI scaling or lower-end hardware.
 
 Unity 2.0 adds retained `Visible`, CPU `Prepare()` and texture/mesh/material
 `PrepareRenderer()` loading controls, with 255 EditMode passes (two existing

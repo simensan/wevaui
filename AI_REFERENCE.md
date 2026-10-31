@@ -491,3 +491,9 @@ reduces repeated clip commands while preserving first-draw state ownership.
 Encoding CPU improves 5.04% HUD / 4.26% inventory in four paired runs; 84 tests
 pass with two existing ignored and captures match. It is on the unpublished
 Agentic audit branch; no shared-core or Unity/Godot change is needed.
+
+The [resolution audit](docs/verification/resolution-audit-20261031.md) measures
+nine Agentic processes at 720p/1080p/4K: 7,200 CPU updates and 3,240 separate
+retained GPU intervals. RTX 5080 inventory GPU median reaches 0.034 ms at 4K.
+This is native-pixel viewport evidence, not high-DPI UI, a busy game world,
+or lower-end qualification. Runtime source and both supported hosts are unchanged.
