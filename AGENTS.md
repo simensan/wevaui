@@ -499,3 +499,5 @@ nine Agentic processes at 720p/1080p/4K: 7,200 CPU updates and 3,240 separate
 retained GPU intervals. RTX 5080 inventory GPU median reaches 0.034 ms at 4K.
 This is native-pixel viewport evidence, not high-DPI UI, a busy game world,
 or lower-end qualification. Runtime source and both supported hosts are unchanged.
+
+The [integrated runtime verification](docs/verification/integrated-runtime-20261031.md) checks the current core and Agentic renderer in 9,000 CPU-profiled game frames; selection/use/menu actions pass. It is not a paired speedup claim.
