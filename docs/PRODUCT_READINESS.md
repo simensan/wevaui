@@ -33,7 +33,8 @@ The [flex-row allocation follow-up](verification/flex-row-allocation-20261031.md
 reduces full-inventory update/render CPU by 14.9% in four paired Unity editor
 runs and fixes padding-dependent flex shrink weights. The shared change is
 rebuilt into both hosts; the full gate, including 341 Chrome captures, passes.
-Godot performance has not been measured for this change.
+The [Godot follow-up](verification/flex-row-godot-20261031.md) measures a 10.49%
+median paired inventory-update reduction; HUD and frame-tail results are mixed.
 
 Scoped October 25 core/Agentic checks cover filtered downscaled icons and
 antialiased thin rounded borders; see the

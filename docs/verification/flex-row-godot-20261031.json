@@ -1,0 +1,1418 @@
+{
+  "summary": {
+    "background": {
+      "controller_and_update": {
+        "median_ms": {
+          "baseline": 0.001,
+          "candidate": 0.0015,
+          "paired_percent": 0.0,
+          "wins": 0
+        },
+        "p95_ms": {
+          "baseline": 0.002,
+          "candidate": 0.0025,
+          "paired_percent": 0.0,
+          "wins": 0
+        }
+      },
+      "wall": {
+        "median_ms": {
+          "baseline": 16.666,
+          "candidate": 16.666,
+          "paired_percent": 0.0,
+          "wins": 0
+        },
+        "p95_ms": {
+          "baseline": 16.7405,
+          "candidate": 16.776,
+          "paired_percent": 0.21204478357738088,
+          "wins": 1
+        }
+      },
+      "render_setup_cpu": {
+        "median_ms": {
+          "baseline": 0.007,
+          "candidate": 0.007,
+          "paired_percent": -12.698412698412698,
+          "wins": 3
+        },
+        "p95_ms": {
+          "baseline": 0.0115,
+          "candidate": 0.0115,
+          "paired_percent": -2.142857142857152,
+          "wins": 2
+        }
+      }
+    },
+    "idle_hud": {
+      "controller_and_update": {
+        "median_ms": {
+          "baseline": 0.0085,
+          "candidate": 0.009999999999999998,
+          "paired_percent": 0.0,
+          "wins": 1
+        },
+        "p95_ms": {
+          "baseline": 0.013,
+          "candidate": 0.017,
+          "paired_percent": 30.419580419580427,
+          "wins": 0
+        }
+      },
+      "wall": {
+        "median_ms": {
+          "baseline": 16.666,
+          "candidate": 16.666,
+          "paired_percent": 0.0,
+          "wins": 0
+        },
+        "p95_ms": {
+          "baseline": 16.7635,
+          "candidate": 16.825000000000003,
+          "paired_percent": 0.14887030070795948,
+          "wins": 1
+        }
+      },
+      "render_setup_cpu": {
+        "median_ms": {
+          "baseline": 0.006500000000000001,
+          "candidate": 0.0075,
+          "paired_percent": 8.333333333333337,
+          "wins": 1
+        },
+        "p95_ms": {
+          "baseline": 0.01,
+          "candidate": 0.0115,
+          "paired_percent": 16.111111111111107,
+          "wins": 1
+        }
+      }
+    },
+    "updating_hud": {
+      "controller_and_update": {
+        "median_ms": {
+          "baseline": 0.2145,
+          "candidate": 0.2175,
+          "paired_percent": 3.0290321965725564,
+          "wins": 1
+        },
+        "p95_ms": {
+          "baseline": 0.3875,
+          "candidate": 0.389,
+          "paired_percent": 3.7321428571428505,
+          "wins": 1
+        }
+      },
+      "wall": {
+        "median_ms": {
+          "baseline": 16.666,
+          "candidate": 16.666,
+          "paired_percent": 0.0,
+          "wins": 0
+        },
+        "p95_ms": {
+          "baseline": 16.7285,
+          "candidate": 16.7255,
+          "paired_percent": -0.026672460306381707,
+          "wins": 2
+        }
+      },
+      "render_setup_cpu": {
+        "median_ms": {
+          "baseline": 0.007,
+          "candidate": 0.007,
+          "paired_percent": 0.0,
+          "wins": 1
+        },
+        "p95_ms": {
+          "baseline": 0.012,
+          "candidate": 0.012,
+          "paired_percent": 3.8461538461538547,
+          "wins": 1
+        }
+      }
+    },
+    "inventory": {
+      "controller_and_update": {
+        "median_ms": {
+          "baseline": 0.009,
+          "candidate": 0.01,
+          "paired_percent": 11.111111111111116,
+          "wins": 1
+        },
+        "p95_ms": {
+          "baseline": 0.017,
+          "candidate": 0.018,
+          "paired_percent": 8.823529411764685,
+          "wins": 1
+        }
+      },
+      "wall": {
+        "median_ms": {
+          "baseline": 16.666,
+          "candidate": 16.666,
+          "paired_percent": 0.0,
+          "wins": 0
+        },
+        "p95_ms": {
+          "baseline": 16.843,
+          "candidate": 16.821,
+          "paired_percent": 0.002943036186292547,
+          "wins": 2
+        }
+      },
+      "render_setup_cpu": {
+        "median_ms": {
+          "baseline": 0.007,
+          "candidate": 0.0075,
+          "paired_percent": 7.14285714285714,
+          "wins": 1
+        },
+        "p95_ms": {
+          "baseline": 0.0115,
+          "candidate": 0.012,
+          "paired_percent": 9.090909090909093,
+          "wins": 1
+        }
+      }
+    },
+    "inventory_selection": {
+      "controller_and_update": {
+        "median_ms": {
+          "baseline": 0.977,
+          "candidate": 0.8855,
+          "paired_percent": -10.485723834538334,
+          "wins": 4
+        },
+        "p95_ms": {
+          "baseline": 2.349,
+          "candidate": 1.4705,
+          "paired_percent": -31.18500733178862,
+          "wins": 3
+        }
+      },
+      "wall": {
+        "median_ms": {
+          "baseline": 16.666,
+          "candidate": 16.666,
+          "paired_percent": 0.0,
+          "wins": 0
+        },
+        "p95_ms": {
+          "baseline": 16.741,
+          "candidate": 16.83,
+          "paired_percent": 0.531758145553074,
+          "wins": 0
+        }
+      },
+      "render_setup_cpu": {
+        "median_ms": {
+          "baseline": 0.007,
+          "candidate": 0.007,
+          "paired_percent": 0.0,
+          "wins": 1
+        },
+        "p95_ms": {
+          "baseline": 0.012,
+          "candidate": 0.0115,
+          "paired_percent": -4.166666666666669,
+          "wins": 2
+        }
+      }
+    }
+  },
+  "binary_sha256": {
+    "baseline": "c5b583d865a868e613c90384802a5778aa22889dedc846212599b369704c224f",
+    "candidate": "51b29309d0478ada193629fdb823e2d61c27b39bb900476be0a62604a471ea19"
+  },
+  "source_baseline": "bcb337f1",
+  "source_candidate": "a0943b78",
+  "runs": [
+    {
+      "mode": "baseline",
+      "round": 0,
+      "result": {
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "vulkan",
+        "engine": {
+          "build": "official",
+          "hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+          "hex": 263936,
+          "major": 4,
+          "minor": 7,
+          "patch": 0,
+          "status": "stable",
+          "string": "4.7-stable (official)",
+          "timestamp": 0
+        },
+        "frame_limit": 60,
+        "frames": 240,
+        "gpu_timing_enabled": false,
+        "method": "mobile",
+        "results": [
+          {
+            "case": "background",
+            "controller_and_update": {
+              "mean_ms": 0.00184166666666667,
+              "median_ms": 0.002,
+              "p95_ms": 0.003
+            },
+            "core_draws": 0,
+            "draw_calls_median": 3.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00932916666666665,
+              "median_ms": 0.009,
+              "p95_ms": 0.014
+            },
+            "round": 0,
+            "triangles": 0,
+            "wall": {
+              "mean_ms": 16.6660041666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.739
+            }
+          },
+          {
+            "case": "idle_hud",
+            "controller_and_update": {
+              "mean_ms": 0.0127833333333333,
+              "median_ms": 0.012,
+              "p95_ms": 0.018
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00900416666666665,
+              "median_ms": 0.008,
+              "p95_ms": 0.013
+            },
+            "round": 0,
+            "triangles": 4668,
+            "wall": {
+              "mean_ms": 16.665575,
+              "median_ms": 16.666,
+              "p95_ms": 16.763
+            }
+          },
+          {
+            "case": "updating_hud",
+            "controller_and_update": {
+              "mean_ms": 0.2656625,
+              "median_ms": 0.251,
+              "p95_ms": 0.4
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00901666666666664,
+              "median_ms": 0.009,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 4666,
+            "wall": {
+              "mean_ms": 16.6660125,
+              "median_ms": 16.666,
+              "p95_ms": 16.704
+            }
+          },
+          {
+            "case": "inventory",
+            "controller_and_update": {
+              "mean_ms": 0.0138458333333333,
+              "median_ms": 0.013,
+              "p95_ms": 0.02
+            },
+            "core_draws": 300,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00977916666666664,
+              "median_ms": 0.009,
+              "p95_ms": 0.015
+            },
+            "round": 0,
+            "triangles": 13276,
+            "wall": {
+              "mean_ms": 16.6660916666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.694
+            }
+          },
+          {
+            "case": "inventory_selection",
+            "controller_and_update": {
+              "mean_ms": 1.25814583333333,
+              "median_ms": 1.185,
+              "p95_ms": 1.842
+            },
+            "core_draws": 296,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.0111625,
+              "median_ms": 0.01,
+              "p95_ms": 0.016
+            },
+            "round": 0,
+            "triangles": 13236,
+            "wall": {
+              "mean_ms": 16.6659708333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.693
+            }
+          }
+        ],
+        "rounds": 1,
+        "schema": 1,
+        "viewport": [
+          1280,
+          720
+        ],
+        "warmup": 120
+      }
+    },
+    {
+      "mode": "candidate",
+      "round": 0,
+      "result": {
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "vulkan",
+        "engine": {
+          "build": "official",
+          "hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+          "hex": 263936,
+          "major": 4,
+          "minor": 7,
+          "patch": 0,
+          "status": "stable",
+          "string": "4.7-stable (official)",
+          "timestamp": 0
+        },
+        "frame_limit": 60,
+        "frames": 240,
+        "gpu_timing_enabled": false,
+        "method": "mobile",
+        "results": [
+          {
+            "case": "background",
+            "controller_and_update": {
+              "mean_ms": 0.001825,
+              "median_ms": 0.002,
+              "p95_ms": 0.003
+            },
+            "core_draws": 0,
+            "draw_calls_median": 3.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00881666666666664,
+              "median_ms": 0.008,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 0,
+            "wall": {
+              "mean_ms": 16.6658791666667,
+              "median_ms": 16.667,
+              "p95_ms": 16.745
+            }
+          },
+          {
+            "case": "idle_hud",
+            "controller_and_update": {
+              "mean_ms": 0.0131791666666666,
+              "median_ms": 0.011,
+              "p95_ms": 0.018
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00824166666666665,
+              "median_ms": 0.008,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 4668,
+            "wall": {
+              "mean_ms": 16.6656791666667,
+              "median_ms": 16.667,
+              "p95_ms": 16.74
+            }
+          },
+          {
+            "case": "updating_hud",
+            "controller_and_update": {
+              "mean_ms": 0.2753,
+              "median_ms": 0.259,
+              "p95_ms": 0.415
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00932083333333331,
+              "median_ms": 0.008,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 4666,
+            "wall": {
+              "mean_ms": 16.6659208333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.71
+            }
+          },
+          {
+            "case": "inventory",
+            "controller_and_update": {
+              "mean_ms": 0.0138041666666666,
+              "median_ms": 0.012,
+              "p95_ms": 0.018
+            },
+            "core_draws": 300,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00917499999999998,
+              "median_ms": 0.008,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 13276,
+            "wall": {
+              "mean_ms": 16.6659875,
+              "median_ms": 16.667,
+              "p95_ms": 16.818
+            }
+          },
+          {
+            "case": "inventory_selection",
+            "controller_and_update": {
+              "mean_ms": 0.9980125,
+              "median_ms": 0.93,
+              "p95_ms": 1.573
+            },
+            "core_draws": 296,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00926666666666665,
+              "median_ms": 0.009,
+              "p95_ms": 0.013
+            },
+            "round": 0,
+            "triangles": 13236,
+            "wall": {
+              "mean_ms": 16.6659791666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.814
+            }
+          }
+        ],
+        "rounds": 1,
+        "schema": 1,
+        "viewport": [
+          1280,
+          720
+        ],
+        "warmup": 120
+      }
+    },
+    {
+      "mode": "candidate",
+      "round": 1,
+      "result": {
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "vulkan",
+        "engine": {
+          "build": "official",
+          "hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+          "hex": 263936,
+          "major": 4,
+          "minor": 7,
+          "patch": 0,
+          "status": "stable",
+          "string": "4.7-stable (official)",
+          "timestamp": 0
+        },
+        "frame_limit": 60,
+        "frames": 240,
+        "gpu_timing_enabled": false,
+        "method": "mobile",
+        "results": [
+          {
+            "case": "background",
+            "controller_and_update": {
+              "mean_ms": 0.00192083333333333,
+              "median_ms": 0.002,
+              "p95_ms": 0.003
+            },
+            "core_draws": 0,
+            "draw_calls_median": 3.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00986249999999997,
+              "median_ms": 0.009,
+              "p95_ms": 0.014
+            },
+            "round": 0,
+            "triangles": 0,
+            "wall": {
+              "mean_ms": 16.6659708333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.704
+            }
+          },
+          {
+            "case": "idle_hud",
+            "controller_and_update": {
+              "mean_ms": 0.0136666666666666,
+              "median_ms": 0.012,
+              "p95_ms": 0.02
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.0104666666666667,
+              "median_ms": 0.009,
+              "p95_ms": 0.014
+            },
+            "round": 0,
+            "triangles": 4668,
+            "wall": {
+              "mean_ms": 16.6665458333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.797
+            }
+          },
+          {
+            "case": "updating_hud",
+            "controller_and_update": {
+              "mean_ms": 0.232404166666667,
+              "median_ms": 0.215,
+              "p95_ms": 0.363
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00765833333333331,
+              "median_ms": 0.007,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 4666,
+            "wall": {
+              "mean_ms": 16.6659916666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.708
+            }
+          },
+          {
+            "case": "inventory",
+            "controller_and_update": {
+              "mean_ms": 0.0117583333333333,
+              "median_ms": 0.01,
+              "p95_ms": 0.017
+            },
+            "core_draws": 300,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00935416666666665,
+              "median_ms": 0.007,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 13276,
+            "wall": {
+              "mean_ms": 16.6660291666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.787
+            }
+          },
+          {
+            "case": "inventory_selection",
+            "controller_and_update": {
+              "mean_ms": 0.889545833333334,
+              "median_ms": 0.871,
+              "p95_ms": 1.19
+            },
+            "core_draws": 296,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00892499999999997,
+              "median_ms": 0.007,
+              "p95_ms": 0.011
+            },
+            "round": 0,
+            "triangles": 13236,
+            "wall": {
+              "mean_ms": 16.6659833333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.832
+            }
+          }
+        ],
+        "rounds": 1,
+        "schema": 1,
+        "viewport": [
+          1280,
+          720
+        ],
+        "warmup": 120
+      }
+    },
+    {
+      "mode": "baseline",
+      "round": 1,
+      "result": {
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "vulkan",
+        "engine": {
+          "build": "official",
+          "hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+          "hex": 263936,
+          "major": 4,
+          "minor": 7,
+          "patch": 0,
+          "status": "stable",
+          "string": "4.7-stable (official)",
+          "timestamp": 0
+        },
+        "frame_limit": 60,
+        "frames": 240,
+        "gpu_timing_enabled": false,
+        "method": "mobile",
+        "results": [
+          {
+            "case": "background",
+            "controller_and_update": {
+              "mean_ms": 0.00175416666666667,
+              "median_ms": 0.001,
+              "p95_ms": 0.002
+            },
+            "core_draws": 0,
+            "draw_calls_median": 3.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00739999999999998,
+              "median_ms": 0.007,
+              "p95_ms": 0.011
+            },
+            "round": 0,
+            "triangles": 0,
+            "wall": {
+              "mean_ms": 16.6663125,
+              "median_ms": 16.666,
+              "p95_ms": 16.882
+            }
+          },
+          {
+            "case": "idle_hud",
+            "controller_and_update": {
+              "mean_ms": 0.00866249999999998,
+              "median_ms": 0.008,
+              "p95_ms": 0.013
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00702499999999999,
+              "median_ms": 0.006,
+              "p95_ms": 0.01
+            },
+            "round": 0,
+            "triangles": 4668,
+            "wall": {
+              "mean_ms": 16.6660166666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.764
+            }
+          },
+          {
+            "case": "updating_hud",
+            "controller_and_update": {
+              "mean_ms": 0.232925,
+              "median_ms": 0.209,
+              "p95_ms": 0.35
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00822916666666665,
+              "median_ms": 0.007,
+              "p95_ms": 0.009
+            },
+            "round": 0,
+            "triangles": 4666,
+            "wall": {
+              "mean_ms": 16.6659875,
+              "median_ms": 16.666,
+              "p95_ms": 16.732
+            }
+          },
+          {
+            "case": "inventory",
+            "controller_and_update": {
+              "mean_ms": 0.00942916666666665,
+              "median_ms": 0.008,
+              "p95_ms": 0.013
+            },
+            "core_draws": 300,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00742499999999998,
+              "median_ms": 0.006,
+              "p95_ms": 0.01
+            },
+            "round": 0,
+            "triangles": 13276,
+            "wall": {
+              "mean_ms": 16.6660083333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.95
+            }
+          },
+          {
+            "case": "inventory_selection",
+            "controller_and_update": {
+              "mean_ms": 1.13626666666667,
+              "median_ms": 0.983,
+              "p95_ms": 2.689
+            },
+            "core_draws": 296,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00804166666666664,
+              "median_ms": 0.007,
+              "p95_ms": 0.011
+            },
+            "round": 0,
+            "triangles": 13236,
+            "wall": {
+              "mean_ms": 16.666,
+              "median_ms": 16.666,
+              "p95_ms": 16.761
+            }
+          }
+        ],
+        "rounds": 1,
+        "schema": 1,
+        "viewport": [
+          1280,
+          720
+        ],
+        "warmup": 120
+      }
+    },
+    {
+      "mode": "baseline",
+      "round": 2,
+      "result": {
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "vulkan",
+        "engine": {
+          "build": "official",
+          "hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+          "hex": 263936,
+          "major": 4,
+          "minor": 7,
+          "patch": 0,
+          "status": "stable",
+          "string": "4.7-stable (official)",
+          "timestamp": 0
+        },
+        "frame_limit": 60,
+        "frames": 240,
+        "gpu_timing_enabled": false,
+        "method": "mobile",
+        "results": [
+          {
+            "case": "background",
+            "controller_and_update": {
+              "mean_ms": 0.00150833333333333,
+              "median_ms": 0.001,
+              "p95_ms": 0.002
+            },
+            "core_draws": 0,
+            "draw_calls_median": 3.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00876249999999998,
+              "median_ms": 0.007,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 0,
+            "wall": {
+              "mean_ms": 16.6657958333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.742
+            }
+          },
+          {
+            "case": "idle_hud",
+            "controller_and_update": {
+              "mean_ms": 0.00928333333333332,
+              "median_ms": 0.008,
+              "p95_ms": 0.011
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00692499999999998,
+              "median_ms": 0.006,
+              "p95_ms": 0.009
+            },
+            "round": 0,
+            "triangles": 4668,
+            "wall": {
+              "mean_ms": 16.6650916666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.85
+            }
+          },
+          {
+            "case": "updating_hud",
+            "controller_and_update": {
+              "mean_ms": 0.232283333333334,
+              "median_ms": 0.212,
+              "p95_ms": 0.375
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00810833333333332,
+              "median_ms": 0.007,
+              "p95_ms": 0.013
+            },
+            "round": 0,
+            "triangles": 4666,
+            "wall": {
+              "mean_ms": 16.6657958333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.804
+            }
+          },
+          {
+            "case": "inventory",
+            "controller_and_update": {
+              "mean_ms": 0.0103125,
+              "median_ms": 0.009,
+              "p95_ms": 0.017
+            },
+            "core_draws": 300,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00751666666666665,
+              "median_ms": 0.007,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 13276,
+            "wall": {
+              "mean_ms": 16.6660708333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.848
+            }
+          },
+          {
+            "case": "inventory_selection",
+            "controller_and_update": {
+              "mean_ms": 1.08080833333333,
+              "median_ms": 0.953,
+              "p95_ms": 2.079
+            },
+            "core_draws": 296,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00779583333333331,
+              "median_ms": 0.007,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 13236,
+            "wall": {
+              "mean_ms": 16.6660208333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.721
+            }
+          }
+        ],
+        "rounds": 1,
+        "schema": 1,
+        "viewport": [
+          1280,
+          720
+        ],
+        "warmup": 120
+      }
+    },
+    {
+      "mode": "candidate",
+      "round": 2,
+      "result": {
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "vulkan",
+        "engine": {
+          "build": "official",
+          "hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+          "hex": 263936,
+          "major": 4,
+          "minor": 7,
+          "patch": 0,
+          "status": "stable",
+          "string": "4.7-stable (official)",
+          "timestamp": 0
+        },
+        "frame_limit": 60,
+        "frames": 240,
+        "gpu_timing_enabled": false,
+        "method": "mobile",
+        "results": [
+          {
+            "case": "background",
+            "controller_and_update": {
+              "mean_ms": 0.00134583333333333,
+              "median_ms": 0.001,
+              "p95_ms": 0.002
+            },
+            "core_draws": 0,
+            "draw_calls_median": 3.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00765416666666664,
+              "median_ms": 0.006,
+              "p95_ms": 0.009
+            },
+            "round": 0,
+            "triangles": 0,
+            "wall": {
+              "mean_ms": 16.6658041666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.807
+            }
+          },
+          {
+            "case": "idle_hud",
+            "controller_and_update": {
+              "mean_ms": 0.0112833333333333,
+              "median_ms": 0.008,
+              "p95_ms": 0.016
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00753333333333331,
+              "median_ms": 0.007,
+              "p95_ms": 0.011
+            },
+            "round": 0,
+            "triangles": 4668,
+            "wall": {
+              "mean_ms": 16.6659791666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.867
+            }
+          },
+          {
+            "case": "updating_hud",
+            "controller_and_update": {
+              "mean_ms": 0.26855,
+              "median_ms": 0.22,
+              "p95_ms": 0.509
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00785833333333331,
+              "median_ms": 0.007,
+              "p95_ms": 0.014
+            },
+            "round": 0,
+            "triangles": 4666,
+            "wall": {
+              "mean_ms": 16.6658666666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.789
+            }
+          },
+          {
+            "case": "inventory",
+            "controller_and_update": {
+              "mean_ms": 0.0142583333333333,
+              "median_ms": 0.01,
+              "p95_ms": 0.018
+            },
+            "core_draws": 300,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00979583333333331,
+              "median_ms": 0.008,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 13276,
+            "wall": {
+              "mean_ms": 16.6659875,
+              "median_ms": 16.666,
+              "p95_ms": 16.863
+            }
+          },
+          {
+            "case": "inventory_selection",
+            "controller_and_update": {
+              "mean_ms": 1.0673375,
+              "median_ms": 0.893,
+              "p95_ms": 2.592
+            },
+            "core_draws": 296,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00799166666666664,
+              "median_ms": 0.007,
+              "p95_ms": 0.011
+            },
+            "round": 0,
+            "triangles": 13236,
+            "wall": {
+              "mean_ms": 16.666025,
+              "median_ms": 16.666,
+              "p95_ms": 16.828
+            }
+          }
+        ],
+        "rounds": 1,
+        "schema": 1,
+        "viewport": [
+          1280,
+          720
+        ],
+        "warmup": 120
+      }
+    },
+    {
+      "mode": "candidate",
+      "round": 3,
+      "result": {
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "vulkan",
+        "engine": {
+          "build": "official",
+          "hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+          "hex": 263936,
+          "major": 4,
+          "minor": 7,
+          "patch": 0,
+          "status": "stable",
+          "string": "4.7-stable (official)",
+          "timestamp": 0
+        },
+        "frame_limit": 60,
+        "frames": 240,
+        "gpu_timing_enabled": false,
+        "method": "mobile",
+        "results": [
+          {
+            "case": "background",
+            "controller_and_update": {
+              "mean_ms": 0.00146666666666667,
+              "median_ms": 0.001,
+              "p95_ms": 0.002
+            },
+            "core_draws": 0,
+            "draw_calls_median": 3.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00705833333333332,
+              "median_ms": 0.006,
+              "p95_ms": 0.011
+            },
+            "round": 0,
+            "triangles": 0,
+            "wall": {
+              "mean_ms": 16.665875,
+              "median_ms": 16.666,
+              "p95_ms": 16.857
+            }
+          },
+          {
+            "case": "idle_hud",
+            "controller_and_update": {
+              "mean_ms": 0.00953749999999997,
+              "median_ms": 0.009,
+              "p95_ms": 0.015
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00800833333333332,
+              "median_ms": 0.006,
+              "p95_ms": 0.011
+            },
+            "round": 0,
+            "triangles": 4668,
+            "wall": {
+              "mean_ms": 16.6667958333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.853
+            }
+          },
+          {
+            "case": "updating_hud",
+            "controller_and_update": {
+              "mean_ms": 0.221970833333333,
+              "median_ms": 0.209,
+              "p95_ms": 0.322
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00878749999999998,
+              "median_ms": 0.007,
+              "p95_ms": 0.01
+            },
+            "round": 0,
+            "triangles": 4666,
+            "wall": {
+              "mean_ms": 16.6657625,
+              "median_ms": 16.666,
+              "p95_ms": 16.741
+            }
+          },
+          {
+            "case": "inventory",
+            "controller_and_update": {
+              "mean_ms": 0.0174541666666666,
+              "median_ms": 0.01,
+              "p95_ms": 0.019
+            },
+            "core_draws": 300,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00917083333333332,
+              "median_ms": 0.007,
+              "p95_ms": 0.013
+            },
+            "round": 0,
+            "triangles": 13276,
+            "wall": {
+              "mean_ms": 16.6660083333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.824
+            }
+          },
+          {
+            "case": "inventory_selection",
+            "controller_and_update": {
+              "mean_ms": 0.9465,
+              "median_ms": 0.878,
+              "p95_ms": 1.368
+            },
+            "core_draws": 296,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00797916666666665,
+              "median_ms": 0.007,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 13236,
+            "wall": {
+              "mean_ms": 16.665975,
+              "median_ms": 16.666,
+              "p95_ms": 16.982
+            }
+          }
+        ],
+        "rounds": 1,
+        "schema": 1,
+        "viewport": [
+          1280,
+          720
+        ],
+        "warmup": 120
+      }
+    },
+    {
+      "mode": "baseline",
+      "round": 3,
+      "result": {
+        "adapter": "NVIDIA GeForce RTX 5080",
+        "driver": "vulkan",
+        "engine": {
+          "build": "official",
+          "hash": "5b4e0cb0fd279832bbdd69fed5354d4e5ad26f88",
+          "hex": 263936,
+          "major": 4,
+          "minor": 7,
+          "patch": 0,
+          "status": "stable",
+          "string": "4.7-stable (official)",
+          "timestamp": 0
+        },
+        "frame_limit": 60,
+        "frames": 240,
+        "gpu_timing_enabled": false,
+        "method": "mobile",
+        "results": [
+          {
+            "case": "background",
+            "controller_and_update": {
+              "mean_ms": 0.00119583333333333,
+              "median_ms": 0.001,
+              "p95_ms": 0.002
+            },
+            "core_draws": 0,
+            "draw_calls_median": 3.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00692916666666665,
+              "median_ms": 0.007,
+              "p95_ms": 0.01
+            },
+            "round": 0,
+            "triangles": 0,
+            "wall": {
+              "mean_ms": 16.6659916666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.731
+            }
+          },
+          {
+            "case": "idle_hud",
+            "controller_and_update": {
+              "mean_ms": 0.0101,
+              "median_ms": 0.009,
+              "p95_ms": 0.013
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00945833333333332,
+              "median_ms": 0.007,
+              "p95_ms": 0.01
+            },
+            "round": 0,
+            "triangles": 4668,
+            "wall": {
+              "mean_ms": 16.6660208333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.737
+            }
+          },
+          {
+            "case": "updating_hud",
+            "controller_and_update": {
+              "mean_ms": 0.2540875,
+              "median_ms": 0.217,
+              "p95_ms": 0.409
+            },
+            "core_draws": 152,
+            "draw_calls_median": 63.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00777499999999998,
+              "median_ms": 0.007,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 4666,
+            "wall": {
+              "mean_ms": 16.6660041666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.725
+            }
+          },
+          {
+            "case": "inventory",
+            "controller_and_update": {
+              "mean_ms": 0.0104166666666666,
+              "median_ms": 0.009,
+              "p95_ms": 0.017
+            },
+            "core_draws": 300,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00814583333333331,
+              "median_ms": 0.007,
+              "p95_ms": 0.011
+            },
+            "round": 0,
+            "triangles": 13276,
+            "wall": {
+              "mean_ms": 16.6660541666667,
+              "median_ms": 16.666,
+              "p95_ms": 16.838
+            }
+          },
+          {
+            "case": "inventory_selection",
+            "controller_and_update": {
+              "mean_ms": 1.1125125,
+              "median_ms": 0.971,
+              "p95_ms": 2.619
+            },
+            "core_draws": 296,
+            "draw_calls_median": 140.0,
+            "render_setup_cpu": {
+              "mean_ms": 0.00787499999999997,
+              "median_ms": 0.007,
+              "p95_ms": 0.012
+            },
+            "round": 0,
+            "triangles": 13236,
+            "wall": {
+              "mean_ms": 16.6659458333333,
+              "median_ms": 16.666,
+              "p95_ms": 16.924
+            }
+          }
+        ],
+        "rounds": 1,
+        "schema": 1,
+        "viewport": [
+          1280,
+          720
+        ],
+        "warmup": 120
+      }
+    }
+  ],
+  "screenshots_rgb_sha256": {
+    "baseline-0.json.background.png": "27f09f34d832c06c2a9d6b6b9a87337f5eaa3f6182513928913e4142f42e9ebc",
+    "candidate-0.json.background.png": "27f09f34d832c06c2a9d6b6b9a87337f5eaa3f6182513928913e4142f42e9ebc",
+    "candidate-1.json.background.png": "27f09f34d832c06c2a9d6b6b9a87337f5eaa3f6182513928913e4142f42e9ebc",
+    "baseline-1.json.background.png": "27f09f34d832c06c2a9d6b6b9a87337f5eaa3f6182513928913e4142f42e9ebc",
+    "baseline-2.json.background.png": "27f09f34d832c06c2a9d6b6b9a87337f5eaa3f6182513928913e4142f42e9ebc",
+    "candidate-2.json.background.png": "27f09f34d832c06c2a9d6b6b9a87337f5eaa3f6182513928913e4142f42e9ebc",
+    "candidate-3.json.background.png": "27f09f34d832c06c2a9d6b6b9a87337f5eaa3f6182513928913e4142f42e9ebc",
+    "baseline-3.json.background.png": "27f09f34d832c06c2a9d6b6b9a87337f5eaa3f6182513928913e4142f42e9ebc",
+    "baseline-0.json.idle_hud.png": "be16def50e1568b449895e126dc0f6254a3e6dab8eab5a20fe6fe4bf24d91475",
+    "candidate-0.json.idle_hud.png": "be16def50e1568b449895e126dc0f6254a3e6dab8eab5a20fe6fe4bf24d91475",
+    "candidate-1.json.idle_hud.png": "be16def50e1568b449895e126dc0f6254a3e6dab8eab5a20fe6fe4bf24d91475",
+    "baseline-1.json.idle_hud.png": "be16def50e1568b449895e126dc0f6254a3e6dab8eab5a20fe6fe4bf24d91475",
+    "baseline-2.json.idle_hud.png": "be16def50e1568b449895e126dc0f6254a3e6dab8eab5a20fe6fe4bf24d91475",
+    "candidate-2.json.idle_hud.png": "be16def50e1568b449895e126dc0f6254a3e6dab8eab5a20fe6fe4bf24d91475",
+    "candidate-3.json.idle_hud.png": "be16def50e1568b449895e126dc0f6254a3e6dab8eab5a20fe6fe4bf24d91475",
+    "baseline-3.json.idle_hud.png": "be16def50e1568b449895e126dc0f6254a3e6dab8eab5a20fe6fe4bf24d91475",
+    "baseline-0.json.updating_hud.png": "1565bf4cfcf08b639429a2f9c012f0ccf473f471b964967cdaf36cae1c2e705d",
+    "candidate-0.json.updating_hud.png": "1565bf4cfcf08b639429a2f9c012f0ccf473f471b964967cdaf36cae1c2e705d",
+    "candidate-1.json.updating_hud.png": "1565bf4cfcf08b639429a2f9c012f0ccf473f471b964967cdaf36cae1c2e705d",
+    "baseline-1.json.updating_hud.png": "1565bf4cfcf08b639429a2f9c012f0ccf473f471b964967cdaf36cae1c2e705d",
+    "baseline-2.json.updating_hud.png": "1565bf4cfcf08b639429a2f9c012f0ccf473f471b964967cdaf36cae1c2e705d",
+    "candidate-2.json.updating_hud.png": "1565bf4cfcf08b639429a2f9c012f0ccf473f471b964967cdaf36cae1c2e705d",
+    "candidate-3.json.updating_hud.png": "1565bf4cfcf08b639429a2f9c012f0ccf473f471b964967cdaf36cae1c2e705d",
+    "baseline-3.json.updating_hud.png": "1565bf4cfcf08b639429a2f9c012f0ccf473f471b964967cdaf36cae1c2e705d",
+    "baseline-0.json.inventory.png": "18fad85171f16b1b37e6ac1c13faaeeefb48fb150a2fd055a197ef0098d9dbec",
+    "candidate-0.json.inventory.png": "18fad85171f16b1b37e6ac1c13faaeeefb48fb150a2fd055a197ef0098d9dbec",
+    "candidate-1.json.inventory.png": "18fad85171f16b1b37e6ac1c13faaeeefb48fb150a2fd055a197ef0098d9dbec",
+    "baseline-1.json.inventory.png": "18fad85171f16b1b37e6ac1c13faaeeefb48fb150a2fd055a197ef0098d9dbec",
+    "baseline-2.json.inventory.png": "18fad85171f16b1b37e6ac1c13faaeeefb48fb150a2fd055a197ef0098d9dbec",
+    "candidate-2.json.inventory.png": "18fad85171f16b1b37e6ac1c13faaeeefb48fb150a2fd055a197ef0098d9dbec",
+    "candidate-3.json.inventory.png": "18fad85171f16b1b37e6ac1c13faaeeefb48fb150a2fd055a197ef0098d9dbec",
+    "baseline-3.json.inventory.png": "18fad85171f16b1b37e6ac1c13faaeeefb48fb150a2fd055a197ef0098d9dbec",
+    "baseline-0.json.inventory_selection.png": "a3071c6e3fe6c3b542fec19e4374e8937232efad056e26b538b3fc8e808c9b99",
+    "candidate-0.json.inventory_selection.png": "a3071c6e3fe6c3b542fec19e4374e8937232efad056e26b538b3fc8e808c9b99",
+    "candidate-1.json.inventory_selection.png": "a3071c6e3fe6c3b542fec19e4374e8937232efad056e26b538b3fc8e808c9b99",
+    "baseline-1.json.inventory_selection.png": "a3071c6e3fe6c3b542fec19e4374e8937232efad056e26b538b3fc8e808c9b99",
+    "baseline-2.json.inventory_selection.png": "a3071c6e3fe6c3b542fec19e4374e8937232efad056e26b538b3fc8e808c9b99",
+    "candidate-2.json.inventory_selection.png": "a3071c6e3fe6c3b542fec19e4374e8937232efad056e26b538b3fc8e808c9b99",
+    "candidate-3.json.inventory_selection.png": "a3071c6e3fe6c3b542fec19e4374e8937232efad056e26b538b3fc8e808c9b99",
+    "baseline-3.json.inventory_selection.png": "a3071c6e3fe6c3b542fec19e4374e8937232efad056e26b538b3fc8e808c9b99"
+  },
+  "scope": "Godot rendered 60 Hz survival UI; controller/update CPU excludes deferred draw translation and GPU execution",
+  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\flex-proof-godot-pairs",
+  "diagnostic_environment": "No WEVA environment variables inherited; GPU timestamps, core stats and draw/stage logging disabled",
+  "evidence_sha256": {
+    "runs.json": "e45a6cd7c46c18355b3f7ad703e8842e056673b91c58020a59bdfc5999785765",
+    "baseline-build.log": "295386634858d1f56a33f66d1cffed7f73143b9bf2ff9ee91a4380575ca2182d",
+    "restored-candidate-build.log": "f8651966c7e79903bf3891dc9de1d56e536da49501f4cdb2c69eab0cd274320f"
+  }
+}

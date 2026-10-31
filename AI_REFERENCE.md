@@ -452,3 +452,9 @@ gate passes 15 GCC and 17 sanitizer suites (706,127 / 706,121 main checks),
 341 Chrome captures, and the existing browser checks. Unity full EditMode
 passes 255 with two inconclusive; Windows Mono player passes 7/7; Godot font,
 Unicode, rendering, exports and scene checks pass. See the receipt for scope.
+
+The [Godot flex-row timing follow-up](docs/verification/flex-row-godot-20261031.md)
+measures four rendered 60 Hz pairs: inventory controller/update median improves
+10.49% (median paired), with 40 RGB-identical captures. HUD and frame-tail
+results are mixed; this is not a GPU or FPS speedup claim. No production code
+changes in the follow-up.

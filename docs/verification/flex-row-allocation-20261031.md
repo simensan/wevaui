@@ -112,7 +112,9 @@ are rebuilt from the same core.
 Full Unity EditMode passes 255 tests with two existing environment-gated
 inconclusive; the Windows Mono development player passes 7/7. All 16 player
 PNGs match the prior direct-vertex baseline byte for byte. These checks do
-not establish a Godot performance gain or IL2CPP/release-player coverage.
+not establish IL2CPP/release-player coverage. The subsequent
+[rendered Godot comparison](flex-row-godot-20261031.md) measures a 10.49%
+median paired inventory-update reduction, with mixed results elsewhere.
 The change is private shared-core state, with no C ABI or host API change.
 Unity and Godot receive the same logic.
 

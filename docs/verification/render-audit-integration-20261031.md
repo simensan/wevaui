@@ -24,7 +24,10 @@ paint/glyph work, snapshot capture, texture/mesh preparation, command recording
 and submission. [Native sampling](core-selection-profile-20261031.md) uses a
 synthetic font; it does not predict host text cost. [Mutation isolation](inventory-invalidation-20261031.md)
 shows that title changes can rebuild 57 draws despite unchanged visible bounds.
-A sound smaller replacement boundary remains a substantive core target.
+The subsequent [flex-row allocation proof](flex-row-allocation-20261031.md)
+now accepts the smaller details subtree for this case, rebuilding 44 draws
+instead of 57, with paired Unity and Agentic CPU improvements. This integration
+receipt predates that change; its newer gate evidence is in the follow-up.
 
 [Texture replacement tests](texture-lifetime-20261031.md) cover resize/reload,
 normal/multiply blending, replacement pixels and bounded exposed resource counts.
