@@ -1,0 +1,94 @@
+{
+  "rows": [
+    {
+      "mode": "baseline",
+      "round": 0,
+      "mean": 0.28179,
+      "allocations": 604
+    },
+    {
+      "mode": "candidate",
+      "round": 0,
+      "mean": 0.274575,
+      "allocations": 604
+    },
+    {
+      "mode": "candidate",
+      "round": 1,
+      "mean": 0.294828,
+      "allocations": 604
+    },
+    {
+      "mode": "baseline",
+      "round": 1,
+      "mean": 0.28887,
+      "allocations": 604
+    },
+    {
+      "mode": "baseline",
+      "round": 2,
+      "mean": 0.272742,
+      "allocations": 604
+    },
+    {
+      "mode": "candidate",
+      "round": 2,
+      "mean": 0.312445,
+      "allocations": 604
+    },
+    {
+      "mode": "candidate",
+      "round": 3,
+      "mean": 0.295101,
+      "allocations": 604
+    },
+    {
+      "mode": "baseline",
+      "round": 3,
+      "mean": 0.289569,
+      "allocations": 604
+    },
+    {
+      "mode": "baseline",
+      "round": 4,
+      "mean": 0.218708,
+      "allocations": 604
+    },
+    {
+      "mode": "candidate",
+      "round": 4,
+      "mean": 0.200394,
+      "allocations": 604
+    },
+    {
+      "mode": "candidate",
+      "round": 5,
+      "mean": 0.202831,
+      "allocations": 604
+    },
+    {
+      "mode": "baseline",
+      "round": 5,
+      "mean": 0.233726,
+      "allocations": 604
+    }
+  ],
+  "paired_percent": -0.3249959188070195,
+  "wins": 3,
+  "baseline_revision": "756eeb41",
+  "decision": "rejected; original source restored; no host candidate installed",
+  "geometry_checks": 176,
+  "geometry_hash": "e45be54e6504f2cd",
+  "restored_gcc_suites": 15,
+  "hashes": {
+    "baseline": "af759275ca085e7d9daec746b36973b05064c7a74eac56b216209c16590ce31e",
+    "candidate": "40dd4ec41329746eab854dc530ec6a0507f38f86112ea94ef42ee2568da68690",
+    "tessellate.cpp.baseline": "8699eae97beba14fa737694dbc87003406a15891caf329d931edb96eaf900ac0",
+    "tessellate.cpp.candidate": "1854965fddbe63c7abddbc11d7b4e00fc493a2968f3e2fb30a32c9901427ed52",
+    "run.py": "f2a1b7e53100d1d2d9681299ac99d90f7fa3e1bbe1ae425924d83e33a8ed89ae",
+    "build.log": "ca5b14b94e54332c60a350efb5065664cc47d0d0c9340b5352c2084f8cb117ec",
+    "geometry.log": "89dac621e99660c7342622eed25b57342f191bea47a9d430313146ef3dc15a73",
+    "restored-build.log": "2f4aa15c6d7546ab728e1f79555938baa12f0528b2e25f79fce1201d175b936a",
+    "restored-tests.log": "d93a71a309d4231bc7eae3bfbdb304709b987c809eb1da699c3f4506d47a3188"
+  }
+}

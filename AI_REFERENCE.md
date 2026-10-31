@@ -474,3 +474,8 @@ The [paint shaping-buffer experiment](docs/verification/shaping-scratch-20261031
 is rejected: 45.2% fewer diagnostic allocations but 4.76% slower median paired
 core update, losing five of six pairs. Original source is restored; all 15 GCC
 suites pass. Neither host received the experiment.
+
+The [outline-neighbor experiment](docs/verification/outline-neighbors-20261031.md)
+is rejected after six fixed-font pairs split three wins/three losses. Geometry
+checks stayed identical, but no useful runtime gain was established. Original
+source is restored and all 15 GCC suites pass; hosts are unchanged.
