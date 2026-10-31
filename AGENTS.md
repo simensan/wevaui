@@ -1,5 +1,10 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [runtime accounting correction](docs/verification/runtime-accounting-20261031.md)
+separates worker UI from main-thread cost. Inventory main UI is 0.533 ms mean,
+including 0.511 ms document work; 9,000 frames and 355 reloads pass. Older
+threaded `ui` values combine main/worker work; this fix claims no new speedup.
+
 The [current Agentic SDK runtime check](docs/verification/current-runtime-20261031.md)
 passes 18,000 measured frames, click/actions and 716 reloads in a 240-cube world.
 Inventory frame median improves 10.7%, but p95 is mixed; this is not GPU or

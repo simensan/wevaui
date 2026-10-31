@@ -1,7 +1,7 @@
 # Runtime tail attribution — October 31, 2026
 
 The mixed inventory p95 result does not isolate a renderer resource-upload
-regression. The slow frames in after-round 0 have higher main UI, worker UI,
+regression. The slow frames in after-round 0 have higher combined UI, worker UI,
 scene-render and render-wait intervals together. This is an association, not
 proof of system interference or any specific engine cause. The regression
 remains in the published results; no samples are removed.
@@ -16,18 +16,20 @@ wall interval in a threaded renderer.
 
 Inventory after-round 0, mean milliseconds within each group:
 
-| Group | Frame interval | Main UI | Worker UI | Scene render | Render wait |
+| Group | Frame interval | Combined UI | Worker UI | Scene render | Render wait |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Middle 5% | 1.2927 | 0.7481 | 0.1901 | 0.4112 | 0.3427 |
 | Slowest 5% | 2.1013 | 1.1119 | 0.2835 | 0.6094 | 0.4915 |
 
 After-round 1 has a different shape: middle/slowest frame intervals are
-1.2457/1.5488 ms, while main UI means are 0.7179/0.7334 and scene render means
+1.2457/1.5488 ms, while combined UI means are 0.7179/0.7334 and scene render means
 0.4005/0.3982. No single stage explains every tail. In before-round 2, the
-slowest group's frame interval averages 7.7136 ms, main UI 1.6888 and render
+slowest group's frame interval averages 7.7136 ms, combined UI 1.6888 and render
 wait 1.5456; CPU section timing alone does not account for that wall interval.
 
-Main UI remains the largest measured UI stage in all six inventory runs.
+Correction: the historical UI section includes main and worker work, so it
+cannot establish the largest main-thread stage. The follow-up instrumentation
+[separates the costs and fixes the accounting](runtime-accounting-20261031.md).
 The next optimization investigation should split its core update and snapshot
 cost in the actual threaded runtime. The earlier standalone diagnostic already
 has that split, but using its proportions as runtime evidence would be unsound.

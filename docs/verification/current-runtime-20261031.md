@@ -2,7 +2,7 @@
 
 The accepted shared-core changes now have actual Agentic runtime validation,
 using a newly published local SDK. Inventory median frame interval improves
-10.7% and mean main-thread UI CPU improves 14.9% (medians of three run
+10.7% and mean combined UI CPU improves 14.9% (medians of three run
 statistics). Tail results are mixed: the median of inventory run p95 frame
 intervals increases from 1.6818 to 1.9230 ms. This is not an across-the-board
 performance win or Chrome parity evidence.
@@ -32,7 +32,7 @@ per-run statistics and capture hashes are in the adjacent JSON receipt.
 
 Median of three per-run p95 values, milliseconds:
 
-| Mode | Frame interval before → after | Main UI CPU before → after | Worker UI CPU before → after |
+| Mode | Frame interval before → after | Combined UI CPU before → after | Worker UI CPU before → after |
 | --- | ---: | ---: | ---: |
 | Hidden UI | 0.7650 → 0.8182 | 0.0350 → 0.0424 | 0.0337 → 0.0403 |
 | Static HUD | 0.8511 → 0.8171 | 0.1139 → 0.1062 | 0.1110 → 0.1031 |
@@ -42,15 +42,17 @@ Median of three per-run p95 values, milliseconds:
 
 Inventory pair detail prevents the aggregate from hiding variability:
 
-| Round | Frame median before → after | Frame p95 before → after | Main UI mean before → after |
+| Round | Frame median before → after | Frame p95 before → after | Combined UI mean before → after |
 | --- | ---: | ---: | ---: |
 | 0 | 1.43280 → 1.29275 | 1.6818 → 1.9230 | 0.90222 → 0.77728 |
 | 1 | 1.44700 → 1.24550 | 1.6783 → 1.4417 | 0.91312 → 0.71918 |
 | 2 | 2.43625 → 1.70505 | 3.5209 → 2.3298 | 1.60025 → 1.05232 |
 
-Inventory median and mean UI cost improve in every pair, while p95 worsens in
+Inventory median and mean combined UI cost improve in every pair, while p95 worsens in
 round 0. Both versions have slower round-2 inventory profiles; the cause is
-unproven. Main/worker intervals overlap and must not be summed. Updating every
+unproven. The old `ui` field combines main and worker UI work; it is not main-thread
+CPU. It overlaps the separately reported worker interval and must not be
+summed with it. See [the accounting correction](runtime-accounting-20261031.md). Updating every
 tick is a stress workload, not human click latency. The threaded binding path
 already filters equal values, so standalone C ABI gains do not transfer directly.
 

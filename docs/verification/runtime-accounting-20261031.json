@@ -1,0 +1,1246 @@
+{
+  "agentic": "4c5cf4ecd",
+  "weva": "a7253f9f",
+  "bundle": {
+    "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
+    "key": "733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
+    "components": [
+      "cli",
+      "headless",
+      "runtime"
+    ],
+    "files": 42
+  },
+  "profiles": [
+    {
+      "round": 0,
+      "mode": 0,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.0005635000000000006,
+          "median": 0.0003,
+          "p95": 0.00039999999999999996,
+          "p99": 0.00039999999999999996,
+          "max": 0.0901,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "p99": 0.0,
+          "max": 0.0,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "p99": 0.0,
+          "max": 0.0,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.024049999999999978,
+          "median": 0.023799999999999998,
+          "p95": 0.0282,
+          "p99": 0.0468,
+          "max": 0.10790000000000001,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.0237785,
+          "median": 0.0236,
+          "p95": 0.028,
+          "p99": 0.047299999999999995,
+          "max": 0.1072,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.5250398333333336,
+        "median": 0.520450000000011,
+        "p95": 0.678100000000029,
+        "p99": 0.8109999999999786,
+        "max": 1.8739999999999952,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 0,
+      "mode": 2,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.14093333333333324,
+          "median": 0.13945000000000002,
+          "p95": 0.1795,
+          "p99": 0.20980000000000001,
+          "max": 0.2776,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.009012833333333333,
+          "median": 0.0088,
+          "p95": 0.0099,
+          "p99": 0.0157,
+          "max": 0.032799999999999996,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.13118783333333334,
+          "median": 0.1301,
+          "p95": 0.1665,
+          "p99": 0.18159999999999998,
+          "max": 0.2677,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.10136416666666663,
+          "median": 0.0979,
+          "p95": 0.1182,
+          "p99": 0.16610000000000003,
+          "max": 0.28209999999999996,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.10092383333333335,
+          "median": 0.0973,
+          "p95": 0.1184,
+          "p99": 0.1658,
+          "max": 0.2828,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.771862833333333,
+        "median": 0.762250000000023,
+        "p95": 0.9329000000000178,
+        "p99": 1.0672999999999888,
+        "max": 1.2180999999999926,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 0,
+      "mode": 4,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.0018436666666666705,
+          "median": 0.0019,
+          "p95": 0.002,
+          "p99": 0.0024,
+          "max": 0.0836,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.00013816666666666703,
+          "median": 9.999999999999999e-05,
+          "p95": 0.00019999999999999998,
+          "p99": 0.00019999999999999998,
+          "max": 0.0003,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.0012456666666666601,
+          "median": 0.0014,
+          "p95": 0.0015,
+          "p99": 0.0017000000000000001,
+          "max": 0.0194,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.09342949999999989,
+          "median": 0.0907,
+          "p95": 0.1103,
+          "p99": 0.163,
+          "max": 0.2415,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.0931361666666666,
+          "median": 0.0903,
+          "p95": 0.11019999999999999,
+          "p99": 0.1622,
+          "max": 0.242,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.6052868333333336,
+        "median": 0.5927999999999827,
+        "p95": 0.7871999999999844,
+        "p99": 0.9304000000000201,
+        "max": 1.0304000000000002,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 0,
+      "mode": 3,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.5285511666666673,
+          "median": 0.5188,
+          "p95": 0.5992999999999999,
+          "p99": 0.7248,
+          "max": 1.0774000000000001,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.02165166666666673,
+          "median": 0.0208,
+          "p95": 0.023,
+          "p99": 0.0429,
+          "max": 0.13799999999999998,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.5059850000000005,
+          "median": 0.49624999999999997,
+          "p95": 0.5749000000000001,
+          "p99": 0.7035,
+          "max": 1.0363,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.1845843333333332,
+          "median": 0.18820000000000003,
+          "p95": 0.2247,
+          "p99": 0.28090000000000004,
+          "max": 0.35390000000000005,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.18400799999999992,
+          "median": 0.18725,
+          "p95": 0.224,
+          "p99": 0.281,
+          "max": 0.3531,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 1.250194833333334,
+        "median": 1.2363500000000158,
+        "p95": 1.4687999999999874,
+        "p99": 1.6329999999999814,
+        "max": 1.9294000000001006,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 0,
+      "mode": 1,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.0020851666666666714,
+          "median": 0.0019,
+          "p95": 0.002,
+          "p99": 0.0035,
+          "max": 0.1033,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.00013566666666666707,
+          "median": 9.999999999999999e-05,
+          "p95": 0.00019999999999999998,
+          "p99": 0.00019999999999999998,
+          "max": 0.0003,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.0013004999999999946,
+          "median": 0.0013,
+          "p95": 0.0015,
+          "p99": 0.0018,
+          "max": 0.056499999999999995,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.07802866666666665,
+          "median": 0.07575,
+          "p95": 0.0941,
+          "p99": 0.1351,
+          "max": 0.2113,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.07776216666666667,
+          "median": 0.07545000000000002,
+          "p95": 0.0942,
+          "p99": 0.1358,
+          "max": 0.2108,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.5790414999999994,
+        "median": 0.5668500000000165,
+        "p95": 0.7413999999999987,
+        "p99": 0.8611000000000217,
+        "max": 0.983300000000014,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 1,
+      "mode": 1,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.001957666666666672,
+          "median": 0.0019,
+          "p95": 0.002,
+          "p99": 0.0025,
+          "max": 0.0923,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.00013866666666666704,
+          "median": 9.999999999999999e-05,
+          "p95": 0.00019999999999999998,
+          "p99": 0.00019999999999999998,
+          "max": 0.0003,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.0012066666666666608,
+          "median": 0.0013,
+          "p95": 0.0015,
+          "p99": 0.0017000000000000001,
+          "max": 0.0031999999999999997,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.07795966666666668,
+          "median": 0.07545,
+          "p95": 0.09639999999999999,
+          "p99": 0.1539,
+          "max": 0.1918,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.07770649999999998,
+          "median": 0.075,
+          "p95": 0.0962,
+          "p99": 0.1537,
+          "max": 0.1916,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.5854451666666672,
+        "median": 0.5695499999999782,
+        "p95": 0.7549000000000206,
+        "p99": 0.886799999999937,
+        "max": 0.9646999999999935,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 1,
+      "mode": 3,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.533105166666667,
+          "median": 0.5206,
+          "p95": 0.6092,
+          "p99": 0.8489,
+          "max": 1.046,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.02153600000000001,
+          "median": 0.020999999999999998,
+          "p95": 0.0235,
+          "p99": 0.032799999999999996,
+          "max": 0.061099999999999995,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.5106066666666671,
+          "median": 0.49879999999999997,
+          "p95": 0.5796,
+          "p99": 0.8271,
+          "max": 1.0233,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.18625333333333335,
+          "median": 0.19055,
+          "p95": 0.2205,
+          "p99": 0.28840000000000005,
+          "max": 0.37929999999999997,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.18572933333333316,
+          "median": 0.19024999999999997,
+          "p95": 0.2197,
+          "p99": 0.2881,
+          "max": 0.3791,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 1.2608339999999991,
+        "median": 1.2500000000000568,
+        "p95": 1.4550999999999021,
+        "p99": 1.6455999999999449,
+        "max": 1.8053999999999917,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 1,
+      "mode": 4,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.0017911666666666722,
+          "median": 0.0019,
+          "p95": 0.002,
+          "p99": 0.0022,
+          "max": 0.0921,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.00012750000000000028,
+          "median": 9.999999999999999e-05,
+          "p95": 0.00019999999999999998,
+          "p99": 0.00019999999999999998,
+          "max": 0.0003,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.0011963333333333266,
+          "median": 0.0014,
+          "p95": 0.0015,
+          "p99": 0.0015999999999999999,
+          "max": 0.0025,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.09230099999999992,
+          "median": 0.089,
+          "p95": 0.1108,
+          "p99": 0.176,
+          "max": 0.20950000000000002,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.09209799999999996,
+          "median": 0.08875,
+          "p95": 0.11069999999999999,
+          "p99": 0.1764,
+          "max": 0.21000000000000002,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.5998508333333336,
+        "median": 0.5806499999999915,
+        "p95": 0.7475000000000307,
+        "p99": 0.884900000000016,
+        "max": 5.913799999999981,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 1,
+      "mode": 2,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.14214716666666655,
+          "median": 0.1395,
+          "p95": 0.18330000000000002,
+          "p99": 0.2586,
+          "max": 0.3514,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.009033499999999977,
+          "median": 0.0088,
+          "p95": 0.0104,
+          "p99": 0.0162,
+          "max": 0.0485,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.13252050000000015,
+          "median": 0.13024999999999998,
+          "p95": 0.17129999999999998,
+          "p99": 0.2386,
+          "max": 0.3422,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.1015235,
+          "median": 0.0978,
+          "p95": 0.1154,
+          "p99": 0.1853,
+          "max": 0.22219999999999998,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.10110616666666651,
+          "median": 0.0974,
+          "p95": 0.115,
+          "p99": 0.1851,
+          "max": 0.2221,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.7730640000000002,
+        "median": 0.7596500000000077,
+        "p95": 0.9719000000000051,
+        "p99": 1.043299999999988,
+        "max": 1.60409999999996,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 1,
+      "mode": 0,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.0005428333333333336,
+          "median": 0.0003,
+          "p95": 0.00039999999999999996,
+          "p99": 0.00039999999999999996,
+          "max": 0.0887,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "p99": 0.0,
+          "max": 0.0,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "p99": 0.0,
+          "max": 0.0,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.02354033333333334,
+          "median": 0.023700000000000002,
+          "p95": 0.026600000000000002,
+          "p99": 0.031599999999999996,
+          "max": 0.0565,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.023303833333333353,
+          "median": 0.0236,
+          "p95": 0.0264,
+          "p99": 0.0314,
+          "max": 0.055600000000000004,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.5078310000000001,
+        "median": 0.5100999999999942,
+        "p95": 0.6174000000000035,
+        "p99": 0.7670999999999708,
+        "max": 0.9527000000000214,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 2,
+      "mode": 0,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.0005235000000000004,
+          "median": 0.0003,
+          "p95": 0.00039999999999999996,
+          "p99": 0.00039999999999999996,
+          "max": 0.0815,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "p99": 0.0,
+          "max": 0.0,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.0,
+          "median": 0.0,
+          "p95": 0.0,
+          "p99": 0.0,
+          "max": 0.0,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.023535,
+          "median": 0.0235,
+          "p95": 0.025900000000000003,
+          "p99": 0.0468,
+          "max": 0.13290000000000002,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.023259833333333303,
+          "median": 0.0233,
+          "p95": 0.025400000000000002,
+          "p99": 0.0468,
+          "max": 0.1332,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.5138638333333335,
+        "median": 0.5059999999999576,
+        "p95": 0.6637000000000342,
+        "p99": 0.8055999999999699,
+        "max": 2.2593999999999994,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 2,
+      "mode": 2,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.13984499999999994,
+          "median": 0.1391,
+          "p95": 0.1639,
+          "p99": 0.22599999999999998,
+          "max": 0.3042,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.00854350000000004,
+          "median": 0.0083,
+          "p95": 0.0098,
+          "p99": 0.016,
+          "max": 0.0309,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.13072066666666665,
+          "median": 0.13019999999999998,
+          "p95": 0.1537,
+          "p99": 0.2142,
+          "max": 0.2952,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.10010649999999989,
+          "median": 0.09559999999999999,
+          "p95": 0.1169,
+          "p99": 0.18480000000000002,
+          "max": 0.2248,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.0996676666666665,
+          "median": 0.09514999999999998,
+          "p95": 0.11620000000000001,
+          "p99": 0.18450000000000003,
+          "max": 0.2342,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.7639159999999996,
+        "median": 0.7516499999999979,
+        "p95": 0.9243000000000166,
+        "p99": 1.0660000000000025,
+        "max": 1.2316000000000713,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 2,
+      "mode": 4,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.0019160000000000054,
+          "median": 0.0019,
+          "p95": 0.002,
+          "p99": 0.0023,
+          "max": 0.0853,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.00013400000000000028,
+          "median": 9.999999999999999e-05,
+          "p95": 0.00019999999999999998,
+          "p99": 0.0003,
+          "max": 0.0003,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.0011896666666666616,
+          "median": 0.0013,
+          "p95": 0.0014,
+          "p99": 0.0015999999999999999,
+          "max": 0.0034000000000000002,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.09141066666666672,
+          "median": 0.088,
+          "p95": 0.1129,
+          "p99": 0.16780000000000003,
+          "max": 0.22480000000000003,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.0911266666666668,
+          "median": 0.0877,
+          "p95": 0.1128,
+          "p99": 0.1685,
+          "max": 0.22460000000000002,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.5872179999999996,
+        "median": 0.5746500000000196,
+        "p95": 0.7513999999999896,
+        "p99": 0.8732000000000539,
+        "max": 0.9936999999999614,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 2,
+      "mode": 3,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.5525153333333331,
+          "median": 0.54335,
+          "p95": 0.6223,
+          "p99": 0.7578,
+          "max": 0.9213,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.021949333333333303,
+          "median": 0.0214,
+          "p95": 0.025599999999999998,
+          "p99": 0.0305,
+          "max": 0.06949999999999999,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.5296080000000007,
+          "median": 0.5207,
+          "p95": 0.5954,
+          "p99": 0.7272,
+          "max": 0.8920999999999999,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.18614600000000006,
+          "median": 0.18575,
+          "p95": 0.2209,
+          "p99": 0.2767,
+          "max": 0.3317,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.1854826666666667,
+          "median": 0.1851,
+          "p95": 0.22,
+          "p99": 0.2762,
+          "max": 0.3311,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 1.2993019999999997,
+        "median": 1.287700000000001,
+        "p95": 1.5069999999998345,
+        "p99": 1.6710000000000207,
+        "max": 1.950300000000027,
+        "over_budget": 0
+      }
+    },
+    {
+      "round": 2,
+      "mode": 1,
+      "sections": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.002058833333333336,
+          "median": 0.0019,
+          "p95": 0.0022,
+          "p99": 0.0024,
+          "max": 0.093,
+          "over_budget": 0
+        },
+        "ui_capture": {
+          "samples": 600,
+          "mean": 0.00013816666666666705,
+          "median": 9.999999999999999e-05,
+          "p95": 0.00019999999999999998,
+          "p99": 0.00019999999999999998,
+          "max": 0.0003,
+          "over_budget": 0
+        },
+        "ui_document": {
+          "samples": 600,
+          "mean": 0.0012846666666666612,
+          "median": 0.0014,
+          "p95": 0.0015999999999999999,
+          "p99": 0.0017000000000000001,
+          "max": 0.0022,
+          "over_budget": 0
+        },
+        "ui_worker_cpu": {
+          "samples": 600,
+          "mean": 0.08438200000000004,
+          "median": 0.07875,
+          "p95": 0.1245,
+          "p99": 0.1834,
+          "max": 0.2603,
+          "over_budget": 0
+        }
+      },
+      "worker": {
+        "ui": {
+          "samples": 600,
+          "mean": 0.08395933333333337,
+          "median": 0.07830000000000001,
+          "p95": 0.1237,
+          "p99": 0.1829,
+          "max": 0.2606,
+          "over_budget": 0
+        }
+      },
+      "interval": {
+        "samples": 600,
+        "mean": 0.6247541666666667,
+        "median": 0.603699999999975,
+        "p95": 0.8285999999999945,
+        "p99": 0.9771000000000072,
+        "max": 1.7404999999999404,
+        "over_budget": 0
+      }
+    }
+  ],
+  "lifecycle": [
+    {
+      "variant": "accounting",
+      "round": 0,
+      "before": {
+        "audit_mode": 4.0,
+        "audit_selected": 8.0,
+        "audit_clicks": 0.0,
+        "audit_uses": 0.0,
+        "audit_reloads": 0.0
+      },
+      "actions": {
+        "audit_mode": 1.0,
+        "audit_selected": 1.0,
+        "audit_clicks": 1.0,
+        "audit_uses": 1.0,
+        "audit_reloads": 0.0
+      },
+      "final": {
+        "audit_mode": 4.0,
+        "audit_selected": 1.0,
+        "audit_clicks": 2.0,
+        "audit_uses": 1.0,
+        "audit_reloads": 109.0
+      },
+      "memory_before": {
+        "rss": 379764736,
+        "vms": 885964800,
+        "num_page_faults": 136613,
+        "peak_wset": 383512576,
+        "wset": 379764736,
+        "peak_paged_pool": 1505344,
+        "paged_pool": 1440216,
+        "peak_nonpaged_pool": 121220,
+        "nonpaged_pool": 54032,
+        "pagefile": 885964800,
+        "peak_pagefile": 889794560,
+        "private": 885964800
+      },
+      "memory_after": {
+        "rss": 380866560,
+        "vms": 886947840,
+        "num_page_faults": 137056,
+        "peak_wset": 383512576,
+        "wset": 380866560,
+        "peak_paged_pool": 1505344,
+        "paged_pool": 1440216,
+        "peak_nonpaged_pool": 121220,
+        "nonpaged_pool": 54168,
+        "pagefile": 886947840,
+        "peak_pagefile": 889794560,
+        "private": 886947840
+      },
+      "capture_artifacts": [
+        {
+          "kind": "image",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\71e1ea58aaef992ea256b75755b5a402f73eb49d6e5f5816e14aec6610ee6ffb\\captures\\52568-18e37499435595f4-76\\frame.png",
+          "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
+        },
+        {
+          "kind": "capture_manifest",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\71e1ea58aaef992ea256b75755b5a402f73eb49d6e5f5816e14aec6610ee6ffb\\captures\\52568-18e37499435595f4-76\\frame.json",
+          "sha256": "1d0fdf1536fd6d4b9063e548758a36e964b52941dcdf93299c23a1cc42b33cf7"
+        }
+      ],
+      "launch": {
+        "schema_version": 1,
+        "id": "71e1ea58aaef992ea256b75755b5a402f73eb49d6e5f5816e14aec6610ee6ffb",
+        "name": "accounting-0",
+        "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-runtime-project-v2",
+        "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
+        "executable": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8\\target\\fast\\dev_runtime.exe",
+        "executable_sha256": "e812b7f92eb215467ddbe64bf6c9eafdf302090b8204f0b0741c4f5f66f882aa",
+        "pid": 52568,
+        "process_birth": 134378788732550368,
+        "endpoint": "127.0.0.1:61937",
+        "started_ms": 1793405273622,
+        "run_dir": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\71e1ea58aaef992ea256b75755b5a402f73eb49d6e5f5816e14aec6610ee6ffb",
+        "capabilities": [
+          "status",
+          "stop",
+          "inspect",
+          "snapshot",
+          "events",
+          "watch",
+          "reload",
+          "scenario",
+          "scenario_initial_inputs_v1",
+          "project_command",
+          "input",
+          "rendered_simulation",
+          "capture",
+          "profile",
+          "agent_activity_v1",
+          "request_keys",
+          "request_result"
+        ],
+        "watch": false
+      }
+    },
+    {
+      "variant": "accounting",
+      "round": 1,
+      "before": {
+        "audit_mode": 4.0,
+        "audit_selected": 10.0,
+        "audit_clicks": 0.0,
+        "audit_uses": 0.0,
+        "audit_reloads": 0.0
+      },
+      "actions": {
+        "audit_mode": 1.0,
+        "audit_selected": 1.0,
+        "audit_clicks": 1.0,
+        "audit_uses": 1.0,
+        "audit_reloads": 0.0
+      },
+      "final": {
+        "audit_mode": 4.0,
+        "audit_selected": 1.0,
+        "audit_clicks": 2.0,
+        "audit_uses": 1.0,
+        "audit_reloads": 118.0
+      },
+      "memory_before": {
+        "rss": 373952512,
+        "vms": 877723648,
+        "num_page_faults": 135724,
+        "peak_wset": 380628992,
+        "wset": 373952512,
+        "peak_paged_pool": 1504032,
+        "paged_pool": 1438568,
+        "peak_nonpaged_pool": 121220,
+        "nonpaged_pool": 54032,
+        "pagefile": 877723648,
+        "peak_pagefile": 884051968,
+        "private": 877723648
+      },
+      "memory_after": {
+        "rss": 376737792,
+        "vms": 880001024,
+        "num_page_faults": 136580,
+        "peak_wset": 380628992,
+        "wset": 376737792,
+        "peak_paged_pool": 1504032,
+        "paged_pool": 1438568,
+        "peak_nonpaged_pool": 121220,
+        "nonpaged_pool": 54168,
+        "pagefile": 880001024,
+        "peak_pagefile": 884051968,
+        "private": 880001024
+      },
+      "capture_artifacts": [
+        {
+          "kind": "image",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\54a2713e20ef01328a4a3a3d23dc3aab8b60ed6eddac455c7682440b1009a508\\captures\\23688-18e3749ac93302a0-76\\frame.png",
+          "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
+        },
+        {
+          "kind": "capture_manifest",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\54a2713e20ef01328a4a3a3d23dc3aab8b60ed6eddac455c7682440b1009a508\\captures\\23688-18e3749ac93302a0-76\\frame.json",
+          "sha256": "ea184749356d0d6d8f67ff34c84e0f6ff8c1824c14c04d9d7b65bdc98956a461"
+        }
+      ],
+      "launch": {
+        "schema_version": 1,
+        "id": "54a2713e20ef01328a4a3a3d23dc3aab8b60ed6eddac455c7682440b1009a508",
+        "name": "accounting-1",
+        "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-runtime-project-v2",
+        "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
+        "executable": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8\\target\\fast\\dev_runtime.exe",
+        "executable_sha256": "e812b7f92eb215467ddbe64bf6c9eafdf302090b8204f0b0741c4f5f66f882aa",
+        "pid": 23688,
+        "process_birth": 134378788799805706,
+        "endpoint": "127.0.0.1:61638",
+        "started_ms": 1793405280345,
+        "run_dir": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\54a2713e20ef01328a4a3a3d23dc3aab8b60ed6eddac455c7682440b1009a508",
+        "capabilities": [
+          "status",
+          "stop",
+          "inspect",
+          "snapshot",
+          "events",
+          "watch",
+          "reload",
+          "scenario",
+          "scenario_initial_inputs_v1",
+          "project_command",
+          "input",
+          "rendered_simulation",
+          "capture",
+          "profile",
+          "agent_activity_v1",
+          "request_keys",
+          "request_result"
+        ],
+        "watch": false
+      }
+    },
+    {
+      "variant": "accounting",
+      "round": 2,
+      "before": {
+        "audit_mode": 4.0,
+        "audit_selected": 9.0,
+        "audit_clicks": 0.0,
+        "audit_uses": 0.0,
+        "audit_reloads": 0.0
+      },
+      "actions": {
+        "audit_mode": 1.0,
+        "audit_selected": 1.0,
+        "audit_clicks": 1.0,
+        "audit_uses": 1.0,
+        "audit_reloads": 0.0
+      },
+      "final": {
+        "audit_mode": 4.0,
+        "audit_selected": 1.0,
+        "audit_clicks": 2.0,
+        "audit_uses": 1.0,
+        "audit_reloads": 128.0
+      },
+      "memory_before": {
+        "rss": 375783424,
+        "vms": 880627712,
+        "num_page_faults": 134122,
+        "peak_wset": 379465728,
+        "wset": 375783424,
+        "peak_paged_pool": 1504032,
+        "paged_pool": 1437976,
+        "peak_nonpaged_pool": 57552,
+        "nonpaged_pool": 53896,
+        "pagefile": 880627712,
+        "peak_pagefile": 884457472,
+        "private": 880627712
+      },
+      "memory_after": {
+        "rss": 377294848,
+        "vms": 882089984,
+        "num_page_faults": 134666,
+        "peak_wset": 379465728,
+        "wset": 377294848,
+        "peak_paged_pool": 1504032,
+        "paged_pool": 1437976,
+        "peak_nonpaged_pool": 57552,
+        "nonpaged_pool": 54032,
+        "pagefile": 882089984,
+        "peak_pagefile": 884457472,
+        "private": 882089984
+      },
+      "capture_artifacts": [
+        {
+          "kind": "image",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\68d75ac0a24ebd443b3b52596792492c85beb153217df5a70a5b2c48009a4a8e\\captures\\54628-18e3749c522f8a64-76\\frame.png",
+          "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
+        },
+        {
+          "kind": "capture_manifest",
+          "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\68d75ac0a24ebd443b3b52596792492c85beb153217df5a70a5b2c48009a4a8e\\captures\\54628-18e3749c522f8a64-76\\frame.json",
+          "sha256": "6de812b73e5d5aa978ed230434a4bf0e5fbeb1e59aa9971dca2f9e060cdb3ab4"
+        }
+      ],
+      "launch": {
+        "schema_version": 1,
+        "id": "68d75ac0a24ebd443b3b52596792492c85beb153217df5a70a5b2c48009a4a8e",
+        "name": "accounting-2",
+        "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-runtime-project-v2",
+        "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
+        "executable": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8\\target\\fast\\dev_runtime.exe",
+        "executable_sha256": "e812b7f92eb215467ddbe64bf6c9eafdf302090b8204f0b0741c4f5f66f882aa",
+        "pid": 54628,
+        "process_birth": 134378788865765715,
+        "endpoint": "127.0.0.1:60403",
+        "started_ms": 1793405286938,
+        "run_dir": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\68d75ac0a24ebd443b3b52596792492c85beb153217df5a70a5b2c48009a4a8e",
+        "capabilities": [
+          "status",
+          "stop",
+          "inspect",
+          "snapshot",
+          "events",
+          "watch",
+          "reload",
+          "scenario",
+          "scenario_initial_inputs_v1",
+          "project_command",
+          "input",
+          "rendered_simulation",
+          "capture",
+          "profile",
+          "agent_activity_v1",
+          "request_keys",
+          "request_result"
+        ],
+        "watch": false
+      }
+    }
+  ],
+  "checks": "9000 frame artifacts verified; nested phases within main UI; hidden phases zero; all owned sessions stopped"
+}
