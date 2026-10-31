@@ -14,6 +14,7 @@
 #include "weva/css_properties.h"
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <memory>
 
@@ -1873,9 +1874,18 @@ IntrinsicWidths intrinsic_widths(const BoxTree& tree, BoxId id, const LayoutCont
 // one table per template variant: the variants specialize their arithmetic
 // separately, so each keeps its own answers. NaN is "not measured yet".
 struct ContributionMemo {
+    struct Table {
+        struct Entry { BoxId id; IntrinsicWidths widths; };
+        // Local replacements usually measure only a handful of block boxes.
+        // Do not initialize document-sized storage for each such scope. Dense
+        // indexing still handles larger walks without quadratic lookup cost.
+        std::array<Entry, 16> small;
+        size_t count = 0;
+        std::vector<IntrinsicWidths> dense;
+    };
     const BoxTree* tree = nullptr;
     const LayoutContext* ctx = nullptr;
-    std::vector<IntrinsicWidths> tables[3];
+    Table tables[3];
 };
 thread_local ContributionMemo* g_contribution_memo = nullptr;
 
@@ -1891,17 +1901,29 @@ IntrinsicWidths block_child_contribution(const BoxTree& tree, BoxId c, const Lay
     ContributionMemo* memo = g_contribution_memo;
     if (!memo || memo->tree != &tree || memo->ctx != ctx || !tree.valid(c))
         return block_child_contribution_uncached<Minimum, Maximum>(tree, c, ctx);
-    std::vector<IntrinsicWidths>& table = memo->tables[Minimum && Maximum ? 2 : Minimum ? 0 : 1];
-    if (table.empty()) {
-        const double unset = std::numeric_limits<double>::quiet_NaN();
-        table.assign(static_cast<size_t>(tree.size()), IntrinsicWidths{unset, unset});
+    auto& table = memo->tables[Minimum && Maximum ? 2 : Minimum ? 0 : 1];
+    if (table.dense.empty()) {
+        for (size_t i = 0; i < table.count; ++i)
+            if (table.small[i].id == c) return table.small[i].widths;
+    } else {
+        const auto& slot = table.dense[static_cast<size_t>(c)];
+        if (slot.minimum == slot.minimum) return slot; // measured: not NaN
     }
-    IntrinsicWidths& slot = table[static_cast<size_t>(c)];
-    if (slot.minimum == slot.minimum) return slot;   // measured: not NaN
     const IntrinsicWidths w = block_child_contribution_uncached<Minimum, Maximum>(tree, c, ctx);
+    // Recursive measurement may have filled or promoted the table meanwhile.
+    if (table.dense.empty() && table.count < table.small.size()) {
+        table.small[table.count++] = {c, w};
+        return w;
+    }
+    if (table.dense.empty()) {
+        const double unset = std::numeric_limits<double>::quiet_NaN();
+        table.dense.assign(static_cast<size_t>(tree.size()), IntrinsicWidths{unset, unset});
+        for (size_t i = 0; i < table.count; ++i)
+            table.dense[static_cast<size_t>(table.small[i].id)] = table.small[i].widths;
+    }
     // Unused halves stay zero, as the uncached call returns them; only the
     // marker needs to be a number.
-    table[static_cast<size_t>(c)] = w;
+    table.dense[static_cast<size_t>(c)] = w;
     return w;
 }
 

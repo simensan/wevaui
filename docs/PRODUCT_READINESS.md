@@ -1,12 +1,12 @@
 # Product readiness
 
-The [inventory update pass](verification/inventory-update-20261031.md) reduced
-paired style/layout CPU by 30% provisionally. The subsequent
-[box-copy cleanup](verification/inventory-box-copies-20261031.md) removes more
-unnecessary work; its latest batch measures 0.194 ms versus Chrome's 0.159 ms
-for style/layout, and 0.214 versus 0.203 ms for paint. Chrome parity is not
-established. Other-workspace activity remains in these requested runs; separate
-batch percentages are not a combined speedup claim.
+The [local intrinsic-memo pass](verification/inventory-intrinsic-memo-20261031.md)
+measures a further provisional 10.1% reduction in inventory style/layout CPU
+after the [box-copy cleanup](verification/inventory-box-copies-20261031.md).
+The latest batch measures 0.173 ms versus Chrome's 0.138 ms for style/layout,
+and 0.202 versus 0.196 ms for paint. Chrome parity is not established.
+Other-workspace activity remains in these requested runs; separate batch
+percentages are not a combined speedup claim.
 
 The [clean Chrome comparison](verification/clean-render-comparison-20261031.md)
 still finds an inventory CPU gap: style/layout 0.280 vs 0.142 ms, paint recording

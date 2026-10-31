@@ -76,6 +76,12 @@ can retain descendant styles unless inherited inputs change. Published images
 with equal intrinsic dimensions can swap sources through paint invalidation.
 These proofs apply to direct setters and bindings in the shared core.
 
+Intrinsic contribution memoization is scoped to an unchanged tree and layout
+context. Small walks use inline entries before promoting to dense indexing;
+indexing a local replacement therefore does not initialize a document-sized
+table. Each min/max variant remains separate, and recursive promotion preserves
+pending ancestor results. See the [allocation regression and measurements](verification/inventory-intrinsic-memo-20261031.md).
+
 ## Rounded geometry execution
 
 Default eight-segment rounded corners reuse an immutable table of the original
