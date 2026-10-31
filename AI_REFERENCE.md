@@ -639,3 +639,10 @@ removes a strong callback root that prevented abandoned bound documents from
 finalizing. The original 24-document probe now collects all documents, adapters
 and 6 MiB of model payloads. Full Unity EditMode passes 259 plus two inconclusive,
 player 7/7, and all 16 Unity captures match; core/Godot sources are unchanged.
+
+The [Godot/Agentic memory audit](docs/verification/host-memory-20261101.md)
+passes 268 standalone Godot rendered lifecycle checks and adds idle, warmup,
+endpoint-observation and FPS controls to Agentic audit tooling. Tool suites pass
+79 on Linux and 70 plus nine platform skips on Windows. The historical Agentic
+SDK still grows at 60 updates/s; native/driver allocation attribution remains
+open. No runtime sources or native binaries changed in this audit.

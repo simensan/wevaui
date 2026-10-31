@@ -1,5 +1,11 @@
 # Product readiness
 
+The [Godot/Agentic memory audit](verification/host-memory-20261101.md) passes
+268 rendered Godot lifecycle checks. The preserved Agentic SDK still shows
+process-private growth at 60 updates/s (+15.4 MiB idle, +78.2 MiB reloading over
+five minutes). Allocation ownership remains unresolved; these historical-SDK
+measurements neither qualify the current SDK nor establish a fixed leak.
+
 The [binding-lifetime fix](verification/binding-lifetime-20261031.md) removes
 a Unity callback root that prevented abandoned bound documents and models from
 being collected. Live documents keep adapters alive through managed ownership;

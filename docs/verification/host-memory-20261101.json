@@ -1,0 +1,669 @@
+{
+  "baseline_commit": "55306b800632f7432cddbcd288b84fea54a07907",
+  "sdk_key": "db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248",
+  "sdk_source_commit": "6ab7386e36d2f18fdf8c83150b2e9ea1f6e130de",
+  "source_hashes": {
+    "Tools/performance/run_agentic_runtime_audit.py": "167a4d7dcdbbced9c70945bccc3d727d1d362ff475264585c3e045463e6062f8",
+    "Tools/performance/create_agentic_audit_project.py": "6e45547e0fcfd4790f693bf10f5c78c447e0660bf26b232475622e31736e2784",
+    "Tools/tests/test_agentic_lifecycle.py": "eda6632bb584a4ccce3d958d8137b4d0ad54bcb780096e6fc6ec94b65be48dde",
+    "hosts/godot/project/memory_lifetime_tests.gd": "a1810e779af863d0d387dfd8182328330e368e01c7348076a0f2688514aa526b"
+  },
+  "agentic": {
+    "agentic-idle": {
+      "seconds": 304.69661070001894,
+      "samples": 61,
+      "sampled_runtime_snapshots": 61,
+      "start_private_mib": 848.078125,
+      "end_private_mib": 852.05859375,
+      "delta_private_mib": 3.98046875,
+      "after_120_seconds_private_range_mib": [
+        850.9765625,
+        852.05859375
+      ],
+      "reloads": 0.0,
+      "session": "29f3af66f726b37b837c7382b7959ce82938edd950f512b9298eb5c92631eaa4",
+      "runtime_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b"
+    },
+    "agentic-reload": {
+      "seconds": 304.6809415999742,
+      "samples": 61,
+      "sampled_runtime_snapshots": 61,
+      "start_private_mib": 834.9765625,
+      "end_private_mib": 845.8359375,
+      "delta_private_mib": 10.859375,
+      "after_120_seconds_private_range_mib": [
+        843.53125,
+        845.8359375
+      ],
+      "reloads": 22929.0,
+      "session": "763303a70405565e1d869ae1fae384cabc636d2364ce8e6a75b1d16f7523091f",
+      "runtime_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b"
+    },
+    "agentic-process-only": {
+      "seconds": 300.3600245999987,
+      "samples": 61,
+      "sampled_runtime_snapshots": 1,
+      "start_private_mib": 850.15234375,
+      "end_private_mib": 846.2734375,
+      "delta_private_mib": -3.87890625,
+      "after_120_seconds_private_range_mib": [
+        846.15625,
+        846.2734375
+      ],
+      "reloads": 0.0,
+      "session": "786f91d9b0303f416724d58e6e39cdb672b95b52a7f0a3d33daed75b72c259e6",
+      "runtime_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b"
+    },
+    "agentic-process-only-reload": {
+      "seconds": 300.2055180000025,
+      "samples": 61,
+      "sampled_runtime_snapshots": 1,
+      "start_private_mib": 847.8125,
+      "end_private_mib": 913.9921875,
+      "delta_private_mib": 66.1796875,
+      "after_120_seconds_private_range_mib": [
+        843.71875,
+        913.9921875
+      ],
+      "reloads": 22996.0,
+      "session": "6e2c319f40810206d2bc805e744841aef4f3e76dd620c56439067dd114c47984",
+      "runtime_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b"
+    },
+    "capped-agentic-idle": {
+      "seconds": 303.9003464000125,
+      "samples": 61,
+      "sampled_runtime_snapshots": 1,
+      "start_private_mib": 839.1328125,
+      "end_private_mib": 854.515625,
+      "delta_private_mib": 15.3828125,
+      "after_120_seconds_private_range_mib": [
+        831.06640625,
+        854.515625
+      ],
+      "reloads": 0.0,
+      "session": "ff52b54935d698f599b2b2219d6f43c0bdd052ee2efce8eef0786a188c87b961",
+      "runtime_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b",
+      "observed_tick_rate": 59.99664105680417
+    },
+    "capped-agentic-reload": {
+      "seconds": 303.9075464999769,
+      "samples": 61,
+      "sampled_runtime_snapshots": 1,
+      "start_private_mib": 841.3671875,
+      "end_private_mib": 919.56640625,
+      "delta_private_mib": 78.19921875,
+      "after_120_seconds_private_range_mib": [
+        839.5,
+        919.56640625
+      ],
+      "reloads": 2005.0,
+      "session": "94a15cbcd5d6516039937cabfeacf6c296beac0e34c194f60f933859078d891e",
+      "runtime_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b",
+      "observed_tick_rate": 59.99851010610356
+    }
+  },
+  "godot": {
+    "idle": {
+      "checks": 67,
+      "baseline": {
+        "buffer_bytes": 6426892.0,
+        "iteration": 80,
+        "mode": "idle",
+        "nodes": 3.0,
+        "objects": 1511.0,
+        "resources": 2.0,
+        "static_bytes": 123697548.0,
+        "texture_bytes": 11533195.0
+      },
+      "final": {
+        "buffer_bytes": 6426892.0,
+        "iteration": 400,
+        "mode": "idle",
+        "nodes": 3.0,
+        "objects": 1511.0,
+        "resources": 2.0,
+        "static_bytes": 123699112.0,
+        "texture_bytes": 11533195.0
+      },
+      "static_delta_bytes": 1564.0,
+      "rss_samples": [
+        {
+          "seconds": 0.00012463499999881833,
+          "rss": 0
+        },
+        {
+          "seconds": 0.5004157669999998,
+          "rss": 72310784
+        },
+        {
+          "seconds": 1.0007565689999964,
+          "rss": 235229184
+        },
+        {
+          "seconds": 1.5010955710000005,
+          "rss": 371281920
+        },
+        {
+          "seconds": 2.0015474049999966,
+          "rss": 371281920
+        },
+        {
+          "seconds": 2.5020279979999955,
+          "rss": 371281920
+        },
+        {
+          "seconds": 3.0023447049999987,
+          "rss": 371281920
+        },
+        {
+          "seconds": 3.502768463999999,
+          "rss": 371281920
+        },
+        {
+          "seconds": 4.003085878,
+          "rss": 371281920
+        }
+      ],
+      "render_sha256": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d"
+    },
+    "reload": {
+      "checks": 67,
+      "baseline": {
+        "buffer_bytes": 6426892.0,
+        "iteration": 80,
+        "mode": "reload",
+        "nodes": 3.0,
+        "objects": 1511.0,
+        "resources": 2.0,
+        "static_bytes": 123697564.0,
+        "texture_bytes": 11533195.0
+      },
+      "final": {
+        "buffer_bytes": 6426892.0,
+        "iteration": 400,
+        "mode": "reload",
+        "nodes": 3.0,
+        "objects": 1511.0,
+        "resources": 2.0,
+        "static_bytes": 123699136.0,
+        "texture_bytes": 11533195.0
+      },
+      "static_delta_bytes": 1572.0,
+      "rss_samples": [
+        {
+          "seconds": 9.494799999743009e-05,
+          "rss": 0
+        },
+        {
+          "seconds": 0.500451757999997,
+          "rss": 374575104
+        },
+        {
+          "seconds": 1.0007231319999974,
+          "rss": 374575104
+        },
+        {
+          "seconds": 1.5010982060000018,
+          "rss": 374575104
+        },
+        {
+          "seconds": 2.0014262170000023,
+          "rss": 374575104
+        },
+        {
+          "seconds": 2.5017387059999976,
+          "rss": 374575104
+        },
+        {
+          "seconds": 3.002013257999998,
+          "rss": 374575104
+        }
+      ],
+      "render_sha256": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d"
+    },
+    "cycle": {
+      "checks": 67,
+      "baseline": {
+        "buffer_bytes": 6410632.0,
+        "iteration": 80,
+        "mode": "cycle",
+        "nodes": 2.0,
+        "objects": 1506.0,
+        "resources": 2.0,
+        "static_bytes": 123667700.0,
+        "texture_bytes": 9929763.0
+      },
+      "final": {
+        "buffer_bytes": 6410632.0,
+        "iteration": 400,
+        "mode": "cycle",
+        "nodes": 2.0,
+        "objects": 1506.0,
+        "resources": 2.0,
+        "static_bytes": 123680784.0,
+        "texture_bytes": 9929763.0
+      },
+      "static_delta_bytes": 13084.0,
+      "rss_samples": [
+        {
+          "seconds": 8.838700000524113e-05,
+          "rss": 131072
+        },
+        {
+          "seconds": 0.5003707970000022,
+          "rss": 374726656
+        },
+        {
+          "seconds": 1.0006410460000055,
+          "rss": 374726656
+        },
+        {
+          "seconds": 1.5012954399999998,
+          "rss": 374870016
+        },
+        {
+          "seconds": 2.0015697290000034,
+          "rss": 374870016
+        },
+        {
+          "seconds": 2.501868587000004,
+          "rss": 374935552
+        },
+        {
+          "seconds": 3.0022278210000053,
+          "rss": 375046144
+        },
+        {
+          "seconds": 3.5025368570000026,
+          "rss": 257290240
+        }
+      ],
+      "render_sha256": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d"
+    },
+    "theme": {
+      "checks": 67,
+      "baseline": {
+        "buffer_bytes": 6426892.0,
+        "iteration": 80,
+        "mode": "theme",
+        "nodes": 3.0,
+        "objects": 1515.0,
+        "resources": 2.0,
+        "static_bytes": 124001804.0,
+        "texture_bytes": 11533195.0
+      },
+      "final": {
+        "buffer_bytes": 6426892.0,
+        "iteration": 400,
+        "mode": "theme",
+        "nodes": 3.0,
+        "objects": 1515.0,
+        "resources": 2.0,
+        "static_bytes": 124003368.0,
+        "texture_bytes": 11533195.0
+      },
+      "static_delta_bytes": 1564.0,
+      "rss_samples": [
+        {
+          "seconds": 0.00012081899999571988,
+          "rss": 131072
+        },
+        {
+          "seconds": 0.5004110849999961,
+          "rss": 378470400
+        },
+        {
+          "seconds": 1.0007040630000006,
+          "rss": 377511936
+        },
+        {
+          "seconds": 1.5009766350000007,
+          "rss": 377688064
+        },
+        {
+          "seconds": 2.001253632000001,
+          "rss": 377872384
+        },
+        {
+          "seconds": 2.5015543279999974,
+          "rss": 377880576
+        },
+        {
+          "seconds": 3.001837131000002,
+          "rss": 377880576
+        }
+      ],
+      "render_sha256": "bd31e645819f44a1253f10faec5c8bf11bdb78410260269cbeb353082107db74"
+    }
+  },
+  "script": {
+    "idle": [
+      {
+        "frame": 19999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 320000,
+        "total_free": 320000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      },
+      {
+        "frame": 39999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 640000,
+        "total_free": 640000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      },
+      {
+        "frame": 59999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 960000,
+        "total_free": 960000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      },
+      {
+        "frame": 79999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 1280000,
+        "total_free": 1280000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      },
+      {
+        "frame": 99999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 1600000,
+        "total_free": 1600000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      },
+      {
+        "frame": 119999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 1920000,
+        "total_free": 1920000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      }
+    ],
+    "reload": [
+      {
+        "frame": 19999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 320000,
+        "total_free": 320000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      },
+      {
+        "frame": 39999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 640000,
+        "total_free": 640000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      },
+      {
+        "frame": 59999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 960000,
+        "total_free": 960000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      },
+      {
+        "frame": 79999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 1280000,
+        "total_free": 1280000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      },
+      {
+        "frame": 99999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 1600000,
+        "total_free": 1600000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      },
+      {
+        "frame": 119999,
+        "live_count": 0,
+        "live_bytes": 0,
+        "total_alloc": 1920000,
+        "total_free": 1920000,
+        "heap_bytes": 1048576,
+        "entities": 1,
+        "cworld_bodies": 0,
+        "cworld_shapes": 0,
+        "cworld_characters": 0,
+        "host_total": 22,
+        "entity_lookup": 16,
+        "global_state": 6
+      }
+    ]
+  },
+  "evidence_hashes": {
+    ".utmp\\host-memory-20261031\\agentic-idle.log": "84fe8fd1a59ee01318b4da5dc21820b940e7c24d1d67afb756d942715c48f5c0",
+    ".utmp\\host-memory-20261031\\agentic-process-only-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
+    ".utmp\\host-memory-20261031\\agentic-process-only.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
+    ".utmp\\host-memory-20261031\\agentic-reload.log": "84fe8fd1a59ee01318b4da5dc21820b940e7c24d1d67afb756d942715c48f5c0",
+    ".utmp\\host-memory-20261031\\capped-agentic-idle.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
+    ".utmp\\host-memory-20261031\\capped-agentic-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-idle.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
+    ".utmp\\host-memory-20261031\\first-godot-cycle.log": "88639debca502bd0b630ee50ad9c782195ddb7250db728775afe74e2f8c306aa",
+    ".utmp\\host-memory-20261031\\first-godot-idle.log": "eb5b0d62c0105e135a2958f5c3aad863e9827adb0f419315e31565b68cce86fb",
+    ".utmp\\host-memory-20261031\\first-godot-reload.log": "0685a36584896fd044d154c069d68df5801e9762623fe6bf8a5b3e21278c2bd3",
+    ".utmp\\host-memory-20261031\\godot-cycle.log": "9cb0a9380f0bedc2d080236011ef65029b3bbe0184416c3823ef2654a1431879",
+    ".utmp\\host-memory-20261031\\godot-idle.log": "2391ed9b86cad18950782ba569befa924125e37c2b1e4bea4613e6afbe4a594a",
+    ".utmp\\host-memory-20261031\\godot-reload.log": "9bf9876300636f6d76b249d6bee20d3ce6878a334627ce2742efde70823ee4c1",
+    ".utmp\\host-memory-20261031\\godot-theme.log": "1691c13d35bc08783960a0d75fc3e402b2e6e158fc684d9e32e414ab2cae0e99",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-cycle.log": "9ef261d535a0148b70364d722a58cdb7618f905db82053908345f9f6d20a5516",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-idle.log": "9f82548d72b4f990a5bdf76d15e8f0bb34a6792bd63bd6ff3178d173652eeeaa",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-reload.log": "cd41cdbdc6c730fe6bff34b59fcf3403d9b35827f055e88cbbf979ffbbcc0600",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-theme.log": "24bf98a908a01e4756ba27827600a6a75ec54255e50bec7a743819c4247fb73f",
+    ".utmp\\host-memory-20261031\\previous-godot-cycle.log": "f691c3060bb454b527370380311d31c9bfc196c23f6c1b1d92468f56f41bb9d9",
+    ".utmp\\host-memory-20261031\\previous-godot-idle.log": "90e0683e03e3f2f9423cf6776a1006e64d13b4a6471fef1d8f9355a62e6c5bbb",
+    ".utmp\\host-memory-20261031\\previous-godot-reload.log": "4affb8d1f1131bd948a62c2eeca2a2495a00cd16fcf95d1854136762555dd7e5",
+    ".utmp\\host-memory-20261031\\previous-godot-theme.log": "24bf98a908a01e4756ba27827600a6a75ec54255e50bec7a743819c4247fb73f",
+    ".utmp\\host-memory-20261031\\script-idle-untraced.log": "13325a83f6a8b3f0bde5d6392bc5f172bf32c968163550c963221f9bfd5b2b65",
+    ".utmp\\host-memory-20261031\\script-idle.log": "aa2a7d4444834ec49a25fc43baf6230a4556f313a050d446d81146f49417d172",
+    ".utmp\\host-memory-20261031\\script-reload-untraced.log": "a012019d6b090c76e64e5ea02ec50b9a62bcb061caafe893646141e5a37c433e",
+    ".utmp\\host-memory-20261031\\script-reload.log": "a2b73df90a609702a9c16f2f6f2c1330c7b8ffa0ccfd009697905fb3322e1cfd",
+    ".utmp\\host-memory-20261031\\smoke-agentic-idle.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
+    ".utmp\\host-memory-20261031\\smoke-agentic-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
+    ".utmp\\host-memory-20261031\\tools-linux-final.log": "0de482375d862a4494fd6d888881e325d2b4f34ef68e0d3c9adbf941da323f83",
+    ".utmp\\host-memory-20261031\\tools-linux.log": "5b9efd0c6b66b2a118344859a7e6377a41d85f4bc9a9c8423f2d214aefe8cf1e",
+    ".utmp\\host-memory-20261031\\tools-windows-final.log": "9c1f08822fe04726367084140367aab424f979a482f7979aca392f28177bc994",
+    ".utmp\\host-memory-20261031\\tools-windows.log": "b43d2c7a81998b9da029f5ab71b5dcc01de03273cfb93b22e972ff0ea26c7c33",
+    ".utmp\\host-memory-20261031\\add-control.py": "14548ebf003f0c9da722d09e801e5ebb6c40213c0f5bc041f652b56dd6181083",
+    ".utmp\\host-memory-20261031\\add-endpoints.py": "80ab39d1642f14abfe548542567c6153d567c87864b339f8dcaeb079d3ce40f5",
+    ".utmp\\host-memory-20261031\\add-pacing.py": "323b02a11f07a1eeac60041c45cc9405ca75af2cb08fbfa6217e512c43342c3d",
+    ".utmp\\host-memory-20261031\\add-theme.py": "1e86a28bde28339de8e37368be6022669f8fb1a0f4904a1bc308c1db3ac6e24c",
+    ".utmp\\host-memory-20261031\\analyze.py": "8376a0666bf6d51f3b298bc7e5b0df9e69d4cdc057ab23a36464f9ec06d0f2fd",
+    ".utmp\\host-memory-20261031\\capped-agentic.py": "d99002b6769cc51dccf896f12c1cfbeadce2cb0e3b632e21f9c49c15dc95d2a0",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic.py": "001a448d31c01f3d1b0f1710880d893a946488a12212fc64f79519f4d58e2e7e",
+    ".utmp\\host-memory-20261031\\feedback.py": "71edefe36c8b60663f7454dcd72309b8b36f422cd52c20f910f9cf46afafae43",
+    ".utmp\\host-memory-20261031\\final-analysis.py": "7ffcbcf1c3e22eca750cb33d66fb9e7c66203e02082b634b2266f873e1354255",
+    ".utmp\\host-memory-20261031\\final-godot.py": "c8886941526bbc4279291aa3b6053568e632f75719678c156961b8be365e24b6",
+    ".utmp\\host-memory-20261031\\fix-endpoint-test.py": "8833797de768dd6821d5b72e9c56c3e3552b48575fb3321087cc4b91fdb07cf1",
+    ".utmp\\host-memory-20261031\\fix-godot-runner.py": "814c65e5bc5873611e1363e7de3bfbb3883be8ad02f4382708ce8aeeff139cf9",
+    ".utmp\\host-memory-20261031\\inspect-capped.py": "e56f1657886b46e0201a70ebcbdbb2a96b20344e62e32fc11276cc6595cf0359",
+    ".utmp\\host-memory-20261031\\inspect-endpoints.py": "04720cb41e0e10a799cc490260a3a8db29dc893d128074a21b992cfb0f08398d",
+    ".utmp\\host-memory-20261031\\inspect-process.py": "52e9a6ac4d6d5691e93189c78485ab9ac1bb1c01efc38ec4edd44015e5689ef0",
+    ".utmp\\host-memory-20261031\\inspect.py": "1d111a1bbe6cee1b464f4169a974e4d688a139156c9f84e3d3ebea67075a819c",
+    ".utmp\\host-memory-20261031\\jumps.py": "04808e3b4f5c4f629ce0f76c82a321cf8195e62ad80a4de96b5cbf1a246ffed7",
+    ".utmp\\host-memory-20261031\\object-guard.py": "575dadf284378b8e6ca02067dc48dec7803485ddb1ce35a3c942166ee33c28c0",
+    ".utmp\\host-memory-20261031\\pacing-manifest.py": "4e7b38629a82f1e62ff256231a586024ef48d4714e55fb5d21f1f1c85b2133bf",
+    ".utmp\\host-memory-20261031\\process-only-control.py": "f13364817a85815bec2dbcaa72a88f39a10f2c756c05ea1889907e54652b8cf8",
+    ".utmp\\host-memory-20261031\\process-only-reload-control.py": "d9fe15b508565207f0797597ccb80f53c1572f3ea20676dc2a19bd3f6b399b9c",
+    ".utmp\\host-memory-20261031\\report.py": "419e95e64d3f9eee4289432ba5320fdf5ab981d58a56c9b529f1e8e84c16bccb",
+    ".utmp\\host-memory-20261031\\run-agentic.py": "45d29af8bbad835df358121c2229b52544e4a9372ce9fddb6022c69e38e11c9b",
+    ".utmp\\host-memory-20261031\\run-godot-theme.py": "14389c4425ab46ec6e3c3cc8b67e668cefabc3feccbac99fe64e23b73f01a401",
+    ".utmp\\host-memory-20261031\\run-godot.py": "13382db9b7f38bff0f50deef2f8daf483d93ae586d08248e2dd9caf7d15ff9fe",
+    ".utmp\\host-memory-20261031\\run-process-only-reload.py": "76c292c73a20707aa46c241e1b5ba86a7e0cb3e76f91b8700e629e36ff2c5601",
+    ".utmp\\host-memory-20261031\\run-process-only.py": "583ed25a41cf8fac42eb88521f245cd5cb7b831dfb9af13fa61f67e1d12f13dd",
+    ".utmp\\host-memory-20261031\\run-script-control.py": "e9ecd1a382375c889ca426d13c9a66c667ba293200f97b72462fbc4893f9088f",
+    ".utmp\\host-memory-20261031\\setup-capped.py": "8dee86ac676e61f1c06007dda4be20231e7b9a807b277f44865e1891ff251219",
+    ".utmp\\host-memory-20261031\\setup-godot.py": "146246bc58d9c84debcbbc291b402b33bca0d13adfc8b8476e46a135618f3b18",
+    ".utmp\\host-memory-20261031\\setup-process-only.py": "aa55f2c0fedf001a3feb5b365c31011564e861a861760a5003e645bc673a18ca",
+    ".utmp\\host-memory-20261031\\setup-process-reload.py": "a8389aeb0435c6d61b362a84f5f6cd0ea3ad6b243e321c055eb8f7404fff1309",
+    ".utmp\\host-memory-20261031\\setup-smoke.py": "06bd80d981b7130b61da01116100dbf79323baa59567daa9a1fe0b57fe4720fa",
+    ".utmp\\host-memory-20261031\\smoke-agentic.py": "3388ea9b63dc0ae7de4daca08ecfcefc192743eeaccfb1fdb63cf1cee0dfff78",
+    ".utmp\\host-memory-20261031\\strengthen-godot.py": "16f426c9515adbc3e3de655fd9b03fe7a3d2392d8a664745308d664df13d1db9",
+    ".utmp\\host-memory-20261031\\test-endpoints.py": "6b52ad246dfdf83978dc6e993825904ae62c302e026e9a0448a592ad3530763d",
+    ".utmp\\host-memory-20261031\\test-guards.py": "f18d7b6e1a0e7d1e4485ae4b728455560b56ce6d7403f2a7c2770f9fb133c698",
+    ".utmp\\host-memory-20261031\\trace-script.py": "d866a460eef1f1f8b9731f5c55fab2438571efb67764a65201b8aa5ba8bb0d47",
+    ".utmp\\host-memory-20261031\\api-gap.json": "ae418eb1c24096053f195c30b93ff5b323d3f110a102520c86f2aa22993777ad",
+    ".utmp\\host-memory-20261031\\comparison.json": "4943ea264dd8426c9e4d68d8a2eeff5aea564d9465200240a2e938865612bf45",
+    ".utmp\\host-memory-20261031\\final-analysis.json": "745833b6235ac7c921ef616756324ce4052eb781a08f00a1928f0a3c6a80990e",
+    ".utmp\\host-memory-20261031\\godot-cycle-process.json": "1f145d18a6e8858b910e2a5b4caf5933d6ab4418a2d583a992a837c1f618bdba",
+    ".utmp\\host-memory-20261031\\godot-idle-process.json": "133ef810afde984937749a7aea3e08cddd7cbb085eda66bbb62ae2fa9d02072c",
+    ".utmp\\host-memory-20261031\\godot-reload-process.json": "357153aa43ca53aecae5b7532f41d93fe4fa3353338b86fd3cda40afef2dce7c",
+    ".utmp\\host-memory-20261031\\godot-theme-process.json": "62b5658ce02989463831302a303b10c67568697f8d1ca745d0d4089c76584249",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-cycle-process.json": "a0ae8e279ededca565402c781b8b529d62d90a914ad510a4a5edb28371fe6464",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-idle-process.json": "65f23c8c1ff516e736d6a85c031bfade7def07d060733e5aabacf732ea54aad8",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-reload-process.json": "0456581587a108ab9e3e798232ac3e705e8c03b68182e0c3967c453fc4b32ffd",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-theme-process.json": "808a097c50fe2711d9999879977176d1abbd19be37c5ecba884c18fda42ad8ec",
+    ".utmp\\host-memory-20261031\\previous-godot-cycle-process.json": "92ce67f98cb3f0d9149d8b864733553ff3f017c233ceb88e7e05f8516ce2d76f",
+    ".utmp\\host-memory-20261031\\previous-godot-idle-process.json": "ad4035833a1914ac70ed77bcd869d006ac34276566f3df7aa61a51f85b44f340",
+    ".utmp\\host-memory-20261031\\previous-godot-reload-process.json": "75f8a5ad418ac9870eb80aa114559cd22f8fea4daf8f4e7225f87e28d55664df",
+    ".utmp\\host-memory-20261031\\previous-godot-theme-process.json": "937438ed5c0aeae96c8a73f3b2061856e83f120bb9f75ad662f449602ecbabcc",
+    ".utmp\\host-memory-20261031\\godot-cycle.png": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d",
+    ".utmp\\host-memory-20261031\\godot-idle.png": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d",
+    ".utmp\\host-memory-20261031\\godot-reload.png": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d",
+    ".utmp\\host-memory-20261031\\godot-theme.png": "bd31e645819f44a1253f10faec5c8bf11bdb78410260269cbeb353082107db74",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-cycle.png": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-idle.png": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-reload.png": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d",
+    ".utmp\\host-memory-20261031\\pre-object-guard-godot-theme.png": "bd31e645819f44a1253f10faec5c8bf11bdb78410260269cbeb353082107db74",
+    ".utmp\\host-memory-20261031\\previous-godot-cycle.png": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d",
+    ".utmp\\host-memory-20261031\\previous-godot-idle.png": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d",
+    ".utmp\\host-memory-20261031\\previous-godot-reload.png": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d",
+    ".utmp\\host-memory-20261031\\previous-godot-theme.png": "bd31e645819f44a1253f10faec5c8bf11bdb78410260269cbeb353082107db74",
+    ".utmp\\host-memory-20261031\\agentic-idle\\same-0-reload-memory.json": "d494d53f8f6d1b455b55e73f56549e0f4ee05c75150a7ea47f42c5ef0d990807",
+    ".utmp\\host-memory-20261031\\agentic-idle\\lifecycle.json": "eb8cfa51c08ab959b58349d715b9307539edcfbb54bffa054a69eaf61af06db4",
+    ".utmp\\host-memory-20261031\\agentic-idle\\same-0-stop.json": "a7ff362c738ad72a0ebcadca8f642ca21a889e1ae03d44aa21efad8da3b7c20d",
+    ".utmp\\host-memory-20261031\\agentic-idle\\same-0-launch.json": "6cd5d7d3835b85c023321f8d7689c0e871d5d8edb67b6fd939f4a867ecd00c85",
+    ".utmp\\host-memory-20261031\\agentic-reload\\same-0-reload-memory.json": "e6762e993b0bd5329d3c3c4b046f809334755114302959e416a857df1f5a235f",
+    ".utmp\\host-memory-20261031\\agentic-reload\\lifecycle.json": "caaa3e7cd30d790fb34c5764c213b0a4947e4ec248c1b6b0044cb7b135cd2c23",
+    ".utmp\\host-memory-20261031\\agentic-reload\\same-0-stop.json": "25aa10c0bd383886600316d2a37c8fa1262d894732eaeb264f3f6e8adc1b5010",
+    ".utmp\\host-memory-20261031\\agentic-reload\\same-0-launch.json": "27b79d47d708afcbfe3accc3a83555832bca63686d293c877bc8f05ff000c25e",
+    ".utmp\\host-memory-20261031\\agentic-process-only\\same-0-reload-memory.json": "f4c1585fa0c6b275146d890b169d588d24b798b73eb2406f5325b061c571360b",
+    ".utmp\\host-memory-20261031\\agentic-process-only\\lifecycle.json": "8f01394acdf58528c7ad23755479339386965271312acf947a388a728e3164bd",
+    ".utmp\\host-memory-20261031\\agentic-process-only\\same-0-stop.json": "2b4433b0d3f721b2ef7ede97815cb26ae1d88d876f70a567c9d8a215554ad336",
+    ".utmp\\host-memory-20261031\\agentic-process-only\\same-0-launch.json": "c32ecbf3886b06911ce3fb2eac4e1b34df2845b78c9e08eb33bd0fd4b4e96a6f",
+    ".utmp\\host-memory-20261031\\agentic-process-only-reload\\same-0-reload-memory.json": "66d9e31a81634246c1da6767ce4dfd528e8d9ce5c385af12db091810cd21f895",
+    ".utmp\\host-memory-20261031\\agentic-process-only-reload\\lifecycle.json": "f48930643dd0b3a886494830409875fb9b264e96dfd63cb0eb40240f2016dc93",
+    ".utmp\\host-memory-20261031\\agentic-process-only-reload\\same-0-stop.json": "1fda2de48c6e9bfd0273fd8f8e77e197eb0607e1626d1fd03c6af4433a0ecde5",
+    ".utmp\\host-memory-20261031\\agentic-process-only-reload\\same-0-launch.json": "bebc9ea38824bbc8c612351130e113bbb631a6092b3012c00b826aa4262bd3d4",
+    ".utmp\\host-memory-20261031\\capped-agentic-idle\\same-0-reload-memory.json": "a950343250d6d75f390c3e4a991e45bb33cbd0c9f4623dcc2271159d7b2051db",
+    ".utmp\\host-memory-20261031\\capped-agentic-idle\\lifecycle.json": "9abdda9ece31ec676e41fcdcd4836463bad6bafa1c66038f58d6374351d4c63c",
+    ".utmp\\host-memory-20261031\\capped-agentic-idle\\same-0-stop.json": "1d688a97e37d00d8fe9bafd5185bd339edb36cafe8228b5510c17075f2a4f4b0",
+    ".utmp\\host-memory-20261031\\capped-agentic-idle\\same-0-launch.json": "fb625ca08baf32565a045b9450dbfce0299804ae7d20354275502746b60f9377",
+    ".utmp\\host-memory-20261031\\capped-agentic-reload\\same-0-reload-memory.json": "0fad5016a01e25ab04db5e89c6f545eb9131044d241b04dc9c0edbea087ce9fb",
+    ".utmp\\host-memory-20261031\\capped-agentic-reload\\lifecycle.json": "830ffeb03e76144e526265ff712676dca5fb8f0971440e12429bfa1ee36ac006",
+    ".utmp\\host-memory-20261031\\capped-agentic-reload\\same-0-stop.json": "12c6daf95b3639bc571d9424dea3262facd9a2373aee86a2d8a44eff493aa7df",
+    ".utmp\\host-memory-20261031\\capped-agentic-reload\\same-0-launch.json": "15b8a17fe0a6f209deb4014a3741019fbddb3703475247f5d63ce7be80c7ae65",
+    ".utmp\\host-memory-20261031\\smoke-agentic-idle\\lifecycle.json": "0ef0ead7d059984783b61905ebec5362fb43ebddce7469768b0be56f25f75176",
+    ".utmp\\host-memory-20261031\\smoke-agentic-idle\\same-0-stop.json": "7ffe86d5bc8c1aca4ce3039b469a3e1f77ccfd2fd5246ef929bc13f9ce4f56f6",
+    ".utmp\\host-memory-20261031\\smoke-agentic-reload\\lifecycle.json": "a22beb09215d6643bacfe64548c8ddb598cf66f34155284e6808dd7ea3406bb6",
+    ".utmp\\host-memory-20261031\\smoke-agentic-reload\\same-0-stop.json": "5201255f4b289fee5517245b5de60bcec301dc3de395a58c9fed83c230e04114",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-idle\\lifecycle.json": "9d957902ee686f14c12719d771733a64d1087af398069e606164de0cf81c7a57",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-idle\\same-0-stop.json": "f7e1fafbcf65533e6b5fa9205336f7f213307768580154ea66e68faabfb89810",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-reload\\lifecycle.json": "c6ed86a231c1949b2b001b5603722c8c05bfbeb21b819e0e0d269b0c22380cf8",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-reload\\same-0-stop.json": "7098a8d3518dec7572a9c827e7440e323062e7dc005c72ef43a34cca99feab27"
+  },
+  "native_artifact_hashes": {
+    "hosts\\godot\\project\\addons\\weva\\bin\\libweva_godot.so": "3064fcb68447165f03d0df8aa1c066def1a3cef970bd010c889f665b55e0732e",
+    ".utmp\\render-audit-20261030\\published-sdk\\db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248\\sdk.json": "edc44c8dd282660f2e1c22b2745eefbc81896d0fcd6c9b698e7bc1eb427f161c",
+    ".utmp\\render-audit-20261030\\published-sdk\\db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248\\target\\fast\\dev_runtime.exe": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b"
+  },
+  "tools_tests": {
+    "linux": 79,
+    "windows_passed": 70,
+    "windows_skipped": 9
+  },
+  "runtime_changes": false,
+  "remaining": "Agentic rendered native/driver ownership attribution unresolved"
+}

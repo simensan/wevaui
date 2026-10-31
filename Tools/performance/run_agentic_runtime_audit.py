@@ -11,7 +11,6 @@ from pathlib import Path
 import subprocess
 import time
 
-import psutil
 
 
 def gpu_memory(pid):
@@ -30,6 +29,21 @@ def gpu_memory(pid):
                 shared_bytes=sum(int(row['SharedUsage']) for row in counters), counters=counters)
 
 
+def check_lifecycle_state(current, mode, last_reload, last_progress, now):
+    """Reject mode changes, unexpected control reloads and stalled workloads."""
+    expected_mode = 5 if mode == 'reload' else 4
+    count = current['audit_reloads']
+    if current['audit_mode'] != expected_mode or count < last_reload:
+        raise RuntimeError('Lifecycle mode changed or reload counter moved backwards')
+    if mode == 'idle' and count != last_reload:
+        raise RuntimeError('Idle control unexpectedly reloaded')
+    if count > last_reload:
+        return count, now
+    if mode == 'reload' and now - last_progress > 30:
+        raise RuntimeError('Reload soak stopped making progress for 30 seconds')
+    return last_reload, last_progress
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--project', type=Path, required=True)
@@ -37,7 +51,13 @@ def main():
     parser.add_argument('--engine', action='append', required=True)
     parser.add_argument('--rounds', type=int, default=3)
     parser.add_argument('--reload-seconds', type=float, default=0,
-                        help='Minimum reload-soak duration per process (default: 100 reloads only)')
+                        help='Minimum lifecycle duration per process (reload default: 100 reloads only)')
+    parser.add_argument('--lifecycle-mode', choices=['reload', 'idle'], default='reload',
+                        help='Matched inventory control: reload or leave the loaded UI idle')
+    parser.add_argument('--lifecycle-observation', choices=['snapshots', 'endpoints'], default='snapshots',
+                        help='Endpoints avoids runtime query allocations during process-memory sampling; progress verified at endpoints only')
+    parser.add_argument('--lifecycle-warmup', type=float, default=0,
+                        help='Seconds in the selected lifecycle mode before memory sampling')
     parser.add_argument('--gpu-memory', action='store_true',
                         help='Record Windows per-process GPU allocation counters during reloads')
     parser.add_argument('--skip-profiles', action='store_true',
@@ -49,6 +69,10 @@ def main():
         parser.error('rounds must be positive')
     if not 0 <= args.reload_seconds <= 86400:
         parser.error('reload-seconds must be between 0 and 86400')
+    if not 0 <= args.lifecycle_warmup <= 3600:
+        parser.error('lifecycle-warmup must be between 0 and 3600')
+    if args.lifecycle_observation == 'endpoints' and args.reload_seconds <= 0:
+        parser.error('endpoints requires a positive lifecycle duration')
     if args.gpu_memory and os.name != 'nt':
         parser.error('gpu-memory requires Windows GPU performance counters')
     if args.viewport[0] < 1280 or args.viewport[1] < 720:
@@ -57,6 +81,8 @@ def main():
     def satchel_point(x, y):
         return [x + (args.viewport[0] - 1280) / 2,
                 y + (args.viewport[1] - 720) / 2]
+    import psutil
+
     engines = []
     for item in args.engine:
         label, separator, path = item.partition('=')
@@ -104,7 +130,7 @@ def main():
                                    '--ticks', '2', '--controls', json.dumps(value)])
 
             def state(name):
-                fields = ['audit_mode', 'audit_selected', 'audit_clicks', 'audit_uses', 'audit_reloads']
+                fields = ['audit_mode', 'audit_selected', 'audit_clicks', 'audit_uses', 'audit_reloads', 'audit_ticks']
                 arguments = ['snapshot', '--entity', 'probe']
                 for field in fields:
                     arguments += ['--global', field]
@@ -157,7 +183,9 @@ def main():
                 actions = state('actions')
                 if actions['audit_uses'] != before['audit_uses'] + 1 or actions['audit_mode'] != 1:
                     raise RuntimeError('Use/close actions did not reach the controller')
-                controls('reload-start', {'keys': ['Num6'], 'pointer': [20, 20]})
+                controls('reload-start', {'keys': ['Num6' if args.lifecycle_mode == 'reload' else 'Num5'], 'pointer': [20, 20]})
+                if args.lifecycle_warmup:
+                    time.sleep(args.lifecycle_warmup)
                 memory_before = process.memory_info()._asdict()
                 started = time.monotonic()
                 deadline = started + args.reload_seconds + 30
@@ -165,30 +193,33 @@ def main():
                 poll = 0
                 last_reload = actions['audit_reloads']
                 last_progress = started
+                last_state = None
                 while True:
-                    current = state(f'reload-{poll}')
-                    if current['audit_mode'] != 5 or current['audit_reloads'] < last_reload:
-                        raise RuntimeError('Reload soak left its mode or its counter moved backwards')
-                    if current['audit_reloads'] > last_reload:
-                        last_progress = time.monotonic()
-                        last_reload = current['audit_reloads']
-                    elif time.monotonic() - last_progress > 30:
-                        raise RuntimeError('Reload soak stopped making progress for 30 seconds')
+                    observed = args.lifecycle_observation == 'snapshots' or last_state is None
+                    if observed:
+                        last_state = state(f'reload-{poll}')
+                        last_reload, last_progress = check_lifecycle_state(
+                            last_state, args.lifecycle_mode, last_reload, last_progress, time.monotonic())
+                    current = last_state
                     elapsed = time.monotonic() - started
-                    sample = dict(elapsed_seconds=elapsed, globals=current,
+                    sample = dict(elapsed_seconds=elapsed, globals=current, globals_sampled=observed,
                                   memory=process.memory_info()._asdict())
                     if args.gpu_memory:
                         sample['gpu_memory'] = gpu_memory(process.pid)
                     samples.append(sample)
                     (output / f'{prefix}-reload-memory.json').write_text(
                         json.dumps(samples, indent=2), encoding='utf-8')
-                    if (current['audit_reloads'] >= actions['audit_reloads'] + 100
+                    if ((args.lifecycle_observation == 'endpoints' or args.lifecycle_mode == 'idle' or current['audit_reloads'] >= actions['audit_reloads'] + 100)
                             and elapsed >= args.reload_seconds):
                         break
                     if time.monotonic() >= deadline:
                         raise RuntimeError('Reload deadline')
                     time.sleep(5 if args.reload_seconds else .25)
                     poll += 1
+                endpoint = state('lifecycle-endpoint')
+                check_lifecycle_state(endpoint, args.lifecycle_mode, last_reload, last_progress, time.monotonic())
+                if args.lifecycle_mode == 'reload' and endpoint['audit_reloads'] < actions['audit_reloads'] + 100:
+                    raise RuntimeError('Lifecycle endpoint did not reach 100 reloads')
                 controls('reload-stop', {'keys': ['Num5']})
                 settled = state('reload-final')
                 controls('after-reload-click', {'pointer': satchel_point(307, 295), 'buttons': [True, False, False]})
@@ -197,10 +228,12 @@ def main():
                     raise RuntimeError('Post-reload click failed')
                 lifecycle.append(dict(variant=label, round=round_index, before=before, actions=actions,
                     final=final, memory_before=memory_before, memory_after=process.memory_info()._asdict(),
-                    reload_seconds=elapsed, memory_samples=len(samples),
+                    reload_seconds=elapsed, lifecycle_mode=args.lifecycle_mode,
+                    lifecycle_observation=args.lifecycle_observation, lifecycle_endpoint=endpoint,
+                    lifecycle_warmup=args.lifecycle_warmup, memory_samples=len(samples),
                     capture_artifacts=capture['artifacts'], launch=launch['data']['session']))
                 (output / 'lifecycle.json').write_text(json.dumps(lifecycle, indent=2), encoding='utf-8')
-                print(prefix, 'five modes, clicks, actions and reloads passed',
+                print(prefix, 'five modes, clicks, actions and', args.lifecycle_mode, 'lifecycle passed',
                       '(profiles skipped)' if args.skip_profiles else '(profiles recorded)', flush=True)
             finally:
                 call('stop', ['session', 'stop'])

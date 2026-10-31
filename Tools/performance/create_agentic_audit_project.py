@@ -14,6 +14,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('fixtures', type=Path)
     parser.add_argument('output', type=Path)
+    parser.add_argument('--max-fps', type=int, default=0,
+                        help='Cap foreground and background FPS for normal game-load memory checks; 0 is uncapped')
     parser.add_argument('--direct', action='store_true')
     parser.add_argument('--viewport', type=int, nargs=2, default=[1280, 720],
                         metavar=('WIDTH', 'HEIGHT'))
@@ -24,6 +26,8 @@ def main():
     args = parser.parse_args()
     if args.viewport[0] < 1280 or args.viewport[1] < 720:
         parser.error('survival fixture requires at least 1280x720')
+    if not 0 <= args.max_fps <= 1000:
+        parser.error('max-fps must be between 0 and 1000')
     source = args.fixtures.resolve(strict=True)
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
@@ -110,7 +114,7 @@ engine.html_set("MenuClass",mode>=3?"menu-open":"");
 engine.html_set("Stamina","100");select(selected);
 engine.set_global("audit_mode",mode);
 }
-export function init(entity:i64):void {setMode(INITIAL_MODE);}
+export function init(entity:i64):void {FRAME_PACINGsetMode(INITIAL_MODE);}
 export function update(entity:i64,dt:f64):void {
 ticks++;
 if(engine.get_key_down("1")){setMode(0);}
@@ -137,6 +141,7 @@ engine.set_global("audit_uses",uses);engine.set_global("audit_reloads",reloads);
 '''
     events = ''.join(f'if(action=="select_{i}"){{select({i});clicks++;}}' for i in range(12))
     driver = driver.replace('SELECT_BODY', '\n'.join(select)).replace('EVENT_BODY', events)
+    driver = driver.replace('FRAME_PACING', f'engine.set_max_fps({args.max_fps},{args.max_fps});' if args.max_fps else '')
     driver = driver.replace('INITIAL_MODE', '0' if args.defer_ui else '4')
     if args.prepare_input:
         driver = driver.replace('if(mode==2)', '''if(engine.get_key_down("8")){
@@ -172,7 +177,8 @@ if(mode==2)''')
         '4=cycling inventory, 5=interactive inventory, 6=reload every 10 ticks, '
         '7=hidden inventory with continuing binding updates.\n'
         'Globals: audit_mode, audit_ticks, audit_selected, audit_clicks, audit_uses, audit_reloads.\n'
-        'Synthetic 240-cube scene; not a production-game workload.\n', encoding='utf-8')
+        'Synthetic 240-cube scene; not a production-game workload.\n'
+        f'FPS cap (foreground/background): {args.max_fps or "uncapped"}.\n', encoding='utf-8')
     print(output)
 
 
