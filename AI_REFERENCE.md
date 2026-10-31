@@ -587,3 +587,13 @@ Six provisional pairs did not establish a gain from independent mesh retention;
 the cache was removed. All 17 GCC and 19 Clang sanitizer suites pass, and the
 restored Agentic PE sections match the accepted baseline. Host binaries and
 their previous full-gate qualification are unchanged.
+
+The [empty-glyph follow-up](docs/verification/empty-glyphs-20261031.md)
+caches successful no-ink rasters in a bounded atlas-owned table. Inventory
+removes 36.79 raster and 36.79 metric calls per update; six provisional pairs
+measure 3.8% lower paint CPU with effectively flat complete CPU. The qualified
+release gate passes 808,781 GCC main checks (808,775 sanitized), all 17 GCC/19
+sanitizer suites, 341 Chrome captures and 67 browser checks plus the existing
+known failure. Both Windows hosts are rebuilt; Unity passes 255 EditMode tests
+with two inconclusive and 7/7 Mono player checks. All 17 render comparisons
+match the baseline. This is not a stable Chrome-parity claim.

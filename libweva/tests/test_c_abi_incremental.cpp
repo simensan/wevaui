@@ -996,12 +996,13 @@ void test_abi_incremental_glyph_preparation() {
             CHECK(std::find(state[0].raster_sizes.begin(), state[0].raster_sizes.end(), expected) !=
                   state[0].raster_sizes.end());
         }
-        // Spaces have no slot: visiting unchanged text would rasterize them
-        // again even when the shaper memo and every visible glyph are cached.
-        if (step == 0 || step == 1 || step == 10) CHECK(state[0].empty_rasters == 0);
-        CHECK(state[1].empty_rasters > 0);
-        if (step == 2 || step == 3 || step == 4 || step == 5 || step == 8)
-            CHECK(state[0].empty_rasters > 0);
+        // Successful empty rasters survive layout/renderer changes just like
+        // visible slots. A new size or font backend must request them again.
+        for (const auto& s : state) {
+            if (step <= 3 || (step >= 6 && step <= 10)) CHECK(s.empty_rasters == 0);
+            if (step == 4 || step == 5 || step == 11 || step == 12)
+                CHECK(s.empty_rasters > 0);
+        }
     }
     for (const auto doc : docs) weva_document_destroy(doc);
 }

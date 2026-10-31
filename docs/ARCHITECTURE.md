@@ -814,6 +814,13 @@ handle so sweeping cannot release a visible cached background. External paint
 inputs invalidate the root version; clean frames still return before pipeline
 work. Custom backend callbacks use the existing full path.
 
+The glyph atlas also remembers successful raster requests with no bitmap, such
+as spaces. A fixed 64-entry direct-mapped cache uses the same face, glyph and
+1/64-pixel size identity as visible slots. Collisions retry rasterization;
+failed requests are never cached. Empty glyphs consume no texture space and
+need no glyph-metrics callback because shaping supplies their advances. Font
+backend replacement clears both caches; renderer replacement preserves them.
+
 The incremental corpus gate forces full recomputation in a control document
 by round-tripping viewport size before updating, without resetting its DOM,
 animation clock or glyph history. See PERFORMANCE.md for timings and fallback

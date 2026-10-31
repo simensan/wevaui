@@ -128,6 +128,55 @@ void test_glyph_atlas() {
     atlas.clear();
     CHECK(atlas.slot_count() == 0 && atlas.slot_version() != slot_version);
     CHECK(atlas.get(&font, face, a, 16) != nullptr);
+
+    struct EmptyFont : StubFont {
+        int rasters = 0, metrics = 0;
+        bool fail = false, ink = false;
+        bool rasterize(FaceHandle, uint32_t, double, RenderMode, Bitmap* out) override {
+            ++rasters;
+            *out = {};
+            if (fail) return false;
+            if (ink) { out->width = out->height = 1; out->data = {255}; }
+            return true;
+        }
+        bool glyph_metrics(FaceHandle, uint32_t, double, GlyphMetrics* out) override {
+            ++metrics;
+            *out = {};
+            return true;
+        }
+    } empty_font;
+    GlyphAtlas empty_atlas(16, 16);
+    CHECK(empty_atlas.get(&empty_font, face, space, 16) == nullptr);
+    CHECK(empty_font.rasters == 1 && empty_font.metrics == 0);
+    for (int i = 0; i < 20; ++i)
+        CHECK(empty_atlas.get(&empty_font, face, space, 15.999) == nullptr);
+    CHECK(empty_font.rasters == 1 && empty_atlas.slot_count() == 0);
+    CHECK(empty_atlas.get(&empty_font, face, space, 16.4) == nullptr);
+    CHECK(empty_atlas.get(&empty_font, FaceHandle{2}, space, 16) == nullptr);
+    CHECK(empty_atlas.get(&empty_font, face, space + 1, 16) == nullptr);
+    CHECK(empty_font.rasters == 4);
+    // Failed rasterization is retryable, never a cached empty glyph.
+    empty_font.fail = true;
+    CHECK(empty_atlas.get(&empty_font, face, space + 2, 16) == nullptr);
+    CHECK(empty_atlas.get(&empty_font, face, space + 2, 16) == nullptr);
+    CHECK(empty_font.rasters == 6);
+    empty_font.fail = false;
+    empty_font.ink = true;
+    CHECK(empty_atlas.get(&empty_font, face, space + 2, 16) != nullptr);
+    CHECK(empty_font.rasters == 7 && empty_font.metrics == 1);
+    // Resetting the font backend must discard successful empty results too.
+    empty_atlas.clear();
+    CHECK(empty_atlas.get(&empty_font, face, space, 16) != nullptr);
+    CHECK(empty_font.rasters == 8 && empty_font.metrics == 2);
+    // Many distinct empty requests exceed the bounded cache. No collision may
+    // suppress a different glyph's ink, and no empty request occupies a slot.
+    empty_atlas.clear();
+    empty_font.ink = false;
+    for (uint32_t glyph = 1000; glyph < 1256; ++glyph)
+        CHECK(empty_atlas.get(&empty_font, face, glyph, 16) == nullptr);
+    CHECK(empty_atlas.slot_count() == 0);
+    empty_font.ink = true;
+    CHECK(empty_atlas.get(&empty_font, face, 2000, 16) != nullptr);
 }
 
 void test_text_geometry() {

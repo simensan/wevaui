@@ -29,6 +29,12 @@ measure 2.6% lower inventory paint CPU, with a 3.5 microsecond saving in the
 instrumented containing-block stage. Browser timings remain variable;
 consistent Chrome parity is not established.
 
+The [empty-glyph cache](verification/empty-glyphs-20261031.md) removes repeated
+host raster/metric calls for spaces. Six provisional pairs measure 3.8% lower
+inventory paint CPU and effectively flat complete CPU; HUD paint is unchanged.
+Inventory paint medians are 0.213 ms versus Chrome's 0.208 ms in that batch,
+with inconsistent individual pairs. This does not establish stable parity.
+
 The [clean Chrome comparison](verification/clean-render-comparison-20261031.md)
 still finds an inventory CPU gap: style/layout 0.280 vs 0.142 ms, paint recording
 0.255 vs 0.201 ms. The [30-minute reload soak](verification/lifecycle-soak-20261031.md)

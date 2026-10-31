@@ -9,6 +9,7 @@ namespace weva {
 void GlyphAtlas::clear() {
     ++slot_version_;
     slots_.clear();
+    empty_glyphs_ = {};
     std::fill(pixels_.begin(), pixels_.end(), 0);
     shelf_x_ = shelf_y_ = shelf_height_ = 0;
     dirty_ = true;
@@ -33,11 +34,21 @@ const GlyphSlot* GlyphAtlas::get(FontInterface* font, FaceHandle face, uint32_t 
     auto it = slots_.find(key);
     if (it != slots_.end()) return &it->second;
 
+    const uint64_t hash = face.id * 0x9e3779b97f4a7c15ULL ^
+                          glyph * 0xbf58476d1ce4e5b9ULL ^
+                          static_cast<uint64_t>(quantised) * 0x94d049bb133111ebULL;
+    auto& empty = empty_glyphs_[(hash ^ (hash >> 32)) % empty_glyphs_.size()];
+    if (empty.face == key.face && empty.glyph == key.glyph &&
+        empty.px_quantised == key.px_quantised) return nullptr;
+
     Bitmap bmp;
     if (!font->rasterize(face, glyph, px, RenderMode::Alpha8, &bmp)) return nullptr;
+    if (bmp.width <= 0 || bmp.height <= 0) {
+        empty = key;
+        return nullptr;
+    }
     GlyphMetrics gm;
     font->glyph_metrics(face, glyph, px, &gm);
-    if (bmp.width <= 0 || bmp.height <= 0) return nullptr;   // a space has no bitmap
 
     // One pixel of padding, so bilinear filtering in a GPU backend cannot bleed
     // a neighbouring glyph into this one.

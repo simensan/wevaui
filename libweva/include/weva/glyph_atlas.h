@@ -3,6 +3,7 @@
 #include "weva/render_interface.h"
 
 #include <map>
+#include <array>
 #include <vector>
 
 // Packs rasterized glyphs into one texture so a run of text is a single draw
@@ -74,6 +75,10 @@ private:
     int width_, height_;
     std::vector<uint8_t> pixels_;
     std::map<Key, GlyphSlot> slots_;
+    // Successful rasters without ink need no slot or texture space. Keep a
+    // bounded direct-mapped cache so repeated spaces do not call the host on
+    // every preparation/draw. Collisions only cause another raster request.
+    std::array<Key, 64> empty_glyphs_{};
     // Shelf packing: glyphs go left to right on a row, and a new row starts
     // below the tallest glyph of the previous one. Simple, and good enough when
     // the entries are all roughly the same height, which glyphs at one size are.
