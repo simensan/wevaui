@@ -1,0 +1,249 @@
+{
+  "experiment": "Rejected allocation-free family-name comparison; production sources restored",
+  "binaries": {
+    "before": {
+      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-paint-ids.exe",
+      "sha256": "2c55ca701675f662b303952eec8822d0b894aeeb6e0640a4f9c8b21605d0ac10"
+    },
+    "after": {
+      "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+      "sha256": "b3e429314fd70c4782104a98b8ca62d18a8d9b36763c5b17d7196e37e2f3d401"
+    }
+  },
+  "paired_runs": [
+    {
+      "round": 0,
+      "variant": "after",
+      "case": "HUD",
+      "cascade": 0.022,
+      "boxes": 0.052,
+      "layout": 0.0,
+      "paint": 0.05,
+      "core update, total": 0.127,
+      "host draw": 0.199,
+      "complete CPU path": 0.35
+    },
+    {
+      "round": 0,
+      "variant": "after",
+      "case": "inventory",
+      "cascade": 0.098,
+      "boxes": 0.272,
+      "layout": 0.0,
+      "paint": 0.272,
+      "core update, total": 0.647,
+      "host draw": 0.276,
+      "complete CPU path": 1.08
+    },
+    {
+      "round": 0,
+      "variant": "before",
+      "case": "HUD",
+      "cascade": 0.023,
+      "boxes": 0.053,
+      "layout": 0.0,
+      "paint": 0.053,
+      "core update, total": 0.131,
+      "host draw": 0.205,
+      "complete CPU path": 0.36
+    },
+    {
+      "round": 0,
+      "variant": "before",
+      "case": "inventory",
+      "cascade": 0.124,
+      "boxes": 0.312,
+      "layout": 0.0,
+      "paint": 0.299,
+      "core update, total": 0.739,
+      "host draw": 0.379,
+      "complete CPU path": 1.321
+    },
+    {
+      "round": 1,
+      "variant": "after",
+      "case": "HUD",
+      "cascade": 0.024,
+      "boxes": 0.056,
+      "layout": 0.0,
+      "paint": 0.054,
+      "core update, total": 0.136,
+      "host draw": 0.22,
+      "complete CPU path": 0.382
+    },
+    {
+      "round": 1,
+      "variant": "after",
+      "case": "inventory",
+      "cascade": 0.12,
+      "boxes": 0.311,
+      "layout": 0.0,
+      "paint": 0.309,
+      "core update, total": 0.745,
+      "host draw": 0.471,
+      "complete CPU path": 1.419
+    },
+    {
+      "round": 1,
+      "variant": "before",
+      "case": "HUD",
+      "cascade": 0.026,
+      "boxes": 0.061,
+      "layout": 0.0,
+      "paint": 0.061,
+      "core update, total": 0.151,
+      "host draw": 0.231,
+      "complete CPU path": 0.411
+    },
+    {
+      "round": 1,
+      "variant": "before",
+      "case": "inventory",
+      "cascade": 0.12,
+      "boxes": 0.317,
+      "layout": 0.0,
+      "paint": 0.298,
+      "core update, total": 0.74,
+      "host draw": 0.458,
+      "complete CPU path": 1.393
+    },
+    {
+      "round": 2,
+      "variant": "after",
+      "case": "HUD",
+      "cascade": 0.026,
+      "boxes": 0.059,
+      "layout": 0.0,
+      "paint": 0.062,
+      "core update, total": 0.149,
+      "host draw": 0.226,
+      "complete CPU path": 0.404
+    },
+    {
+      "round": 2,
+      "variant": "after",
+      "case": "inventory",
+      "cascade": 0.11,
+      "boxes": 0.301,
+      "layout": 0.0,
+      "paint": 0.306,
+      "core update, total": 0.721,
+      "host draw": 0.44,
+      "complete CPU path": 1.342
+    },
+    {
+      "round": 2,
+      "variant": "before",
+      "case": "HUD",
+      "cascade": 0.024,
+      "boxes": 0.058,
+      "layout": 0.0,
+      "paint": 0.057,
+      "core update, total": 0.143,
+      "host draw": 0.241,
+      "complete CPU path": 0.413
+    },
+    {
+      "round": 2,
+      "variant": "before",
+      "case": "inventory",
+      "cascade": 0.107,
+      "boxes": 0.287,
+      "layout": 0.0,
+      "paint": 0.282,
+      "core update, total": 0.68,
+      "host draw": 0.444,
+      "complete CPU path": 1.292
+    },
+    {
+      "round": 3,
+      "variant": "after",
+      "case": "HUD",
+      "cascade": 0.025,
+      "boxes": 0.06,
+      "layout": 0.0,
+      "paint": 0.058,
+      "core update, total": 0.146,
+      "host draw": 0.226,
+      "complete CPU path": 0.399
+    },
+    {
+      "round": 3,
+      "variant": "after",
+      "case": "inventory",
+      "cascade": 0.119,
+      "boxes": 0.311,
+      "layout": 0.0,
+      "paint": 0.314,
+      "core update, total": 0.748,
+      "host draw": 0.468,
+      "complete CPU path": 1.413
+    },
+    {
+      "round": 3,
+      "variant": "before",
+      "case": "HUD",
+      "cascade": 0.025,
+      "boxes": 0.058,
+      "layout": 0.0,
+      "paint": 0.057,
+      "core update, total": 0.143,
+      "host draw": 0.226,
+      "complete CPU path": 0.395
+    },
+    {
+      "round": 3,
+      "variant": "before",
+      "case": "inventory",
+      "cascade": 0.096,
+      "boxes": 0.257,
+      "layout": 0.0,
+      "paint": 0.279,
+      "core update, total": 0.636,
+      "host draw": 0.466,
+      "complete CPU path": 1.246
+    }
+  ],
+  "paint_probes": [
+    {
+      "file": "paint-split.log",
+      "samples": 200,
+      "means_ms": {
+        "replay": 0.02392,
+        "setup": 0.0461875,
+        "own": 0.17873050000000001,
+        "order": 0.0076295
+      }
+    },
+    {
+      "file": "paint-own.log",
+      "samples": 200,
+      "means_ms": {
+        "effects": 0.016367,
+        "layers": 0.033015,
+        "decor": 0.041471,
+        "text": 0.091694
+      }
+    },
+    {
+      "file": "paint-overflow.log",
+      "samples": 200,
+      "means_ms": {
+        "effects": 0.0114445,
+        "layers": 0.0221795,
+        "decor": 0.0278575,
+        "text": 0.0663955
+      }
+    },
+    {
+      "file": "paint-text.log",
+      "samples": 200,
+      "means_ms": {
+        "style": 0.0161295,
+        "shadows": 0.003617,
+        "controls": 0.0
+      }
+    }
+  ],
+  "limitations": "Probes add timers and stderr I/O. Split/own paced at60Hz; overflow/text unpaced. Do not combine times across runs; these are attribution only."
+}
