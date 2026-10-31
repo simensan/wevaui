@@ -501,3 +501,5 @@ or lower-end qualification. Runtime source and both supported hosts are unchange
 The [integrated runtime verification](docs/verification/integrated-runtime-20261031.md) checks the current core and Agentic renderer in 9,000 CPU-profiled game frames; selection/use/menu actions pass. It is not a paired speedup claim.
 
 The [ordinary-draw bounds experiment](docs/verification/backdrop-bounds-20261031.md) was rejected after a fresh-baseline repeat failed to establish a runtime gain; accepted renderer source and binaries were restored.
+
+The [final rendering audit](docs/verification/render-audit-final-20261031.md) reconciles accepted changes against current source, installed host binaries and original test evidence, with remaining product qualifications explicit.

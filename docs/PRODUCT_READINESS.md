@@ -1,5 +1,7 @@
 # Product readiness
 
+The [completed rendering audit](verification/render-audit-final-20261031.md) consolidates verified improvements, current binary/test evidence and the remaining Chrome, cold-start and hardware qualification gaps. It does not change development-preview release status.
+
 The local Agentic audit branch adds explicit hidden CPU preparation through
 `html_prepare()`. Paired runtime checks show lower interactive opening cost
 by moving layout/glyph/paint work into loading; GPU first-use work remains.
