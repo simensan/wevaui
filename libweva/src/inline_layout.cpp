@@ -877,9 +877,9 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             ? font_size_px(line_height_style,
                            cbox.parent != kNoBox ? (*tree)[cbox.parent].style : nullptr, ctx)
             : ctx.root_font_size_px;
-    const double strut_ascent = strut_fm.ascent(strut_font_size);
     const double strut_leading =
         declared_line_height ? *declared_line_height : strut_fm.line_height(strut_font_size);
+    const auto strut_vertical = strut_fm.line_extents(strut_font_size, strut_leading);
 
     // An atom contributes above- and below-baseline extents like a glyph does,
     // so the line grows around it instead of clipping it.
@@ -959,8 +959,7 @@ double layout_inline_items(BoxTree* tree, BoxId container,
     const auto reset_line_metrics = [&] {
         // Seeded with the strut, not with zero: the containing block's own
         // font is present on every line whether or not any text lands there.
-        const double half_leading = strut_fm.leading_above(strut_leading, strut_font_size);
-        max_ascent = strut_ascent + half_leading;
+        max_ascent = strut_vertical.ascent;
         max_descent = strut_leading - max_ascent;
         top_aligned_height = bottom_aligned_height = 0;
     };
@@ -1330,9 +1329,10 @@ double layout_inline_items(BoxTree* tree, BoxId container,
                 Box& br = (*tree)[f.item->break_box];
                 br.x = f.x + dx;
                 const FontMetrics& fm = f.item->metrics ? *f.item->metrics : metrics;
-                br.y = baseline - fm.ascent(f.item->font_size);
+                const auto vertical = fm.font_extents(f.item->font_size);
+                br.y = baseline - vertical.ascent;
                 br.width = 0;
-                br.height = fm.ascent(f.item->font_size) + fm.descent(f.item->font_size);
+                br.height = vertical.ascent + vertical.descent;
                 tree->append_child(lb, f.item->break_box);
                 continue;
             }
@@ -1368,11 +1368,12 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             // Runs sit on the shared baseline, so a smaller span aligns with a
             // larger one rather than with the line's top edge.
             const FontMetrics& fm = f.item->metrics ? *f.item->metrics : metrics;
-            r.y = baseline - fm.ascent(f.item->font_size);
+            const auto vertical = fm.font_extents(f.item->font_size);
+            r.y = baseline - vertical.ascent;
             r.width = f.width;
             r.justify_letter_spacing = f.justify_spacing;
             r.justify_extra_width = f.justify_extra;
-            r.height = fm.ascent(f.item->font_size) + fm.descent(f.item->font_size);
+            r.height = vertical.ascent + vertical.descent;
             tree->append_child(lb, run);
         }
         for (Span& sp : spans) {
@@ -1408,9 +1409,10 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             fb.padding_left = pad.left; fb.padding_right = pad.right;
             fb.border_top = border.top; fb.border_bottom = border.bottom;
             fb.border_left = border.left; fb.border_right = border.right;
-            fb.y = baseline - fm.ascent(fs) - pad.top - border.top;
+            const auto vertical = fm.font_extents(fs);
+            fb.y = baseline - vertical.ascent - pad.top - border.top;
             fb.width = sp.x1 - sp.x0;
-            fb.height = fm.ascent(fs) + fm.descent(fs) + pad.top + pad.bottom + border.top + border.bottom;
+            fb.height = vertical.ascent + vertical.descent + pad.top + pad.bottom + border.top + border.bottom;
         }
 
         line_boxes.push_back(lb);
@@ -1447,10 +1449,9 @@ double layout_inline_items(BoxTree* tree, BoxId container,
             return;
         }
         const FontMetrics& fm = it.metrics ? *it.metrics : metrics;
-        const double a = fm.ascent(it.font_size);
-        const double half_leading = fm.leading_above(it.line_height, it.font_size);
-        max_ascent = std::max(max_ascent, a + half_leading);
-        max_descent = std::max(max_descent, it.line_height - a - half_leading);
+        const auto vertical = fm.line_extents(it.font_size, it.line_height);
+        max_ascent = std::max(max_ascent, vertical.ascent);
+        max_descent = std::max(max_descent, vertical.descent);
     };
 
     reset_line_metrics();

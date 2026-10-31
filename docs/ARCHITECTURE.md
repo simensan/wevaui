@@ -1318,3 +1318,10 @@ first, and guarded by a mutex. Tested in `test_background.cpp`
 (`test_shared_raster_cache`); neither host changes its default yet.
 
 Unity callback imports retain typed managed function-pointer wrappers but cross P/Invoke as raw pointers: IL2CPP cannot marshal C# function-pointer parameters. The generator owns these wrappers; the C ABI and native callback tables are unchanged. See docs/verification/il2cpp-qualification-20261031.md.
+
+The internal FontMetrics interface provides combined font_extents and
+line_extents queries. FontInterfaceMetrics reads each face once per query;
+inline layout uses these for glyph boxes and baseline contributions. Default
+implementations preserve custom FontMetrics scalar overrides. The host font
+callback table and C ABI are unchanged; see
+docs/verification/vertical-metrics-20261031.md.

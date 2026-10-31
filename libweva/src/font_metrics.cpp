@@ -81,6 +81,19 @@ double FontInterfaceMetrics::leading_above(double height, double fs) const {
     return font_ && font_->rounds_line_leading() ? std::floor(half) : half;
 }
 
+VerticalFontMetrics FontInterfaceMetrics::font_extents(double fs) const {
+    FaceMetrics fm;
+    if (!font_ || !font_->face_metrics(face_, fs, &fm)) return {fs * 0.8, fs * 0.4};
+    return {fm.ascent, fm.descent};
+}
+
+VerticalFontMetrics FontInterfaceMetrics::line_extents(double fs, double height) const {
+    const auto fm = font_extents(fs);
+    const double half = (height - fm.ascent - fm.descent) * .5;
+    const double leading = font_ && font_->rounds_line_leading() ? std::floor(half) : half;
+    return {fm.ascent + leading, height - fm.ascent - leading};
+}
+
 double FontInterfaceMetrics::measure(std::string_view text, double fs) const {
     if (!font_ || text.empty()) return 0;
 

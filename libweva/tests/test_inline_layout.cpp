@@ -227,6 +227,54 @@ void test_inline_layout_reuse() {
 }
 
 void test_font_metrics() {
+    struct CountingFont : StubFont {
+        int calls = 0;
+        bool rounded = false, valid = true;
+        bool rounds_line_leading() const override { return rounded; }
+        bool face_metrics(FaceHandle, double fs, FaceMetrics* out) override {
+            ++calls;
+            out->ascent = fs * .73 + 1.5;
+            out->descent = fs * .24 + .75;
+            return valid;
+        }
+    } font;
+    FontInterfaceMetrics real(&font, StubFont::builtin());
+    for (bool rounded : {false, true}) for (bool valid : {false, true}) {
+        font.rounded = rounded;
+        font.valid = valid;
+        for (double fs : {0.0, 8.25, 16.0, 31.375}) for (double height : {0.0, 8.0, 17.25, 40.0}) {
+            const double a = real.ascent(fs), d = real.descent(fs);
+            const double leading = real.leading_above(height, fs);
+            font.calls = 0;
+            const auto combined = real.font_extents(fs);
+            CHECK(font.calls == 1);
+            CHECK(combined.ascent == a);
+            CHECK(combined.descent == d);
+            font.calls = 0;
+            const auto line = real.line_extents(fs, height);
+            CHECK(font.calls == 1);
+            CHECK(line.ascent == a + leading);
+            CHECK(line.descent == height - a - leading);
+        }
+    }
+    // The default combined query still honors a custom backend's overrides.
+    struct CustomMetrics : MonoFontMetrics {
+        double ascent(double) const override { return 13.25; }
+        double descent(double) const override { return 2.75; }
+        double leading_above(double, double) const override { return -3.5; }
+    } custom;
+    const auto combined = custom.font_extents(16);
+    CHECK(combined.ascent == 13.25 && combined.descent == 2.75);
+    const auto custom_line = custom.line_extents(16, 10);
+    CHECK(custom_line.ascent == 9.75 && custom_line.descent == .25);
+    FontInterfaceMetrics missing(nullptr, {});
+    const auto fallback = missing.font_extents(16);
+    CHECK(fallback.ascent == missing.ascent(16));
+    CHECK(fallback.descent == missing.descent(16));
+    const auto fallback_line = missing.line_extents(16, 17.25);
+    CHECK(fallback_line.ascent == missing.ascent(16) + missing.leading_above(17.25, 16));
+    CHECK(fallback_line.descent == 17.25 - missing.ascent(16) - missing.leading_above(17.25, 16));
+
     MonoFontMetrics m;
     // The parameterless shape is what the reference's own arithmetic is pinned
     // against: 5 chars at 16px is 40px.

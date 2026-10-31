@@ -548,3 +548,12 @@ establish a runtime gain despite fewer line builds. The final color-only full
 gate passes 807,198 GCC main checks (807,192 sanitized), 17 GCC/19 sanitizer
 suites, 341 Chrome captures and 67 browser checks plus the existing known
 failure. Unity remains 255 passes/two inconclusive and 7/7 Mono player passes.
+
+The [combined vertical-metrics pass](docs/verification/vertical-metrics-20261031.md)
+removes duplicate cached face lookups during inline layout. Six provisional
+pairs measure 12.5% lower inventory style/layout CPU; this is not universal
+Chrome parity. The full gate passes 807,588 GCC main checks (807,582 sanitized),
+17 GCC/19 sanitizer suites, 341 Chrome captures and 67 browser checks plus
+the existing known failure. Both Windows hosts are rebuilt; Unity passes
+255 EditMode tests/two inconclusive and 7/7 Mono player tests. All 17 render
+comparisons match the accepted baseline.

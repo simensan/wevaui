@@ -16,6 +16,10 @@
 
 namespace weva {
 
+struct VerticalFontMetrics {
+    double ascent, descent;
+};
+
 class FontMetrics {
 public:
     virtual ~FontMetrics() = default;
@@ -26,6 +30,16 @@ public:
     virtual double descent(double font_size) const = 0;
     virtual double leading_above(double line_height, double font_size) const {
         return (line_height - ascent(font_size) - descent(font_size)) * .5;
+    }
+    // Defaults honor existing custom metrics and leading overrides. A host
+    // backend can answer each combined query with one face-metrics lookup.
+    virtual VerticalFontMetrics font_extents(double font_size) const {
+        return {ascent(font_size), descent(font_size)};
+    }
+    virtual VerticalFontMetrics line_extents(double font_size, double line_height) const {
+        const double a = ascent(font_size);
+        const double leading = leading_above(line_height, font_size);
+        return {a + leading, line_height - a - leading};
     }
     // Measures a slice in place. Layout probes O(log n) prefixes of the same
     // word when wrapping, so this takes a view rather than forcing a copy per
@@ -88,6 +102,8 @@ public:
     double ascent(double fs) const override;
     double descent(double fs) const override;
     double leading_above(double line_height, double fs) const override;
+    VerticalFontMetrics font_extents(double fs) const override;
+    VerticalFontMetrics line_extents(double fs, double line_height) const override;
     double measure(std::string_view text, double fs) const override;
 
 private:

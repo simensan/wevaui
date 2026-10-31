@@ -17,6 +17,12 @@ corrects background painting through the common color resolver, with an exact
 Chrome pixel comparison. Its local-layout investigation rejected a width-reuse
 experiment after six paired runs failed to establish a runtime improvement.
 
+The [combined vertical-metrics pass](verification/vertical-metrics-20261031.md)
+removes redundant cached font lookups. Six provisional pairs measure 12.5%
+lower inventory style/layout CPU, with medians of 0.167 ms versus Chrome's
+0.170 ms. Paint remains higher and HUD results are flat; this is not stable
+Chrome parity or a new release qualification.
+
 The [clean Chrome comparison](verification/clean-render-comparison-20261031.md)
 still finds an inventory CPU gap: style/layout 0.280 vs 0.142 ms, paint recording
 0.255 vs 0.201 ms. The [30-minute reload soak](verification/lifecycle-soak-20261031.md)
