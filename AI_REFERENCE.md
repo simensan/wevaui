@@ -523,3 +523,10 @@ The [local intrinsic-memo follow-up](docs/verification/inventory-intrinsic-memo-
 The [ASCII grapheme follow-up](docs/verification/inventory-graphemes-20261031.md) avoids Unicode table searches for ASCII text. The full qualified release gate passes: 16 GCC suites (807,102 main checks), 18 sanitizer suites (807,096), 341 Chrome captures and 66 behavior scripts. Unity full EditMode passes 255 plus two inconclusive, Mono player 7/7; Godot font safety passes 19,833 checks and all renders are unchanged. Direct ASCII grapheme iteration measures about 87% less CPU time provisionally; this is not an inventory frame-time or Chrome-parity claim.
 
 The [bidi mapping follow-up](docs/verification/inventory-bidi-20261031.md) removes mapping allocations from ordinary LTR layout. Paired inventory style/layout improves 7.7% provisionally (0.182 to 0.168 ms; Chrome 0.139 ms), with complete native CPU down 3.7%. Full qualified gate passes: 17 GCC and 19 sanitizer suites, including 792 new bidi checks with zero LTR mapping allocations. Main counts remain 807,102/807,096; Unity EditMode 255 plus two inconclusive, player 7/7, Godot and Chrome gates pass with unchanged renders. Chrome parity remains open.
+
+The [matched property-ID follow-up](docs/verification/inventory-property-ids-20261031.md)
+reuses stable IDs during cascade application. Its three paired inventory rounds
+show a provisional 4.3% style/layout reduction and effectively flat complete CPU;
+Chrome parity remains unproven. GCC main coverage is 807,129 checks (807,123
+under sanitizers), with 17 GCC and 19 sanitizer suites. The report also preserves
+a rejected line-height experiment and an existing pseudo color-inherit defect.

@@ -1374,6 +1374,7 @@ const std::vector<MatchedDeclaration>& CascadeEngine::collect_matches(
         for (const Declaration& d : cr.declarations) {
             MatchedDeclaration m;
             m.declaration = &d;
+            m.property_id = CssPropertyRegistry::instance().id_of(d.property);
             m.source_url = &cr.rule->source_url;
             m.origin = cr.origin;
             m.specificity = spec;
@@ -1520,6 +1521,7 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     for (const MatchedDeclaration& m : matches) {
         const std::string& name = m.declaration->property;
         if (name.size() > 2 && name[0] == '-' && name[1] == '-') continue;
+        const int id = m.property_id != kCustomPropertyId ? m.property_id : reg.id_of(name);
         const std::string& value = m.declaration->value_text;
         if ((value.find("var(") != std::string::npos || value.find("VAR(") != std::string::npos) &&
             is_shorthand(name)) {
@@ -1531,10 +1533,12 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
                     // The shorthand slot keeps the substituted text as well:
                     // readers of the raw shorthand (and tests of it) still see
                     // the resolved value there.
-                    out->set(name, resolved);
+                    if (id != kCustomPropertyId) out->set(id, resolved);
+                    else out->set(name, resolved);
                     for (const ShorthandLonghand& lh : early_longhands) {
-                        out->set(lh.property, lh.value);
                         const int lid = reg.id_of(lh.property);
+                        if (lid != kCustomPropertyId) out->set(lid, lh.value);
+                        else out->set(lh.property, lh.value);
                         if (lid != kCustomPropertyId) {
                             out->set_important(lid, m.declaration->important);
                             winner_keys_[static_cast<size_t>(lid)] = CascadeKey::of(m, gen);
@@ -1544,8 +1548,8 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
                 }
             }
         }
-        out->set(name, value);
-        int id = reg.id_of(name);
+        if (id != kCustomPropertyId) out->set(id, value);
+        else out->set(name, value);
         if (id != kCustomPropertyId) {
             out->set_important(id, m.declaration->important);
             winner_keys_[static_cast<size_t>(id)] = CascadeKey::of(m, gen);
@@ -1576,7 +1580,8 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
                 // An inline normal declaration loses to an existing !important
                 // one; an inline !important beats a normal one.
                 if (id != kCustomPropertyId && out->is_important(id) && !d.important) continue;
-                out->set(d.property, d.value_text);
+                if (id != kCustomPropertyId) out->set(id, d.value_text);
+                else out->set(d.property, d.value_text);
                 if (id != kCustomPropertyId) {
                     out->set_important(id, d.important);
                     CascadeKey k;
@@ -1832,6 +1837,7 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
         for (const Declaration& d : cr.declarations) {
             MatchedDeclaration m;
             m.declaration = &d;
+            m.property_id = CssPropertyRegistry::instance().id_of(d.property);
             m.source_url = &cr.rule->source_url;
             m.origin = cr.origin;
             m.specificity = spec;
@@ -1856,8 +1862,9 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
     out->clear();
     auto& reg = CssPropertyRegistry::instance();
     for (const MatchedDeclaration& m : matches) {
-        out->set(m.declaration->property, m.declaration->value_text);
-        int id = reg.id_of(m.declaration->property);
+        const int id = m.property_id != kCustomPropertyId ? m.property_id : reg.id_of(m.declaration->property);
+        if (id != kCustomPropertyId) out->set(id, m.declaration->value_text);
+        else out->set(m.declaration->property, m.declaration->value_text);
         if (id != kCustomPropertyId) out->set_important(id, m.declaration->important);
     }
 

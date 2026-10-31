@@ -77,6 +77,9 @@ struct MatchedDeclaration {
     std::string selector_text;
     const std::string* source_url = nullptr;
     int scope_distance = kUnscopedDistance;
+    // Registry IDs are stable. Unknown/custom names remain name-based so a
+    // property registered after this match was cached can still be resolved.
+    int property_id = kCustomPropertyId;
 };
 
 // The ordering fields of a MatchedDeclaration without the borrowed Declaration

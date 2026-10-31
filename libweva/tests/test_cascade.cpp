@@ -57,6 +57,31 @@ MatchedDeclaration make(const Declaration* d, DeclarationOrigin o, Specificity s
 } // namespace
 
 void test_cascade_order() {
+    {
+        Fixture f;
+        CHECK(f.html("<div id=x style='margin-left:9px;--gap:4px;color:blue'>text</div>"));
+        CHECK(f.css("#x{margin:var(--gap)!important;color:red;--gap:3px}"
+                    "#x::before{content:'x';margin:var(--gap)}"));
+        for (int pass = 0; pass < 2; ++pass) {
+            const auto& matches = f.engine.collect_matches(*f.id("x"), f.state);
+            CHECK(!matches.empty());
+            for (const auto& match : matches)
+                CHECK(match.property_id == CssPropertyRegistry::instance().id_of(match.declaration->property));
+            ComputedStyle host, pseudo;
+            f.engine.compute(*f.id("x"), f.state, nullptr, &host);
+            CHECK(host.get("color") == "blue");
+            CHECK(host.get("margin-left") == "4px");
+            CHECK(host.is_important(CssPropertyRegistry::instance().id_of("margin-left")));
+            CHECK(host.get("--gap") == "4px");
+            CHECK(f.engine.compute_pseudo_element(*f.id("x"), "before", f.state, host, &pseudo));
+            CHECK(pseudo.get("margin-left") == "4px");
+            CHECK(pseudo.get("color") == "blue");
+        }
+        // Compiled match replacement must refresh IDs together with declarations.
+        CHECK(f.css("#x{padding:5px;color:green!important}"));
+        CHECK(f.value("x", "color") == "green");
+        CHECK(f.value("x", "padding-left") == "5px");
+    }
     // @supports selector(): a selector the engine parses is supported, one it
     // does not is not, and a `:` inside it is not a declaration's colon.
     for (const auto& [rule, expected] : std::vector<std::pair<const char*, const char*>>{
