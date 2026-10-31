@@ -566,3 +566,12 @@ six provisional pairs failed to isolate a useful gain; unrelated Rust builds
 contaminated the first batch. Corrected paint attribution, both batches and
 the rejected patch are preserved. The restored engine passes all 17 GCC
 suites and the rebuilt Agentic PE sections match the accepted baseline.
+
+The [paint state follow-up](docs/verification/paint-state-20261031.md)
+combines absolute/fixed containing-block queries in the positioning owner.
+Six provisional pairs measure 2.6% lower inventory paint CPU; the diagnostic
+stage saves 3.5 microseconds. The full gate passes 808,138 GCC main checks
+(808,132 sanitized), 17 GCC/19 sanitizer suites, 341 Chrome captures and
+67 browser checks plus the existing known failure. Both Windows hosts are
+rebuilt; Unity passes 255 EditMode tests/two inconclusive and 7/7 Mono player
+checks. All 17 render comparisons match the accepted baseline.

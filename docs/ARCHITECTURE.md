@@ -1325,3 +1325,8 @@ inline layout uses these for glyph boxes and baseline contributions. Default
 implementations preserve custom FontMetrics scalar overrides. The host font
 callback table and C ABI are unchanged; see
 docs/verification/vertical-metrics-20261031.md.
+
+Paint obtains absolute and fixed containing-block status together through
+positioning's internal containing_block_kinds query. The shared CSS predicate
+is evaluated once per query; no cached state or C ABI change is involved.
+See docs/verification/paint-state-20261031.md.

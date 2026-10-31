@@ -379,6 +379,11 @@ bool establishes_absolute_containing_block(const Box& b) {
     return has_containing_block_property(b);
 }
 
+ContainingBlockKinds containing_block_kinds(const Box& b) {
+    const bool fixed = has_containing_block_property(b);
+    return {b.position != PositionType::Static || fixed, fixed};
+}
+
 ContainingBlock resolve_absolute_containing_block(const BoxTree& tree, BoxId box,
                                                   const LayoutContext& ctx) {
     for (BoxId p = tree[box].parent; p != kNoBox; p = tree[p].parent) {

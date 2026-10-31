@@ -116,6 +116,44 @@ bool near(double a, double b) { return std::fabs(a - b) < 1e-9; }
 } // namespace
 
 void test_relative_positioning() {
+    // Absolute positioning also accepts a positioned ancestor; fixed
+    // positioning only accepts the CSS properties that capture its viewport.
+    // Mutate the same style so the combined query cannot retain stale flags.
+    struct Case { const char* property; const char* value; bool captures; };
+    const Case cases[] = {
+        {"transform", "none", false}, {"transform", "translateX(0px)", true},
+        {"translate", "0px", true}, {"rotate", "0deg", true}, {"scale", "1", true},
+        {"filter", "none", false}, {"filter", "blur(0px)", true},
+        {"perspective", "100px", true}, {"will-change", "opacity", false},
+        {"will-change", "transform", true}, {"will-change", "filter", true},
+        {"will-change", "perspective", true}, {"contain", "none", false},
+        {"contain", "size", false}, {"contain", "layout", true},
+        {"contain", "paint", true}, {"contain", "strict", true},
+        {"contain", "content", true}
+    };
+    ComputedStyle style;
+    Box box;
+    for (auto position : {PositionType::Static, PositionType::Relative,
+                          PositionType::Absolute, PositionType::Fixed, PositionType::Sticky}) {
+        box.position = position;
+        box.style = nullptr;
+        auto kinds = containing_block_kinds(box);
+        CHECK(kinds.absolute == (position != PositionType::Static));
+        CHECK(!kinds.fixed);
+        box.style = &style;
+        for (const auto& test : cases) {
+            style.set(test.property, test.value);
+            kinds = containing_block_kinds(box);
+            CHECK(kinds.absolute == (position != PositionType::Static || test.captures));
+            CHECK(kinds.fixed == test.captures);
+            CHECK(kinds.absolute == establishes_absolute_containing_block(box));
+            CHECK(kinds.fixed == establishes_fixed_containing_block(box));
+            style.unset(CssPropertyRegistry::instance().id_of(test.property));
+            kinds = containing_block_kinds(box);
+            CHECK(kinds.absolute == (position != PositionType::Static));
+            CHECK(!kinds.fixed);
+        }
+    }
     // `relative` offsets the box from its in-flow position WITHOUT affecting
     // the flow: the sibling after it stays where it was.
     Fixture f;

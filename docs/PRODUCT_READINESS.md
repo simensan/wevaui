@@ -23,6 +23,12 @@ lower inventory style/layout CPU, with medians of 0.167 ms versus Chrome's
 0.170 ms. Paint remains higher and HUD results are flat; this is not stable
 Chrome parity or a new release qualification.
 
+The [combined containing-block query](verification/paint-state-20261031.md)
+removes a repeated CSS property scan during paint. Six provisional pairs
+measure 2.6% lower inventory paint CPU, with a 3.5 microsecond saving in the
+instrumented containing-block stage. Browser timings remain variable;
+consistent Chrome parity is not established.
+
 The [clean Chrome comparison](verification/clean-render-comparison-20261031.md)
 still finds an inventory CPU gap: style/layout 0.280 vs 0.142 ms, paint recording
 0.255 vs 0.201 ms. The [30-minute reload soak](verification/lifecycle-soak-20261031.md)

@@ -38,6 +38,12 @@ ContainingBlock resolve_fixed_containing_block(const BoxTree& tree, BoxId box,
 // filling the viewport instead of its parent.
 bool establishes_absolute_containing_block(const Box& b);
 bool establishes_fixed_containing_block(const Box& b);
+struct ContainingBlockKinds {
+    bool absolute, fixed;
+};
+// Paint needs both answers. Share the CSS property scan rather than repeating
+// it for the absolute and fixed cases; no result outlives this query.
+ContainingBlockKinds containing_block_kinds(const Box& b);
 // A positioned descendant escapes overflow between itself and its containing
 // block. The containing block itself, and its ancestors, still clip it.
 bool overflow_clip_applies(const BoxTree& tree, BoxId clip, BoxId containing_block);

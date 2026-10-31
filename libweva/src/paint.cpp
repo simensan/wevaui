@@ -3486,8 +3486,9 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     // bar behind every header's text.
     const bool decorated = b.kind != BoxKind::Line && b.kind != BoxKind::AnonymousBlock &&
                            b.kind != BoxKind::AnonymousInline && b.kind != BoxKind::Text;
-    if (establishes_absolute_containing_block(b)) state.absolute_cb = id;
-    if (establishes_fixed_containing_block(b)) state.fixed_cb = id;
+    const auto containing_blocks = containing_block_kinds(b);
+    if (containing_blocks.absolute) state.absolute_cb = id;
+    if (containing_blocks.fixed) state.fixed_cb = id;
     if (decorated && b.style) state.opacity *= resolve_opacity(b.style);
     // `mix-blend-mode`: told to the backend once per box, and again when the
     // box's subtree is done, so a sibling painted after it is back to the
