@@ -1,5 +1,11 @@
 # AI_REFERENCE.md — orientation for AI agents
 
+The [direct vertex upload pass](docs/verification/unity-direct-vertices-20261031.md)
+reduces paired full-inventory Unity sync median 11.9%, with mixed total CPU tails.
+Full EditMode passes 255 tests (two existing inconclusive); URP and Windows
+Mono player pass 7/7 each, with all 16 captures per host path unchanged.
+
+
 The [mesh reset experiment](docs/verification/unity-mesh-reset-20261031.md)
 was rejected after three alternating pairs: full inventory CPU medians did not
 improve. Production renderer source was restored; no new speedup is claimed.

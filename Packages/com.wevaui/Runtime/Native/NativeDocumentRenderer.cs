@@ -101,20 +101,16 @@ namespace Weva.Native
         public int RunsReused { get; private set; }
         private readonly List<Mesh> _meshPool = new List<Mesh>();
         private readonly List<Vector3> _positions = new List<Vector3>(1024);
-        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-        private struct UploadVertex
-        {
-            public Vector3 Position;
-            public Color Color;
-            public Vector2 UV;
-        }
+        // Match weva_vertex exactly: xy, linear rgba, uv. The shader uses xy;
+        // no synthetic z component or per-vertex managed reconstruction is needed.
         private static readonly VertexAttributeDescriptor[] VertexLayout =
         {
-            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 2),
             new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.Float32, 4),
             new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
         };
-        private readonly List<UploadVertex> _vertices = new List<UploadVertex>(1024);
+        private weva_vertex[] _vertices = new weva_vertex[1024];
+        private int _vertexCount;
         private readonly List<int> _indices = new List<int>(2048);
         private ulong _serial;
         private NativeDocument _document;
@@ -280,7 +276,7 @@ namespace Weva.Native
                     i++;
                     continue;
                 }
-                _vertices.Clear();
+                _vertexCount = 0;
                 _indices.Clear();
                 ulong texture = first.texture_id;
                 // The run's extent and versions first: when last frame built a
@@ -323,24 +319,25 @@ namespace Weva.Native
                         j++;
                         continue;
                     }
-                    int baseVertex = _vertices.Count;
-                    for (nuint v = 0; v < d.vertex_count; v++)
+                    int baseVertex = _vertexCount;
+                    int count = checked((int)d.vertex_count);
+                    int required = checked(baseVertex + count);
+                    if (_vertices.Length < required)
+                        Array.Resize(ref _vertices, Math.Max(required, checked(_vertices.Length * 2)));
+                    fixed (weva_vertex* destination = _vertices)
                     {
-                        weva_vertex vertex = d.vertices[v];
-                        _vertices.Add(new UploadVertex
-                        {
-                            Position = new Vector3(vertex.x, vertex.y, 0),
-                            Color = new Color(vertex.r, vertex.g, vertex.b, vertex.a),
-                            UV = new Vector2(vertex.u, vertex.v),
-                        });
+                        long bytes = (long)count * sizeof(weva_vertex);
+                        Buffer.MemoryCopy(d.vertices, destination + baseVertex,
+                            (long)(_vertices.Length - baseVertex) * sizeof(weva_vertex), bytes);
                     }
+                    _vertexCount = required;
                     for (nuint k = 0; k < d.index_count; k++) _indices.Add(baseVertex + (int)d.indices[k]);
                     j++;
                 }
                 Mesh mesh = RentMesh();
-                mesh.indexFormat = _vertices.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16;
-                mesh.SetVertexBufferParams(_vertices.Count, VertexLayout);
-                mesh.SetVertexBufferData(_vertices, 0, 0, _vertices.Count);
+                mesh.indexFormat = _vertexCount > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16;
+                mesh.SetVertexBufferParams(_vertexCount, VertexLayout);
+                mesh.SetVertexBufferData(_vertices, 0, 0, _vertexCount);
                 mesh.SetIndices(_indices, MeshTopology.Triangles, 0, false);
                 mesh.bounds = new Bounds(Vector3.zero, new Vector3(1e6f, 1e6f, 1f));
                 _batches.Add(new Batch

@@ -179,6 +179,48 @@ namespace Weva.Tests.EditorTests.Native
         }
 
         [Test]
+        public void Render_PooledMeshesSurviveSizeIndexWidthAndBackdropChanges()
+        {
+            Assume.That(HasGraphics, "a graphics device is required");
+            Assert.That(System.Runtime.InteropServices.Marshal.SizeOf<weva_vertex>(), Is.EqualTo(32));
+            using var doc = new NativeDocument(64, 64);
+            using var renderer = new NativeDocumentRenderer();
+            string large = "<body>" + string.Concat(System.Linq.Enumerable.Repeat("<div></div>", 17000)) + "</body>";
+            // Repeated sizes deliberately force the two-frame mesh pool to move
+            // from large to small and back, rather than retaining separate sizes.
+            int[] sizes = { 17000, 1, 1, 0, 0, 17000, 17000, 1 };
+            for (int step = 0; step < sizes.Length; ++step)
+            {
+                bool glass = sizes[step] == 0;
+                doc.LoadHtml(sizes[step] == 17000 ? large : "<body><div></div></body>");
+                doc.SetCss("html,body{margin:0}body{background:linear-gradient(red,blue)}div{position:absolute;left:8px;top:8px;" +
+                    (glass ? "width:40px;height:40px;background:rgba(255,255,255,0.2);backdrop-filter:blur(3px)" :
+                        "width:8px;height:8px;background:" + (step % 2 == 0 ? "lime" : "red")) + "}");
+                doc.Update(0);
+                using var fresh = new NativeDocumentRenderer();
+                Texture2D actual = null, expected = null;
+                try
+                {
+                    actual = renderer.RenderToTexture(doc, 64, 64, Color.black);
+                    expected = fresh.RenderToTexture(doc, 64, 64, Color.black);
+                    Assert.That(actual.GetPixels32(), Is.EqualTo(expected.GetPixels32()), "pool phase " + step);
+                    Assert.That(renderer.BackdropDraws, Is.EqualTo(glass ? 1 : 0));
+                    string directory = System.Environment.GetEnvironmentVariable("WEVA_AUDIT_RENDER_OUT");
+                    if (!string.IsNullOrEmpty(directory))
+                    {
+                        Directory.CreateDirectory(directory);
+                        File.WriteAllBytes(Path.Combine(directory, "pool-" + step + ".png"), actual.EncodeToPNG());
+                    }
+                }
+                finally
+                {
+                    if (actual != null) Object.DestroyImmediate(actual);
+                    if (expected != null) Object.DestroyImmediate(expected);
+                }
+            }
+        }
+
+        [Test]
         public void Render_PutsABoxWhereTheCoreLaidItOut()
         {
             Assume.That(HasGraphics, "a graphics device is required");
