@@ -1,5 +1,10 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [mesh reset experiment](docs/verification/unity-mesh-reset-20261031.md)
+was rejected after three alternating pairs: full inventory CPU medians did not
+improve. Production renderer source was restored; no new speedup is claimed.
+
+
 The [full inventory CPU audit](docs/verification/unity-full-inventory-20261031.md)
 measures all 20 selection mutations through Unity bindings: 24,576 measured
 iterations pass, with full-selection CPU median/p95 of 1.180/1.459 ms.

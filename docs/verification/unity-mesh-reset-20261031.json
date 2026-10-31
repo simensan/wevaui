@@ -1,0 +1,166 @@
+{
+  "decision": "rejected; production source restored byte-for-byte",
+  "measured_iterations": 49152,
+  "results": {
+    "idle-hud": {
+      "baseline": {
+        "sync_ms": {
+          "median": 0.0001,
+          "p95": 0.00030000000000000003
+        },
+        "total_cpu_ms": {
+          "median": 0.033100000000000004,
+          "p95": 0.0441
+        }
+      },
+      "candidate": {
+        "sync_ms": {
+          "median": 0.0001,
+          "p95": 0.0001
+        },
+        "total_cpu_ms": {
+          "median": 0.0334,
+          "p95": 0.040100000000000004
+        }
+      }
+    },
+    "hud": {
+      "baseline": {
+        "sync_ms": {
+          "median": 0.0591,
+          "p95": 0.1008
+        },
+        "total_cpu_ms": {
+          "median": 0.22315000000000002,
+          "p95": 0.34620000000000006
+        }
+      },
+      "candidate": {
+        "sync_ms": {
+          "median": 0.054400000000000004,
+          "p95": 0.0723
+        },
+        "total_cpu_ms": {
+          "median": 0.2217,
+          "p95": 0.2783
+        }
+      }
+    },
+    "inventory": {
+      "baseline": {
+        "sync_ms": {
+          "median": 0.1652,
+          "p95": 0.2354
+        },
+        "total_cpu_ms": {
+          "median": 0.47095,
+          "p95": 0.7276
+        }
+      },
+      "candidate": {
+        "sync_ms": {
+          "median": 0.1572,
+          "p95": 0.18780000000000002
+        },
+        "total_cpu_ms": {
+          "median": 0.4635,
+          "p95": 0.5622
+        }
+      }
+    },
+    "inventory-full": {
+      "baseline": {
+        "sync_ms": {
+          "median": 0.3534,
+          "p95": 0.6543
+        },
+        "total_cpu_ms": {
+          "median": 1.19865,
+          "p95": 1.6448
+        }
+      },
+      "candidate": {
+        "sync_ms": {
+          "median": 0.3612,
+          "p95": 0.6394000000000001
+        },
+        "total_cpu_ms": {
+          "median": 1.22875,
+          "p95": 1.6181
+        }
+      }
+    }
+  },
+  "sha256": {
+    ".utmp/render-audit-20261030/mesh-reset-baseline.cs": "f8b02df40a2891af2ef93f9c3a978a77de909c2b8ce570549a416af237946775",
+    ".utmp/render-audit-20261030/mesh-reset-candidate.cs": "c1eb4a80d984e4013cea7f87d83013d41d773ccb2031747a953dd3875d8398d7",
+    ".utmp/render-audit-20261030/run_mesh_reset_pairs.py": "1b1026ef70dd751dcb1a62ca43d5d61cfe468736cb598fc1f031d8a0bb7c23aa",
+    ".utmp/render-audit-20261030/mesh-reset-paired/pairs.json": "81ad9f4a037677ce0df7529634d5b0c0da894924810b64787df603c2194138a3",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-0/full-inventory-input.json": "562c5653bb6f5731f1b183cf44102f3c95040053f7cf4186b6fce16e2996e098",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-0/summary.json": "e3a0df98b80054bfc1f66575d3e47b2b07721387f5359ae546d8de3f362d16a3",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-1/full-inventory-input.json": "562c5653bb6f5731f1b183cf44102f3c95040053f7cf4186b6fce16e2996e098",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-1/summary.json": "729b6515d8794f98ef3ec36a297b95d1e60243b0b5db980ba3601b2020308a17",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-2/full-inventory-input.json": "562c5653bb6f5731f1b183cf44102f3c95040053f7cf4186b6fce16e2996e098",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-2/summary.json": "6cdf4fa116850ae21fa46f975ccf1c7f53e77745f056f4bad9a7a69e70262af8",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-0/full-inventory-input.json": "562c5653bb6f5731f1b183cf44102f3c95040053f7cf4186b6fce16e2996e098",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-0/summary.json": "8b2f30a585cf4222222949562341accf41c67ce2a82809fdf33ffdd6da203eee",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-1/full-inventory-input.json": "562c5653bb6f5731f1b183cf44102f3c95040053f7cf4186b6fce16e2996e098",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-1/summary.json": "8539ff1d3b0e07439548750259060d835e9f89d8d50e2075a11c8729de724ac0",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-2/full-inventory-input.json": "562c5653bb6f5731f1b183cf44102f3c95040053f7cf4186b6fce16e2996e098",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-2/summary.json": "c66587fd2848e804298473f5fcd759dd5785d5f0df7abf7b8a421dcd00150d7c",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-2/0/hud.json": "329b8615c99e74972d5a4740bab53e87b6cacbeeee42043b84e436709a486103",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-2/0/idle-hud.json": "800924eb0f318eb7aa33a263bb89b4fc9e440e077764de55c96c18ec40ec7cab",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-2/0/inventory-full.json": "9efa16d25fa1971fe241e8c0afb9c47e587749ef17af464ef3911f6f34ceb64d",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-2/0/inventory.json": "a65629a74ed3b44e43bde592b0b1de1bc279707337738d4186a21170b39e798e",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-1/0/hud.json": "37cf5043298ebb64d2633d74208621468888689e204cbeff0c4a694f170e9de2",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-1/0/idle-hud.json": "c4c10d1b23e900fb7e27cf8b423cfcfd9467dcccc5a43d237640be7d2ac25847",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-1/0/inventory-full.json": "86186cb871706327c1f468a4e90fa3ed7364e44b2544890e8ea98f128c8385d1",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-1/0/inventory.json": "5f98e11be17c9c19691f3372d62425895bfbb970d387b6aee264841cdd3cdd51",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-0/0/hud.json": "8490fb6e2237f664304b52a62d9a5665d59dfe6c36ec6b8828d99a002542a4a9",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-0/0/idle-hud.json": "1e4b4371df9e0c4f2a92d7624272e7768c6d2752ea83be6175d0e2cce6c3842c",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-0/0/inventory-full.json": "d6c047f27513728a9a3cdde3eb666ff6b98ff6438fbcfeac6ddb2b95288578c1",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-0/0/inventory.json": "a5f136bfb1c512d23874035d03a3016134a86498f65d5c4891461649e4da5acb",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-2/0/hud.json": "592ed4e94f2f10d821f0126c117da1daa51fd670b5624ca54445e21a066e7760",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-2/0/idle-hud.json": "5a48696c7f9b317fbba1d57397fdb1e2d93ae37c42f41e5f3bf6b8cbeac3d7bc",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-2/0/inventory-full.json": "d445e525f0a0fde70afdd35eeac3c4006acedf58558f27577f634332282e9b20",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-2/0/inventory.json": "13e632826d618a4b21ebf93919986f85f0432b7f654032f8d68015ea99219fb7",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-1/0/hud.json": "666944cd1be3b170b47dd1d8d42f76562bb5a86f7d9c4a2855f871446a3f9a39",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-1/0/idle-hud.json": "753b3b48e4c9c1ba033f648fc5a099febe4c43f68dfe9cb5144a919939d527c5",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-1/0/inventory-full.json": "a9e62cc50afdf8154bcc4d503421d4b3c35bb669e04d9af3588cc4c03353d9c7",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-1/0/inventory.json": "b608ad62c0e9436f01fd8b4efe7167f55fc462d3159bd1aeab6163fd83b2ace6",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-0/0/hud.json": "c42a224da3cf1e3f582f2d0f96831652c29c31a9173a719b32565387cf508874",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-0/0/idle-hud.json": "9275e96c90462c365c4958a7c860ccfc03370850f6374bc561283ff707acef8c",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-0/0/inventory-full.json": "1a8b1349bff291af788b17935b02e26712f720cf8426f27977be822f48d0400d",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-0/0/inventory.json": "b9c1c2ccbe3f9a98378723df6d14eb7c471b68097417cdb1bccb6d836e96038a",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-2/0/hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-2/0/idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-2/0/inventory-full.png": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-2/0/inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-1/0/hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-1/0/idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-1/0/inventory-full.png": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-1/0/inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-0/0/hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-0/0/idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-0/0/inventory-full.png": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-0/0/inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-2/0/hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-2/0/idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-2/0/inventory-full.png": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-2/0/inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-1/0/hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-1/0/idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-1/0/inventory-full.png": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-1/0/inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-0/0/hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-0/0/idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-0/0/inventory-full.png": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-0/0/inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-0/0.log": "79aa99414f579abcdfc6f2c46199fafae0912edf530d7de121d9191f98eef375",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-1/0.log": "14a12b21ef80ed5ae61ee9d3a4e094120f07e250ae6fd804b25a39fa34063ea9",
+    ".utmp/render-audit-20261030/mesh-reset-paired/baseline-2/0.log": "ad33e1b6da8f57e624cbe3c7ca28d7af873192cce0056af26a8702062c0562c1",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-0/0.log": "2cfa885b576ebb2b393d92ab6f333700a165c6b5b18b9deed236ff387088962e",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-1/0.log": "cf8f355f50dcf33de6db4b87663fdb03c0bdc5e5fa807a9e03d71d057cf5722d",
+    ".utmp/render-audit-20261030/mesh-reset-paired/candidate-2/0.log": "b09e79ac1f3faef7ca88ec0bd17f11437d9ec7cad3f9d7c6ab4e16344cf4960a"
+  }
+}
