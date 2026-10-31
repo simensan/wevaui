@@ -1,0 +1,65 @@
+{
+  "decision": "reject; source and GCC archive restored",
+  "pairs": [
+    {
+      "pair": 0,
+      "baseline_mean_ms": 0.38767,
+      "candidate_mean_ms": 0.369665,
+      "change_percent": -4.644414063507618
+    },
+    {
+      "pair": 1,
+      "baseline_mean_ms": 0.366857,
+      "candidate_mean_ms": 0.359009,
+      "change_percent": -2.1392531694910955
+    },
+    {
+      "pair": 2,
+      "baseline_mean_ms": 0.351196,
+      "candidate_mean_ms": 0.391121,
+      "change_percent": 11.368295766466584
+    },
+    {
+      "pair": 3,
+      "baseline_mean_ms": 0.360048,
+      "candidate_mean_ms": 0.397947,
+      "change_percent": 10.526096520463945
+    },
+    {
+      "pair": 4,
+      "baseline_mean_ms": 0.362803,
+      "candidate_mean_ms": 0.354035,
+      "change_percent": -2.4167385605962433
+    },
+    {
+      "pair": 5,
+      "baseline_mean_ms": 0.360003,
+      "candidate_mean_ms": 0.356138,
+      "change_percent": -1.0736021644264127
+    }
+  ],
+  "median_paired_change_percent": -1.606427666958754,
+  "restored_library_sha256": "9ee47cba558a6e81486d1a4b38ddae0d9709116f64b8ca32a73bc8570f72903a",
+  "sha256": {
+    ".utmp/render-audit-20261030/transform-font-baseline.cpp": "b27c525045d14465e33c0c14549152e3736a91fd75e8fac5d47cfe305de794e2",
+    ".utmp/render-audit-20261030/transform-font-candidate.cpp": "52f9440c2b5634dc663736eb0dfaa93f22e4e6139cde4e709958e6dd81fa1a70",
+    ".utmp/render-audit-20261030/transform-font-build.log": "f5580bd456bb2b6bd7314b767abc43737d1c5d986436112b9ce53e7096cac540",
+    ".utmp/render-audit-20261030/transform-font-restored-build.log": "f5580bd456bb2b6bd7314b767abc43737d1c5d986436112b9ce53e7096cac540",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/0-baseline.log": "bd024355cdcf93bfc26f0a3a0cfaf31f21e58a47569d0e71d68a4f9e7317cdae",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/0-candidate.log": "4cb956ffd5850a89d6a1e271301637eb148e94e63c64dfc3f2516168e758097a",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/1-baseline.log": "4a3923f521d63ce0372cc817e6567509510211c12c9320ae2db437c6712ec2f6",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/1-candidate.log": "2e900b405debbe1cc9d49722230a01920fce7344be0fc86766099dc2abbe9e9c",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/2-baseline.log": "95e690ca53a6d7d1ae671f600cd4a4ca16700595403dc05efe0a3d836e81a4ad",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/2-candidate.log": "c5238ea2dfcf971403e31ad13c7052b92cb6f7fb092d228183363e79f58cf93c",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/3-baseline.log": "a783290689b6511ae80e47cfa36c82b44e336ad1aa9ce1c035609818fada79a3",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/3-candidate.log": "ebfea684a89c0ed81c2c2fd1071b8290cd828d9a86390028234a3e114ad3033f",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/4-baseline.log": "3b483ce2083a4f3b352156f8136fed4c3011dc47941ff867c6c25eb21b92cbd0",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/4-candidate.log": "57b472b3d241d6125a8f51f3f23fed098196373a2cf00852c6d1db5dff2eb39f",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/5-baseline.log": "7741c25516ab2e668f717a75cd5a581c759f4b652c2c6d48900fa7d7a2e9cbd9",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/5-candidate.log": "b15796fcf3d5f1a66c31cb71cf1518a86d90b54e05fd012a3d796f535c721ed2",
+    ".utmp/render-audit-20261030/core-selection-profile/transform-font-pairs/results.json": "0ba8060eb116c12496835559faa227e687d45956ae50092fbabc23e73826a38f",
+    ".utmp/render-audit-20261030/core-selection-profile/compare_transform_font.py": "898435edbeaa093ee21c28ba947f64fdc33c0c21defbc83399e089f28668b128",
+    ".utmp/render-audit-20261030/core-selection-profile/selection_baseline": "2b17349e7e8bf386624941bc43e78398891f44138258e7713f861eed9e3ffb6d",
+    ".utmp/render-audit-20261030/core-selection-profile/transform_font_candidate": "461897ae802b32f3e44baba66ded0e2b410b634183eca875ad5125f4c08d8343"
+  }
+}
