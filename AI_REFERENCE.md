@@ -1,5 +1,10 @@
 # AI_REFERENCE.md â€” orientation for AI agents
 
+The [Agentic viewport-uniform follow-up](docs/verification/viewport-uniform-20261031.md)
+skips redundant changed-frame buffer writes. Fourteen renderer tests, 18,000
+measured runtime frames and 656 reloads pass. Observed worker savings are small
+(about 1.5–1.8%); static-mode timings remain mixed. Shared core is unchanged.
+
 The [Agentic submission follow-up](docs/verification/ui-submission-20261031.md)
 combines presentation and HTML encoding: inventory worker UI-phase CPU falls
 17.1% and frame median 3.3% in three pairs. 18,000 frames, 713 reloads and nine
