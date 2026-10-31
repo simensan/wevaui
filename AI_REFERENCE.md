@@ -485,3 +485,9 @@ fixes inherited clipping hiding canvas backgrounds. The leased audit branch
 passes 84 library tests with two existing ignored; the GPU regression fails
 before and passes after. This is adapter correctness, not a speedup or an
 upstream SDK release. Unity/Godot use different clipping paths and are unchanged.
+
+The [Agentic scissor command follow-up](docs/verification/agentic-scissor-dedup-20261031.md)
+reduces repeated clip commands while preserving first-draw state ownership.
+Encoding CPU improves 5.04% HUD / 4.26% inventory in four paired runs; 84 tests
+pass with two existing ignored and captures match. It is on the unpublished
+Agentic audit branch; no shared-core or Unity/Godot change is needed.

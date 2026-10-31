@@ -5,6 +5,9 @@ The local Agentic audit branch adds explicit hidden CPU preparation through
 by moving layout/glyph/paint work into loading; GPU first-use work remains.
 This is not yet an upstream Agentic integration. See the
 [October 31 preparation receipt](verification/script-preparation-20261031.md).
+The [Agentic scissor follow-up](verification/agentic-scissor-dedup-20261031.md)
+reduces command-encoding CPU by roughly 4–5% in four paired survival-UI runs,
+with unchanged captures. It also remains on the unpublished audit branch.
 
 Unity 2.0 adds retained `Visible`, CPU `Prepare()` and texture/mesh/material
 `PrepareRenderer()` loading controls, with 255 EditMode passes (two existing
