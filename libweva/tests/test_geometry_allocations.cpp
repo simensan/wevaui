@@ -39,7 +39,7 @@ template<class F> size_t measure(F call) {
 }
 // Independent scalar reference for the pre-optimization AA ring construction.
 using Point = std::pair<double, double>;
-Point reference_offset(const std::vector<Point>& pts, size_t i, double d) {
+Point reference_displacement(const std::vector<Point>& pts, size_t i, double d) {
     const size_t n = pts.size();
     size_t prev = i, next = i;
     for (size_t k = 1; k <= n; ++k) { prev = (i + n - k) % n; if (pts[prev] != pts[i]) break; }
@@ -47,22 +47,26 @@ Point reference_offset(const std::vector<Point>& pts, size_t i, double d) {
     const double ax = pts[i].first - pts[prev].first, ay = pts[i].second - pts[prev].second;
     const double bx = pts[next].first - pts[i].first, by = pts[next].second - pts[i].second;
     const double la = std::sqrt(ax*ax + ay*ay), lb = std::sqrt(bx*bx + by*by);
-    if (la <= 0 || lb <= 0) return pts[i];
+    if (la <= 0 || lb <= 0) return {0,0};
     const double n1x = ay/la, n1y = -ax/la, n2x = by/lb, n2y = -bx/lb;
     double mx = n1x+n2x, my = n1y+n2y;
     const double lm = std::sqrt(mx*mx + my*my);
-    if (lm <= 1e-9) return pts[i];
+    if (lm <= 1e-9) return {0,0};
     mx /= lm; my /= lm;
     const double c = mx*n1x + my*n1y;
     const double scale = c > .2 ? d/c : d*5;
-    return {pts[i].first + mx*scale, pts[i].second + my*scale};
+    return {mx*scale, my*scale};
 }
-bool scalar_rounding_matches(const weva::Rect& r, const weva::BorderRadii& radii, int segments) {
+Point reference_offset(const std::vector<Point>& pts, size_t i, double d) {
+    const auto delta = reference_displacement(pts,i,d);
+    return {pts[i].first+delta.first,pts[i].second+delta.second};
+}
+std::vector<Point> reference_outline(const weva::Rect& r, const weva::BorderRadii& radii, int segments, bool uniform=false) {
     const auto c = weva::clamp_radii_to_rect(radii, r.width, r.height);
     std::vector<Point> pts;
     const double pi = 3.14159265358979323846;
     const auto arc = [&](double x, double y, const weva::CornerRadius& radius, double start) {
-        if (radius.x_radius <= 0 || radius.y_radius <= 0) { pts.emplace_back(x,y); return; }
+        if (radius.x_radius <= 0 || radius.y_radius <= 0) { for (int i=0; i<(uniform ? segments+1 : 1); ++i) pts.emplace_back(x,y); return; }
         for (int i=0; i<=segments; ++i) {
             const double t = start + (pi*.5)*(static_cast<double>(i)/segments);
             pts.emplace_back(x+radius.x_radius*std::cos(t), y+radius.y_radius*std::sin(t));
@@ -72,6 +76,10 @@ bool scalar_rounding_matches(const weva::Rect& r, const weva::BorderRadii& radii
     arc(r.right()-c.top_right.x_radius,r.y+c.top_right.y_radius,c.top_right,-pi*.5);
     arc(r.right()-c.bottom_right.x_radius,r.bottom()-c.bottom_right.y_radius,c.bottom_right,0);
     arc(r.x+c.bottom_left.x_radius,r.bottom()-c.bottom_left.y_radius,c.bottom_left,pi*.5);
+    return pts;
+}
+bool scalar_rounding_matches(const weva::Rect& r, const weva::BorderRadii& radii, int segments) {
+    const auto pts = reference_outline(r,radii,segments);
     weva::Mesh actual;
     weva::tessellate_rounded_rect(r,radii,weva::LinearColor::white(),&actual,segments,true);
     if (actual.vertices.size()!=1+2*pts.size()) return false;
@@ -83,6 +91,44 @@ bool scalar_rounding_matches(const weva::Rect& r, const weva::BorderRadii& radii
     }
     return true;
 }
+bool scalar_thin_border_matches(const weva::Rect& r, const weva::BorderRadii& radii, int segments, double width) {
+    const weva::Rect inner(r.x+width,r.y+width,std::max(0.0,r.width-2*width),std::max(0.0,r.height-2*width));
+    const auto inside=weva::inset_radii(weva::clamp_radii_to_rect(radii,r.width,r.height),width,width,width,width);
+    auto outer_points=reference_outline(r,radii,segments);
+    auto inner_points=reference_outline(inner,inside,segments);
+    if (outer_points.size()!=inner_points.size()) {
+        outer_points=reference_outline(r,radii,segments,true);
+        inner_points=reference_outline(inner,inside,segments,true);
+    }
+    weva::Mesh actual;
+    actual.vertices.resize(3);
+    actual.indices = {2,1,0};
+    const weva::LinearColor colors[4]={{.2f,.4f,.6f,.7f},{.2f,.4f,.6f,.7f},{.2f,.4f,.6f,.7f},{.2f,.4f,.6f,.7f}};
+    weva::tessellate_border(r,radii,width,width,width,width,colors,&actual,segments,true);
+    if (actual.vertices.size()!=3+4*outer_points.size() || actual.indices.size()!=3+18*outer_points.size()) return false;
+    if (actual.indices[0]!=2 || actual.indices[1]!=1 || actual.indices[2]!=0) return false;
+    for (size_t i=0;i<outer_points.size();++i) {
+        const auto od=reference_displacement(outer_points,i,1);
+        const auto id=reference_displacement(inner_points,i,1);
+        for (int ring=0;ring<4;++ring) {
+            const auto& p=ring<2 ? outer_points[i] : inner_points[i];
+            const auto& delta=ring<2 ? od : id;
+            const double distance=ring==0 ? .5 : ring==1 ? .5-width : ring==2 ? width-.5 : -.5;
+            const auto& v=actual.vertices[3+4*i+ring];
+            if (v.position.x!=static_cast<float>(p.first+delta.first*distance) ||
+                v.position.y!=static_cast<float>(p.second+delta.second*distance) ||
+                v.color.a!=((ring==0 || ring==3) ? 0.f : .7f*static_cast<float>(width))) return false;
+        }
+        const size_t next=(i+1)%outer_points.size();
+        for (uint32_t strip=0;strip<3;++strip) {
+            const uint32_t a=static_cast<uint32_t>(3+4*i+strip), b=static_cast<uint32_t>(3+4*next+strip);
+            const uint32_t expected[6]={a,b,a+1,a+1,b,b+1};
+            for (size_t j=0;j<6;++j) if (actual.indices[3+18*i+6*strip+j]!=expected[j]) return false;
+        }
+    }
+    return true;
+}
+
 }
 
 void* operator new(size_t size) {
@@ -112,6 +158,20 @@ int main() {
         corners.bottom_left = {0,0};
         check(scalar_rounding_matches(Rect(2.125,y,103.5,41.25),corners,segments),
               "AA vertices exactly match scalar reference",0,0);
+    }
+    // Full and collapsed inner corners, repeated points at square corners,
+    // and a closing-edge run must retain the former scalar geometry exactly.
+    for (int segments : {1, 4, 8, 31}) for (double width : {.25, .5, 1.})
+    for (double radius : {.125, .5, 1., 8., 100.}) for (bool mixed : {false,true}) {
+        auto radii=BorderRadii::uniform(radius);
+        if (mixed) { radii.top_left={0,0}; radii.bottom_right={radius*.3,radius*.7}; }
+        check(scalar_thin_border_matches(rect,radii,segments,width),
+              "thin border matches independent scalar geometry",0,0);
+    }
+    for (const Rect small : {Rect(0,0,2,2),Rect(-.25,.125,1.5,2),Rect(.125,-.25,2,1.5)})
+    for (double width : {.75,1.}) for (double radius : {1.,100.}) for (int segments : {1,8}) {
+        check(scalar_thin_border_matches(small,BorderRadii::uniform(radius),segments,width),
+              "collapsed inner outline matches scalar geometry",0,0);
     }
     {
         Mesh border;

@@ -573,3 +573,10 @@ stage saves 3.5 microseconds. The full gate passes 808,138 GCC main checks
 67 browser checks plus the existing known failure. Both Windows hosts are
 rebuilt; Unity passes 255 EditMode tests/two inconclusive and 7/7 Mono player
 checks. All 17 render comparisons match the accepted baseline.
+
+The [border geometry investigation](docs/verification/border-investigation-20261031.md)
+retains 144 new scalar geometry checks (320 total) and no runtime change.
+Three candidates were reverted; the six-pair bulk-index comparison does not
+isolate a useful gain. All 17 GCC and 19 Clang sanitizer suites pass, with
+unchanged geometry hashes and allocation budgets. The rebuilt Agentic PE
+sections match the accepted paint-state baseline; host binaries are unchanged.
