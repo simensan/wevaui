@@ -1,0 +1,66 @@
+{
+  "decision": "reject; source and GCC archive restored",
+  "pairs": [
+    {
+      "pair": 0,
+      "baseline_mean_ms": 0.369732,
+      "candidate_mean_ms": 0.348671,
+      "change_percent": -5.696288122207438
+    },
+    {
+      "pair": 1,
+      "baseline_mean_ms": 0.37501,
+      "candidate_mean_ms": 0.379394,
+      "change_percent": 1.1690354923868718
+    },
+    {
+      "pair": 2,
+      "baseline_mean_ms": 0.348253,
+      "candidate_mean_ms": 0.349518,
+      "change_percent": 0.36324166625987253
+    },
+    {
+      "pair": 3,
+      "baseline_mean_ms": 0.356559,
+      "candidate_mean_ms": 0.34758,
+      "change_percent": -2.5182368135427846
+    },
+    {
+      "pair": 4,
+      "baseline_mean_ms": 0.353213,
+      "candidate_mean_ms": 0.362267,
+      "change_percent": 2.5633258119038604
+    },
+    {
+      "pair": 5,
+      "baseline_mean_ms": 0.388537,
+      "candidate_mean_ms": 0.400481,
+      "change_percent": 3.074095903350238
+    }
+  ],
+  "median_paired_change_percent": 0.7661385793233721,
+  "restored_library_sha256": "9ee47cba558a6e81486d1a4b38ddae0d9709116f64b8ca32a73bc8570f72903a",
+  "sha256": {
+    ".utmp/render-audit-20261030/glyph-map-baseline.h": "7db480b92bc10142aa11c22719317036bcf63fe7b519977f10ba8d13f1fa8313",
+    ".utmp/render-audit-20261030/glyph-map-candidate.h": "6e98d4a620bb70f0d3aee22e06105a77d61c32db5145d97b8e4bee906429466c",
+    ".utmp/render-audit-20261030/glyph-map-build.log": "069dbddcd11dc3de18ac95519aa23848ca631d23c2ca3f4bc5e7823643c09054",
+    ".utmp/render-audit-20261030/glyph-map-restored-build.log": "8c35b1682f73592d30612d7b0fabdb384fcfff35cb5a076cb48b85b1368aa794",
+    ".utmp/render-audit-20261030/glyph-map-restored-build-v2.log": "069dbddcd11dc3de18ac95519aa23848ca631d23c2ca3f4bc5e7823643c09054",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/0-baseline.log": "53a841419c5692e2b2b76dd598e269da829c0b35e85ee91bdd5c17408cb8eb54",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/0-candidate.log": "d53a2fa69f5f733adffed1f4fd205dc1b64529d766f0917ea2d2fe00fc9a00a8",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/1-baseline.log": "499c5d6a40f4d9bb4d5734c583cf884ffc78f6c9afcd6a8a826508a21f084c52",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/1-candidate.log": "c60af4ab2c23c5092e4e5f2f915e0a4c42c5dcb5ee1178d219135a44cf6681ac",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/2-baseline.log": "f15182c87c3700814982c8723eb392fe281b6c91cf706943ab06913548efc5dd",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/2-candidate.log": "8aef14e9ecd353f767a83e6a4e35f0abae2290a6a391bac538f0ead21f6d0227",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/3-baseline.log": "96edd29a6a92292cc4cf9b817312b90159f997d437b9d083d156eafaf5e9effe",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/3-candidate.log": "24fd5fa922f64a9b3f666f3943964d5e074ed927c5ea0adfce83ea7527aecca6",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/4-baseline.log": "f1cd8984066343cad6aea14ff9cea25fdb7faaa8f2192e1be27a9d953e9ff6d5",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/4-candidate.log": "88cea77be6f1e960992ecd94a17b8722817635e177dc48e1b5772ccdc11bb3d0",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/5-baseline.log": "afdb801e652ce9a5e06198572f62428cee909ba8fee68f5fcc00af9824d44cc3",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/5-candidate.log": "10aa01a38867bc9a2c558fa866bfc5e59e718e4a1e62af39f713ad02bc00c279",
+    ".utmp/render-audit-20261030/core-selection-profile/glyph-map-pairs/results.json": "25eb291e1515aeedbe1b5527dc1495c41b4d356db2dc852c2a549c287134d32c",
+    ".utmp/render-audit-20261030/core-selection-profile/compare_glyph_map.py": "4d5c1725be7a5d300c4a99410259c73a15ab886e7aa35a11df1c3db8f27cd3d5",
+    ".utmp/render-audit-20261030/core-selection-profile/selection_baseline": "2b17349e7e8bf386624941bc43e78398891f44138258e7713f861eed9e3ffb6d",
+    ".utmp/render-audit-20261030/core-selection-profile/selection_candidate": "d407ea13f2fce594a410649711a25d0a82fb516f9d59eef65349568e3504c9d9"
+  }
+}

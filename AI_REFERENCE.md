@@ -1,5 +1,11 @@
 # AI_REFERENCE.md — orientation for AI agents
 
+The [glyph lookup experiment](docs/verification/glyph-map-20261031.md) was
+rejected after six paired native selection runs: the hash-table candidate lost
+four pairs. The original source and byte-identical GCC core library are restored;
+no host binary changed and no speedup is claimed.
+
+
 The [shared-core selection profile](docs/verification/core-selection-profile-20261031.md)
 attributes fixed-font native selection work: computed-style reads are 9.47%
 and glyph-atlas lookup 5.02% of self samples. No optimization or host-frame
