@@ -1,0 +1,805 @@
+{
+  "summary": [
+    {
+      "run": 0,
+      "scenario": "idle-hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.00030000000000000003,
+        "p95": 0.0016,
+        "max": 0.0143
+      },
+      "sync_ms": {
+        "median": 0.0001,
+        "p95": 0.0002,
+        "max": 0.0009000000000000001
+      },
+      "record_ms": {
+        "median": 0.018500000000000003,
+        "p95": 0.041600000000000005,
+        "max": 0.3272
+      },
+      "total_cpu_ms": {
+        "median": 0.0188,
+        "p95": 0.0425,
+        "max": 0.3296
+      },
+      "core_update_ms": {
+        "median": 0.0002,
+        "p95": 0.0006,
+        "max": 0.0126
+      },
+      "cascade_ms": {
+        "median": 0.0001,
+        "p95": 0.0003,
+        "max": 0.0005
+      },
+      "layout_ms": {
+        "median": 0.0,
+        "p95": 0.0001,
+        "max": 0.0002
+      },
+      "paint_ms": {
+        "median": 0.0,
+        "p95": 0.0001,
+        "max": 0.0002
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "uploaded_triangles": {
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      },
+      "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+    },
+    {
+      "run": 0,
+      "scenario": "hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.1392,
+        "p95": 0.21660000000000001,
+        "max": 1.1505
+      },
+      "sync_ms": {
+        "median": 0.0562,
+        "p95": 0.1024,
+        "max": 0.7998000000000001
+      },
+      "record_ms": {
+        "median": 0.0257,
+        "p95": 0.056600000000000004,
+        "max": 0.3602
+      },
+      "total_cpu_ms": {
+        "median": 0.22815000000000002,
+        "p95": 0.3526000000000001,
+        "max": 1.2703000000000002
+      },
+      "core_update_ms": {
+        "median": 0.09185,
+        "p95": 0.1482,
+        "max": 0.9251
+      },
+      "cascade_ms": {
+        "median": 0.0154,
+        "p95": 0.0258,
+        "max": 0.3739
+      },
+      "layout_ms": {
+        "median": 0.0001,
+        "p95": 0.0002,
+        "max": 0.0129
+      },
+      "paint_ms": {
+        "median": 0.0363,
+        "p95": 0.0701,
+        "max": 0.4602
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 56.0,
+        "p95": 56,
+        "max": 56
+      },
+      "uploaded_triangles": {
+        "median": 92.0,
+        "p95": 92,
+        "max": 94
+      },
+      "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+    },
+    {
+      "run": 0,
+      "scenario": "inventory",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.2675,
+        "p95": 0.6194000000000001,
+        "max": 2.1187
+      },
+      "sync_ms": {
+        "median": 0.16565000000000002,
+        "p95": 0.32780000000000004,
+        "max": 1.3248
+      },
+      "record_ms": {
+        "median": 0.06825,
+        "p95": 0.1327,
+        "max": 0.8275
+      },
+      "total_cpu_ms": {
+        "median": 0.50275,
+        "p95": 1.0416,
+        "max": 2.4298
+      },
+      "core_update_ms": {
+        "median": 0.20935,
+        "p95": 0.5236,
+        "max": 2.0509
+      },
+      "cascade_ms": {
+        "median": 0.0524,
+        "p95": 0.1116,
+        "max": 0.7969
+      },
+      "layout_ms": {
+        "median": 0.0001,
+        "p95": 0.0002,
+        "max": 0.0048
+      },
+      "paint_ms": {
+        "median": 0.1066,
+        "p95": 0.2672,
+        "max": 1.1836
+      },
+      "batches": {
+        "median": 137.0,
+        "p95": 137,
+        "max": 137
+      },
+      "reused": {
+        "median": 128.0,
+        "p95": 128,
+        "max": 128
+      },
+      "uploaded_triangles": {
+        "median": 1244.0,
+        "p95": 1244,
+        "max": 1550
+      },
+      "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+    },
+    {
+      "run": 0,
+      "scenario": "inventory-full",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.7142,
+        "p95": 1.1009,
+        "max": 4.5433
+      },
+      "sync_ms": {
+        "median": 0.34740000000000004,
+        "p95": 0.7473000000000001,
+        "max": 3.3039
+      },
+      "record_ms": {
+        "median": 0.101,
+        "p95": 0.16740000000000002,
+        "max": 0.49360000000000004
+      },
+      "total_cpu_ms": {
+        "median": 1.17945,
+        "p95": 1.9079,
+        "max": 5.6131
+      },
+      "core_update_ms": {
+        "median": 0.6255999999999999,
+        "p95": 0.9724,
+        "max": 4.4424
+      },
+      "cascade_ms": {
+        "median": 0.0782,
+        "p95": 0.132,
+        "max": 2.618
+      },
+      "layout_ms": {
+        "median": 0.0002,
+        "p95": 0.0003,
+        "max": 0.009
+      },
+      "paint_ms": {
+        "median": 0.28654999999999997,
+        "p95": 0.4463,
+        "max": 1.6362
+      },
+      "batches": {
+        "median": 137.0,
+        "p95": 137,
+        "max": 137
+      },
+      "reused": {
+        "median": 120.0,
+        "p95": 120,
+        "max": 120
+      },
+      "uploaded_triangles": {
+        "median": 1514.0,
+        "p95": 1546,
+        "max": 1546
+      },
+      "image_sha256": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091"
+    },
+    {
+      "run": 1,
+      "scenario": "idle-hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.00030000000000000003,
+        "p95": 0.0005,
+        "max": 0.0021000000000000003
+      },
+      "sync_ms": {
+        "median": 0.0001,
+        "p95": 0.0001,
+        "max": 0.0004
+      },
+      "record_ms": {
+        "median": 0.025900000000000003,
+        "p95": 0.037000000000000005,
+        "max": 0.0442
+      },
+      "total_cpu_ms": {
+        "median": 0.026300000000000004,
+        "p95": 0.0377,
+        "max": 0.044700000000000004
+      },
+      "core_update_ms": {
+        "median": 0.0002,
+        "p95": 0.0002,
+        "max": 0.0008
+      },
+      "cascade_ms": {
+        "median": 0.0001,
+        "p95": 0.0001,
+        "max": 0.0004
+      },
+      "layout_ms": {
+        "median": 0.0,
+        "p95": 0.0001,
+        "max": 0.0002
+      },
+      "paint_ms": {
+        "median": 0.0,
+        "p95": 0.0001,
+        "max": 0.0001
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "uploaded_triangles": {
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      },
+      "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+    },
+    {
+      "run": 1,
+      "scenario": "hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.1275,
+        "p95": 0.1656,
+        "max": 0.1932
+      },
+      "sync_ms": {
+        "median": 0.0555,
+        "p95": 0.0719,
+        "max": 0.10830000000000001
+      },
+      "record_ms": {
+        "median": 0.0332,
+        "p95": 0.0405,
+        "max": 0.0596
+      },
+      "total_cpu_ms": {
+        "median": 0.2155,
+        "p95": 0.27380000000000004,
+        "max": 0.30529999999999996
+      },
+      "core_update_ms": {
+        "median": 0.0777,
+        "p95": 0.1064,
+        "max": 0.127
+      },
+      "cascade_ms": {
+        "median": 0.0118,
+        "p95": 0.0178,
+        "max": 0.0304
+      },
+      "layout_ms": {
+        "median": 0.0001,
+        "p95": 0.0001,
+        "max": 0.0003
+      },
+      "paint_ms": {
+        "median": 0.034,
+        "p95": 0.0441,
+        "max": 0.0595
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 56.0,
+        "p95": 56,
+        "max": 56
+      },
+      "uploaded_triangles": {
+        "median": 92.0,
+        "p95": 92,
+        "max": 94
+      },
+      "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+    },
+    {
+      "run": 1,
+      "scenario": "inventory",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.24005,
+        "p95": 0.2863,
+        "max": 0.8432000000000001
+      },
+      "sync_ms": {
+        "median": 0.1623,
+        "p95": 0.19090000000000001,
+        "max": 0.4116
+      },
+      "record_ms": {
+        "median": 0.07175000000000001,
+        "p95": 0.0888,
+        "max": 0.4193
+      },
+      "total_cpu_ms": {
+        "median": 0.4708,
+        "p95": 0.5544,
+        "max": 1.1752
+      },
+      "core_update_ms": {
+        "median": 0.1846,
+        "p95": 0.2227,
+        "max": 0.7809
+      },
+      "cascade_ms": {
+        "median": 0.0455,
+        "p95": 0.0548,
+        "max": 0.3057
+      },
+      "layout_ms": {
+        "median": 0.0001,
+        "p95": 0.0002,
+        "max": 0.0003
+      },
+      "paint_ms": {
+        "median": 0.0959,
+        "p95": 0.1194,
+        "max": 0.3682
+      },
+      "batches": {
+        "median": 137.0,
+        "p95": 137,
+        "max": 137
+      },
+      "reused": {
+        "median": 128.0,
+        "p95": 128,
+        "max": 128
+      },
+      "uploaded_triangles": {
+        "median": 1244.0,
+        "p95": 1244,
+        "max": 1550
+      },
+      "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+    },
+    {
+      "run": 1,
+      "scenario": "inventory-full",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.7345,
+        "p95": 0.8178000000000001,
+        "max": 1.2748000000000002
+      },
+      "sync_ms": {
+        "median": 0.36935,
+        "p95": 0.5874,
+        "max": 5.5315
+      },
+      "record_ms": {
+        "median": 0.11750000000000001,
+        "p95": 0.13440000000000002,
+        "max": 0.3209
+      },
+      "total_cpu_ms": {
+        "median": 1.2197500000000001,
+        "p95": 1.4590000000000003,
+        "max": 6.372700000000001
+      },
+      "core_update_ms": {
+        "median": 0.64005,
+        "p95": 0.7166,
+        "max": 1.0555
+      },
+      "cascade_ms": {
+        "median": 0.076,
+        "p95": 0.0949,
+        "max": 0.1771
+      },
+      "layout_ms": {
+        "median": 0.0002,
+        "p95": 0.0003,
+        "max": 0.0004
+      },
+      "paint_ms": {
+        "median": 0.3048,
+        "p95": 0.3439,
+        "max": 0.6268
+      },
+      "batches": {
+        "median": 137.0,
+        "p95": 137,
+        "max": 137
+      },
+      "reused": {
+        "median": 120.0,
+        "p95": 120,
+        "max": 120
+      },
+      "uploaded_triangles": {
+        "median": 1514.0,
+        "p95": 1546,
+        "max": 1546
+      },
+      "image_sha256": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091"
+    },
+    {
+      "run": 2,
+      "scenario": "idle-hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.00030000000000000003,
+        "p95": 0.0004,
+        "max": 0.0016
+      },
+      "sync_ms": {
+        "median": 0.0001,
+        "p95": 0.0001,
+        "max": 0.0005
+      },
+      "record_ms": {
+        "median": 0.024300000000000002,
+        "p95": 0.0376,
+        "max": 0.056600000000000004
+      },
+      "total_cpu_ms": {
+        "median": 0.024650000000000002,
+        "p95": 0.038000000000000006,
+        "max": 0.057100000000000005
+      },
+      "core_update_ms": {
+        "median": 0.0002,
+        "p95": 0.0002,
+        "max": 0.0006
+      },
+      "cascade_ms": {
+        "median": 0.0001,
+        "p95": 0.0001,
+        "max": 0.0003
+      },
+      "layout_ms": {
+        "median": 0.0,
+        "p95": 0.0001,
+        "max": 0.0001
+      },
+      "paint_ms": {
+        "median": 0.0,
+        "p95": 0.0001,
+        "max": 0.0001
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "uploaded_triangles": {
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      },
+      "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+    },
+    {
+      "run": 2,
+      "scenario": "hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.12845,
+        "p95": 0.16290000000000002,
+        "max": 0.43260000000000004
+      },
+      "sync_ms": {
+        "median": 0.0591,
+        "p95": 0.07490000000000001,
+        "max": 0.1092
+      },
+      "record_ms": {
+        "median": 0.0345,
+        "p95": 0.0407,
+        "max": 0.05
+      },
+      "total_cpu_ms": {
+        "median": 0.2219,
+        "p95": 0.27340000000000003,
+        "max": 0.5479
+      },
+      "core_update_ms": {
+        "median": 0.081,
+        "p95": 0.1084,
+        "max": 0.3753
+      },
+      "cascade_ms": {
+        "median": 0.0124,
+        "p95": 0.0178,
+        "max": 0.0252
+      },
+      "layout_ms": {
+        "median": 0.0001,
+        "p95": 0.0002,
+        "max": 0.0003
+      },
+      "paint_ms": {
+        "median": 0.0354,
+        "p95": 0.0458,
+        "max": 0.0628
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 56.0,
+        "p95": 56,
+        "max": 56
+      },
+      "uploaded_triangles": {
+        "median": 92.0,
+        "p95": 92,
+        "max": 94
+      },
+      "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+    },
+    {
+      "run": 2,
+      "scenario": "inventory",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.23465000000000003,
+        "p95": 0.28300000000000003,
+        "max": 0.8503000000000001
+      },
+      "sync_ms": {
+        "median": 0.16175,
+        "p95": 0.1938,
+        "max": 0.34890000000000004
+      },
+      "record_ms": {
+        "median": 0.07150000000000001,
+        "p95": 0.0898,
+        "max": 0.1139
+      },
+      "total_cpu_ms": {
+        "median": 0.45945,
+        "p95": 0.5617000000000001,
+        "max": 1.2244
+      },
+      "core_update_ms": {
+        "median": 0.1809,
+        "p95": 0.2229,
+        "max": 0.7889
+      },
+      "cascade_ms": {
+        "median": 0.0459,
+        "p95": 0.0559,
+        "max": 0.0802
+      },
+      "layout_ms": {
+        "median": 0.0001,
+        "p95": 0.0002,
+        "max": 0.0003
+      },
+      "paint_ms": {
+        "median": 0.0958,
+        "p95": 0.1194,
+        "max": 0.3781
+      },
+      "batches": {
+        "median": 137.0,
+        "p95": 137,
+        "max": 137
+      },
+      "reused": {
+        "median": 128.0,
+        "p95": 128,
+        "max": 128
+      },
+      "uploaded_triangles": {
+        "median": 1244.0,
+        "p95": 1244,
+        "max": 1550
+      },
+      "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+    },
+    {
+      "run": 2,
+      "scenario": "inventory-full",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.68,
+        "p95": 0.7823,
+        "max": 1.0078
+      },
+      "sync_ms": {
+        "median": 0.35300000000000004,
+        "p95": 0.5732,
+        "max": 1.3697000000000001
+      },
+      "record_ms": {
+        "median": 0.10845,
+        "p95": 0.1323,
+        "max": 4.7330000000000005
+      },
+      "total_cpu_ms": {
+        "median": 1.1447500000000002,
+        "p95": 1.3996,
+        "max": 5.950500000000001
+      },
+      "core_update_ms": {
+        "median": 0.5967,
+        "p95": 0.689,
+        "max": 0.8386
+      },
+      "cascade_ms": {
+        "median": 0.0713,
+        "p95": 0.0902,
+        "max": 0.1467
+      },
+      "layout_ms": {
+        "median": 0.0002,
+        "p95": 0.0003,
+        "max": 0.0003
+      },
+      "paint_ms": {
+        "median": 0.28135,
+        "p95": 0.3316,
+        "max": 0.4239
+      },
+      "batches": {
+        "median": 137.0,
+        "p95": 137,
+        "max": 137
+      },
+      "reused": {
+        "median": 120.0,
+        "p95": 120,
+        "max": 120
+      },
+      "uploaded_triangles": {
+        "median": 1514.0,
+        "p95": 1546,
+        "max": 1546
+      },
+      "image_sha256": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091"
+    }
+  ],
+  "measured_iterations": 24576,
+  "sha256": {
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/0.log": "ef9e8316428f284e9822ccc8a45fa92df0986afbd7a09349665b40c6c3b4f336",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/1.log": "0623b03810db973f23324fb02822c53d2c8b8479075691147df53d55721af938",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/2.log": "581360ce3e9eb7dca541a6b7d13ea441ee936abfd5ec25d7c35e7a7ef74d41e6",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/full-inventory-input.json": "562c5653bb6f5731f1b183cf44102f3c95040053f7cf4186b6fce16e2996e098",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/summary.json": "f8c67c80a415842981aebbae3cde8b8396b5a2ab2fc5e3983c1ab384b7cee013",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/0/hud.json": "7aa50bcaabb00477ee42e2f1740173355154b5787fa665e80c73c4c9e9269803",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/0/hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/0/idle-hud.json": "d17b0b1da51e672441cf07010662685603f6f286ea2daed165025ab03dc448f1",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/0/idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/0/inventory-full.json": "aef7b324ac71dc099a4a770b82ad22f9d55558b06efe0e145279ed11424dcfb3",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/0/inventory-full.png": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/0/inventory.json": "8a1482016e4b343f76150a446ac75556d2d44e08fdcc72543f922599868a54e1",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/0/inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/1/hud.json": "b977d42ba4ebcb825901b4edaa2c4df3259463af73b5651960db23b57c938933",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/1/hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/1/idle-hud.json": "18bb4ba251ce08736c5a3b914defc079b32896942f37e01bd3846951b3f2e2df",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/1/idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/1/inventory-full.json": "a48a23919c8bfe86e6e55a4e0536868abcc841b221e271aad4004166710968b9",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/1/inventory-full.png": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/1/inventory.json": "f884ef881f3d0cfd8ae430e1a738c426d6f7c2352dcb40c24cde675ddc462db3",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/1/inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/2/hud.json": "e759a4bc53ba4d9e039ad4f53f14df8b6667fffa0a4723ac5fd3f0bc2bff1829",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/2/hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/2/idle-hud.json": "a797f92e72d3fc066aa782f18a75d60b9e5fc757275213832c05cb529f33b81b",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/2/idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/2/inventory-full.json": "fffaf8f446134a425b877c701bc9ebe7bdb32e7884bdecd5826cb03256137a99",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/2/inventory-full.png": "48ddb9d0c0a90ae3e16b5c418bd4b8a7a3368c6ebe480ee25be4d151b223a091",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/2/inventory.json": "335b58cf7c2fb246c1b0f77ac0328d69dab79d287b1e8cb2f11fb0a779ebcb5f",
+    ".utmp/render-audit-20261030/unity-full-inventory-stages/2/inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    ".utmp/render-audit-20261030/survival-fixtures/ammo.svg.png": "d4520a84fd2b3fb782fff62a8db6309dcc73a01341283e86a878c9db48a2b4c9",
+    ".utmp/render-audit-20261030/survival-fixtures/bandage.svg.png": "21a0b64549df57ec47a4268213a6b6224c6b9fe8ba7397cba905f0c9e853f355",
+    ".utmp/render-audit-20261030/survival-fixtures/beans.svg.png": "cba3c4dc9418d7f358d2fa08ee84fabd465d4833024e39fc1512fe0df7b12eb4",
+    ".utmp/render-audit-20261030/survival-fixtures/bolt.svg.png": "b3377182cda4864d4e856bbafdc770cbdac253e87de7842346be45fc5b1e720a",
+    ".utmp/render-audit-20261030/survival-fixtures/campfire.svg.png": "5e041c7efcd01ebf13145c4a77d4e28b661d01f8d0551c330218705abcaac848",
+    ".utmp/render-audit-20261030/survival-fixtures/canteen.svg.png": "977f51dee7dff4001e396afe93a25d8111821b0b6317f4b15d9a9df79b276e86",
+    ".utmp/render-audit-20261030/survival-fixtures/cloth.svg.png": "2df601d83f95c1afc1196b852b4a41000d73155fdef701af74af5fffd638858b",
+    ".utmp/render-audit-20261030/survival-fixtures/drop.svg.png": "35271db3426bfd7e67188c7dc68684b1bf15508b12db0ccb6485c2afe9652424",
+    ".utmp/render-audit-20261030/survival-fixtures/food.svg.png": "ca655dfac85122ab568f6bb76c5d609447f10a3c5ad9916764803f6fbeb97e34",
+    ".utmp/render-audit-20261030/survival-fixtures/hatchet.svg.png": "02508c1e246f60fdab8b2af5afa217582cbd327198dd614de98148655408ed49",
+    ".utmp/render-audit-20261030/survival-fixtures/heart.svg.png": "30d3a74ae6b0ec0d310a5603fe8071e0ad8538a5e25647980f4eb8bca65ab146",
+    ".utmp/render-audit-20261030/survival-fixtures/hud.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    ".utmp/render-audit-20261030/survival-fixtures/hud.html": "b29a00ff8341aeec836f793fc988192149206931aa49e83f8895234b74f5ad10",
+    ".utmp/render-audit-20261030/survival-fixtures/inventory.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    ".utmp/render-audit-20261030/survival-fixtures/inventory.html": "f2f130a482259071b078107e9d1a734c88dd47809bde4f382faa1c3028032090",
+    ".utmp/render-audit-20261030/survival-fixtures/knife.svg.png": "ceda161ae3ae746f80250b104a9146972159dfe6dfc75a06b6c65f512e1daa21",
+    ".utmp/render-audit-20261030/survival-fixtures/mutations.json": "aa0ad5e6a9768b9ece2c00c3a0d5afbb68f167a5461ecc086c029be0f253e8bc",
+    ".utmp/render-audit-20261030/survival-fixtures/open-sans-semibold.ttf": "445ac29890c338bc293873ec8da462193755346499903133b1b4d6f16eb708ca",
+    ".utmp/render-audit-20261030/survival-fixtures/revolver.svg.png": "730e040dd4dc0f0ab0e0919c29a9e00fe293fdf4b2d89544a3135c73b191c692",
+    ".utmp/render-audit-20261030/survival-fixtures/rope.svg.png": "39d42acb1a7b28cc761e4c9c00512ea601627fb0674cf994d53bc6fe86fdf09d",
+    ".utmp/render-audit-20261030/survival-fixtures/stone.svg.png": "64403858edb3564e0b034cf7da6d652286a5b55785f94547f56cf361f08f639b",
+    ".utmp/render-audit-20261030/survival-fixtures/wood.svg.png": "cbb723754580f23cfdd5a47f1640058bee21c510d89f95e7cdb9d42aef95bd7d",
+    "Packages/com.wevaui/Editor/DevTools/RuntimeRenderingBenchmark.cs": "6a7f2287805121c007df7b2ea73b0e63202d8cf7b09e31d04b5104c81f0b5359",
+    "Tools/performance/run_unity_runtime_audit.py": "3107f725c93712d81275f125f0a989fc58cb23a213d7b10b3385a6c5b333f1d9",
+    "Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll": "c4eecb720344f78c09643980f43b6bf8ea8ce019c7f9b994a91ab895881bfed4"
+  }
+}

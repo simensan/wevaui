@@ -192,3 +192,22 @@ Agentic’s optional fifth authored argument is a JSON mutation sequence. Set
 `WEVA_BENCH_WIDTH`/`WEVA_BENCH_HEIGHT` for resolution. The
 [GPU/selection receipt](../../docs/verification/agentic-gpu-20261030.md) records
 actual hardware intervals and distinguishes them from changing-frame CPU cost.
+
+## Unity full inventory CPU workload
+
+Run `run_unity_runtime_audit.py --unity EDITOR --project REPO --fixtures FIXTURES
+--output NEW_DIRECTORY --runs 3 --full-inventory` with the prepared survival
+HTML/CSS, PNGs, font and `mutations.json`. The optional full case binds all
+selection changes from that file: slot classes, item text, icon and disabled
+action state. It retains the existing idle HUD, changing HUD and small inventory
+workloads as separate cases. The generated binding input is preserved in output.
+
+Each fresh editor process runs 128 warmups and 2048 measured iterations per
+case. Target validation and retained-versus-fresh pixel comparison are outside
+timing. Update includes model assignment, binding refresh and core update;
+sync includes host texture/mesh preparation; recording excludes GPU execution.
+Core timing counters are also recorded and overlap the update interval: do not
+add them to the host total. Their layout field alone does not include all
+incremental box/layout work. These results are neither player frame times nor
+a matched Chrome comparison. See the
+[full inventory audit](../../docs/verification/unity-full-inventory-20261031.md).

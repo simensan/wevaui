@@ -1,5 +1,11 @@
 # AI_REFERENCE.md — orientation for AI agents
 
+The [full inventory CPU audit](docs/verification/unity-full-inventory-20261031.md)
+measures all 20 selection mutations through Unity bindings: 24,576 measured
+iterations pass, with full-selection CPU median/p95 of 1.180/1.459 ms.
+This is editor update/sync/record time, excludes GPU execution, and claims no speedup.
+
+
 The [texture lifetime audit](docs/verification/texture-lifetime-20261031.md) adds
 replacement regressions in both hosts: Unity renderer tests pass 14 with one
 existing environment-gated inconclusive; Godot passes 96 rendered and 48
