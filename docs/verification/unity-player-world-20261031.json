@@ -1,0 +1,777 @@
+{
+  "baseline": "cd824bb7",
+  "test": {
+    "id": "2",
+    "testcasecount": "1",
+    "result": "Passed",
+    "total": "1",
+    "passed": "1",
+    "failed": "0",
+    "inconclusive": "0",
+    "skipped": "0",
+    "asserts": "0",
+    "engine-version": "3.5.0.0",
+    "clr-version": "4.0.30319.42000",
+    "start-time": "0001-01-01 00:00:00Z",
+    "end-time": "0001-01-01 00:00:00Z",
+    "duration": "181.2836388"
+  },
+  "summaries": [
+    {
+      "scenario": "background",
+      "round": 0,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6668,
+        "p95": 16.6733,
+        "max": 16.9287
+      },
+      "cpu_main_ms": {
+        "median": 0.4675,
+        "p95": 0.6981,
+        "max": 1.0655
+      },
+      "cpu_render_ms": {
+        "median": 0.167,
+        "p95": 0.2526,
+        "max": 1.383
+      },
+      "present_wait_ms": {
+        "median": 16.1935,
+        "p95": 16.2516,
+        "max": 16.4707
+      },
+      "gpu_frame_ms": {
+        "median": 0.03264,
+        "p95": 0.03712,
+        "max": 0.290816
+      }
+    },
+    {
+      "scenario": "background",
+      "round": 1,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6668,
+        "p95": 16.679,
+        "max": 17.0305
+      },
+      "cpu_main_ms": {
+        "median": 0.48205,
+        "p95": 0.8192,
+        "max": 1.2717
+      },
+      "cpu_render_ms": {
+        "median": 0.1775,
+        "p95": 0.3018,
+        "max": 0.7748
+      },
+      "present_wait_ms": {
+        "median": 16.1789,
+        "p95": 16.2491,
+        "max": 16.3721
+      },
+      "gpu_frame_ms": {
+        "median": 0.033792,
+        "p95": 0.038144,
+        "max": 0.382976
+      }
+    },
+    {
+      "scenario": "background",
+      "round": 2,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6668,
+        "p95": 16.6772,
+        "max": 16.8501
+      },
+      "cpu_main_ms": {
+        "median": 0.48375,
+        "p95": 0.7921,
+        "max": 1.5447
+      },
+      "cpu_render_ms": {
+        "median": 0.17685,
+        "p95": 0.2963,
+        "max": 0.7932
+      },
+      "present_wait_ms": {
+        "median": 16.177500000000002,
+        "p95": 16.2503,
+        "max": 16.3252
+      },
+      "gpu_frame_ms": {
+        "median": 0.033536,
+        "p95": 0.037632,
+        "max": 0.433152
+      }
+    },
+    {
+      "scenario": "idle-hud",
+      "round": 0,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6667,
+        "p95": 16.6725,
+        "max": 17.0307
+      },
+      "cpu_main_ms": {
+        "median": 0.5527,
+        "p95": 0.8154,
+        "max": 1.2949
+      },
+      "cpu_render_ms": {
+        "median": 0.27165,
+        "p95": 0.3793,
+        "max": 1.9913
+      },
+      "present_wait_ms": {
+        "median": 16.10785,
+        "p95": 16.1736,
+        "max": 16.5268
+      },
+      "gpu_frame_ms": {
+        "median": 0.033536,
+        "p95": 0.0384,
+        "max": 0.349184
+      }
+    },
+    {
+      "scenario": "idle-hud",
+      "round": 1,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6668,
+        "p95": 16.6766,
+        "max": 16.9942
+      },
+      "cpu_main_ms": {
+        "median": 0.59815,
+        "p95": 0.9612,
+        "max": 1.5326
+      },
+      "cpu_render_ms": {
+        "median": 0.29910000000000003,
+        "p95": 0.4549,
+        "max": 0.6772
+      },
+      "present_wait_ms": {
+        "median": 16.06395,
+        "p95": 16.1691,
+        "max": 16.4288
+      },
+      "gpu_frame_ms": {
+        "median": 0.034816,
+        "p95": 0.038912,
+        "max": 0.43904
+      }
+    },
+    {
+      "scenario": "idle-hud",
+      "round": 2,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6668,
+        "p95": 16.6783,
+        "max": 17.0806
+      },
+      "cpu_main_ms": {
+        "median": 0.57035,
+        "p95": 0.8525,
+        "max": 1.707
+      },
+      "cpu_render_ms": {
+        "median": 0.28595,
+        "p95": 0.4053,
+        "max": 0.6342
+      },
+      "present_wait_ms": {
+        "median": 16.09135,
+        "p95": 16.1804,
+        "max": 16.3424
+      },
+      "gpu_frame_ms": {
+        "median": 0.035072,
+        "p95": 0.03968,
+        "max": 0.4288
+      }
+    },
+    {
+      "scenario": "inventory",
+      "round": 0,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6668,
+        "p95": 16.6776,
+        "max": 17.0088
+      },
+      "cpu_main_ms": {
+        "median": 0.6492,
+        "p95": 0.9904,
+        "max": 1.9192
+      },
+      "cpu_render_ms": {
+        "median": 0.3836,
+        "p95": 0.5519,
+        "max": 0.9122
+      },
+      "present_wait_ms": {
+        "median": 16.0142,
+        "p95": 16.1098,
+        "max": 16.2731
+      },
+      "gpu_frame_ms": {
+        "median": 0.043904,
+        "p95": 0.048384,
+        "max": 0.68224
+      }
+    },
+    {
+      "scenario": "inventory",
+      "round": 1,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6668,
+        "p95": 16.6839,
+        "max": 17.0959
+      },
+      "cpu_main_ms": {
+        "median": 0.7213,
+        "p95": 1.1264,
+        "max": 1.6914
+      },
+      "cpu_render_ms": {
+        "median": 0.42635,
+        "p95": 0.6462,
+        "max": 1.6531
+      },
+      "present_wait_ms": {
+        "median": 15.941849999999999,
+        "p95": 16.0695,
+        "max": 16.3093
+      },
+      "gpu_frame_ms": {
+        "median": 0.044544,
+        "p95": 0.048896,
+        "max": 0.395776
+      }
+    },
+    {
+      "scenario": "inventory",
+      "round": 2,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6668,
+        "p95": 16.6781,
+        "max": 17.4428
+      },
+      "cpu_main_ms": {
+        "median": 0.6445,
+        "p95": 0.9967,
+        "max": 1.4013
+      },
+      "cpu_render_ms": {
+        "median": 0.39885000000000004,
+        "p95": 0.6225,
+        "max": 1.0103
+      },
+      "present_wait_ms": {
+        "median": 16.016849999999998,
+        "p95": 16.1063,
+        "max": 16.8285
+      },
+      "gpu_frame_ms": {
+        "median": 0.044544,
+        "p95": 0.048896,
+        "max": 0.569344
+      }
+    },
+    {
+      "scenario": "updating-hud",
+      "round": 0,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6668,
+        "p95": 16.6726,
+        "max": 16.9969
+      },
+      "cpu_main_ms": {
+        "median": 0.8123,
+        "p95": 1.1426,
+        "max": 1.5738
+      },
+      "cpu_render_ms": {
+        "median": 0.3911,
+        "p95": 0.5612,
+        "max": 0.8468
+      },
+      "present_wait_ms": {
+        "median": 15.8478,
+        "p95": 15.9564,
+        "max": 16.2475
+      },
+      "gpu_frame_ms": {
+        "median": 0.03968,
+        "p95": 0.045312,
+        "max": 0.393216
+      }
+    },
+    {
+      "scenario": "updating-hud",
+      "round": 1,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.666849999999997,
+        "p95": 16.6848,
+        "max": 17.899
+      },
+      "cpu_main_ms": {
+        "median": 0.9721,
+        "p95": 1.6699,
+        "max": 2.4746
+      },
+      "cpu_render_ms": {
+        "median": 0.4573,
+        "p95": 0.7507,
+        "max": 1.8596
+      },
+      "present_wait_ms": {
+        "median": 15.68825,
+        "p95": 15.9027,
+        "max": 16.7902
+      },
+      "gpu_frame_ms": {
+        "median": 0.041216,
+        "p95": 0.045824,
+        "max": 0.382976
+      }
+    },
+    {
+      "scenario": "updating-hud",
+      "round": 2,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6667,
+        "p95": 16.6775,
+        "max": 16.881
+      },
+      "cpu_main_ms": {
+        "median": 0.8169500000000001,
+        "p95": 1.3205,
+        "max": 2.1224
+      },
+      "cpu_render_ms": {
+        "median": 0.4023,
+        "p95": 0.6164,
+        "max": 1.0821
+      },
+      "present_wait_ms": {
+        "median": 15.8462,
+        "p95": 15.9734,
+        "max": 16.1272
+      },
+      "gpu_frame_ms": {
+        "median": 0.041216,
+        "p95": 0.045824,
+        "max": 0.375808
+      }
+    },
+    {
+      "scenario": "updating-inventory",
+      "round": 0,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6668,
+        "p95": 16.6743,
+        "max": 16.9924
+      },
+      "cpu_main_ms": {
+        "median": 1.0444499999999999,
+        "p95": 1.5155,
+        "max": 2.4885
+      },
+      "cpu_render_ms": {
+        "median": 0.51405,
+        "p95": 0.7731,
+        "max": 1.0968
+      },
+      "present_wait_ms": {
+        "median": 15.61845,
+        "p95": 15.7635,
+        "max": 15.9508
+      },
+      "gpu_frame_ms": {
+        "median": 0.052224,
+        "p95": 0.05632,
+        "max": 0.422144
+      }
+    },
+    {
+      "scenario": "updating-inventory",
+      "round": 1,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.6668,
+        "p95": 16.6794,
+        "max": 16.8577
+      },
+      "cpu_main_ms": {
+        "median": 1.10225,
+        "p95": 1.7495,
+        "max": 2.694
+      },
+      "cpu_render_ms": {
+        "median": 0.5527,
+        "p95": 0.8113,
+        "max": 1.1693
+      },
+      "present_wait_ms": {
+        "median": 15.5597,
+        "p95": 15.7484,
+        "max": 15.7982
+      },
+      "gpu_frame_ms": {
+        "median": 0.05248,
+        "p95": 0.055808,
+        "max": 0.543232
+      }
+    },
+    {
+      "scenario": "updating-inventory",
+      "round": 2,
+      "width": 1280,
+      "height": 720,
+      "target_fps": 60,
+      "graphics_api": "Direct3D12",
+      "device": "NVIDIA GeForce RTX 5080",
+      "unity": "6000.4.1f1",
+      "gpu_timer_frequency": 1000000000,
+      "cpu_timer_frequency": 10000000,
+      "duplicates": 0,
+      "missing": 0,
+      "world": "cubes",
+      "world_renderers": 321,
+      "world_animated": 64,
+      "samples": 600,
+      "gpu_available": 600,
+      "gpu_complete": true,
+      "focused_samples": 600,
+      "cpu_frame_ms": {
+        "median": 16.666849999999997,
+        "p95": 16.6842,
+        "max": 16.9631
+      },
+      "cpu_main_ms": {
+        "median": 1.0536500000000002,
+        "p95": 1.5912,
+        "max": 2.8217
+      },
+      "cpu_render_ms": {
+        "median": 0.5246500000000001,
+        "p95": 0.7304,
+        "max": 1.0664
+      },
+      "present_wait_ms": {
+        "median": 15.6066,
+        "p95": 15.7641,
+        "max": 15.8808
+      },
+      "gpu_frame_ms": {
+        "median": 0.052608,
+        "p95": 0.05632,
+        "max": 0.412672
+      }
+    }
+  ],
+  "sha256": {
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\background-0.json": "d292488cbb51a18c27b81495da63f65fc19f79a926104818bd7d078790488e05",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\background-0.png": "28c416d6006c0e887f7418c0f133f32dee9d0678bfb9edc85c536cf1353a3a18",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\background-1.json": "2c33e59468793ea59992ffe31e7a61b9848b40b0ecf70914f0a24c3098179211",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\background-1.png": "28c416d6006c0e887f7418c0f133f32dee9d0678bfb9edc85c536cf1353a3a18",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\background-2.json": "f430b9581a58645d167eb8f6da79130df6476486d21f3353239fd4c268af9bfe",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\background-2.png": "28c416d6006c0e887f7418c0f133f32dee9d0678bfb9edc85c536cf1353a3a18",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\idle-hud-0.json": "10a97e41557817b6dbda357412e7f4e8c84856cd1f2326ad65ab45349df7d568",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\idle-hud-0.png": "12267c00ce0f87246c5fa6a1a35d75b4fc0f3a45984cbb89088203e4c6ab9ee4",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\idle-hud-1.json": "815c50644d0c399b8661439401a69ff52bf9467170c9a0660f4164221f119c02",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\idle-hud-1.png": "12267c00ce0f87246c5fa6a1a35d75b4fc0f3a45984cbb89088203e4c6ab9ee4",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\idle-hud-2.json": "a51074233dfcf81172af38829fc6678058541aefee8712b62d5cd07fdcb55f1a",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\idle-hud-2.png": "12267c00ce0f87246c5fa6a1a35d75b4fc0f3a45984cbb89088203e4c6ab9ee4",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\inventory-0.json": "0d8b98a64ed9b660ed3f12f569311079c7a9e573848d2284766bfa6ac4ce14dc",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\inventory-0.png": "aafe281224eead57311120d192a52d577acc26bc1c13ff2746f1ac61793d1f27",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\inventory-1.json": "18761a1a607c026e7cf72497b66dbf3c47264082b4a604b315d3972496dc7ade",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\inventory-1.png": "aafe281224eead57311120d192a52d577acc26bc1c13ff2746f1ac61793d1f27",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\inventory-2.json": "d303d9f969133d7ce072d75c6921fe977fa47673d2b3e48dedcb69f446b56a31",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\inventory-2.png": "aafe281224eead57311120d192a52d577acc26bc1c13ff2746f1ac61793d1f27",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-hud-0.json": "8cb988d2521a4a189616e39f16cbfd9668842aa9d627fe79c9be441c5d94fb0e",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-hud-0.png": "2c1e4bbb0ee04cf31f263cbf40b3170ee374515833ccbd5b5242127f4ff5630e",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-hud-1.json": "7c63292552fceb16b1c0bfc45230266ea9eb57216ba07fc69e800e2ece1cc966",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-hud-1.png": "2c1e4bbb0ee04cf31f263cbf40b3170ee374515833ccbd5b5242127f4ff5630e",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-hud-2.json": "620b05aeb9a6c885a5e7567e5ff523620dab4ff8f3eeead18eaecc70ded8c40a",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-hud-2.png": "2c1e4bbb0ee04cf31f263cbf40b3170ee374515833ccbd5b5242127f4ff5630e",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-inventory-0.json": "256c44ded9e2a6fbdf2fad52e9984d9362717e8bf1b8659a39d2846bd1baaf06",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-inventory-0.png": "070def664027b9d9799278a497516418eb7dd2c48df9b5cf592d4da894347b34",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-inventory-1.json": "b5d7cf59733be4be794ff69b422e2943c1c5b0d47ff659ec16a2289245a0cc8d",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-inventory-1.png": "070def664027b9d9799278a497516418eb7dd2c48df9b5cf592d4da894347b34",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-inventory-2.json": "7baa251df64ac051dddd452c49a9238a077a1b6c7f849796102b15fe88cf106f",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\measurements\\updating-inventory-2.png": "070def664027b9d9799278a497516418eb7dd2c48df9b5cf592d4da894347b34",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\receipt.json": "8f0a4b076f1497c4a84d4f163f8afe3d70c0d9120c5791ae33a024c552a5b25b",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\results.xml": "d3ddd72a8109e9f7a754c3d810b0f0c8c98f677f228403df5f84adfdae1561c6",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\build.log": "c30143de7980d2f902228743edb3a229d994c7463e3416b37ed1713304a05939",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\summary.json": "dbb1c6a8dbc8c7caa6b716d0ac03f07b5e1199a27cbdbe007bfb3d1335f990b2",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\player\\PlayerWithTests\\PlayerWithTests_Data\\Managed\\Weva.Runtime.dll": "5ceb2142f93791a6dae2805f119415a1685048753382cc82e0e04fee815659c9",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\player\\PlayerWithTests\\PlayerWithTests_Data\\Managed\\Weva.Tests.Runtime.dll": "3f86f3e33af4ce85547b0e289e387f0dfe386bdb575af5d3fca18ce3a418d414",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\player\\PlayerWithTests\\PlayerWithTests_Data\\Plugins\\x86_64\\weva_core.dll": "c4eecb720344f78c09643980f43b6bf8ea8ce019c7f9b994a91ab895881bfed4",
+    ".utmp\\render-audit-20261030\\unity-player-world-v2\\player\\PlayerWithTests\\PlayerWithTests.exe": "7f89d0b2bdb12fdaaaa14391d69ecf427c1b1628ac5419ffe3f98a8540f448fd",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\ammo.svg.png": "d4520a84fd2b3fb782fff62a8db6309dcc73a01341283e86a878c9db48a2b4c9",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\bandage.svg.png": "21a0b64549df57ec47a4268213a6b6224c6b9fe8ba7397cba905f0c9e853f355",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\beans.svg.png": "cba3c4dc9418d7f358d2fa08ee84fabd465d4833024e39fc1512fe0df7b12eb4",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\bolt.svg.png": "b3377182cda4864d4e856bbafdc770cbdac253e87de7842346be45fc5b1e720a",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\campfire.svg.png": "5e041c7efcd01ebf13145c4a77d4e28b661d01f8d0551c330218705abcaac848",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\canteen.svg.png": "977f51dee7dff4001e396afe93a25d8111821b0b6317f4b15d9a9df79b276e86",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\cloth.svg.png": "2df601d83f95c1afc1196b852b4a41000d73155fdef701af74af5fffd638858b",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\drop.svg.png": "35271db3426bfd7e67188c7dc68684b1bf15508b12db0ccb6485c2afe9652424",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\food.svg.png": "ca655dfac85122ab568f6bb76c5d609447f10a3c5ad9916764803f6fbeb97e34",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hatchet.svg.png": "02508c1e246f60fdab8b2af5afa217582cbd327198dd614de98148655408ed49",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\heart.svg.png": "30d3a74ae6b0ec0d310a5603fe8071e0ad8538a5e25647980f4eb8bca65ab146",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hud.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hud.html": "b29a00ff8341aeec836f793fc988192149206931aa49e83f8895234b74f5ad10",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\inventory.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\inventory.html": "f2f130a482259071b078107e9d1a734c88dd47809bde4f382faa1c3028032090",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\knife.svg.png": "ceda161ae3ae746f80250b104a9146972159dfe6dfc75a06b6c65f512e1daa21",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\mutations.json": "aa0ad5e6a9768b9ece2c00c3a0d5afbb68f167a5461ecc086c029be0f253e8bc",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\open-sans-semibold.ttf": "445ac29890c338bc293873ec8da462193755346499903133b1b4d6f16eb708ca",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\revolver.svg.png": "730e040dd4dc0f0ab0e0919c29a9e00fe293fdf4b2d89544a3135c73b191c692",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\rope.svg.png": "39d42acb1a7b28cc761e4c9c00512ea601627fb0674cf994d53bc6fe86fdf09d",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\stone.svg.png": "64403858edb3564e0b034cf7da6d652286a5b55785f94547f56cf361f08f639b",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\wood.svg.png": "cbb723754580f23cfdd5a47f1640058bee21c510d89f95e7cdb9d42aef95bd7d",
+    "Packages\\com.wevaui\\Tests\\Runtime\\Rendering\\PlayerTimingAudit.cs": "1c25da44740c189205060a3039273f712bba3913a90f599d593afb17401bc5ea",
+    "Tools\\performance\\run_unity_player_timing.py": "1050f53035e71fc9ba307f790d7d7be9173c59207ca37f70ac0c7becf4cdda72",
+    "Packages\\com.wevaui\\Tests\\Runtime\\Resources\\WevaTests\\world-lit.mat": "6404032939ac94919581dca41eae5a48a84b723d368ff7e5c0adc0988b3dc299",
+    "Assets\\Settings\\Weva_URPAsset.asset": "7dcf4ff3a72908db3062b1ad660cf11d8a5122325afbc38b3f33a402458fed02"
+  }
+}

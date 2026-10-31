@@ -6,6 +6,8 @@ It records whole-player presented frames with a background control, GPU sample
 availability and post-timing captures. It is separate from the matched layout
 comparison below; see the [timing receipt](../../docs/verification/unity-player-timing-20261031.md)
 for boundaries, measured results and retained failed probes.
+Add `--world cubes` for the deterministic 321-renderer scene with camera motion
+and 64 rotating objects; see the [3D follow-up](../../docs/verification/unity-player-world-20261031.md).
 
 Run identical, deterministic geometry-only HUD, inventory and settings fixtures
 through the native core benchmark and headless Chrome on the **same OS**.

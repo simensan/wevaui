@@ -6,6 +6,7 @@ using System.IO;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using UnityEngine.Rendering;
 using Weva.Rendering;
 using Weva.Rendering.URP;
 
@@ -22,7 +23,8 @@ namespace Weva.Tests.Rendering
         }
         [Serializable] private sealed class Result
         {
-            public string scenario, unity, device, graphics_api;
+            public string scenario, unity, device, graphics_api, world;
+            public int world_renderers, world_animated;
             public int round, width, height, target_fps, warmup = 120, polls, duplicates, missing, unavailable_gpu;
             public ulong gpu_timer_frequency, cpu_timer_frequency;
             public ulong expected_render_serial, synced_render_serial;
@@ -35,9 +37,11 @@ namespace Weva.Tests.Rendering
         {
             string fixtures = Environment.GetEnvironmentVariable("WEVA_PLAYER_TIMING_FIXTURES");
             string output = Environment.GetEnvironmentVariable("WEVA_PLAYER_TIMING_OUTPUT");
+            string worldMode = Environment.GetEnvironmentVariable("WEVA_PLAYER_TIMING_WORLD") ?? "none";
             int targetFps = int.Parse(Environment.GetEnvironmentVariable("WEVA_PLAYER_TIMING_FPS") ?? "60");
             Assert.That(targetFps, Is.GreaterThanOrEqualTo(0));
             if (Application.isEditor || string.IsNullOrEmpty(output)) Assert.Ignore("opt-in standalone player diagnostic");
+            Assert.That(worldMode == "none" || worldMode == "cubes", Is.True, "unsupported diagnostic world");
             Assert.That(UrpFeatureStatus.UrpActive, Is.True);
             Assert.That(FrameTimingManager.IsFeatureEnabled(), Is.True, "frame timing must be enabled");
             Assert.That(Directory.Exists(output), Is.False, "preserve previous evidence");
@@ -49,11 +53,17 @@ namespace Weva.Tests.Rendering
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = Color.black;
             GameObject documentObject = null;
+            AuditWorld world = null;
             try
             {
                 QualitySettings.vSyncCount = 0;
                 Application.targetFrameRate = targetFps == 0 ? -1 : targetFps;
                 Application.runInBackground = true;
+                if (worldMode == "cubes")
+                {
+                    world = new AuditWorld(camera);
+                    world.Build();
+                }
                 Screen.SetResolution(1280, 720, FullScreenMode.Windowed);
                 for (int i = 0; i < 20; ++i) yield return null;
                 Assert.That(Screen.width, Is.EqualTo(1280));
@@ -85,6 +95,7 @@ namespace Weva.Tests.Rendering
                             ui.PrepareRenderer();
                         }
                         var result = new Result { scenario = scenario, round = round, target_fps = targetFps, unity = Application.unityVersion,
+                            world = worldMode, world_renderers = world == null ? 0 : 321, world_animated = world == null ? 0 : 64,
                             device = SystemInfo.graphicsDeviceName, graphics_api = SystemInfo.graphicsDeviceType.ToString(),
                             width = Screen.width, height = Screen.height, gpu_timer_frequency = FrameTimingManager.GetGpuTimerFrequency(),
                             cpu_timer_frequency = FrameTimingManager.GetCpuTimerFrequency() };
@@ -97,6 +108,7 @@ namespace Weva.Tests.Rendering
                         int state = 0;
                         for (int frame = -result.warmup; result.samples.Count < 600 && frame < 5000; ++frame)
                         {
+                            world?.Step(frame + result.warmup);
                             state = 30 + ((frame + result.warmup) % 71);
                             if (updating)
                             {
@@ -142,7 +154,7 @@ namespace Weva.Tests.Rendering
                             ui.Prepare();
                             Assert.That(label.Text, Is.EqualTo(updating ? state.ToString() : "30"));
                         }
-                        Capture(camera, output, name, ui != null);
+                        Capture(camera, output, name, ui != null || world != null);
                         Debug.Log("PlayerTimingAudit " + name + ": " + result.samples.Count + " frames; " + result.unavailable_gpu + " unavailable GPU timings");
                         if (documentObject != null) UnityEngine.Object.Destroy(documentObject);
                         documentObject = null;
@@ -153,6 +165,7 @@ namespace Weva.Tests.Rendering
             finally
             {
                 if (documentObject != null) UnityEngine.Object.Destroy(documentObject);
+                world?.Dispose();
                 UnityEngine.Object.Destroy(cameraObject);
                 QualitySettings.vSyncCount = oldVsync;
                 Application.targetFrameRate = oldCap;
@@ -160,7 +173,74 @@ namespace Weva.Tests.Rendering
             }
         }
 
-        private static void Capture(Camera camera, string output, string name, bool hasUi)
+        // A reproducible scene load, not a model of a particular game's world.
+        private sealed class AuditWorld : IDisposable
+        {
+            private readonly GameObject root = new GameObject("timing-world");
+            private readonly Material[] materials = new Material[8];
+            private readonly Transform[] moving = new Transform[64];
+            private readonly Camera camera;
+
+            public AuditWorld(Camera camera) { this.camera = camera; }
+
+            public void Build()
+            {
+                Material basis = Resources.Load<Material>("WevaTests/world-lit");
+                Assert.That(basis, Is.Not.Null, "explicit world material must be packaged");
+                for (int i = 0; i < materials.Length; ++i)
+                {
+                    materials[i] = new Material(basis);
+                    materials[i].color = Color.HSVToRGB(0.08f + i * 0.035f, 0.35f, 0.3f + i * 0.055f);
+                }
+                Cube("ground", new Vector3(0, -0.3f, 18), new Vector3(44, 0.5f, 64), materials[0]);
+                for (int i = 0; i < 320; ++i)
+                {
+                    float height = 0.6f + (i * 17 % 11) * 0.22f;
+                    GameObject cube = Cube("world-cube-" + i, new Vector3((i % 16 - 7.5f) * 2.2f, height * 0.5f, (i / 16) * 2.2f),
+                        new Vector3(1.1f, height, 1.1f), materials[1 + i % 7]);
+                    if (i < moving.Length) moving[i] = cube.transform;
+                }
+                var lightObject = new GameObject("world-sun");
+                lightObject.transform.SetParent(root.transform);
+                lightObject.transform.rotation = Quaternion.Euler(45, -30, 0);
+                Light light = lightObject.AddComponent<Light>();
+                light.type = LightType.Directional;
+                light.intensity = 1.2f;
+                light.shadows = LightShadows.Hard;
+                camera.fieldOfView = 65;
+                camera.farClipPlane = 150;
+                camera.backgroundColor = new Color(0.12f, 0.18f, 0.23f);
+                Step(0);
+            }
+
+            private GameObject Cube(string name, Vector3 position, Vector3 scale, Material material)
+            {
+                GameObject cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.name = name;
+                cube.transform.SetParent(root.transform);
+                cube.transform.position = position;
+                cube.transform.localScale = scale;
+                cube.GetComponent<Renderer>().sharedMaterial = material;
+                UnityEngine.Object.Destroy(cube.GetComponent<Collider>());
+                return cube;
+            }
+
+            public void Step(int frame)
+            {
+                camera.transform.position = new Vector3(Mathf.Sin(frame * 0.015f) * 2, 5, -12);
+                camera.transform.LookAt(new Vector3(0, 0.8f, 18));
+                for (int i = 0; i < moving.Length; ++i)
+                    moving[i].rotation = Quaternion.Euler(0, frame * 0.65f + i * 13, 0);
+            }
+
+            public void Dispose()
+            {
+                UnityEngine.Object.Destroy(root);
+                foreach (Material material in materials) if (material != null) UnityEngine.Object.Destroy(material);
+            }
+        }
+
+        private static void Capture(Camera camera, string output, string name, bool hasContent)
         {
             var target = new RenderTexture(1280, 720, 24);
             var image = new Texture2D(1280, 720, TextureFormat.RGB24, false);
@@ -176,7 +256,7 @@ namespace Weva.Tests.Rendering
                 File.WriteAllBytes(Path.Combine(output, name + ".png"), image.EncodeToPNG());
                 int bright = 0;
                 foreach (Color32 pixel in image.GetPixels32()) if (pixel.r > 64 || pixel.g > 64 || pixel.b > 64) ++bright;
-                Assert.That(hasUi ? bright > 1000 : bright == 0, Is.True, "camera must render expected UI/control");
+                Assert.That(hasContent ? bright > 1000 : bright == 0, Is.True, "camera must render expected UI/world/control");
             }
             finally
             {

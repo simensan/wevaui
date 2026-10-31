@@ -18,6 +18,8 @@ def summarize_measurements(output):
             raise RuntimeError(f'{path}: incomplete frame sample set')
         item = {k: raw[k] for k in ('scenario', 'round', 'width', 'height', 'target_fps', 'graphics_api',
                                     'device', 'unity', 'gpu_timer_frequency', 'cpu_timer_frequency', 'duplicates', 'missing')}
+        item.update(world=raw.get('world', 'none'), world_renderers=raw.get('world_renderers', 0),
+                    world_animated=raw.get('world_animated', 0))
         gpu = [s['gpu_frame_ms'] for s in samples if s['gpu_available']]
         item.update(samples=len(samples), gpu_available=len(gpu), gpu_complete=len(gpu) == len(samples),
                     focused_samples=sum(s['focused'] for s in samples))
@@ -40,6 +42,7 @@ def main():
     parser.add_argument('--fixtures', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--fps', type=int, default=60, help='Target rate; 0 is uncapped')
+    parser.add_argument('--world', choices=('none', 'cubes'), default='none', help='Optional deterministic moving 3D scene')
     args = parser.parse_args()
     if args.fps < 0:
         parser.error('fps must be nonnegative')
@@ -47,7 +50,8 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=False)
     env = dict(os.environ, WEVA_TEST_PLAYER='1', WEVA_PLAYER_TIMING_FIXTURES=str(args.fixtures.resolve(strict=True)),
-               WEVA_PLAYER_TIMING_OUTPUT=str(output/'measurements'), WEVA_PLAYER_TIMING_FPS=str(args.fps))
+               WEVA_PLAYER_TIMING_OUTPUT=str(output/'measurements'), WEVA_PLAYER_TIMING_FPS=str(args.fps),
+               WEVA_PLAYER_TIMING_WORLD=args.world)
     command = [str(args.unity.resolve(strict=True)), '-batchmode', '-projectPath', str(root), '-runTests',
                '-testPlatform', 'StandaloneWindows64', '-testFilter', 'Weva.Tests.Rendering.PlayerTimingAudit',
                '-buildPlayerPath', str(output/'player'), '-testResults', str(output/'results.xml'),

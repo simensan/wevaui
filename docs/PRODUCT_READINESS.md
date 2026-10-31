@@ -145,6 +145,9 @@ and browser-level visual/text fidelity remain incomplete.
   adds 9,000 presented frames at 60 Hz on D3D12/RTX 5080. It reports whole-player
   CPU/GPU timing with a background control and explicit GPU availability
   (8,997/9,000), not isolated UI GPU time or uncapped FPS.
+  A [synthetic 3D follow-up](verification/unity-player-world-20261031.md) adds
+  321 renderers, camera motion and 64 rotating objects with 9,000/9,000 GPU
+  readings. This scene has no active shadows and is not GPU-saturated.
 
 - **Deep markup:** content nested more than 64 elements deep is not rendered,
   so layout stays within a 1 MB thread stack.

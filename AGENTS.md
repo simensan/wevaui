@@ -4,6 +4,9 @@ The [Unity player timing audit](docs/verification/unity-player-timing-20261031.m
 passes its opt-in Windows Mono/D3D12 diagnostic: 9000 presented frames at
 60 Hz, 8997 available GPU timings, all focused. Whole-player metrics are
 not isolated UI GPU time; production correctness counts remain unchanged.
+The [3D follow-up](docs/verification/unity-player-world-20261031.md) adds
+321 renderers and 64 rotating objects, with 9000/9000 GPU readings; the
+synthetic scene has no active shadows and is not GPU-saturated.
 
 The [Unity interleaved upload pass](docs/verification/unity-interleaved-upload-20261031.md)
 passes 252 EditMode tests (two existing inconclusive), URP 7/7 and Windows
