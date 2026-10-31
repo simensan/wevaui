@@ -582,3 +582,10 @@ Three candidates were reverted; the six-pair bulk-index comparison does not
 isolate a useful gain. All 17 GCC and 19 Clang sanitizer suites pass, with
 unchanged geometry hashes and allocation budgets. The rebuilt Agentic PE
 sections match the accepted paint-state baseline; host binaries are unchanged.
+
+The [decoration reuse investigation](docs/verification/decoration-reuse-20261031.md)
+retains a 22-state incremental decoration regression and no runtime change.
+Six provisional pairs did not establish a gain from independent mesh retention;
+the cache was removed. All 17 GCC and 19 Clang sanitizer suites pass, and the
+restored Agentic PE sections match the accepted baseline. Host binaries and
+their previous full-gate qualification are unchanged.

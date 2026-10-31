@@ -799,6 +799,65 @@ void test_abi_incremental_retained_grid_paint() {
         check_retained_grid_paint(overflow);
 }
 
+void test_abi_decoration_updates() {
+    const auto cfg = config();
+    auto live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+    const char* css = "body{margin:0;color:#abc}#outer{width:280px;height:160px}"
+        "#panel{width:200px;height:100px;padding:10px;background:#123;"
+        "border:1px solid currentColor;border-radius:8px}";
+    const char* html = "<body><div id=outer><div id=panel><span id=label>a</span></div></div></body>";
+    for (auto doc : {live,full}) {
+        CHECK(weva_document_add_css(doc,css,std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_load_html(doc,html,std::strlen(html)) == WEVA_OK);
+    }
+    struct Step { const char* body; const char* outer; const char* panel; };
+    const Step steps[] = {
+        {"","",""}, {"","",""}, {"","",""},
+        {"color:#f24","",""}, {"color:#abc","","background:currentColor"},
+        {"color:currentColor","","background:currentColor"},
+        {"","opacity:.5",""}, {"","opacity:.5",""},
+        {"","transform:translate(13px,5px)",""},
+        {"","filter:brightness(.8)",""}, {"","mix-blend-mode:multiply",""},
+        {"","overflow:hidden;width:100px;height:50px;border-radius:9px",""},
+        {"","overflow:hidden;width:100px;height:50px;border-radius:9px","position:absolute;left:3px;top:7px"},
+        {"","","width:180px;height:80px;border-radius:13px;border-width:3px"},
+        {"","","border:0"}, {"","","border:2px solid red;border-radius:0"},
+        {"","","column-count:2;column-rule:1px solid red"},
+        {"","","visibility:hidden"}, {"","",""},
+        {"","","display:none"}, {"","",""}, {"","",""}
+    };
+    std::map<uint64_t,Frame::Draw> seen;
+    for (size_t step=0;step<sizeof(steps)/sizeof(steps[0]);++step) {
+        CHECK(weva_document_load_html(full,html,std::strlen(html)) == WEVA_OK);
+        const auto& state=steps[step];
+        const char* text=step%2 ? "a longer label" : "short";
+        for (auto doc : {live,full}) {
+            CHECK(weva_element_set_attribute(doc,weva_document_query(doc,"body"),"style",state.body) == WEVA_OK);
+            CHECK(weva_element_set_attribute(doc,weva_document_query(doc,"#outer"),"style",state.outer) == WEVA_OK);
+            CHECK(weva_element_set_attribute(doc,weva_document_query(doc,"#panel"),"style",state.panel) == WEVA_OK);
+            CHECK(weva_element_set_text(doc,weva_document_query(doc,"#label"),text) == WEVA_OK);
+            CHECK(weva_document_update(doc,0) == WEVA_OK);
+        }
+        const auto frame=capture(live);
+        const auto reference=capture(full);
+        if (frame!=reference) std::printf("decoration update step %zu: %s\n",step,frame.diff(reference).c_str());
+        CHECK(frame==reference);
+        size_t count=0;
+        const auto* versions=weva_document_draw_versions(live,&count);
+        CHECK(count==frame.draws.size());
+        std::map<uint64_t,bool> unique;
+        for (size_t i=0;i<count;++i) {
+            CHECK(unique.emplace(versions[i],true).second);
+            const auto old=seen.find(versions[i]);
+            if (old!=seen.end()) {
+                Frame a,b; a.draws.push_back(old->second); b.draws.push_back(frame.draws[i]);
+                CHECK(a==b);
+            } else seen.emplace(versions[i],frame.draws[i]);
+        }
+    }
+    weva_document_destroy(live); weva_document_destroy(full);
+}
+
 void test_abi_draw_versions() {
     size_t count = 99;
     CHECK(weva_document_draw_versions(nullptr, &count) == nullptr && count == 0);

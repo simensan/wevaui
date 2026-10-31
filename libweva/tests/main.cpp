@@ -332,6 +332,7 @@ void test_abi_incremental_matches_fresh();
 void test_abi_incremental_subtree_sequences();
 void test_abi_incremental_retained_grid_paint();
 void test_abi_draw_versions();
+void test_abi_decoration_updates();
 void test_abi_incremental_glyph_preparation();
 void test_abi_incremental_flex_intrinsics();
 void test_abi_incremental_item_box_edges();
@@ -814,6 +815,7 @@ int main() {
     test_abi_incremental_subtree_sequences();
     test_abi_incremental_retained_grid_paint();
     test_abi_draw_versions();
+    test_abi_decoration_updates();
     test_abi_incremental_glyph_preparation();
     test_abi_incremental_flex_intrinsics();
     test_abi_incremental_item_box_edges();

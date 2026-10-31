@@ -1,0 +1,2241 @@
+{
+  "baseline_commit": "b07a556ddbf3737f30832170b1ae7849282ddcbe",
+  "decision": "Reject runtime cache; retain decoration update regression",
+  "provisional": true,
+  "batches": [
+    {
+      "manifest": {
+        "provisional": true,
+        "reason": "User requests keeping the other workspace active",
+        "binaries": {
+          "baseline": "dccc645d9883e39b2ead16ea0cd0c9fbfed6a23b6c29f6de9d1dc596888406cb",
+          "candidate": "e02f11ef428fcc833774c87353d6fa531c18f3a82410bbd81b952c5a3a945a07"
+        },
+        "source_hashes": {
+          "libweva\\include\\weva\\paint.h": "6bf1c7587bbbf1529ac44ac439ed2e3516c647f19d767aa8875c955b9b1fe040",
+          "libweva\\src\\paint.cpp": "c8019d42cdcc3a3967100c6b5fcb6a21963c86817d4762d28f822661d9b5e5a9",
+          "libweva\\src\\weva_c.cpp": "1b382230aa2ccfb3cd88969e8e08b4e9cdef468a092b392ab4db323f0beb21a5",
+          "libweva\\tests\\test_c_abi_incremental.cpp": "d382f3c9d52de2a924710798334fdd8e4a83681c53e3a580a0fdf8e171d7a6af",
+          "libweva\\tests\\main.cpp": "3f5acdf8083647c45696f64f65c6b27b7e49b4088389fe2259ad6e827a46b79b"
+        },
+        "runs": [
+          {
+            "round": 0,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "pid": 42344
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "pid": 53644
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 53724
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 54444
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "pid": 42344
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "pid": 53644
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 53724
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 54444
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "pid": 42344
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "pid": 53644
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 54444
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "pid": 42344
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "pid": 53644
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 54444
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "pid": 42344
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "pid": 53644
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 54444
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 7556
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 15664
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 40384
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "pid": 47880
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 48472
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "pid": 48524
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 15664
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "pid": 47880
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 48472
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "pid": 48524
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 18984
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 22492
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 41796
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 45788
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 46376
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 47944
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 52424
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 54080
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 55144
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 13832
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 36924
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 52520
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 15932
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 16744
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 39288
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 43056
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 43732
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 46976
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 52904
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 54824
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 20668
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 22020
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 23600
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 25308
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 25960
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 37360
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 38892
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 41928
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 43956
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 45860
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 46004
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 46720
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 50820
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 54360
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 1008
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 22928
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 23020
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 43356
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 51308
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 54980
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 9752
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 20148
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 24960
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 35896
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 43076
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 46696
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 50676
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 51456
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 54536
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 11880
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "pid": 48712
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 49588
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "pid": 54640
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 11880
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "pid": 48712
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "pid": 54640
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "pid": 37968
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 43004
+              },
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "pid": 54824
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 41980
+              },
+              {
+                "name": "rustc.exe",
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "pid": 22152
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "name": "cargo.exe",
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "pid": 27280
+              }
+            ]
+          }
+        ]
+      },
+      "rows": [
+        {
+          "round": 0,
+          "mode": "baseline",
+          "case": "hud",
+          "cascade": 0.016,
+          "boxes": 0.047,
+          "layout": 0.0,
+          "paint": 0.048,
+          "core update, total": 0.112,
+          "host draw": 0.189,
+          "host prepare": 0.052,
+          "host capture": 0.013,
+          "host prepare GPU": 0.038,
+          "host encode": 0.065,
+          "host submit": 0.072,
+          "controller + update": 0.135,
+          "complete CPU path": 0.323,
+          "frame": 0.301,
+          "idle frame": 0.149,
+          "style_layout": 0.063
+        },
+        {
+          "round": 0,
+          "mode": "baseline",
+          "case": "inventory",
+          "cascade": 0.051,
+          "boxes": 0.121,
+          "layout": 0.0,
+          "paint": 0.224,
+          "core update, total": 0.4,
+          "host draw": 0.477,
+          "host prepare": 0.291,
+          "host capture": 0.043,
+          "host prepare GPU": 0.248,
+          "host encode": 0.099,
+          "host submit": 0.087,
+          "controller + update": 0.552,
+          "complete CPU path": 1.029,
+          "frame": 0.877,
+          "idle frame": 0.323,
+          "style_layout": 0.172
+        },
+        {
+          "round": 0,
+          "mode": "candidate",
+          "case": "hud",
+          "cascade": 0.043,
+          "boxes": 0.118,
+          "layout": 0.0,
+          "paint": 0.115,
+          "core update, total": 0.28,
+          "host draw": 0.836,
+          "host prepare": 0.121,
+          "host capture": 0.039,
+          "host prepare GPU": 0.082,
+          "host encode": 0.161,
+          "host submit": 0.555,
+          "controller + update": 0.515,
+          "complete CPU path": 1.351,
+          "frame": 1.116,
+          "idle frame": 3.256,
+          "style_layout": 0.16099999999999998
+        },
+        {
+          "round": 0,
+          "mode": "candidate",
+          "case": "inventory",
+          "cascade": 0.085,
+          "boxes": 0.221,
+          "layout": 0.0,
+          "paint": 0.41,
+          "core update, total": 0.725,
+          "host draw": 0.887,
+          "host prepare": 0.45,
+          "host capture": 0.098,
+          "host prepare GPU": 0.352,
+          "host encode": 0.209,
+          "host submit": 0.228,
+          "controller + update": 0.979,
+          "complete CPU path": 1.867,
+          "frame": 1.612,
+          "idle frame": 0.429,
+          "style_layout": 0.306
+        },
+        {
+          "round": 1,
+          "mode": "baseline",
+          "case": "hud",
+          "cascade": 0.018,
+          "boxes": 0.051,
+          "layout": 0.0,
+          "paint": 0.055,
+          "core update, total": 0.127,
+          "host draw": 0.208,
+          "host prepare": 0.054,
+          "host capture": 0.014,
+          "host prepare GPU": 0.04,
+          "host encode": 0.074,
+          "host submit": 0.08,
+          "controller + update": 0.151,
+          "complete CPU path": 0.359,
+          "frame": 0.335,
+          "idle frame": 0.184,
+          "style_layout": 0.06899999999999999
+        },
+        {
+          "round": 1,
+          "mode": "baseline",
+          "case": "inventory",
+          "cascade": 0.049,
+          "boxes": 0.121,
+          "layout": 0.0,
+          "paint": 0.218,
+          "core update, total": 0.392,
+          "host draw": 0.407,
+          "host prepare": 0.23,
+          "host capture": 0.033,
+          "host prepare GPU": 0.197,
+          "host encode": 0.09,
+          "host submit": 0.087,
+          "controller + update": 0.562,
+          "complete CPU path": 0.97,
+          "frame": 0.799,
+          "idle frame": 0.217,
+          "style_layout": 0.16999999999999998
+        },
+        {
+          "round": 1,
+          "mode": "candidate",
+          "case": "hud",
+          "cascade": 0.016,
+          "boxes": 0.048,
+          "layout": 0.0,
+          "paint": 0.052,
+          "core update, total": 0.118,
+          "host draw": 0.197,
+          "host prepare": 0.051,
+          "host capture": 0.014,
+          "host prepare GPU": 0.037,
+          "host encode": 0.067,
+          "host submit": 0.079,
+          "controller + update": 0.14,
+          "complete CPU path": 0.337,
+          "frame": 0.315,
+          "idle frame": 0.156,
+          "style_layout": 0.064
+        },
+        {
+          "round": 1,
+          "mode": "candidate",
+          "case": "inventory",
+          "cascade": 0.046,
+          "boxes": 0.116,
+          "layout": 0.0,
+          "paint": 0.21,
+          "core update, total": 0.376,
+          "host draw": 0.4,
+          "host prepare": 0.228,
+          "host capture": 0.036,
+          "host prepare GPU": 0.192,
+          "host encode": 0.091,
+          "host submit": 0.081,
+          "controller + update": 0.524,
+          "complete CPU path": 0.924,
+          "frame": 0.776,
+          "idle frame": 0.187,
+          "style_layout": 0.162
+        },
+        {
+          "round": 2,
+          "mode": "baseline",
+          "case": "hud",
+          "cascade": 0.041,
+          "boxes": 0.106,
+          "layout": 0.0,
+          "paint": 0.114,
+          "core update, total": 0.266,
+          "host draw": 0.452,
+          "host prepare": 0.118,
+          "host capture": 0.038,
+          "host prepare GPU": 0.08,
+          "host encode": 0.163,
+          "host submit": 0.17,
+          "controller + update": 0.34,
+          "complete CPU path": 0.792,
+          "frame": 0.717,
+          "idle frame": 0.239,
+          "style_layout": 0.147
+        },
+        {
+          "round": 2,
+          "mode": "baseline",
+          "case": "inventory",
+          "cascade": 0.045,
+          "boxes": 0.118,
+          "layout": 0.0,
+          "paint": 0.208,
+          "core update, total": 0.374,
+          "host draw": 0.39,
+          "host prepare": 0.222,
+          "host capture": 0.034,
+          "host prepare GPU": 0.189,
+          "host encode": 0.086,
+          "host submit": 0.082,
+          "controller + update": 0.529,
+          "complete CPU path": 0.919,
+          "frame": 0.765,
+          "idle frame": 0.209,
+          "style_layout": 0.16299999999999998
+        },
+        {
+          "round": 2,
+          "mode": "candidate",
+          "case": "hud",
+          "cascade": 0.017,
+          "boxes": 0.05,
+          "layout": 0.0,
+          "paint": 0.055,
+          "core update, total": 0.125,
+          "host draw": 0.197,
+          "host prepare": 0.052,
+          "host capture": 0.014,
+          "host prepare GPU": 0.037,
+          "host encode": 0.07,
+          "host submit": 0.075,
+          "controller + update": 0.148,
+          "complete CPU path": 0.346,
+          "frame": 0.322,
+          "idle frame": 0.221,
+          "style_layout": 0.067
+        },
+        {
+          "round": 2,
+          "mode": "candidate",
+          "case": "inventory",
+          "cascade": 0.045,
+          "boxes": 0.114,
+          "layout": 0.0,
+          "paint": 0.2,
+          "core update, total": 0.363,
+          "host draw": 0.427,
+          "host prepare": 0.26,
+          "host capture": 0.034,
+          "host prepare GPU": 0.226,
+          "host encode": 0.087,
+          "host submit": 0.081,
+          "controller + update": 0.509,
+          "complete CPU path": 0.936,
+          "frame": 0.79,
+          "idle frame": 0.197,
+          "style_layout": 0.159
+        }
+      ],
+      "chrome": [
+        {
+          "round": 0,
+          "case": "hud",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.20146,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.190755,
+          "paint_recording_events": 1483,
+          "raster_workers_cpu_ms_per_update": 0.039384999999999996,
+          "raster_workers_events": 200,
+          "window_ms": 3304.687,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 0,
+          "case": "hud",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.013015,
+          "paint_recording_events": 1038,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3303.734,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 0,
+          "case": "inventory",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.146275,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.190455,
+          "paint_recording_events": 1807,
+          "raster_workers_cpu_ms_per_update": 0.08255000000000001,
+          "raster_workers_events": 600,
+          "window_ms": 3310.562,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 0,
+          "case": "inventory",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.01414,
+          "paint_recording_events": 1065,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3306.854,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 1,
+          "case": "hud",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.07559,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.08637,
+          "paint_recording_events": 1403,
+          "raster_workers_cpu_ms_per_update": 0.020034999999999997,
+          "raster_workers_events": 200,
+          "window_ms": 3304.635,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 1,
+          "case": "hud",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.01085,
+          "paint_recording_events": 975,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3311.501,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 1,
+          "case": "inventory",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.137225,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.18073499999999998,
+          "paint_recording_events": 1790,
+          "raster_workers_cpu_ms_per_update": 0.07301,
+          "raster_workers_events": 600,
+          "window_ms": 3310.465,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 1,
+          "case": "inventory",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.011430000000000001,
+          "paint_recording_events": 991,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3305.881,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 2,
+          "case": "hud",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.072385,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.085945,
+          "paint_recording_events": 1426,
+          "raster_workers_cpu_ms_per_update": 0.020489999999999998,
+          "raster_workers_events": 200,
+          "window_ms": 3309.154,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 2,
+          "case": "hud",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.01048,
+          "paint_recording_events": 987,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3308.645,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 2,
+          "case": "inventory",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.125115,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.171695,
+          "paint_recording_events": 1789,
+          "raster_workers_cpu_ms_per_update": 0.071285,
+          "raster_workers_events": 600,
+          "window_ms": 3310.226,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 2,
+          "case": "inventory",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.010589999999999999,
+          "paint_recording_events": 974,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3303.224,
+          "gpu_execution_ms": null
+        }
+      ],
+      "summary": {
+        "hud": {
+          "baseline": {
+            "cascade": 0.018,
+            "boxes": 0.051,
+            "style_layout": 0.06899999999999999,
+            "paint": 0.055,
+            "complete CPU path": 0.359,
+            "idle frame": 0.184
+          },
+          "candidate": {
+            "cascade": 0.017,
+            "boxes": 0.05,
+            "style_layout": 0.067,
+            "paint": 0.055,
+            "complete CPU path": 0.346,
+            "idle frame": 0.221
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.07559,
+            "paint_recording_cpu_ms_per_update": 0.08637,
+            "raster_workers_cpu_ms_per_update": 0.020489999999999998
+          },
+          "paired_percent": {
+            "style_layout": -7.246376811594191,
+            "paint": -5.454545454545457,
+            "complete CPU path": -6.128133704735362
+          }
+        },
+        "inventory": {
+          "baseline": {
+            "cascade": 0.049,
+            "boxes": 0.121,
+            "style_layout": 0.16999999999999998,
+            "paint": 0.218,
+            "complete CPU path": 0.97,
+            "idle frame": 0.217
+          },
+          "candidate": {
+            "cascade": 0.046,
+            "boxes": 0.116,
+            "style_layout": 0.162,
+            "paint": 0.21,
+            "complete CPU path": 0.936,
+            "idle frame": 0.197
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.137225,
+            "paint_recording_cpu_ms_per_update": 0.18073499999999998,
+            "raster_workers_cpu_ms_per_update": 0.07301
+          },
+          "paired_percent": {
+            "style_layout": -2.4539877300613355,
+            "paint": -3.669724770642202,
+            "complete CPU path": 1.8498367791077275
+          }
+        }
+      }
+    },
+    {
+      "manifest": {
+        "provisional": true,
+        "reason": "User requests keeping the other workspace active",
+        "binaries": {
+          "baseline": "dccc645d9883e39b2ead16ea0cd0c9fbfed6a23b6c29f6de9d1dc596888406cb",
+          "candidate": "e02f11ef428fcc833774c87353d6fa531c18f3a82410bbd81b952c5a3a945a07"
+        },
+        "source_hashes": {
+          "libweva\\include\\weva\\paint.h": "6bf1c7587bbbf1529ac44ac439ed2e3516c647f19d767aa8875c955b9b1fe040",
+          "libweva\\src\\paint.cpp": "c8019d42cdcc3a3967100c6b5fcb6a21963c86817d4762d28f822661d9b5e5a9",
+          "libweva\\src\\weva_c.cpp": "1b382230aa2ccfb3cd88969e8e08b4e9cdef468a092b392ab4db323f0beb21a5",
+          "libweva\\tests\\test_c_abi_incremental.cpp": "d382f3c9d52de2a924710798334fdd8e4a83681c53e3a580a0fdf8e171d7a6af",
+          "libweva\\tests\\main.cpp": "3f5acdf8083647c45696f64f65c6b27b7e49b4088389fe2259ad6e827a46b79b"
+        },
+        "runs": [
+          {
+            "round": 0,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "pid": 11236,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 21992,
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 2584,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 22328,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 53152,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 6548,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 27180,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 34424,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 45672,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 50892,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 19636,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 24872,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 29668,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 36416,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 38956,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 50668,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 54608,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 55072,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 53700,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "pid": 11236,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 21992,
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 29668,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 36416,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 50668,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 53700,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 26408,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 54632,
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 13700,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 26476,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 48940,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 54728,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 420,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 20580,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 39456,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 46492,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 20512,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 38992,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 40172,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 40756,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 44292,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 45984,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 50580,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 53288,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 30084,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 45688,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              }
+            ]
+          },
+          {
+            "round": 0,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "pid": 420,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 11236,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 13700,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 20512,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 20580,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 21992,
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 26408,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 29668,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 30084,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 38992,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 39456,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 40172,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 45688,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 46492,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 48940,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 50668,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 51752,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 53700,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 54632,
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 54728,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 54360,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 18420,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 24228,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 24756,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 53992,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 41824,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 49372,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 50236,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 51004,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 11540,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 37656,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 47100,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 50912,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 53264,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 48540,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 22500,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 36736,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "pid": 11236,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 11540,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 21992,
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 22500,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 24228,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 26408,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 36736,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 37656,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 40172,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 46492,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 48540,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 50236,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 50912,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 51752,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 53700,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 53992,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 54632,
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "candidate",
+            "other_processes": [
+              {
+                "pid": 11236,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 21992,
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 24228,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 26408,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 40172,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 46492,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 53700,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 54632,
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 54652,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              }
+            ]
+          },
+          {
+            "round": 1,
+            "mode": "baseline",
+            "other_processes": [
+              {
+                "pid": 11236,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 21992,
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 53700,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              },
+              {
+                "pid": 47808,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "name": "rustc.exe"
+              }
+            ]
+          },
+          {
+            "round": 2,
+            "mode": "baseline",
+            "other_processes": []
+          },
+          {
+            "round": 2,
+            "mode": "candidate",
+            "other_processes": []
+          },
+          {
+            "round": 2,
+            "mode": "chrome",
+            "other_processes": [
+              {
+                "pid": 19972,
+                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              },
+              {
+                "pid": 27604,
+                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "name": "cargo.exe"
+              }
+            ]
+          }
+        ]
+      },
+      "rows": [
+        {
+          "round": 0,
+          "mode": "baseline",
+          "case": "hud",
+          "cascade": 0.016,
+          "boxes": 0.048,
+          "layout": 0.0,
+          "paint": 0.05,
+          "core update, total": 0.117,
+          "host draw": 0.2,
+          "host prepare": 0.056,
+          "host capture": 0.013,
+          "host prepare GPU": 0.043,
+          "host encode": 0.068,
+          "host submit": 0.076,
+          "controller + update": 0.14,
+          "complete CPU path": 0.34,
+          "frame": 0.317,
+          "idle frame": 0.263,
+          "style_layout": 0.064
+        },
+        {
+          "round": 0,
+          "mode": "baseline",
+          "case": "inventory",
+          "cascade": 0.139,
+          "boxes": 0.372,
+          "layout": 0.0,
+          "paint": 0.599,
+          "core update, total": 1.134,
+          "host draw": 1.506,
+          "host prepare": 0.584,
+          "host capture": 0.133,
+          "host prepare GPU": 0.452,
+          "host encode": 0.267,
+          "host submit": 0.655,
+          "controller + update": 1.537,
+          "complete CPU path": 3.043,
+          "frame": 2.64,
+          "idle frame": 0.674,
+          "style_layout": 0.511
+        },
+        {
+          "round": 0,
+          "mode": "candidate",
+          "case": "hud",
+          "cascade": 0.027,
+          "boxes": 0.074,
+          "layout": 0.0,
+          "paint": 0.082,
+          "core update, total": 0.186,
+          "host draw": 0.299,
+          "host prepare": 0.079,
+          "host capture": 0.026,
+          "host prepare GPU": 0.054,
+          "host encode": 0.112,
+          "host submit": 0.107,
+          "controller + update": 0.228,
+          "complete CPU path": 0.527,
+          "frame": 0.485,
+          "idle frame": 0.635,
+          "style_layout": 0.10099999999999999
+        },
+        {
+          "round": 0,
+          "mode": "candidate",
+          "case": "inventory",
+          "cascade": 0.108,
+          "boxes": 0.29,
+          "layout": 0.0,
+          "paint": 0.53,
+          "core update, total": 0.935,
+          "host draw": 3.839,
+          "host prepare": 0.529,
+          "host capture": 0.115,
+          "host prepare GPU": 0.414,
+          "host encode": 0.308,
+          "host submit": 3.002,
+          "controller + update": 1.266,
+          "complete CPU path": 5.104,
+          "frame": 4.774,
+          "idle frame": 1.69,
+          "style_layout": 0.39799999999999996
+        },
+        {
+          "round": 1,
+          "mode": "baseline",
+          "case": "hud",
+          "cascade": 0.018,
+          "boxes": 0.054,
+          "layout": 0.0,
+          "paint": 0.055,
+          "core update, total": 0.13,
+          "host draw": 0.22,
+          "host prepare": 0.056,
+          "host capture": 0.016,
+          "host prepare GPU": 0.04,
+          "host encode": 0.076,
+          "host submit": 0.088,
+          "controller + update": 0.157,
+          "complete CPU path": 0.377,
+          "frame": 0.35,
+          "idle frame": 0.163,
+          "style_layout": 0.072
+        },
+        {
+          "round": 1,
+          "mode": "baseline",
+          "case": "inventory",
+          "cascade": 0.045,
+          "boxes": 0.111,
+          "layout": 0.0,
+          "paint": 0.207,
+          "core update, total": 0.367,
+          "host draw": 0.392,
+          "host prepare": 0.233,
+          "host capture": 0.031,
+          "host prepare GPU": 0.202,
+          "host encode": 0.08,
+          "host submit": 0.08,
+          "controller + update": 0.512,
+          "complete CPU path": 0.905,
+          "frame": 0.76,
+          "idle frame": 0.174,
+          "style_layout": 0.156
+        },
+        {
+          "round": 1,
+          "mode": "candidate",
+          "case": "hud",
+          "cascade": 0.049,
+          "boxes": 0.163,
+          "layout": 0.0,
+          "paint": 0.263,
+          "core update, total": 0.48,
+          "host draw": 1.239,
+          "host prepare": 0.227,
+          "host capture": 0.047,
+          "host prepare GPU": 0.181,
+          "host encode": 0.38,
+          "host submit": 0.632,
+          "controller + update": 0.6,
+          "complete CPU path": 1.839,
+          "frame": 1.72,
+          "idle frame": 0.282,
+          "style_layout": 0.21200000000000002
+        },
+        {
+          "round": 1,
+          "mode": "candidate",
+          "case": "inventory",
+          "cascade": 0.057,
+          "boxes": 0.145,
+          "layout": 0.0,
+          "paint": 0.25,
+          "core update, total": 0.457,
+          "host draw": 0.524,
+          "host prepare": 0.31,
+          "host capture": 0.049,
+          "host prepare GPU": 0.261,
+          "host encode": 0.108,
+          "host submit": 0.106,
+          "controller + update": 0.63,
+          "complete CPU path": 1.154,
+          "frame": 0.981,
+          "idle frame": 0.221,
+          "style_layout": 0.20199999999999999
+        },
+        {
+          "round": 2,
+          "mode": "baseline",
+          "case": "hud",
+          "cascade": 0.019,
+          "boxes": 0.057,
+          "layout": 0.0,
+          "paint": 0.058,
+          "core update, total": 0.136,
+          "host draw": 0.22,
+          "host prepare": 0.056,
+          "host capture": 0.016,
+          "host prepare GPU": 0.04,
+          "host encode": 0.077,
+          "host submit": 0.087,
+          "controller + update": 0.161,
+          "complete CPU path": 0.381,
+          "frame": 0.356,
+          "idle frame": 0.19,
+          "style_layout": 0.076
+        },
+        {
+          "round": 2,
+          "mode": "baseline",
+          "case": "inventory",
+          "cascade": 0.045,
+          "boxes": 0.118,
+          "layout": 0.0,
+          "paint": 0.202,
+          "core update, total": 0.369,
+          "host draw": 0.402,
+          "host prepare": 0.235,
+          "host capture": 0.055,
+          "host prepare GPU": 0.18,
+          "host encode": 0.081,
+          "host submit": 0.085,
+          "controller + update": 0.523,
+          "complete CPU path": 0.925,
+          "frame": 0.771,
+          "idle frame": 0.215,
+          "style_layout": 0.16299999999999998
+        },
+        {
+          "round": 2,
+          "mode": "candidate",
+          "case": "hud",
+          "cascade": 0.019,
+          "boxes": 0.057,
+          "layout": 0.0,
+          "paint": 0.058,
+          "core update, total": 0.136,
+          "host draw": 0.216,
+          "host prepare": 0.055,
+          "host capture": 0.015,
+          "host prepare GPU": 0.04,
+          "host encode": 0.075,
+          "host submit": 0.087,
+          "controller + update": 0.161,
+          "complete CPU path": 0.377,
+          "frame": 0.352,
+          "idle frame": 0.193,
+          "style_layout": 0.076
+        },
+        {
+          "round": 2,
+          "mode": "candidate",
+          "case": "inventory",
+          "cascade": 0.052,
+          "boxes": 0.136,
+          "layout": 0.0,
+          "paint": 0.23,
+          "core update, total": 0.423,
+          "host draw": 0.45,
+          "host prepare": 0.274,
+          "host capture": 0.032,
+          "host prepare GPU": 0.242,
+          "host encode": 0.089,
+          "host submit": 0.087,
+          "controller + update": 0.608,
+          "complete CPU path": 1.058,
+          "frame": 0.873,
+          "idle frame": 0.212,
+          "style_layout": 0.188
+        }
+      ],
+      "chrome": [
+        {
+          "round": 0,
+          "case": "hud",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.20302499999999998,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.189605,
+          "paint_recording_events": 1470,
+          "raster_workers_cpu_ms_per_update": 0.03971,
+          "raster_workers_events": 200,
+          "window_ms": 3306.81,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 0,
+          "case": "hud",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.016325,
+          "paint_recording_events": 1069,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3308.748,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 0,
+          "case": "inventory",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.30244499999999996,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.38789999999999997,
+          "paint_recording_events": 1838,
+          "raster_workers_cpu_ms_per_update": 0.140725,
+          "raster_workers_events": 600,
+          "window_ms": 3304.508,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 0,
+          "case": "inventory",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.015715,
+          "paint_recording_events": 1072,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3306.564,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 1,
+          "case": "hud",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.20778,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.19747499999999998,
+          "paint_recording_events": 1477,
+          "raster_workers_cpu_ms_per_update": 0.040534999999999995,
+          "raster_workers_events": 200,
+          "window_ms": 3307.09,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 1,
+          "case": "hud",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.016045,
+          "paint_recording_events": 1074,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3308.14,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 1,
+          "case": "inventory",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.29256,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.377675,
+          "paint_recording_events": 1839,
+          "raster_workers_cpu_ms_per_update": 0.13747,
+          "raster_workers_events": 600,
+          "window_ms": 3308.128,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 1,
+          "case": "inventory",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.01574,
+          "paint_recording_events": 1071,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3304.129,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 2,
+          "case": "hud",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.094995,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.101165,
+          "paint_recording_events": 1437,
+          "raster_workers_cpu_ms_per_update": 0.0207,
+          "raster_workers_events": 200,
+          "window_ms": 3308.904,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 2,
+          "case": "hud",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.01154,
+          "paint_recording_events": 988,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3307.99,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 2,
+          "case": "inventory",
+          "phase": "mutating",
+          "style_layout_cpu_ms_per_update": 0.13895,
+          "style_layout_events": 400,
+          "paint_recording_cpu_ms_per_update": 0.18411000000000002,
+          "paint_recording_events": 1795,
+          "raster_workers_cpu_ms_per_update": 0.075935,
+          "raster_workers_events": 600,
+          "window_ms": 3310.362,
+          "gpu_execution_ms": null
+        },
+        {
+          "round": 2,
+          "case": "inventory",
+          "phase": "retained",
+          "style_layout_cpu_ms_per_update": 0.0,
+          "style_layout_events": 0,
+          "paint_recording_cpu_ms_per_update": 0.010355000000000001,
+          "paint_recording_events": 977,
+          "raster_workers_cpu_ms_per_update": 0.0,
+          "raster_workers_events": 0,
+          "window_ms": 3307.671,
+          "gpu_execution_ms": null
+        }
+      ],
+      "summary": {
+        "hud": {
+          "baseline": {
+            "cascade": 0.018,
+            "boxes": 0.054,
+            "style_layout": 0.072,
+            "paint": 0.055,
+            "complete CPU path": 0.377,
+            "idle frame": 0.19
+          },
+          "candidate": {
+            "cascade": 0.027,
+            "boxes": 0.074,
+            "style_layout": 0.10099999999999999,
+            "paint": 0.082,
+            "complete CPU path": 0.527,
+            "idle frame": 0.282
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.20302499999999998,
+            "paint_recording_cpu_ms_per_update": 0.189605,
+            "raster_workers_cpu_ms_per_update": 0.03971
+          },
+          "paired_percent": {
+            "style_layout": 57.81249999999998,
+            "paint": 63.99999999999999,
+            "complete CPU path": 55.00000000000001
+          }
+        },
+        "inventory": {
+          "baseline": {
+            "cascade": 0.045,
+            "boxes": 0.118,
+            "style_layout": 0.16299999999999998,
+            "paint": 0.207,
+            "complete CPU path": 0.925,
+            "idle frame": 0.215
+          },
+          "candidate": {
+            "cascade": 0.057,
+            "boxes": 0.145,
+            "style_layout": 0.20199999999999999,
+            "paint": 0.25,
+            "complete CPU path": 1.154,
+            "idle frame": 0.221
+          },
+          "chrome": {
+            "style_layout_cpu_ms_per_update": 0.29256,
+            "paint_recording_cpu_ms_per_update": 0.377675,
+            "raster_workers_cpu_ms_per_update": 0.13747
+          },
+          "paired_percent": {
+            "style_layout": 15.337423312883459,
+            "paint": 13.861386138613852,
+            "complete CPU path": 27.513812154696126
+          }
+        }
+      }
+    }
+  ],
+  "summary": {
+    "hud": {
+      "baseline": {
+        "style_layout": 0.0705,
+        "paint": 0.055,
+        "complete CPU path": 0.368
+      },
+      "candidate": {
+        "style_layout": 0.0885,
+        "paint": 0.07,
+        "complete CPU path": 0.452
+      },
+      "paired": {
+        "style_layout": 28.90624999999999,
+        "paint": 31.999999999999996,
+        "complete CPU path": 26.975065616797902
+      },
+      "chrome": {
+        "style_layout_cpu_ms_per_update": 0.1482275,
+        "paint_recording_cpu_ms_per_update": 0.145385,
+        "raster_workers_cpu_ms_per_update": 0.0300425
+      }
+    },
+    "inventory": {
+      "baseline": {
+        "style_layout": 0.16649999999999998,
+        "paint": 0.213,
+        "complete CPU path": 0.9475
+      },
+      "candidate": {
+        "style_layout": 0.195,
+        "paint": 0.24,
+        "complete CPU path": 1.1059999999999999
+      },
+      "paired": {
+        "style_layout": 6.441717791411062,
+        "paint": 5.095830683985826,
+        "complete CPU path": 20.946095266537256
+      },
+      "chrome": {
+        "style_layout_cpu_ms_per_update": 0.14261249999999998,
+        "paint_recording_cpu_ms_per_update": 0.18728250000000002,
+        "raster_workers_cpu_ms_per_update": 0.07924250000000001
+      }
+    }
+  },
+  "diagnostic": {
+    "count": 5.495,
+    "identical": 3.335,
+    "vertices": 676.94,
+    "identical_vertices": 241.02
+  },
+  "final_executable_sections": {
+    "restored": {
+      ".text": "8b171437ee2d724db6f8445e1149aa1d9fcb7524776f2b9cedcc575a97a06e22",
+      ".rdata": "77f9af4d988929a28e20732fa6834f75318a3440390b10bc011ca396de970b37",
+      ".data": "b95e92fef7d833f1edbab7ce0dc1fe2ea91ba3851edc37746c0d71a2b6f5b695",
+      ".pdata": "fbef69b05ff1db281003ef95acf47633ee2e899b333722d911b9e68bd926d66d",
+      ".tls": "2e32128a6d93cea5cb21b5af45eb0895a0261b128e88d9e4d8e01fbc8dca3ec6",
+      ".reloc": "9a55fb92bbb8b837999c73088aa50bf80899d1155c7bf50887242abba6f89098"
+    },
+    "baseline": {
+      ".text": "8b171437ee2d724db6f8445e1149aa1d9fcb7524776f2b9cedcc575a97a06e22",
+      ".rdata": "77f9af4d988929a28e20732fa6834f75318a3440390b10bc011ca396de970b37",
+      ".data": "b95e92fef7d833f1edbab7ce0dc1fe2ea91ba3851edc37746c0d71a2b6f5b695",
+      ".pdata": "fbef69b05ff1db281003ef95acf47633ee2e899b333722d911b9e68bd926d66d",
+      ".tls": "2e32128a6d93cea5cb21b5af45eb0895a0261b128e88d9e4d8e01fbc8dca3ec6",
+      ".reloc": "9a55fb92bbb8b837999c73088aa50bf80899d1155c7bf50887242abba6f89098"
+    },
+    "rejected_candidate": {
+      ".text": "cbbd384d20f902dd465dbfb030741cd1e143b60201e9463a468a3bf041dc12e6",
+      ".rdata": "dee73dd06aa2f9b80f34abc38b02c6e6863afd6a9d15e0d31300f3600a695df0",
+      ".data": "091707d19448e653489d37a7f602ab731c0dd536761a18c9c3cffe13dc296149",
+      ".pdata": "8b5756496dde6960b68589ebbaa8f171a33c4b30da4e7f1be9ca91444864825a",
+      ".tls": "2e32128a6d93cea5cb21b5af45eb0895a0261b128e88d9e4d8e01fbc8dca3ec6",
+      ".reloc": "54ab07488a2ae35f0fa22c26b467e77e32098a7a1a0bc64697df3e4fd6df0c4a"
+    }
+  },
+  "validation": {
+    "gcc_suites": 17,
+    "clang_sanitizer_suites": 19,
+    "runtime_matches_head": true,
+    "host_binaries_changed": false,
+    "browser_host_gates_rerun": false
+  },
+  "source_hashes": {
+    "libweva/include/weva/paint.h": "1b1d204e7d9af1ff53581e995bf6edf8cf483debf803f46a1f85146fcc743d38",
+    "libweva/src/paint.cpp": "9a283ecff6d405bb477b1cf02d147245aa43d2fab3d52b1588e6b4a24670e2f2",
+    "libweva/src/weva_c.cpp": "09fa2d9e7661b94e94a3923290caff7852c9230939bb15d23305800855b46898",
+    "libweva/tests/main.cpp": "be3f1b2c1c75fae48f5ff7993a5dbb65fac7875b0f5007bae41ebbe319f70c71",
+    "libweva/tests/test_c_abi_incremental.cpp": "87f377a08a276e74cbc47731e24b4fd32ef408fe1a81c66f8bcc5204c2285a23"
+  },
+  "evidence_hashes": {
+    ".utmp\\decoration-reuse-20261031\\rejected.patch": "404be1ee4db6ce840ab6bc1fd9605e8bea397a35d81b76a1de32927bb3be0f48",
+    ".utmp\\decoration-reuse-20261031\\rejected-paint.h": "6bf1c7587bbbf1529ac44ac439ed2e3516c647f19d767aa8875c955b9b1fe040",
+    ".utmp\\decoration-reuse-20261031\\rejected-paint.cpp": "c8019d42cdcc3a3967100c6b5fcb6a21963c86817d4762d28f822661d9b5e5a9",
+    ".utmp\\decoration-reuse-20261031\\rejected-weva_c.cpp": "1b382230aa2ccfb3cd88969e8e08b4e9cdef468a092b392ab4db323f0beb21a5",
+    ".utmp\\decoration-reuse-20261031\\baseline.exe": "dccc645d9883e39b2ead16ea0cd0c9fbfed6a23b6c29f6de9d1dc596888406cb",
+    ".utmp\\decoration-reuse-20261031\\candidate.exe": "e02f11ef428fcc833774c87353d6fa531c18f3a82410bbd81b952c5a3a945a07",
+    ".utmp\\decoration-reuse-20261031\\diagnostic.log": "e4f3341c9a1fa2442e71511ae7a1d309dbdc5c8fc2ce16b13ac131c6f3993d70",
+    ".utmp\\decoration-reuse-20261031\\diagnostic-summary.json": "0dfb98f9ed456daeacbfa86c69f15cef43ba5fcd8d0e120259be7684e2063edd",
+    ".utmp\\decoration-reuse-20261031\\trace.log": "ba6bef701ab2c8c14212c9ac2f6f902ccbb88006986b528236126878450f1197",
+    ".utmp\\decoration-reuse-20261031\\focused.log": "b9c1711a7104e90f2af30268080ef4f422450dfef244c8aa7a4beded44a5364b",
+    ".utmp\\decoration-reuse-20261031\\slots-tests.log": "3eac91ee48e3cd665fbc8d2be13dac4cbf26df879d95de1fdbd8b538ffef395a",
+    ".utmp\\decoration-reuse-20261031\\final-gcc-tests.log": "6cd2e5788aab65b5e4a256f8b2131873e77077b0899daa47cfc591caef23f76b",
+    ".utmp\\decoration-reuse-20261031\\final-clang-tests.log": "4e5e91204443b287ce020ee006a9226723cb1c745db4ad96ecae0c509553793e",
+    ".utmp\\decoration-reuse-20261031\\final-gcc-build.log": "4859d5ed58323415137db93297aac1b19940c74c620d9ded136ac383bbe0e867",
+    ".utmp\\decoration-reuse-20261031\\final-clang-build.log": "a7021fbc7e6266762b93050493e264466941009d9e7003c06f9c625e7ef8a51e",
+    ".utmp\\decoration-reuse-20261031\\restored-agentic-build.log": "1f4fe237c600c9a25723c469198a01cdfb82de18f608a176e61038cda036babf",
+    ".utmp\\decoration-reuse-20261031\\restored-sections.json": "623b82f730ec8a856a4944576249cf9af351582877e5aba0559f4b8230491d54"
+  },
+  "fixture_hashes": {
+    ".utmp\\render-audit-20261030\\survival-fixtures\\ammo.svg.png": "d4520a84fd2b3fb782fff62a8db6309dcc73a01341283e86a878c9db48a2b4c9",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\bandage.svg.png": "21a0b64549df57ec47a4268213a6b6224c6b9fe8ba7397cba905f0c9e853f355",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\beans.svg.png": "cba3c4dc9418d7f358d2fa08ee84fabd465d4833024e39fc1512fe0df7b12eb4",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\bolt.svg.png": "b3377182cda4864d4e856bbafdc770cbdac253e87de7842346be45fc5b1e720a",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\campfire.svg.png": "5e041c7efcd01ebf13145c4a77d4e28b661d01f8d0551c330218705abcaac848",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\canteen.svg.png": "977f51dee7dff4001e396afe93a25d8111821b0b6317f4b15d9a9df79b276e86",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\cloth.svg.png": "2df601d83f95c1afc1196b852b4a41000d73155fdef701af74af5fffd638858b",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\drop.svg.png": "35271db3426bfd7e67188c7dc68684b1bf15508b12db0ccb6485c2afe9652424",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\food.svg.png": "ca655dfac85122ab568f6bb76c5d609447f10a3c5ad9916764803f6fbeb97e34",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hatchet.svg.png": "02508c1e246f60fdab8b2af5afa217582cbd327198dd614de98148655408ed49",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\heart.svg.png": "30d3a74ae6b0ec0d310a5603fe8071e0ad8538a5e25647980f4eb8bca65ab146",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hud.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\hud.html": "b29a00ff8341aeec836f793fc988192149206931aa49e83f8895234b74f5ad10",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\inventory.css": "dae93e4c9f6095123231fb7d5cf394dcf682b255b0aa919c4dc2d8d2495e4654",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\inventory.html": "f2f130a482259071b078107e9d1a734c88dd47809bde4f382faa1c3028032090",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\knife.svg.png": "ceda161ae3ae746f80250b104a9146972159dfe6dfc75a06b6c65f512e1daa21",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\mutations.json": "aa0ad5e6a9768b9ece2c00c3a0d5afbb68f167a5461ecc086c029be0f253e8bc",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\open-sans-semibold.ttf": "445ac29890c338bc293873ec8da462193755346499903133b1b4d6f16eb708ca",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\revolver.svg.png": "730e040dd4dc0f0ab0e0919c29a9e00fe293fdf4b2d89544a3135c73b191c692",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\rope.svg.png": "39d42acb1a7b28cc761e4c9c00512ea601627fb0674cf994d53bc6fe86fdf09d",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\stone.svg.png": "64403858edb3564e0b034cf7da6d652286a5b55785f94547f56cf361f08f639b",
+    ".utmp\\render-audit-20261030\\survival-fixtures\\wood.svg.png": "cbb723754580f23cfdd5a47f1640058bee21c510d89f95e7cdb9d42aef95bd7d"
+  }
+}
