@@ -1,5 +1,11 @@
 # Product readiness
 
+The local Agentic audit branch adds explicit hidden CPU preparation through
+`html_prepare()`. Paired runtime checks show lower interactive opening cost
+by moving layout/glyph/paint work into loading; GPU first-use work remains.
+This is not yet an upstream integration or a new Unity/Godot API. See the
+[October 31 preparation receipt](verification/script-preparation-20261031.md).
+
 Updated October 30, 2026 · Integration verification through October 30.
 
 Scoped October 25 core/Agentic checks cover filtered downscaled icons and

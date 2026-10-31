@@ -1,5 +1,11 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [scripted hidden preparation pass](docs/verification/script-preparation-20261031.md)
+adds native Agentic html_prepare on the local audit branch. Three paired runs
+reduce opening main CPU from 20.42 to 0.55 ms by moving about 20 ms to loading;
+GPU first-use work remains. API/accounting/editor checks and live clicks pass.
+Shared core and Godot/Unity code are unchanged.
+
 The [1080p/1440p runtime validation](docs/verification/resolution-runtime-20261031.md)
 passes 36,000 measured frames and 1,332 reloads. Combined Agentic submission
 and uniform changes reduce cycling-inventory worker CPU by 11.6-12.6%; frame
