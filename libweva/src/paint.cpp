@@ -4235,22 +4235,34 @@ double resolve_opacity(const ComputedStyle* style) {
 LinearColor resolve_color(const ComputedStyle* style, std::string_view property) {
     ProfileScope prof(&g_paint_profile.colors);
     if (!style) return LinearColor::transparent();
-    const int id = CssPropertyRegistry::instance().id_of(property);
-    CssValuePtr custom;
-    const CssValue* v;
-    if (id == kCustomPropertyId) {
-        // Public callers can resolve an unregistered/custom property too;
-        // those have no parsed slot, so retain the on-demand behavior.
-        custom = parse_css_value(style->get(property), nullptr);
-        v = custom.get();
-    } else {
-        // Reuse the style's existing slot memo. Writes/unsets invalidate it,
-        // and inherited reads share the current ancestor's entry.
-        v = style->parsed(id);
+    int id = CssPropertyRegistry::instance().id_of(property);
+    for (;;) {
+        CssValuePtr custom;
+        const CssValue* v;
+        if (id == kCustomPropertyId) {
+            // Public callers can resolve names without a registered slot too.
+            custom = parse_css_value(style->get(property), nullptr);
+            v = custom.get();
+        } else {
+            // Writes/unsets invalidate this memo; inherited reads share it.
+            v = style->parsed(id);
+        }
+        if (!v) return LinearColor::transparent();
+        if (v->kind() == CssValueKind::Color) {
+            const auto& c = static_cast<const CssColor&>(*v);
+            return LinearColor::from_srgb(c.r, c.g, c.b, c.a);
+        }
+        if (v->kind() != CssValueKind::Keyword ||
+            !ci_equal(static_cast<const CssKeyword&>(*v).name, "currentcolor"))
+            return LinearColor::transparent();
+        static const int color_id = CssPropertyRegistry::instance().id_of("color");
+        // On other properties currentColor uses this element's color. On
+        // color itself it inherits. Walk iteratively so authored chains do
+        // not consume one stack frame per ancestor; never cache the result.
+        if (id == color_id) style = style->inherit_parent();
+        id = color_id;
+        if (!style) return LinearColor(0, 0, 0, 1);
     }
-    if (!v || v->kind() != CssValueKind::Color) return LinearColor::transparent();
-    const auto& c = static_cast<const CssColor&>(*v);
-    return LinearColor::from_srgb(c.r, c.g, c.b, c.a);
 }
 
 bool resolve_transform(const ComputedStyle* style, const LayoutContext& ctx,

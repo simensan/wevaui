@@ -32,6 +32,15 @@ const {launch} = require('./chrome_test_browser.cjs');
                 'color:var(--missing, inherit);padding-left:var(--missing, inherit)}');
             const variable = getComputedStyle(document.getElementById('x'), '::before');
             rows.push({label:'variable fallback',color:variable.color,padding:variable.paddingLeft});
+            build('#p{color:rgba(255,0,0,.25)}#x{color:currentColor;background-color:CuRrEnTcOlOr}' +
+                '#x::before{content:"x";color:inherit;background-color:currentColor}');
+            for (const color of ['rgba(255, 0, 0, 0.25)', 'rgb(0, 255, 0)', 'rgb(0, 0, 255)']) {
+                document.getElementById('p').style.color = color;
+                const x = document.getElementById('x');
+                rows.push({label:'currentColor '+color, color:getComputedStyle(x).color,
+                    background:getComputedStyle(x).backgroundColor,
+                    pseudo:getComputedStyle(x, '::before').backgroundColor});
+            }
             return rows;
         });
         for (const keyword of ['inherit', 'initial', 'unset', 'revert', 'revert-layer']) {
@@ -47,6 +56,9 @@ const {launch} = require('./chrome_test_browser.cjs');
             label:'layer rollback',color:'rgb(0, 128, 0)',font:'24px',line:'30px'});
         assert.deepEqual(rows.find(r => r.label === 'variable fallback'), {
             label:'variable fallback',color:'rgb(0, 0, 255)',padding:'13px'});
+        for (const color of ['rgba(255, 0, 0, 0.25)', 'rgb(0, 255, 0)', 'rgb(0, 0, 255)'])
+            assert.deepEqual(rows.find(r => r.label === 'currentColor '+color), {
+                label:'currentColor '+color,color,background:color,pseudo:color});
         console.log(JSON.stringify({browser:await browser.version(),rows},null,2));
     } finally {
         await browser.close();

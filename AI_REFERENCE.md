@@ -540,3 +540,11 @@ the existing known failure. Unity remains 255 passes/two inconclusive and
 7/7 Mono player checks. A focused core render matches Chrome pixels. The
 report records provisional regression timings, local layout counters and
 a separate unresolved background-color currentColor paint defect.
+
+The [currentColor and layout investigation](docs/verification/currentcolor-and-layout-probes-20261031.md)
+fixes shared currentColor painting and verifies live ordinary/pseudo background
+updates. The width-reuse experiment is reverted: six provisional pairs do not
+establish a runtime gain despite fewer line builds. The final color-only full
+gate passes 807,198 GCC main checks (807,192 sanitized), 17 GCC/19 sanitizer
+suites, 341 Chrome captures and 67 browser checks plus the existing known
+failure. Unity remains 255 passes/two inconclusive and 7/7 Mono player passes.

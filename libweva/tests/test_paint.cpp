@@ -451,6 +451,32 @@ void test_paint_color_resolution() {
     CHECK(resolve_color(&child, "--ink") == LinearColor(1, 0, 0, 1));
     CHECK(resolve_color(&child, "--missing").a == 0);
     CHECK(resolve_color(nullptr, "color").a == 0);
+
+    // currentColor remains live when its source changes, including alpha,
+    // inherited background syntax and color:currentColor ancestor chains.
+    parent.set("color", "rgba(255,0,0,.25)");
+    child.set("background-color", "CuRrEnTcOlOr");
+    CHECK(resolve_color(&child, "background-color") == LinearColor(1, 0, 0, .25f));
+    child.set("color", "#0000ff");
+    CHECK(resolve_color(&child, "background-color") == LinearColor(0, 0, 1, 1));
+    child.set("color", "currentColor");
+    CHECK(resolve_color(&child, "color") == LinearColor(1, 0, 0, .25f));
+    CHECK(resolve_color(&child, "background-color") == LinearColor(1, 0, 0, .25f));
+    parent.set("color", "#00ff00");
+    CHECK(resolve_color(&child, "background-color") == LinearColor(0, 1, 0, 1));
+    child.set_inherit_parent(nullptr);
+    CHECK(resolve_color(&child, "background-color") == LinearColor(0, 0, 0, 1));
+    std::vector<ComputedStyle> chain(512);
+    for (size_t i = 0; i < chain.size(); ++i) {
+        chain[i].set("color", "currentcolor");
+        if (i) chain[i].set_inherit_parent(&chain[i - 1]);
+    }
+    chain.back().set("background-color", "currentcolor");
+    CHECK(resolve_color(&chain.back(), "background-color") == LinearColor(0, 0, 0, 1));
+    chain.front().set("color", "#ff0000");
+    CHECK(resolve_color(&chain.back(), "background-color") == LinearColor(1, 0, 0, 1));
+    chain.front().set("color", "#0000ff");
+    CHECK(resolve_color(&chain.back(), "background-color") == LinearColor(0, 0, 1, 1));
 }
 
 void test_paint_decorations() {

@@ -31,7 +31,8 @@ The initial background-based fixture exposed a separate existing defect:
 failed core render and Chrome render are preserved as `background-currentcolor.*`.
 The border fixture isolates the corrected cascade behavior; it does not fix
 or qualify that background behavior. General `currentColor` paint resolution
-remains a correctness follow-up.
+was deferred in this pass and is fixed by the subsequent
+[currentColor follow-up](currentcolor-and-layout-probes-20261031.md).
 
 ## Provisional inventory regression check
 

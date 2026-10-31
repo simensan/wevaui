@@ -12,8 +12,10 @@ percentages are not a combined speedup claim.
 The [pseudo keyword follow-up](verification/pseudo-keywords-20261031.md) fixes
 explicit inherited colors and CSS-wide keyword rollback on pseudo-elements,
 using the same resolver as ordinary elements. Its focused render matches Chrome.
-It also exposes a separate unresolved `background-color: currentColor` paint
-defect; the report preserves the failing render for follow-up.
+The subsequent [currentColor fix](verification/currentcolor-and-layout-probes-20261031.md)
+corrects background painting through the common color resolver, with an exact
+Chrome pixel comparison. Its local-layout investigation rejected a width-reuse
+experiment after six paired runs failed to establish a runtime improvement.
 
 The [clean Chrome comparison](verification/clean-render-comparison-20261031.md)
 still finds an inventory CPU gap: style/layout 0.280 vs 0.142 ms, paint recording
