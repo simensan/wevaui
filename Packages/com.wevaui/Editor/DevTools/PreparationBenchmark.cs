@@ -2,6 +2,8 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using UnityEngine;
+using UnityEngine.Rendering;
+using Weva.Native;
 
 namespace Weva.EditorTools
 {
@@ -14,6 +16,58 @@ namespace Weva.EditorTools
             public int width = 1280, height = 720, initial_width, initial_height;
             public double activation_cpu_ms, loading_cpu_ms, loading_renderer_sync_cpu_ms, opening_cpu_ms, renderer_sync_cpu_ms, first_render_readback_ms;
             public long prepared_draw_serial, shown_draw_serial;
+            public RenderStages first_render, retained_render;
+        }
+
+        [Serializable] private sealed class RenderStages
+        {
+            public double target_create_ms, record_ms, execute_ms, readback_ms, cleanup_ms;
+        }
+
+        // Mirrors the offscreen diagnostic sequence using the production Draw
+        // implementation. CPU call durations are not GPU timestamp queries.
+        private static Texture2D MeasureRender(WevaDocument ui, int width, int height, out RenderStages stages)
+        {
+            stages = new RenderStages();
+            var timer = Stopwatch.StartNew();
+            var target = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+            var cmd = new CommandBuffer { name = "Weva.Preparation.Stages" };
+            Texture2D image = null;
+            RenderTexture previous = RenderTexture.active;
+            try
+            {
+                if (!target.Create()) throw new InvalidOperationException("offscreen target creation failed");
+                stages.target_create_ms = timer.Elapsed.TotalMilliseconds;
+                timer.Restart();
+                cmd.SetRenderTarget(target);
+                cmd.ClearRenderTarget(true, true, Color.black);
+                ui.Renderer.Draw(cmd, width, height, SystemInfo.graphicsUVStartsAtTop ? 1 : -1, true, NativeRenderTarget.Of(target));
+                stages.record_ms = timer.Elapsed.TotalMilliseconds;
+                timer.Restart();
+                Graphics.ExecuteCommandBuffer(cmd);
+                stages.execute_ms = timer.Elapsed.TotalMilliseconds;
+                timer.Restart();
+                RenderTexture.active = target;
+                image = new Texture2D(width, height, TextureFormat.RGBA32, false, false);
+                image.ReadPixels(new Rect(0, 0, width, height), 0, 0, false);
+                image.Apply(false, false);
+                stages.readback_ms = timer.Elapsed.TotalMilliseconds;
+                return image;
+            }
+            catch
+            {
+                if (image != null) UnityEngine.Object.DestroyImmediate(image);
+                throw;
+            }
+            finally
+            {
+                timer.Restart();
+                RenderTexture.active = previous;
+                cmd.Release();
+                target.Release();
+                UnityEngine.Object.DestroyImmediate(target);
+                stages.cleanup_ms = timer.Elapsed.TotalMilliseconds;
+            }
         }
 
         // Unity -batchmode -executeMethod Weva.EditorTools.PreparationBenchmark.Run -quit
@@ -85,10 +139,13 @@ namespace Weva.EditorTools
                 if (mode != "cold" && result.prepared_draw_serial != result.shown_draw_serial)
                     throw new InvalidOperationException("show rebuilt unchanged prepared paint");
                 timer.Restart();
-                image = ui.Renderer.RenderToTexture(ui.Document, result.width, result.height, Color.black);
+                image = MeasureRender(ui, result.width, result.height, out result.first_render);
                 result.first_render_readback_ms = timer.Elapsed.TotalMilliseconds;
                 Directory.CreateDirectory(output);
                 File.WriteAllBytes(Path.Combine(output, "shown.png"), image.EncodeToPNG());
+                UnityEngine.Object.DestroyImmediate(image);
+                image = MeasureRender(ui, result.width, result.height, out result.retained_render);
+                File.WriteAllBytes(Path.Combine(output, "retained.png"), image.EncodeToPNG());
                 File.WriteAllText(Path.Combine(output, "result.json"), JsonUtility.ToJson(result, true));
             }
             finally

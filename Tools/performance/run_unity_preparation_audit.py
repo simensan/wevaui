@@ -49,6 +49,9 @@ def main():
             if result['mode'] != mode or [result['width'], result['height']] != [1280, 720]:
                 raise RuntimeError('Unexpected benchmark configuration')
             result.update(round=round_index, image_sha256=hashlib.sha256((destination / 'shown.png').read_bytes()).hexdigest())
+            retained = destination / 'retained.png'
+            if retained.exists() and hashlib.sha256(retained.read_bytes()).hexdigest() != result['image_sha256']:
+                raise RuntimeError(f'{name}: first and retained render differ; inspect evidence')
             rows.append(result)
             (output / 'results.json').write_text(json.dumps(rows, indent=2) + '\n', encoding='utf-8')
             print(name, 'loading', result['loading_cpu_ms'], 'opening', result['opening_cpu_ms'], flush=True)
