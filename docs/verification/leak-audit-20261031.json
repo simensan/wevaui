@@ -1,0 +1,146 @@
+{
+  "baseline_commit": "d3198a0bfa34fe1d4322b1bb79dc128d386e140e",
+  "unity": {
+    "baselineEntries": 0,
+    "afterEntries": 24,
+    "failedLoads": 24,
+    "collectedBackends": 24,
+    "baselineBytes": 0,
+    "afterBytes": 6291456,
+    "reloads": 200,
+    "reloadFaceCount": 200,
+    "reloadUrlCount": 1,
+    "disposedFaceCount": 0
+  },
+  "core_lifecycle_csv": [
+    [
+      "destroyed",
+      "0",
+      "71808",
+      "450",
+      "216176",
+      "8612"
+    ],
+    [
+      "destroyed",
+      "100",
+      "71808",
+      "450",
+      "226992",
+      "7816"
+    ],
+    [
+      "destroyed",
+      "200",
+      "71808",
+      "450",
+      "226992",
+      "7816"
+    ],
+    [
+      "destroyed",
+      "300",
+      "71808",
+      "450",
+      "226992",
+      "7816"
+    ],
+    [
+      "destroyed",
+      "400",
+      "71808",
+      "450",
+      "226992",
+      "7816"
+    ],
+    [
+      "destroyed",
+      "500",
+      "71808",
+      "450",
+      "226992",
+      "7816"
+    ],
+    [
+      "destroyed",
+      "600",
+      "71808",
+      "450",
+      "226992",
+      "7816"
+    ],
+    [
+      "destroyed",
+      "700",
+      "71808",
+      "450",
+      "226992",
+      "7816"
+    ],
+    [
+      "destroyed",
+      "800",
+      "71808",
+      "450",
+      "226992",
+      "7816"
+    ],
+    [
+      "destroyed",
+      "900",
+      "71808",
+      "450",
+      "226992",
+      "7816"
+    ],
+    [
+      "destroyed",
+      "1000",
+      "71808",
+      "450",
+      "226992",
+      "7816"
+    ]
+  ],
+  "lsan_suites": 20,
+  "lsan_positive_bytes": 12345,
+  "source_hashes": {
+    "libweva/src/weva_c.cpp": "8f96cf83394961444e367aa74333144ae21d576e68782ac91aa617e25ccc5f8f",
+    "libweva/src/paint.cpp": "f268186f730a7b9e2d8d555c71b9b1251087e63c389435b48ba9c2e3a2e5a35b",
+    "Packages/com.wevaui/Runtime/Native/NativeDocument.cs": "575e99c892d215c22cea07dd9e5f8d2b25d488ef537cfc3f16b52bc613007a2f",
+    "Packages/com.wevaui/Runtime/Native/UnityFontBackend.cs": "b4b853a160afe7b632acf4f5857f14a862ff7047942d122ce8b67c223552b970",
+    "Packages/com.wevaui/Runtime/Native/NativeDocumentRenderer.cs": "8f0f4dacd8afd8be4d7f6ee27ba879304fd5d97a5104935661a32b3139321dac",
+    "Packages/com.wevaui/Runtime/WevaDocument.cs": "0d48828dfd9ab537a4632bb4206ac3810077f6dd9a4ae8a7c88dfd77eeda4262",
+    "hosts/godot/src/weva_node.cpp": "dc77ccc18eb76fe0bb906d2a4d9641d609a71f45ae58de123e302ff63ba5c7d4",
+    "hosts/godot/src/godot_font.cpp": "eba4d988f2cf14ccb3480bb723f78215319c630e4ed09b2fc4aff008d37227ed"
+  },
+  "evidence_hashes": {
+    ".utmp\\leak-audit-20261031\\extend-unity.py": "aff86b4c569d84efafd484588a7e2b45af5396d9f58bcd11a9f87b0c315ea6b4",
+    ".utmp\\leak-audit-20261031\\lifecycle": "b0725e58049c8dbb304545ca87e26331f5af11200eabfbfa9b8d57f0a6e7c690",
+    ".utmp\\leak-audit-20261031\\lifecycle.cpp": "ad1952c8501518aaa380326e34f039d390570227eae59bb71200425cc7239dde",
+    ".utmp\\leak-audit-20261031\\lifecycle.csv": "c988cdb9562d442f4026b42c3e9c9d9bdac86c1c8223a07cb295af7ba5c97e7c",
+    ".utmp\\leak-audit-20261031\\lsan-positive": "fef42d421881ecdbc2e55c410c440da9c9dcf6670e9090979522e2dccbb64f24",
+    ".utmp\\leak-audit-20261031\\lsan-positive-verified.exit": "535fa30d7e25dd8a49f1536779734ec8286108d115da5045d77f3b4185d8f790",
+    ".utmp\\leak-audit-20261031\\lsan-positive-verified.log": "82e31e616394943b21fd362a670d5e7b9fb84eaa589fba3a12bf7227bcdc114a",
+    ".utmp\\leak-audit-20261031\\lsan-positive.cpp": "a5dab65abd2d32bd78111ae72fe60b867c6b98c8415c4e2c0faa872c3d645b7f",
+    ".utmp\\leak-audit-20261031\\lsan-positive.exit": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    ".utmp\\leak-audit-20261031\\lsan-positive.log": "c434a4ffeb285be1f6180f097d9a2cfd4761d0d1b71812cb2821669b66869920",
+    ".utmp\\leak-audit-20261031\\lsan-tests.log": "5e872dce360482bd2dd81768550b16e1d507b35d6bf27cf96eb3d9752843324a",
+    ".utmp\\leak-audit-20261031\\positive.py": "a224bb90ddc6226ecd5538ac3a0f407c28c1dba999a742dee74545f42514ceba",
+    ".utmp\\leak-audit-20261031\\report.py": "6b64c70ae03c2d46211db3ed57991f7e654cc8bfe180b4541db44750be18b54d",
+    ".utmp\\leak-audit-20261031\\run-unity.py": "55a763ad75b77fd4f288836112c75c079bb9e1061b5cf5eae4ba55f543007eed",
+    ".utmp\\leak-audit-20261031\\setup-core.py": "4f250274cde4548a3788a5845c5d9914e1b2fd55a8c59cfd63b9b423f97ebdec",
+    ".utmp\\leak-audit-20261031\\unity-audit-first.log": "72da11827c3445fc09597388a03f42dce1fc9378506a5314499571d1be033000",
+    ".utmp\\leak-audit-20261031\\unity-audit.exit": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+    ".utmp\\leak-audit-20261031\\unity-audit.log": "748de2e49adef1c3ae2ba2205896441a2b7cc3f55dfc79dcf88f6868b2985534",
+    ".utmp\\leak-audit-20261031\\unity-font-cache-first.json": "3462659670d02d9fbc5101db7d39abf444933bebb6d507598ce4c5910ec7d805",
+    ".utmp\\leak-audit-20261031\\unity-font-cache.json": "d8ab29e4bfa954157cc23148f8b83809817a735d0b7ad1ac3a06f80cab53cde1",
+    ".utmp\\leak-audit-20261031\\WevaLeakAudit20261031.cs": "cd13db3b423dc5bd6d23ee609dd744290ffcb6892ce1b3cd8590cd4e075e11b4"
+  },
+  "runtime_changes": false,
+  "unresolved": [
+    "Unity rejected-font static retention",
+    "Unity changed-font face accumulation",
+    "Agentic prior soak growth unattributed"
+  ]
+}

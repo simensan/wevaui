@@ -1,5 +1,11 @@
 # Product readiness
 
+The [memory-leak audit](verification/leak-audit-20261031.md) confirms two open
+Unity font-retention issues: rejected font bytes survive backend disposal, and
+changing CSS font content accumulates face records until disposal. Core
+LeakSanitizer and 1,000 post-warm lifecycle checks pass; the previous Agentic
+process-memory growth remains unattributed.
+
 The [lazy glyph atlas](verification/lazy-atlas-20261031.md) saves 1 MiB of
 core CPU storage per newly created document and 2 MiB in the measured text-free
 panel after font setup. Text-bearing UI uses the same storage as before; this

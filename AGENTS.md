@@ -623,3 +623,9 @@ and 2 MiB of measured core CPU storage for a text-free panel after font setup;
 text-bearing storage is unchanged. The full gate passes 18 GCC and 20 sanitizer
 suites; main checks are 808,791 / 808,785 sanitized. Unity remains 255 plus two
 inconclusive, player 7/7, and all 17 host renders match the prior build.
+
+The [memory-leak audit](docs/verification/leak-audit-20261031.md) passes all
+20 suites with explicit LeakSanitizer and a positive control, plus 1,000
+post-warm core lifetimes with flat tracked storage. It confirms two open Unity
+font-retention defects (rejected static bytes and changing-content face records).
+This audit changes no runtime code and does not close the Agentic soak finding.
