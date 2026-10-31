@@ -821,6 +821,11 @@ failed requests are never cached. Empty glyphs consume no texture space and
 need no glyph-metrics callback because shaping supplies their advances. Font
 backend replacement clears both caches; renderer replacement preserves them.
 
+Glyph preparation uses one temporary shaping-output buffer across text runs,
+form controls and popup rows. Each run is consumed before the next replaces
+it. The buffer is local to one preparation pass and is released before the
+recursive painter starts; it adds no retained text or cross-frame cache.
+
 The incremental corpus gate forces full recomputation in a control document
 by round-tripping viewport size before updating, without resetting its DOM,
 animation clock or glyph history. See PERFORMANCE.md for timings and fallback

@@ -35,6 +35,11 @@ inventory paint CPU and effectively flat complete CPU; HUD paint is unchanged.
 Inventory paint medians are 0.213 ms versus Chrome's 0.208 ms in that batch,
 with inconsistent individual pairs. This does not establish stable parity.
 
+The [glyph preparation buffer](verification/glyph-scratch-20261031.md) cuts
+shaping allocations from 1,200 to 606 in a 100-label regression. Its six
+provisional pairs do not establish a frame-time improvement; this is an
+allocation reduction, not a further speedup claim.
+
 The [clean Chrome comparison](verification/clean-render-comparison-20261031.md)
 still finds an inventory CPU gap: style/layout 0.280 vs 0.142 ms, paint recording
 0.255 vs 0.201 ms. The [30-minute reload soak](verification/lifecycle-soak-20261031.md)

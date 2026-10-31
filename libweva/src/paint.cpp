@@ -2547,7 +2547,8 @@ double text_raster_scale(const Transform2D* xf) {
 }
 
 void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
-                    const PaintContext& paint, Transform2D transform = {}) {
+                    const PaintContext& paint, std::vector<ShapedGlyph>& glyphs,
+                    Transform2D transform = {}) {
     static const bool disable_reuse = std::getenv("WEVA_DISABLE_GLYPH_REUSE") != nullptr;
     if (!disable_reuse && paint.reuse && paint.reuse->reuse_glyphs(id)) {
         if (g_paint_profile.on) ++g_paint_profile.glyph_subtrees_reused;
@@ -2565,7 +2566,7 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
     const double scale = text_raster_scale(&transform);
     if (b.kind == BoxKind::Text && !b.preserved_tab && !b.text.empty() && paint.font && paint.atlas) {
         const FaceHandle face = face_for_run(b, ctx, paint);
-        std::vector<ShapedGlyph> glyphs;
+        glyphs.clear();
         paint.font->shape(face, b.text, b.font_size, &glyphs);
         for (const ShapedGlyph& g : glyphs) {
             paint.atlas->get(paint.font, face, g.glyph, b.font_size * (b.vertical_text ? 1 : scale));
@@ -2583,11 +2584,11 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
         const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
         const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
         const FaceHandle face = face_for_run(b, ctx, paint);
-        std::vector<ShapedGlyph> glyphs;
+        glyphs.clear();
         paint.font->shape(face, t.text, fs, &glyphs);
         for (const ShapedGlyph& g : glyphs) paint.atlas->get(paint.font, face, g.glyph, fs * scale);
     }
-    for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, ctx, paint, transform);
+    for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, ctx, paint, glyphs, transform);
 }
 
 // The open list's labels, into the same up-front upload. Without this the
@@ -2610,7 +2611,7 @@ PopupTextStyle popup_text_style(const Element& row, const Box& select,
     return {style, face, paint.styles && style ? font_size_px(style, parent, ctx) : select_size};
 }
 void prepare_popup_glyphs(const BoxTree& tree, const LayoutContext& ctx,
-                          const PaintContext& paint) {
+                          const PaintContext& paint, std::vector<ShapedGlyph>& glyphs) {
     const Element* select = paint.popup.element;
     if (!select || !paint.font || !paint.atlas) return;
     for (int i = 0; i < tree.size(); ++i) {
@@ -2619,7 +2620,7 @@ void prepare_popup_glyphs(const BoxTree& tree, const LayoutContext& ctx,
         const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
         const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
         for (const Element* option : select_rows(*select)) {
-            std::vector<ShapedGlyph> glyphs;
+            glyphs.clear();
             const bool group = option->tag_name() == "optgroup";
             const auto text = popup_text_style(*option, b, fs, ctx, paint);
             const auto label = group ? std::string(option->get_attribute("label")) : option_label(*option);
@@ -4830,8 +4831,11 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
     if (paint.atlas && paint.font) {
         const auto t0 = std::chrono::steady_clock::now();
         if (paint.reuse) paint.reuse->begin_glyphs(*paint.atlas);
-        prepare_glyphs(tree, root, ctx, paint);
-        prepare_popup_glyphs(tree, ctx, paint);
+        // Preparation consumes each shaped run before visiting the next. Keep
+        // one pass-local buffer, rather than allocating once per text/control.
+        std::vector<ShapedGlyph> glyphs;
+        prepare_glyphs(tree, root, ctx, paint, glyphs);
+        prepare_popup_glyphs(tree, ctx, paint, glyphs);
         atlas_texture = paint.atlas->texture(paint.backend);
         glyphs_ms =
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();

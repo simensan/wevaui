@@ -3,6 +3,7 @@
 #include "weva/tessellate.h"
 #include "weva/paint.h"
 #include "weva/glyph_atlas.h"
+#include "weva/software_renderer.h"
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -231,6 +232,49 @@ int main() {
                 a.tex_coord.y != b.tex_coord.y || a.color != b.color) { ++failures; break; }
         }
     }
+    // Preparation and painting both shape these labels. Only the preparation
+    // phase can share storage: a fresh output allocation for every label would
+    // double the allocation budget without changing the resulting glyphs.
+    struct MeasuredFont : StubFont {
+        size_t shape_allocations = 0;
+        void shape(FaceHandle f, std::string_view text, double px,
+                   std::vector<ShapedGlyph>* out) override {
+            shape_allocations += measure([&] { StubFont::shape(f, text, px, out); });
+        }
+    } measured_font;
+    std::vector<ShapedGlyph> probe;
+    const std::string label = "A preparation buffer";
+    measured_font.shape(face, label, 16, &probe);
+    const size_t cold_shape = measured_font.shape_allocations;
+    check(cold_shape > 0, "shape allocation positive control", cold_shape, 1);
+    measured_font.shape_allocations = 0;
+    BoxTree text_tree;
+    ComputedStyle text_style;
+    text_style.set("color", "red");
+    const BoxId text_root = text_tree.create(BoxKind::Block, nullptr, nullptr);
+    text_tree[text_root].width = text_tree[text_root].height = 100;
+    constexpr int labels = 100;
+    for (int i = 0; i < labels; ++i) {
+        const BoxId child = text_tree.create(BoxKind::Text, nullptr, &text_style);
+        text_tree.append_child(text_root, child);
+        text_tree[child].text = label;
+        text_tree[child].font_size = 16;
+        text_tree[child].width = 100;
+        text_tree[child].height = 16;
+    }
+    GlyphAtlas preparation_atlas;
+    SoftwareRenderer preparation_renderer(100, 20);
+    PaintContext preparation_paint;
+    preparation_paint.backend = &preparation_renderer;
+    preparation_paint.font = &measured_font;
+    preparation_paint.atlas = &preparation_atlas;
+    preparation_paint.face = face;
+    paint_tree(text_tree, text_root, LayoutContext{}, preparation_paint);
+    const size_t preparation_budget = cold_shape * (labels + 1);
+    check(measured_font.shape_allocations <= preparation_budget,
+          "100 labels share preparation storage", measured_font.shape_allocations, preparation_budget);
+    std::printf("100-label shaping: %zu allocations; budget %zu\n",
+                measured_font.shape_allocations, preparation_budget);
     std::printf("geometry allocations: %d checks, %d failures; geometry hash %016llx\n", checks, failures,
                 static_cast<unsigned long long>(geometry_hash));
     return failures ? 1 : 0;

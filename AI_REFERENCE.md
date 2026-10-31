@@ -597,3 +597,13 @@ sanitizer suites, 341 Chrome captures and 67 browser checks plus the existing
 known failure. Both Windows hosts are rebuilt; Unity passes 255 EditMode tests
 with two inconclusive and 7/7 Mono player checks. All 17 render comparisons
 match the baseline. This is not a stable Chrome-parity claim.
+
+The [glyph preparation buffer follow-up](docs/verification/glyph-scratch-20261031.md)
+shares one pass-local shaping buffer. The 100-label regression falls from
+1,200 shaping allocations to 606; six provisional pairs do not establish a
+frame-time improvement. The geometry suite now has 322 checks with its prior
+hash unchanged. The qualified gate passes 808,781 GCC main checks (808,775
+sanitized), 17 GCC/19 sanitizer suites, 341 Chrome captures and 67 browser
+checks plus the existing known failure. Both Windows hosts are rebuilt;
+Unity passes 255 EditMode tests/two inconclusive and 7/7 Mono player checks.
+All 17 render comparisons match the accepted baseline.
