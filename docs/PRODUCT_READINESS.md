@@ -7,7 +7,7 @@ The [completed rendering audit](verification/render-audit-final-20261031.md) con
 The local Agentic audit branch adds explicit hidden CPU preparation through
 `html_prepare()`. Paired runtime checks show lower interactive opening cost
 by moving layout/glyph/paint work into loading; GPU first-use work remains.
-This is not yet an upstream Agentic integration. See the
+This is now integrated into local Agentic main; see the [integration receipt](verification/agentic-integration-20261031.md). See the
 [October 31 preparation receipt](verification/script-preparation-20261031.md).
 The [Agentic scissor follow-up](verification/agentic-scissor-dedup-20261031.md)
 reduces command-encoding CPU by roughly 4–5% in four paired survival-UI runs,

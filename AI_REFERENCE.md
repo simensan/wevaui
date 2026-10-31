@@ -505,3 +505,5 @@ The [ordinary-draw bounds experiment](docs/verification/backdrop-bounds-20261031
 The [final rendering audit](docs/verification/render-audit-final-20261031.md) reconciles accepted changes against current source, installed host binaries and original test evidence, with remaining product qualifications explicit.
 
 The [IL2CPP qualification](docs/verification/il2cpp-qualification-20261031.md) fixes callback P/Invoke marshalling and verifies Windows development/high-stripping non-development players. It also records orphan audit players and the need to remeasure prior performance results without that background load.
+
+The [Agentic integration](docs/verification/agentic-integration-20261031.md) merges the audit into local Agentic main, passes eleven integration targets and three editor queue tests, and validates an immutable merged SDK with runtime actions and reloads. No push or default native SDK pin change.
