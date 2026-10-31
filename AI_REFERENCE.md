@@ -435,3 +435,11 @@ was reverted after the [real-font Unity comparison](docs/verification/stretched-
 failed to establish an overall CPU benefit. Its generic layout regressions
 remain. Both hosts use the restored shared core; the fixed-font 5.53% result
 describes the rejected candidate, not current host performance.
+
+The [rendering integration audit](docs/verification/render-audit-integration-20261031.md)
+passes the October 31 qualified release gate with no skipped stages:
+15 GCC suites, 17 Clang ASan/UBSan suites, 340 Chrome captures, and 66
+browser behavior checks with the existing IME exception. Full Unity
+EditMode passes 255 with two inconclusive; Windows Mono player rendering
+passes 7/7. Godot font, Unicode, renderer, scene and native export gates
+pass. See the receipt for accepted gains, rejected experiments and limits.

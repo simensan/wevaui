@@ -1,5 +1,9 @@
 # Host preparation attribution — October 31, 2026
 
+Follow-up: the proposed [bounded texture cache](bounded-textures-20261031.md)
+was implemented experimentally, measured and rejected. The temporary retention
+probe below is not an outstanding production change or an accepted cache policy.
+
 The inventory host cost is not primarily queue submission. The Agentic
 diagnostic now separates snapshot capture, resource/batch preparation,
 encoding (including finish), and queue submission. These are CPU intervals;

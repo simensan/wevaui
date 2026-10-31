@@ -7,7 +7,7 @@ This is not yet an upstream Agentic integration. See the
 [October 31 preparation receipt](verification/script-preparation-20261031.md).
 
 Unity 2.0 adds retained `Visible`, CPU `Prepare()` and texture/mesh/material
-`PrepareRenderer()` loading controls, with 252 EditMode passes (two existing
+`PrepareRenderer()` loading controls, with 255 EditMode passes (two existing
 environment-gated inconclusive), seven URP render passes and seven Windows
 Mono player passes. Renderer preparation moves work into loading; first shader
 execution and cold-opening player timing remain unverified. See the
@@ -15,18 +15,24 @@ execution and cold-opening player timing remain unverified. See the
 The [material preparation follow-up](verification/unity-material-preparation-20261031.md)
 moves lazy material setup into loading and reduces first command recording
 in the paired editor benchmark; it does not warm GPU shader execution.
-The [interleaved upload follow-up](verification/unity-interleaved-upload-20261031.md)
+The [direct vertex upload follow-up](verification/unity-direct-vertices-20261031.md)
 reduces median inventory mesh synchronization CPU; tail results remain mixed.
 Godot's existing hidden manual-update workflow is verified on Windows
 and the rebuilt qualified Linux addon. See the
 [host preparation receipt](verification/unity-hidden-preparation-20261031.md).
 
-Updated October 31, 2026 · Latest full integration gate: October 30; scoped host verification: October 31.
+Updated October 31, 2026 · Latest full integration gate: October 31.
+
+The [rendering integration audit](verification/render-audit-integration-20261031.md)
+passes the qualified release gate with no skipped stages, plus full Unity
+EditMode and Windows Mono player rendering. It separates accepted improvements
+from rejected experiments and remaining timing/hardware gaps; it does not
+establish universal Chrome parity or hitch-free cold rendering.
 
 Scoped October 25 core/Agentic checks cover filtered downscaled icons and
 antialiased thin rounded borders; see the
 [rendering receipt](verification/image-filtering-20261025.md).
-The [October 30 receipt](verification/chrome-target-20261030.md) records the latest
+The [October 30 receipt](verification/chrome-target-20261030.md) records the preceding
 full local gate and Unity EditMode results: 244 pass, zero failures and two
 environment-gated inconclusive. Godot rendering, exports and scene checks pass
 with the qualified patched editor and templates.

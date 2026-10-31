@@ -1,5 +1,10 @@
 # Inventory invalidation attribution — 2026-10-31
 
+Follow-up: [stretched-item probe tests](stretched-probe-20261031.md) were added,
+but the speculative-probe shortcut was [reverted after real-font Unity timing](stretched-probe-host-20261031.md).
+Narrowing the final replacement boundary remains unimplemented; neither the
+shortcut nor its synthetic-font timing established that optimization.
+
 Title-only text changes rebuild 57 draw commands even though the inventory
 container, details panel and title bounds remain unchanged across all twelve
 selections. This is a concrete target for a smaller incremental layout/paint

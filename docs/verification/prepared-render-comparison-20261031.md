@@ -1,5 +1,9 @@
 # Prepared rendering comparison — October 31, 2026
 
+Follow-up: [sibling-subject invalidation](sibling-subjects-20261031.md) reduces
+shared cascade work. The table below predates that change and must not be
+presented as a newly measured comparison for the current core.
+
 The matched prepared fixtures expose a remaining inventory style/layout gap.
 This is a measurement correction, not a production optimization claim.
 

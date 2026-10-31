@@ -4,6 +4,10 @@ The next shared-core candidate is glyph-atlas lookup, with computed-style reads
 remaining a broader cost. This audit profiles the complete prepared inventory
 selection sequence; it changes no production behavior and claims no speedup.
 
+Follow-up: the [glyph hash-map experiment](glyph-map-20261031.md) was measured
+and rejected. These samples remain attribution evidence, not justification to
+repeat that candidate or a real-font host profile.
+
 ## Diagnostic boundary
 
 A generated diagnostic derives from the current `Tools/weva_bench/main.cpp`.
