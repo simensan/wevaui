@@ -302,6 +302,47 @@ void check_with_sheet(const char* label, const char* html, const char* css, cons
 // and :has(), which lets a descendant decide an ancestor's match and so puts
 // the whole document back in play.
 void test_abi_incremental_selector_reach() {
+    // A class used only on a selector's subject need not restyle descendants
+    // unless its computed inherited inputs changed. Nested selectors, scope
+    // boundaries, sibling filters and class attributes remain observable.
+    const char* class_cases[] = {
+        ".quiet{background:red}",
+        ".quiet span{color:red}",
+        ":is(.quiet) span{color:red}",
+        "[class~='quiet'] span{color:red}",
+        ".quiet + #other span{color:red}",
+        "body:has(.quiet) #other{color:red}",
+        "@scope (.quiet){span{color:red}}",
+        ".quiet{color:red}",
+        ".quiet{--tone:red}span{color:var(--tone,blue)}",
+        ":nth-child(1 of .quiet) span{color:red}",
+    };
+    for (size_t scenario=0; scenario<sizeof(class_cases)/sizeof(*class_cases); ++scenario) {
+        const std::string css=std::string(".panel{padding:4px}.panel span{font-size:12px}")+class_cases[scenario];
+        const char* markup="<div id=panel class=panel><span>first</span><span>second</span></div>"
+            "<div id=other class=panel><span>third</span></div>";
+        const auto cfg=config();
+        const auto doc=weva_document_create(&cfg);
+        weva_document_set_css(doc,css.data(),css.size());
+        weva_document_load_html(doc,markup,std::strlen(markup));
+        CHECK(weva_document_update(doc,0)==WEVA_OK);
+        for (const char* classes : {"panel quiet", "panel", "quiet panel quiet", "panel"}) {
+            weva_stats before{},after{};
+            weva_document_stats(doc,&before);
+            weva_element_set_attribute(doc,weva_document_query(doc,"#panel"),"class",classes);
+            weva_element_set_attribute(doc,weva_document_query(doc,"#other"),"class",classes);
+            CHECK(weva_document_update(doc,0)==WEVA_OK);
+            weva_document_stats(doc,&after);
+            if (scenario==0) CHECK(after.cascade_elements-before.cascade_elements==2);
+            const Frame actual=capture(doc);
+            CHECK(weva_document_set_css(doc,css.data(),css.size())==WEVA_OK);
+            CHECK(weva_document_update(doc,0)==WEVA_OK);
+            const Frame expected=capture(doc);
+            if (actual!=expected) std::printf("class scope %zu %s: %s\n",scenario,classes,actual.diff(expected).c_str());
+            CHECK(actual==expected);
+        }
+        weva_document_destroy(doc);
+    }
     const char* html =
         "<div id=wrap>"
         "<p id=one>One</p><p id=two>Two</p><p id=three>Three</p>"
@@ -1076,6 +1117,57 @@ void test_abi_incremental_item_box_edges() {
 }
 
 namespace {
+void check_intrinsic_block_boundaries() {
+    const char* variants[] = {
+        "", "main{display:flex}", "main{display:flex;width:130px}",
+        "main{display:flex;align-items:baseline}",
+        "main{display:flex}aside{flex:1}",
+        "main{display:flex}aside{min-width:max-content}",
+        "aside{width:auto}", "aside{width:50%}",
+        "aside{width:min-content}", "aside{max-width:min-content}",
+        "aside{display:inline-block}",
+        "aside{display:grid;grid-template-columns:auto}",
+        "aside{display:flex;flex-direction:column;align-items:start}",
+        "main{display:grid;grid-template-columns:auto 1fr}",
+        "#label{height:42px}main{display:flex;align-items:baseline}",
+        "#label{height:42px}main{display:inline-block}",
+        "#label{height:42px}section{display:inline-block}",
+        "#label{height:42px}main{display:grid;align-items:baseline}",
+    };
+    const std::string html = "<header>unchanged header</header><main><aside id='panel'>"
+        "<section><p id='label'>short</p></section><p id='other'>unchanged sibling</p>"
+        "</aside><article>outside</article></main><footer>unchanged footer</footer>";
+    for (const char* variant : variants) {
+        const std::string css = std::string("html,body{margin:0}*{box-sizing:border-box}"
+            "body{font-size:10px}aside{width:180px;padding:4px;background:#123}"
+            "p{margin:0;line-height:14px}article{width:60px}header,footer{height:30px}") + variant;
+        const auto cfg = config();
+        weva_document_t docs[2] = {weva_document_create(&cfg), weva_document_create(&cfg)};
+        for (auto doc : docs) {
+            CHECK(weva_document_add_css(doc, css.data(), css.size()) == WEVA_OK);
+            CHECK(weva_document_load_html(doc, html.data(), html.size()) == WEVA_OK);
+            CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        }
+        const char* values[] = {"longer label", "x", "a much longer wrapping label with several words", "short", "longer label", "x"};
+        for (size_t step = 0; step < 6; ++step) {
+            for (auto doc : docs) {
+                CHECK(weva_element_set_text(doc, weva_document_query(doc, "#label"), values[step]) == WEVA_OK);
+                // Force later parent allocation to consume the updated intrinsic
+                // exports, including a simultaneous ancestor style change.
+                if (step >= 3) CHECK(weva_element_set_attribute(doc, weva_document_query(doc, "main"),
+                    "style", step == 3 ? "width:90px" : step == 4 ? "width:320px" : "width:200px") == WEVA_OK);
+            }
+            weva_document_set_viewport(docs[1], cfg.viewport_width + 1, cfg.viewport_height);
+            weva_document_set_viewport(docs[1], cfg.viewport_width, cfg.viewport_height);
+            for (auto doc : docs) CHECK(weva_document_update(doc, 0) == WEVA_OK);
+            const auto actual = capture(docs[0]), expected = capture(docs[1]);
+            if (actual != expected) std::printf("intrinsic boundary %s step %zu: %s\n", variant, step, actual.diff(expected).c_str());
+            CHECK(actual == expected);
+        }
+        for (auto doc : docs) weva_document_destroy(doc);
+    }
+}
+
 void check_retained_item_subtrees() {
     const char* cases[] = {
         "", // Fixed areas keep nested percentage bars unchanged.
@@ -1179,6 +1271,7 @@ void check_retained_item_subtrees() {
 // Advance far enough to cross animation reversals, then change the grid,
 // viewport, and a width allocation so both retention and materialization run.
 void test_abi_incremental_grid_animation() {
+    check_intrinsic_block_boundaries();
     check_retained_item_subtrees();
     const std::string css =
         "*{box-sizing:border-box}html,body{margin:0;height:100%}"
@@ -1585,6 +1678,8 @@ void test_abi_incremental_direct_text() {
             CHECK(weva_document_update(doc,0) == WEVA_OK);
         }
         for (int step=0;step<15;++step) {
+            weva_stats prior_stats{};
+            weva_document_stats(live, &prior_stats);
             size_t old_count = 0;
             const auto* old_versions = weva_document_draw_versions(live,&old_count);
             const std::vector<uint64_t> before(old_versions,old_versions+old_count);
@@ -1625,6 +1720,11 @@ void test_abi_incremental_direct_text() {
             const int width = step >= 12 ? 420 : 400, height = step >= 12 ? 320 : 300;
             weva_document_set_viewport(full,width+1,height); weva_document_set_viewport(full,width,height);
             CHECK(weva_document_update(live,0) == WEVA_OK); CHECK(weva_document_update(full,0) == WEVA_OK);
+            if (step == 0) {
+                weva_stats current_stats{};
+                weva_document_stats(live, &current_stats);
+                CHECK(current_stats.cascade_elements == prior_stats.cascade_elements);
+            }
             const auto a=capture(live), b=capture(full);
             if (a != b) std::printf("  direct text %s / %d: %s\n",layout,step,a.diff(b).c_str());
             CHECK(a == b);

@@ -100,19 +100,6 @@ bool same_outer(const Box& a, const Box& b) {
            a.margin_top == b.margin_top && a.margin_right == b.margin_right &&
            a.margin_bottom == b.margin_bottom && a.margin_left == b.margin_left;
 }
-std::pair<double, double> baselines(const BoxTree& tree, BoxId id) {
-    std::pair<double, double> out{tree[id].height, tree[id].height};
-    bool first = true;
-    for (BoxId c : tree.children(id)) {
-        if (tree[c].kind != BoxKind::Line) continue;
-        const double baseline = tree[c].y + tree[c].baseline;
-        if (first) out.first = baseline;
-        out.second = baseline;
-        first = false;
-    }
-    out.first = first_in_flow_baseline(tree, id).value_or(tree[id].height);
-    return out;
-}
 
 bool independent_height(const BoxTree& tree, BoxId id, const LayoutContext& ctx) {
     const Box& b = tree[id];
@@ -630,6 +617,21 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
     }
     if (candidates.empty()) return false;
 
+    // Equal outer geometry and baselines keep ordinary block placement stable.
+    // A changed intrinsic export can stop at an unchanged definite-width block:
+    // descendants cannot change that block's export or its proven flex allocation.
+    const auto intrinsic_boundary = [&](BoxId id) -> BoxId {
+        for (BoxId p = (*tree)[id].parent; p != kNoBox; p = (*tree)[p].parent) {
+            const Box& b = (*tree)[p];
+            if (!ordinary(b) || !b.style || !local_[p] || b.orthogonal_root || b.vertical_text) return kNoBox;
+            for (const auto& change : changes)
+                if (change.first == b.style && change.second >= Invalidation::Layout) return kNoBox;
+            if (fixed_inline_boundary(*tree, b, ctx) || b.parent_row_intrinsics_independent)
+                return p;
+        }
+        return kNoBox;
+    };
+
     // All candidates are proved before any splice. A failed probe cannot
     // leave half an update in the retained tree.
     struct Replacement {
@@ -637,6 +639,7 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
         BoxTree tree;
         std::vector<BoxId> retained;
         BoxId grid_parent = kNoBox;
+        BoxId export_boundary = kNoBox;
         GridItemExportProbe grid_exports;
     };
     std::vector<Replacement> ready;
@@ -833,13 +836,19 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
                 block.layout_block(r.from, outer.content_width(), outer.style);
             }
             if (!same_outer(old, r.tree[r.from])) { reject("outer geometry", id); continue; }
-            if (baselines(*tree, id) != baselines(r.tree, r.from)) { reject("baseline", id); continue; }
+            // Flex/grid and ordinary block ancestors consume the first
+            // baseline. Last-line baselines belong to inline-block atoms;
+            // those roots and ancestor chains are excluded from this path.
+            if (first_in_flow_baseline(*tree, id) != first_in_flow_baseline(r.tree, r.from))
+                { reject("baseline", id); continue; }
             // Dimensions alone do not prove stable intrinsic contributions to
             // a flex/grid ancestor. Compare the exports cached BEFORE styles
             // changed, rather than remeasuring old boxes with new styles.
             if (!independent_inline_contribution &&
-                contributions_[id] != block_intrinsic_contributions(r.tree, r.from, &ctx))
-                { reject("intrinsic contribution", id); continue; }
+                contributions_[id] != block_intrinsic_contributions(r.tree, r.from, &ctx)) {
+                r.export_boundary = intrinsic_boundary(id);
+                if (r.export_boundary == kNoBox) { reject("intrinsic contribution", id); continue; }
+            }
             bool safe = true;
             for (BoxId p = old.parent; p != kNoBox; p = (*tree)[p].parent) {
                 const Box& a = (*tree)[p];
@@ -883,6 +892,7 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
         }
         if (!proved) return false;
     }
+    ancestors.clear();
     for (const auto& r : ready) {
         preserve_ = &r.retained;
         // A layout-only replacement preserves DOM and computed-style identities.
@@ -928,6 +938,27 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             height_independent_[p] = independent_height(*tree, p, ctx);
             for (BoxId c : tree->children(p)) height_independent_[p] = height_independent_[p] && height_independent_[c];
             refresh_grid(*tree, p, ctx);
+        }
+        // Exports above the proven boundary are unchanged. Do not rescan the
+        // rest of the page merely to rediscover that fixed outer contribution.
+        if (r.export_boundary != kNoBox)
+            for (BoxId p = (*tree)[r.into].parent; p != kNoBox; p = (*tree)[p].parent) {
+                if (std::find(ancestors.begin(), ancestors.end(), p) == ancestors.end()) ancestors.push_back(p);
+                if (p == r.export_boundary) break;
+            }
+    }
+    // Refresh exports once after all splices. Several changed labels can share
+    // the same ancestors; repeated uncached intrinsic walks erase the benefit
+    // of retaining their siblings.
+    const IntrinsicContributionScope memo(*tree, &ctx);
+    for (BoxId p : ancestors) {
+        if (!local_[p] || !(*tree)[p].element || (*tree)[p].kind != BoxKind::Block) continue;
+        contributions_[p] = block_intrinsic_contributions(*tree, p, &ctx);
+        auto& input = (*tree)[p].parent_layout_input;
+        if (input.available_width >= 0) {
+            const auto measured = measure_parent_layout_input(*tree, p, input.available_width, ctx);
+            input.min_content = measured.min_content;
+            input.max_content = measured.max_content;
         }
     }
     return true;

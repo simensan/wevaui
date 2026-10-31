@@ -2,9 +2,8 @@ import importlib.util
 from pathlib import Path
 import tempfile
 import unittest
-from unittest.mock import Mock, patch
-
-import psutil
+from unittest.mock import Mock
+from types import SimpleNamespace
 
 spec = importlib.util.spec_from_file_location(
     'unity_player_runner', Path(__file__).resolve().parents[1] / 'run_unity_player_tests.py')
@@ -20,8 +19,9 @@ class PlayerOwnershipTests(unittest.TestCase):
             owned = Mock(pid=101, info={'exe': str(output / 'player' / 'game.exe')})
             neighbor = Mock(pid=102, info={'exe': str(output / 'player-other' / 'game.exe')})
             inaccessible = Mock(pid=103, info={'exe': None})
-            with patch.object(unity_player_processes.psutil, 'process_iter', return_value=[owned, neighbor, inaccessible]):
-                stopped = runner.stop_owned_players(output)
+            api = SimpleNamespace(process_iter=Mock(return_value=[owned, neighbor, inaccessible]),
+                                  TimeoutExpired=TimeoutError, NoSuchProcess=ProcessLookupError)
+            stopped = runner.stop_owned_players(output, api)
             self.assertEqual([101], [row['pid'] for row in stopped])
             owned.terminate.assert_called_once()
             neighbor.terminate.assert_not_called()
@@ -31,9 +31,10 @@ class PlayerOwnershipTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory)
             owned = Mock(pid=101, info={'exe': str(output / 'player' / 'game.exe')})
-            owned.wait.side_effect = [psutil.TimeoutExpired(5), 0]
-            with patch.object(unity_player_processes.psutil, 'process_iter', return_value=[owned]):
-                runner.stop_owned_players(output)
+            owned.wait.side_effect = [TimeoutError(), 0]
+            api = SimpleNamespace(process_iter=Mock(return_value=[owned]),
+                                  TimeoutExpired=TimeoutError, NoSuchProcess=ProcessLookupError)
+            runner.stop_owned_players(output, api)
             owned.kill.assert_called_once()
             self.assertEqual(2, owned.wait.call_count)
 

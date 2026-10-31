@@ -330,6 +330,8 @@ void CascadeEngine::clear() {
     sibling_hover_dependency_ = false;
     sibling_active_dependency_ = false;
     style_attribute_selectors_ = false;
+    class_change_unbounded_ = false;
+    ancestor_classes_.clear();
     selector_inputs_ = {};
     hover_reach_ = StateReach{};
     active_reach_ = StateReach{};
@@ -379,7 +381,22 @@ uint64_t hash_class_tokens(std::string_view classes) {
         while (i < classes.size() && ws(classes[i])) ++i;
         std::size_t start = i;
         while (i < classes.size() && !ws(classes[i])) ++i;
-        if (i > start) acc ^= hash_str(classes.substr(start, i - start));
+        if (i > start) {
+            const auto token = classes.substr(start, i - start);
+            bool duplicate = false;
+            // Classes are a set. XORing a repeated token twice cancelled it,
+            // aliasing "panel chosen chosen" with "panel" in the match cache.
+            size_t prior = classes.find(token);
+            while (prior < start) {
+                if ((prior == 0 || ws(classes[prior - 1])) &&
+                    (prior + token.size() == classes.size() || ws(classes[prior + token.size()]))) {
+                    duplicate = true;
+                    break;
+                }
+                prior = classes.find(token, prior + 1);
+            }
+            if (!duplicate) acc ^= hash_str(token);
+        }
     }
     return acc;
 }
@@ -593,7 +610,48 @@ void mutation_dependencies(const CompoundSequence& seq, bool inside_has,
     }
 }
 
+void collect_ancestor_classes(const CompoundSequence& seq, bool nested,
+                             std::set<std::string, std::less<>>* classes, bool* unbounded) {
+    for (size_t i = 0; i < seq.compounds.size(); ++i) for (const auto& part : seq.compounds[i].parts) {
+        if (part->tag() == SimpleSelector::Tag::Class && (nested || i + 1 < seq.compounds.size()))
+            classes->insert(static_cast<const ClassSelector&>(*part).class_name);
+        if (part->tag() == SimpleSelector::Tag::Attribute &&
+            static_cast<const AttributeSelector&>(*part).name == "class") *unbounded = true;
+        if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
+        const auto& pseudo = static_cast<const PseudoClassSelector&>(*part);
+        for (const auto& inner : pseudo.inner_list) collect_ancestor_classes(*inner, true, classes, unbounded);
+        for (const auto& inner : pseudo.nth_of_filter) collect_ancestor_classes(*inner, true, classes, unbounded);
+    }
+}
+
 } // namespace
+
+bool CascadeEngine::class_change_is_local(std::string_view before, std::string_view after) const {
+    if (class_change_unbounded_ || cache_unsafe_has_ || cache_unsafe_scope_) return false;
+    const auto space = [](char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f'; };
+    const auto contains = [&](std::string_view list, std::string_view token) {
+        size_t at = 0;
+        while (at < list.size()) {
+            while (at < list.size() && space(list[at])) ++at;
+            const size_t start = at;
+            while (at < list.size() && !space(list[at])) ++at;
+            if (list.substr(start, at - start) == token) return true;
+        }
+        return false;
+    };
+    const auto unchanged = [&](std::string_view from, std::string_view to) {
+        size_t at = 0;
+        while (at < from.size()) {
+            while (at < from.size() && space(from[at])) ++at;
+            const size_t start = at;
+            while (at < from.size() && !space(from[at])) ++at;
+            const auto token = from.substr(start, at - start);
+            if (ancestor_classes_.count(token) && !contains(to, token)) return false;
+        }
+        return true;
+    };
+    return unchanged(before, after) && unchanged(after, before);
+}
 
 bool CascadeEngine::match_attribute_observable(std::string_view name) const {
     // These attributes have no implicit selector semantics. Include them only
@@ -931,6 +989,7 @@ void CascadeEngine::compile_declarations(const Rule& rule,
                                           DeclarationOrigin origin, int* source_index,
                                           int layer_ordinal) {
     for (auto& cs : selectors) {
+        collect_ancestor_classes(cs.sequence, false, &ancestor_classes_, &class_change_unbounded_);
         // Classify BEFORE moving: the shape cache's soundness depends
         // on spotting sibling-composition and :has() selectors anywhere
         // in the sheet.
@@ -1039,6 +1098,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
             if (ar->name == "media") {
                 if (!evaluate_media_query(ar->prelude, media_)) continue;
             } else if (ar->name == "scope") {
+                class_change_unbounded_ = true;
                 // `(<root list>)? [to (<limit list>)]?`: both lists optional.
                 auto spec = std::make_shared<ScopeSpec>();
                 if (!ar->has_block || !parse_scope_prelude(ar->prelude, !compiling_scopes_.empty(),

@@ -67,6 +67,15 @@ still resolve on every cascade. Scratch styles retain per-property strings and
 parsed owned syntax across clear, while ownership and default/inherited reads
 remain separate. These caches trade bounded retained storage for less repeat work.
 
+The [inventory update pass](verification/inventory-update-20261031.md) stops
+unchanged-size text reflow at proven fixed inline boundaries and refreshes the
+affected intrinsic exports. Ordinary block ancestors consume first baselines;
+inline-block roots/ancestors remain excluded from that reuse path. Nonempty
+text replacements can retain selector results, and subject-only class changes
+can retain descendant styles unless inherited inputs change. Published images
+with equal intrinsic dimensions can swap sources through paint invalidation.
+These proofs apply to direct setters and bindings in the shared core.
+
 ## Rounded geometry execution
 
 Default eight-segment rounded corners reuse an immutable table of the original

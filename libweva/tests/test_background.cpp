@@ -240,6 +240,15 @@ void test_replaced_image_cache() {
         return true;
     };
     store.set_reader(reader);
+    CHECK(!store.same_intrinsic_dimensions("quad.png", "copy.png"));
+    CHECK(store.size() == 0); // The proof never loads an unseen resource.
+    CHECK(store.get("quad.png") != nullptr);
+    CHECK(!store.same_intrinsic_dimensions("quad.png", "copy.png"));
+    CHECK(store.get("copy.png") != nullptr);
+    CHECK(store.same_intrinsic_dimensions("quad.png", "copy.png"));
+    CHECK(!store.same_intrinsic_dimensions("", "copy.png"));
+    store.clear();
+    CHECK(!store.same_intrinsic_dimensions("quad.png", "copy.png"));
     TextureCache cache;
     RecordingBackend retained;
     uint64_t previous = 0;
@@ -399,6 +408,15 @@ void test_replaced_image_cache() {
     weva_element_set_attribute(doc,img,"src","quad.png");
     CHECK(weva_document_update(doc,0)==WEVA_OK);
     CHECK(pixels()==first_pixels);
+    weva_element_set_attribute(doc,img,"src","quad-copy.png");
+    CHECK(weva_document_update(doc,0)==WEVA_OK); // Populate the second URL.
+    weva_element_set_attribute(doc,img,"src","quad.png");
+    CHECK(weva_document_update(doc,0)==WEVA_OK);
+    CHECK(pixels()==first_pixels);
+    weva_element_change image_changes[4]{};
+    const auto image_change_count=weva_document_changed_elements(doc,image_changes,4);
+    CHECK(image_change_count==1);
+    CHECK(image_changes[0].kind==WEVA_CHANGE_PAINT);
     serial=weva_document_draw_serial(doc);
     weva_document_set_base_path(doc,"missing");
     CHECK(weva_document_draw_serial(doc)==serial); // publication is deferred

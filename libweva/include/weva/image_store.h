@@ -55,6 +55,9 @@ public:
     // `decoding="async"` opts an <img> into deferred decoding. Readers stay
     // on the calling thread; workers own only bytes and decoded pixels.
     const DecodedImage* get(std::string_view url, bool async = false);
+    // A source swap between published images with equal natural dimensions
+    // changes pixels, not layout inputs. Never starts a read or decode.
+    bool same_intrinsic_dimensions(std::string_view a, std::string_view b) const;
     // Publish finished images on the document thread. True requires layout
     // (intrinsic dimensions may have changed) and repaint.
     bool poll();

@@ -182,6 +182,14 @@ bool ImageStore::read(std::string_view url, std::vector<uint8_t>* out) const {
     return reader_ ? reader_(path, out) : read_file(path, out);
 }
 
+bool ImageStore::same_intrinsic_dimensions(std::string_view a, std::string_view b) const {
+    if (a.empty() || b.empty()) return false;
+    const auto first = cache_.find(resolve(a)), second = cache_.find(resolve(b));
+    return first != cache_.end() && second != cache_.end() &&
+        first->second.valid() && second->second.valid() &&
+        first->second.width == second->second.width && first->second.height == second->second.height;
+}
+
 const DecodedImage* ImageStore::get(std::string_view url, bool async) {
     if (url.empty()) return nullptr;
     const std::string path = resolve(url);

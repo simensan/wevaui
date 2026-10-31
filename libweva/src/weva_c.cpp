@@ -2294,6 +2294,7 @@ struct weva_document {
     // :has() is about, which lets a descendant decide an ancestor's match and
     // puts the whole document back in play.
     std::vector<Element*> touched;
+    std::vector<std::pair<const Element*, bool>> local_class_inputs;
     bool has_inputs_dirty = true;
     bool sibling_inputs_dirty = true;
     bool selector_state_dirty = true;
@@ -2564,6 +2565,21 @@ bool is_table_span_attribute(std::string_view name) {
     return name == "rowspan" || name == "colspan" || name == "span";
 }
 
+bool text_keeps_selector_inputs(const Element& element, bool had_text, bool has_text) {
+    // Replacing nonempty direct text does not change :empty, element ranks,
+    // attributes or selector state. Auto direction and form defaults can read
+    // the text itself, so leave those on the ordinary cascade path.
+    if (!had_text || !has_text) return false;
+    for (const Node* node = &element; node; node = node->parent()) {
+        if (!node->is_element()) continue;
+        const auto& ancestor = static_cast<const Element&>(*node);
+        const auto tag = ancestor.tag_name();
+        if (ancestor.has_attribute("dir") || tag == "bdi" ||
+            tag == "textarea" || tag == "select" || tag == "option" || tag == "input") return false;
+    }
+    return true;
+}
+
 void note_box_input(weva_document* doc, Element* e) {
     auto& inputs = doc->styles.pending_box_inputs;
     if (std::find(inputs.begin(), inputs.end(), e) == inputs.end()) inputs.push_back(e);
@@ -2619,10 +2635,14 @@ void note_binding_mutation(weva_document* doc, const DomMutation& mutation) {
     // Table placement reads span attributes directly, independent of computed
     // CSS. Their input version must change even when no selector result does.
     const bool table_span = is_table_span_attribute(mutation.name);
-    if (mutation.kind == MutationKind::TextChanged || table_span || (e->tag_name() == "img" && mutation.name == "src")) {
-        auto& inputs = doc->styles.pending_content_inputs;
+    const bool image_source = e->tag_name() == "img" && mutation.name == "src";
+    if (mutation.kind == MutationKind::TextChanged || table_span || image_source) {
+        const bool image_pixels_only = image_source && doc->images.same_intrinsic_dimensions(mutation.old_value, mutation.new_value);
+        auto& inputs = image_pixels_only ? doc->styles.pending_visual_inputs : doc->styles.pending_content_inputs;
         if (std::find(inputs.begin(), inputs.end(), e) == inputs.end()) inputs.push_back(e);
     }
+    if (mutation.kind == MutationKind::TextChanged &&
+        text_keeps_selector_inputs(*e, !mutation.old_value.empty(), !mutation.new_value.empty())) return;
     // Top-layer membership changes boxes even when authored CSS keeps display
     // unchanged. These attributes have the same contract as show/close APIs.
     if ((e->tag_name() == "dialog" && (mutation.name == "open" || mutation.name == "data-modal")) ||
@@ -3980,6 +4000,19 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
             request_popover_hide(doc, doc->handle_of(&element), true, true) == WEVA_OK;
     });
     doc->doc->add_observer([doc](const DomMutation& mutation) {
+        const Node* owner = mutation.target;
+        if (owner && !owner->is_element()) owner = owner->parent();
+        if (owner && owner->is_element()) {
+            const auto* element = static_cast<const Element*>(owner);
+            const bool local_class = mutation.name == "class" &&
+                doc->styles.engine.class_change_is_local(mutation.old_value, mutation.new_value);
+            auto& inputs = doc->local_class_inputs;
+            const auto found = std::find_if(inputs.begin(), inputs.end(),
+                [&](const auto& input) { return input.first == element; });
+            if (found != inputs.end()) found->second = found->second && local_class;
+            else if (inputs.size() < 64) inputs.emplace_back(element, local_class);
+            else doc->selector_state_dirty = true;
+        }
         const bool local_style = mutation.name == "style" && !doc->styles.engine.has_style_attribute_selectors();
         if (!local_style) {
             doc->has_inputs_dirty = true;
@@ -4085,6 +4118,7 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     doc->pending = Invalidation::Boxes;
     // Those point at elements of the document just replaced.
     doc->touched.clear();
+    doc->local_class_inputs.clear();
     doc->default_buttons.clear();
     doc->default_inputs_dirty = true;
     doc->dom_touched = false;
@@ -4650,6 +4684,7 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
         doc->pending == Invalidation::None && !doc->dom_touched && doc->styles.pending_control_inputs.empty() &&
         doc->styles.pending_visual_inputs.empty() &&
         doc->styles.pending_box_inputs.empty() &&
+        doc->styles.pending_content_inputs.empty() &&
         !(dt_seconds > 0 && doc->styles.animating()) &&
         !(input_seconds > 0 && weva_document_needs_input_tick(doc))) {
         lap("cascade");
@@ -4777,7 +4812,10 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
                 const bool local_inline_style = !doc->has_inputs_dirty && !doc->sibling_inputs_dirty &&
                                                 !doc->selector_state_dirty &&
                                                 doc->touched.size() == 1;
-                doc->styles.walk(static_cast<const Element&>(*c), parent_style, local_inline_style);
+                const bool local_class = c.get() == from && !doc->selector_state_dirty &&
+                    std::any_of(doc->local_class_inputs.begin(), doc->local_class_inputs.end(),
+                        [&](const auto& input) { return input.first == c.get() && input.second; });
+                doc->styles.walk(static_cast<const Element&>(*c), parent_style, local_inline_style || local_class);
                 // Without a sibling combinator in the sheets, nothing after the
                 // touched element can have changed.
                 if (!siblings_matter) break;
@@ -4796,6 +4834,7 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
         }
     }
     doc->touched.clear();
+    doc->local_class_inputs.clear();
     doc->has_inputs_dirty = false;
     doc->sibling_inputs_dirty = false;
     doc->selector_state_dirty = false;
@@ -4835,6 +4874,7 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
         doc->styles.advance(0);
         doc->styles.repaint(previous);
         doc->touched.clear();
+        doc->local_class_inputs.clear();
         doc->dom_touched = false;
         caret = caret_for(doc->styles.state);
     }
@@ -8352,6 +8392,7 @@ static weva_element_t adopt(weva_document* doc, const std::vector<Ref<Node>>& ad
     // from an element that already has one.
     doc->pending = worst(doc->pending, Invalidation::Boxes);
     doc->touched.clear();
+    doc->local_class_inputs.clear();
     doc->dom_touched = false;
     return first;
 }
@@ -8574,6 +8615,7 @@ weva_status weva_document_reload_html(weva_document_t doc, const char* html, siz
     doc->styles.engine.invalidate_cache();
     doc->pending = worst(doc->pending, Invalidation::Boxes);
     doc->touched.clear();
+    doc->local_class_inputs.clear();
     doc->dom_touched = false;
     return WEVA_OK;
 }
@@ -8624,6 +8666,7 @@ weva_status weva_element_remove(weva_document_t doc, weva_element_t element) {
     parent->remove_child(e);
     doc->pending = worst(doc->pending, Invalidation::Boxes);
     doc->touched.clear();
+    doc->local_class_inputs.clear();
     doc->dom_touched = false;
     return WEVA_OK;
 }
@@ -8656,6 +8699,8 @@ weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t eleme
     const bool disabling = value && (std::strcmp(name, "readonly") == 0 || std::strcmp(name, "disabled") == 0);
     const bool image_source_changed = e->tag_name() == "img" && std::strcmp(name,"src") == 0 &&
                                      e->get_attribute("src") != std::string_view(value ? value : "");
+    const bool image_pixels_only = image_source_changed &&
+        doc->images.same_intrinsic_dimensions(e->get_attribute("src"), value ? value : "");
     const bool table_span_changed = is_table_span_attribute(name) &&
         e->get_attribute(name) != std::string_view(value ? value : "");
     if (finish && !disabling) weva_document_commit_composition(doc, nullptr);
@@ -8670,7 +8715,7 @@ weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t eleme
     // and dialog side effects above still run; their observers own invalidation.
     if (!attribute_changed) return WEVA_OK;
     if (image_source_changed || table_span_changed) {
-        auto& inputs = doc->styles.pending_content_inputs;
+        auto& inputs = image_pixels_only ? doc->styles.pending_visual_inputs : doc->styles.pending_content_inputs;
         if (std::find(inputs.begin(),inputs.end(),e) == inputs.end()) inputs.push_back(e);
     }
     // What it reaches is the cascade's business; that it must run is this
@@ -8691,6 +8736,11 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     if (!doc) return WEVA_ERR_INVALID_ARGUMENT;
     Element* e = doc->element_at(element);
     if (!e) return WEVA_ERR_NOT_FOUND;
+    bool had_text = false;
+    for (const auto& child : e->children())
+        if (child->node_type() == NodeType::Text && !static_cast<const TextNode&>(*child).data().empty())
+            had_text = true;
+    const bool selector_inputs_equal = text_keeps_selector_inputs(*e, had_text, text && *text);
     if (!replace_text(*e, text ? text : "", &doc->retired_nodes)) {
         // Setting textarea default text replaces its selection even when the
         // text is equal. Keep ordinary HUD text no-ops allocation-free.
@@ -8704,6 +8754,7 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     // change. Keep unrelated pending structure/viewport/font work intact.
     auto& inputs = doc->styles.pending_content_inputs;
     if (std::find(inputs.begin(), inputs.end(), e) == inputs.end()) inputs.push_back(e);
+    if (selector_inputs_equal) return WEVA_OK;
     doc->dom_touched = true;
     Element* scope = e;
     // :nth-last-child(... of :empty) can reach preceding siblings too.

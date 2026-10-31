@@ -1,5 +1,10 @@
 # Product readiness
 
+The [inventory update pass](verification/inventory-update-20261031.md) reduces
+paired style/layout CPU by 30% provisionally, with Unity/Godot correctness checks
+passing. It still measures 0.207 ms versus Chrome's 0.149 ms; Chrome parity is
+not established. Other-workspace activity remains in these requested runs.
+
 The [clean Chrome comparison](verification/clean-render-comparison-20261031.md)
 still finds an inventory CPU gap: style/layout 0.280 vs 0.142 ms, paint recording
 0.255 vs 0.201 ms. The [30-minute reload soak](verification/lifecycle-soak-20261031.md)

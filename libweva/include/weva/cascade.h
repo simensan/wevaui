@@ -204,6 +204,7 @@ public:
     bool sibling_hover_dependency() const { return sibling_hover_dependency_; }
     bool sibling_active_dependency() const { return sibling_active_dependency_; }
     bool has_style_attribute_selectors() const { return style_attribute_selectors_; }
+    bool class_change_is_local(std::string_view before, std::string_view after) const;
     bool has_validity_selectors() const { return shape_key_folds_validity_; }
     bool has_range_selectors() const { return shape_key_folds_range_; }
     bool has_default_selectors() const { return shape_key_folds_default_; }
@@ -368,6 +369,8 @@ private:
     bool sibling_hover_dependency_ = false;
     bool sibling_active_dependency_ = false;
     bool style_attribute_selectors_ = false;
+    bool class_change_unbounded_ = false;
+    std::set<std::string, std::less<>> ancestor_classes_;
     SelectorMatchInputs selector_inputs_;
     StateReach hover_reach_;                         // what :hover can match
     StateReach active_reach_;                        // what :active can match
