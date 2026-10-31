@@ -465,3 +465,9 @@ The [post-optimization Chrome comparison](docs/verification/optimized-render-com
 uses the verified flex-row candidate in three fresh alternating engine pairs.
 Inventory style/layout remains 0.336 ms versus Chrome 0.242 ms; paint and host
 CPU stay separately reported. This is not full rendering or GPU parity.
+
+The [paint caller audit](docs/verification/paint-callers-20261031.md) fixes
+benchmark stack output that silently stopped at four frames. GCC and Clang
+tool builds and smokes pass. The uncapped fixed-font diagnostic attributes
+remaining paint work without claiming host latency or a new runtime speedup;
+Unity and Godot runtime code are unchanged.

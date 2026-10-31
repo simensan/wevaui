@@ -190,7 +190,7 @@ void report_sites(const char* what, size_t total, int top, bool allocations = fa
         std::printf("  %6zu (%4.1f%%)\n", site.count, total ? 100.0 * site.count / total : 0.0);
         if (allocations) std::printf("        %zu allocated bytes\n", site.bytes);
 #ifdef _WIN32
-        for (int f = 0; f < site.depth && f < 4; ++f) {
+        for (int f = 0; f < site.depth; ++f) {
             alignas(SYMBOL_INFO) unsigned char storage[sizeof(SYMBOL_INFO) + MAX_SYM_NAME]{};
             auto* info = reinterpret_cast<SYMBOL_INFO*>(storage);
             info->SizeOfStruct = sizeof(SYMBOL_INFO);
@@ -202,7 +202,7 @@ void report_sites(const char* what, size_t total, int top, bool allocations = fa
         }
 #else
         char** names = backtrace_symbols(site.frames, site.depth);
-        for (int f = 0; f < site.depth && f < 4; ++f) {
+        for (int f = 0; f < site.depth; ++f) {
             std::printf("        %s\n", names ? names[f] : "?");
         }
         std::free(names);
