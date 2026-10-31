@@ -557,3 +557,10 @@ Chrome parity. The full gate passes 807,588 GCC main checks (807,582 sanitized),
 the existing known failure. Both Windows hosts are rebuilt; Unity passes
 255 EditMode tests/two inconclusive and 7/7 Mono player tests. All 17 render
 comparisons match the accepted baseline.
+
+The [inventory paint investigation](docs/verification/paint-investigation-20261031.md)
+retains no runtime change. The no-shadow color experiment was reverted after
+six provisional pairs failed to isolate a useful gain; unrelated Rust builds
+contaminated the first batch. Corrected paint attribution, both batches and
+the rejected patch are preserved. The restored engine passes all 17 GCC
+suites and the rebuilt Agentic PE sections match the accepted baseline.
