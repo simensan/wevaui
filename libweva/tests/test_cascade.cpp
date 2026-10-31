@@ -57,6 +57,48 @@ MatchedDeclaration make(const Declaration* d, DeclarationOrigin o, Specificity s
 } // namespace
 
 void test_cascade_order() {
+    // Pinned Chrome expectations: check_pseudo_keywords_chrome.cjs.
+    for (const char* keyword : {"inherit", "initial", "unset", "revert", "revert-layer"}) {
+        Fixture f;
+        CHECK(f.html("<div id=x></div>"));
+        CHECK(f.css(std::string("#x{color:blue;padding-left:13px;font-size:32px;line-height:40px}") +
+                    "#x::before{content:'x';color:" + keyword + ";padding-left:" + keyword +
+                    ";font-size:" + keyword + ";line-height:" + keyword + "}"));
+        ComputedStyle host, pseudo;
+        f.engine.compute(*f.id("x"), f.state, nullptr, &host);
+        CHECK(f.engine.compute_pseudo_element(*f.id("x"), "before", f.state, host, &pseudo));
+        const bool initial = std::string_view(keyword) == "initial";
+        CHECK(pseudo.get("color") == (initial ? "black" : "blue"));
+        CHECK(pseudo.get("padding-left") == (std::string_view(keyword) == "inherit" ? "13px" : "0"));
+        CHECK(pseudo.get("font-size") == (initial ? "16px" : "32px"));
+        CHECK(pseudo.get("line-height") == (initial ? "normal" : "40px"));
+        CHECK(pseudo.font_size_inherited() == !initial);
+        CHECK(pseudo.line_height_inherited() == !initial);
+    }
+    for (bool layered : {false, true}) {
+        Fixture f;
+        CHECK(f.html("<div id=x></div>"));
+        CHECK(f.css("#x{color:blue;padding-left:13px}"));
+        if (layered) {
+            CHECK(f.css("@layer first,second;"
+                        "@layer first{#x::before{content:'x';color:green;font-size:24px;line-height:30px}}"
+                        "@layer second{#x::before{color:revert-layer;font-size:revert-layer;line-height:revert-layer}}"));
+        } else {
+            CHECK(f.css("#x::before{content:'x';color:var(--missing, inherit);padding-left:var(--missing, inherit)}"));
+        }
+        ComputedStyle host, pseudo;
+        f.engine.compute(*f.id("x"), f.state, nullptr, &host);
+        CHECK(f.engine.compute_pseudo_element(*f.id("x"), "before", f.state, host, &pseudo));
+        CHECK(pseudo.get("color") == (layered ? "green" : "blue"));
+        if (layered) {
+            CHECK(pseudo.get("font-size") == "24px");
+            CHECK(pseudo.get("line-height") == "30px");
+            CHECK(!pseudo.font_size_inherited());
+            CHECK(!pseudo.line_height_inherited());
+        } else {
+            CHECK(pseudo.get("padding-left") == "13px");
+        }
+    }
     {
         Fixture f;
         CHECK(f.html("<div id=x style='margin-left:9px;--gap:4px;color:blue'>text</div>"));

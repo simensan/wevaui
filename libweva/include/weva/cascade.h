@@ -327,6 +327,8 @@ private:
     // Resolves one element's custom properties: CSS-wide keywords, `@property`
     // syntax validation, and initial-value seeding. Runs before substitution.
     void resolve_custom_properties(ComputedStyle* out, const ComputedStyle* parent) const;
+    void resolve_standard_keywords(ComputedStyle* out, const ComputedStyle* parent,
+                                   const std::vector<MatchedDeclaration>& matches, uint64_t generation) const;
 
     // Shape-keyed match cache. Two elements whose tag/id/classes/attributes
     // AND whose whole ancestor chain hash identically must match the same rule

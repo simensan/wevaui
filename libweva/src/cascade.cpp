@@ -1709,57 +1709,62 @@ void CascadeEngine::compute(const Element& e, const ElementStateProvider& state,
     // `var(--x)`. `revert`/`revert-layer` first roll back to the appropriate
     // lower-priority match. Font-size and line-height retain their inheritance
     // source when no rollback target exists.
-    {
-        static const int font_id = reg.id_of("font-size");
-        static const int line_id = reg.id_of("line-height");
-        bool font_inherited = false;
-        bool line_inherited = false;
-        std::vector<std::pair<int, std::string>> rewrites;
-        out->copy_set_ids(property_ids_);
-        for (int id : property_ids_) {
-            const std::string_view raw = out->get(id);
-            if (!is_css_wide_keyword(trim_ws(raw))) continue;
-            const std::string_view name = reg.name_of(id);
-            std::string pre(raw);
-            if (winner_keys_[static_cast<size_t>(id)].generation == gen) {
-                pre = pre_resolve_rollback(name, raw, matches,
-                                           winner_keys_[static_cast<size_t>(id)]);
-            }
-            if (!reg.is_inherited(id) && iequals_ascii(trim_ws(pre), "inherit"))
-                out->set_inherits_non_inherited(true);
-            if (id == font_id || id == line_id) {
-                const auto keyword = trim_ws(pre);
-                // Relative syntax copied from the parent is not a new
-                // declaration relative to that parent. Preserve its source
-                // so layout inherits the parent's computed pixel size.
-                const bool inherited = iequals_ascii(keyword, "inherit") ||
-                    iequals_ascii(keyword, "unset") || iequals_ascii(keyword, "revert") ||
-                    iequals_ascii(keyword, "revert-layer");
-                if (id == font_id) font_inherited = inherited;
-                else {
-                    line_inherited = inherited;
-                    // A rollback with no remaining declaration defaults to
-                    // inheritance for this inherited property, not normal.
-                    if (inherited) pre = "inherit";
-                }
-            }
-            std::string resolved;
-            if (resolve_css_wide_keyword(id, pre, parent, &resolved)) {
-                rewrites.emplace_back(id, std::move(resolved));
-            } else {
-                rewrites.emplace_back(id, std::move(pre));
-            }
-        }
-        for (auto& r : rewrites) out->set(r.first, r.second);
-        if (font_inherited) out->mark_font_size_inherited();
-        if (line_inherited) out->mark_line_height_inherited();
-    }
+    resolve_standard_keywords(out, parent, matches, gen);
     // Top-layer positioning is a computed-value adjustment after the cascade.
     if (e.is_modal() || e.is_popover_open()) {
         const auto position = out->get("position");
         if (position != "absolute" && position != "fixed") out->set("position", "absolute");
         if (out->get("display") == "contents") out->set("display", "block");
     }
+}
+
+void CascadeEngine::resolve_standard_keywords(ComputedStyle* out, const ComputedStyle* parent,
+                                               const std::vector<MatchedDeclaration>& matches,
+                                               uint64_t gen) const {
+    const auto& reg = CssPropertyRegistry::instance();
+    static const int font_id = reg.id_of("font-size");
+    static const int line_id = reg.id_of("line-height");
+    bool font_inherited = false;
+    bool line_inherited = false;
+    std::vector<std::pair<int, std::string>> rewrites;
+    out->copy_set_ids(property_ids_);
+    for (int id : property_ids_) {
+        const std::string_view raw = out->get(id);
+        if (!is_css_wide_keyword(trim_ws(raw))) continue;
+        const std::string_view name = reg.name_of(id);
+        std::string pre(raw);
+        if (winner_keys_[static_cast<size_t>(id)].generation == gen) {
+            pre = pre_resolve_rollback(name, raw, matches,
+                                       winner_keys_[static_cast<size_t>(id)]);
+        }
+        if (!reg.is_inherited(id) && iequals_ascii(trim_ws(pre), "inherit"))
+            out->set_inherits_non_inherited(true);
+        if (id == font_id || id == line_id) {
+            const auto keyword = trim_ws(pre);
+            // Relative syntax copied from the parent is not a new
+            // declaration relative to that parent. Preserve its source
+            // so layout inherits the parent's computed pixel size.
+            const bool inherited = iequals_ascii(keyword, "inherit") ||
+                iequals_ascii(keyword, "unset") || iequals_ascii(keyword, "revert") ||
+                iequals_ascii(keyword, "revert-layer");
+            if (id == font_id) font_inherited = inherited;
+            else {
+                line_inherited = inherited;
+                // A rollback with no remaining declaration defaults to
+                // inheritance for this inherited property, not normal.
+                if (inherited) pre = "inherit";
+            }
+        }
+        std::string resolved;
+        if (resolve_css_wide_keyword(id, pre, parent, &resolved)) {
+            rewrites.emplace_back(id, std::move(resolved));
+        } else {
+            rewrites.emplace_back(id, std::move(pre));
+        }
+    }
+    for (auto& r : rewrites) out->set(r.first, r.second);
+    if (font_inherited) out->mark_font_size_inherited();
+    if (line_inherited) out->mark_line_height_inherited();
 }
 
 void CascadeEngine::resolve_custom_properties(ComputedStyle* out,
@@ -1861,11 +1866,16 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
 
     out->clear();
     auto& reg = CssPropertyRegistry::instance();
+    const uint64_t gen = ++cascade_generation_;
+    winner_keys_.resize(static_cast<size_t>(reg.count()));
     for (const MatchedDeclaration& m : matches) {
         const int id = m.property_id != kCustomPropertyId ? m.property_id : reg.id_of(m.declaration->property);
         if (id != kCustomPropertyId) out->set(id, m.declaration->value_text);
         else out->set(m.declaration->property, m.declaration->value_text);
-        if (id != kCustomPropertyId) out->set_important(id, m.declaration->important);
+        if (id != kCustomPropertyId) {
+            out->set_important(id, m.declaration->important);
+            winner_keys_[static_cast<size_t>(id)] = CascadeKey::of(m, gen);
+        }
     }
 
     // A pseudo participates in the host's var() namespace, so authors can
@@ -1934,38 +1944,8 @@ bool CascadeEngine::compute_pseudo_element(const Element& host, std::string_view
     }
     dropped_.clear();
     out->set_inherit_parent(&host_style);
-    if (!out->font_size_inherited()) {
-        const auto raw = out->get(font_id);
-        if (is_css_wide_keyword(trim_ws(raw))) {
-            // Pseudos inherit from their originating element too. Resolve
-            // initial as a value, but keep computed inheritance distinct.
-            if (iequals_ascii(trim_ws(raw), "initial")) {
-                out->set(font_id, reg.initial_value(font_id));
-            } else {
-                out->set(font_id, host_style.get(font_id));
-                out->mark_font_size_inherited();
-            }
-        }
-    }
-    if (!out->line_height_inherited()) {
-        const auto raw = out->get(line_id);
-        if (is_css_wide_keyword(trim_ws(raw))) {
-            std::string pre(raw);
-            for (auto m = matches.rbegin(); m != matches.rend(); ++m) {
-                if (reg.id_of(m->declaration->property) != line_id) continue;
-                pre = pre_resolve_rollback(reg.name_of(line_id), raw, matches, CascadeKey::of(*m, 0));
-                break;
-            }
-            if (!is_css_wide_keyword(trim_ws(pre))) {
-                out->set(line_id, pre);
-            } else if (iequals_ascii(trim_ws(pre), "initial")) {
-                out->set(line_id, reg.initial_value(line_id));
-            } else {
-                out->set(line_id, host_style.get(line_id));
-                out->mark_line_height_inherited();
-            }
-        }
-    }
+    // Use the same post-substitution keyword and rollback rules as elements.
+    resolve_standard_keywords(out, &host_style, matches, gen);
     return true;
 }
 

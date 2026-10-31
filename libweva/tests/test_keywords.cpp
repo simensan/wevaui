@@ -121,11 +121,11 @@ void test_revert() {
     }
     {
         // ---- with no lower origin there is nothing to roll back to, and the
-        // spec collapses `revert` to `initial`.
+        // inherited property defaults to its parent, as Chrome confirms.
         Fixture f;
         CHECK(f.html("<div id=p><div id=c></div></div>"));
         CHECK(f.css("#p { color: red } #c { color: revert }"));
-        CHECK_EQ(f.value_under("p", "c", "color"), "black");
+        CHECK_EQ(f.value_under("p", "c", "color"), "red");
     }
     {
         // ---- the rolled-back value is resolved in turn, so a UA `inherit`

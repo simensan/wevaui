@@ -3,16 +3,17 @@
 The [matched property-ID pass](verification/inventory-property-ids-20261031.md)
 measures a provisional 4.3% paired reduction in inventory style/layout CPU
 after the [bidi mapping pass](verification/inventory-bidi-20261031.md).
-Complete update CPU is effectively flat. The latest batch measures 0.150 ms
+Complete update CPU is effectively flat. That optimization batch measures 0.150 ms
 versus Chrome's 0.140 ms for style/layout, and 0.194 versus 0.193 ms for paint.
 Chrome parity is not established.
 Other-workspace activity remains in these requested runs; separate batch
 percentages are not a combined speedup claim.
 
-The same pass found an existing pseudo-element keyword-resolution limitation:
-explicit `::before { color: inherit }` retains the keyword instead of resolving
-the host color. Chrome confirms the expected inherited color; the report
-preserves the reproduction for a correctness follow-up.
+The [pseudo keyword follow-up](verification/pseudo-keywords-20261031.md) fixes
+explicit inherited colors and CSS-wide keyword rollback on pseudo-elements,
+using the same resolver as ordinary elements. Its focused render matches Chrome.
+It also exposes a separate unresolved `background-color: currentColor` paint
+defect; the report preserves the failing render for follow-up.
 
 The [clean Chrome comparison](verification/clean-render-comparison-20261031.md)
 still finds an inventory CPU gap: style/layout 0.280 vs 0.142 ms, paint recording

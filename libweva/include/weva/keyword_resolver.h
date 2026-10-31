@@ -22,7 +22,7 @@ bool is_css_wide_keyword(std::string_view value);
 //
 // `unset` is `inherit` for an inherited property and `initial` otherwise, and
 // `revert`/`revert-layer` reaching here means the rollback below found no
-// lower-priority match — the spec collapses both to `initial`.
+// lower-priority match; both default like an absent declaration (`unset`).
 bool resolve_css_wide_keyword(int property_id, std::string_view value,
                               const ComputedStyle* parent, std::string* out);
 
@@ -40,7 +40,7 @@ bool resolve_css_wide_keyword_custom(std::string_view name, std::string_view val
 //
 // `expanded` is the element's full match list in cascade order. Returns `value`
 // unchanged when it is not a rollback keyword or when no target exists — the
-// resolver then maps it to `initial`.
+// resolver then defaults it to the inherited or initial value.
 std::string pre_resolve_rollback(std::string_view property, std::string_view value,
                                  const std::vector<MatchedDeclaration>& expanded,
                                  const CascadeKey& winner);

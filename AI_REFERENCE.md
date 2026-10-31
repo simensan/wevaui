@@ -530,3 +530,13 @@ show a provisional 4.3% style/layout reduction and effectively flat complete CPU
 Chrome parity remains unproven. GCC main coverage is 807,129 checks (807,123
 under sanitizers), with 17 GCC and 19 sanitizer suites. The report also preserves
 a rejected line-height experiment and an existing pseudo color-inherit defect.
+
+The [pseudo keyword follow-up](docs/verification/pseudo-keywords-20261031.md)
+shares standard-property CSS-wide keyword resolution between elements and
+pseudos and corrects inherited rollback defaults against Chrome. The full
+qualified gate passes: 807,189 GCC main checks (807,183 sanitized), 17 GCC
+and 19 sanitizer suites, 341 layout captures, and 67 live Chrome checks plus
+the existing known failure. Unity remains 255 passes/two inconclusive and
+7/7 Mono player checks. A focused core render matches Chrome pixels. The
+report records provisional regression timings, local layout counters and
+a separate unresolved background-color currentColor paint defect.

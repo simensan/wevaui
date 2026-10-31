@@ -98,12 +98,12 @@ bool resolve_css_wide_keyword(int property_id, std::string_view value,
 
     if (iequals(t, "inherit")) {
         *out = inherited_value(property_id, parent);
-    } else if (iequals(t, "unset")) {
+    } else if (iequals(t, "unset") || iequals(t, "revert") || iequals(t, "revert-layer")) {
         *out = reg.is_inherited(property_id) ? inherited_value(property_id, parent)
                                              : std::string(reg.initial_value(property_id));
     } else {
-        // initial, revert and revert-layer. The two rollback keywords only
-        // reach here when no rollback target existed.
+        // Explicit initial ignores inheritance. A rollback without a target
+        // defaults as an absent declaration (the unset branch above).
         *out = std::string(reg.initial_value(property_id));
     }
     return true;
@@ -149,7 +149,7 @@ std::string pre_resolve_rollback(std::string_view property, std::string_view val
             is_revert ? rollback_revert(property, expanded, origin)
                       : rollback_revert_layer(property, expanded, origin, layer);
         // No target: leave the keyword in place so the resolver maps it to
-        // the initial value.
+        // the inherited or initial value.
         if (!rb) return current;
         current = rb->declaration->value_text;
         origin = rb->origin;
