@@ -1,5 +1,9 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [Unity interleaved upload pass](docs/verification/unity-interleaved-upload-20261031.md)
+passes 252 EditMode tests (two existing inconclusive), URP 7/7 and Windows
+Mono player 7/7. Paired inventory sync median improves 12.1%; tails are mixed.
+
 The [Unity material preparation pass](docs/verification/unity-material-preparation-20261031.md)
 adds materials to explicit loading preparation. Full EditMode passes 251
 (two existing inconclusive), URP 7/7 and Windows Mono player 7/7. Paired

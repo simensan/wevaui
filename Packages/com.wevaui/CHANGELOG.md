@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   component enable/disable behavior are unchanged.
 
 ### Changed
+- Unity uploads ordinary meshes through one interleaved vertex buffer instead
+  of separate position/color/UV lists. Paired inventory synchronization median
+  improved 12.1% in the scoped editor CPU benchmark; tail results are mixed.
 - Documents open faster. A paint pass rasterizes its gradients, shadows and
   blurs side by side, and wide blurs are drawn at the resolution they need,
   within 4 of 255 levels. Core first opens measured up to 2.5x faster.

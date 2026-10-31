@@ -101,8 +101,20 @@ namespace Weva.Native
         public int RunsReused { get; private set; }
         private readonly List<Mesh> _meshPool = new List<Mesh>();
         private readonly List<Vector3> _positions = new List<Vector3>(1024);
-        private readonly List<Color> _colors = new List<Color>(1024);
-        private readonly List<Vector2> _uvs = new List<Vector2>(1024);
+        [System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
+        private struct UploadVertex
+        {
+            public Vector3 Position;
+            public Color Color;
+            public Vector2 UV;
+        }
+        private static readonly VertexAttributeDescriptor[] VertexLayout =
+        {
+            new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+            new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.Float32, 4),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord0, VertexAttributeFormat.Float32, 2),
+        };
+        private readonly List<UploadVertex> _vertices = new List<UploadVertex>(1024);
         private readonly List<int> _indices = new List<int>(2048);
         private ulong _serial;
         private NativeDocument _document;
@@ -268,9 +280,7 @@ namespace Weva.Native
                     i++;
                     continue;
                 }
-                _positions.Clear();
-                _colors.Clear();
-                _uvs.Clear();
+                _vertices.Clear();
                 _indices.Clear();
                 ulong texture = first.texture_id;
                 // The run's extent and versions first: when last frame built a
@@ -313,22 +323,24 @@ namespace Weva.Native
                         j++;
                         continue;
                     }
-                    int baseVertex = _positions.Count;
+                    int baseVertex = _vertices.Count;
                     for (nuint v = 0; v < d.vertex_count; v++)
                     {
                         weva_vertex vertex = d.vertices[v];
-                        _positions.Add(new Vector3(vertex.x, vertex.y, 0));
-                        _colors.Add(new Color(vertex.r, vertex.g, vertex.b, vertex.a));
-                        _uvs.Add(new Vector2(vertex.u, vertex.v));
+                        _vertices.Add(new UploadVertex
+                        {
+                            Position = new Vector3(vertex.x, vertex.y, 0),
+                            Color = new Color(vertex.r, vertex.g, vertex.b, vertex.a),
+                            UV = new Vector2(vertex.u, vertex.v),
+                        });
                     }
                     for (nuint k = 0; k < d.index_count; k++) _indices.Add(baseVertex + (int)d.indices[k]);
                     j++;
                 }
                 Mesh mesh = RentMesh();
-                mesh.indexFormat = _positions.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16;
-                mesh.SetVertices(_positions);
-                mesh.SetColors(_colors);
-                mesh.SetUVs(0, _uvs);
+                mesh.indexFormat = _vertices.Count > 65000 ? IndexFormat.UInt32 : IndexFormat.UInt16;
+                mesh.SetVertexBufferParams(_vertices.Count, VertexLayout);
+                mesh.SetVertexBufferData(_vertices, 0, 0, _vertices.Count);
                 mesh.SetIndices(_indices, MeshTopology.Triangles, 0, false);
                 mesh.bounds = new Bounds(Vector3.zero, new Vector3(1e6f, 1e6f, 1f));
                 _batches.Add(new Batch

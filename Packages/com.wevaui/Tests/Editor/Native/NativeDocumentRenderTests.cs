@@ -120,6 +120,30 @@ namespace Weva.Tests.EditorTests.Native
         }
 
         [Test]
+        public void Render_LargeMergedMeshKeepsVertexChannelsAnd32BitIndices()
+        {
+            Assume.That(HasGraphics, "a graphics device is required");
+            using var doc = new NativeDocument(8, 8);
+            using var renderer = new NativeDocumentRenderer();
+            var html = new System.Text.StringBuilder("<body>");
+            for (int i = 0; i < 17000; ++i) html.Append("<div></div>");
+            html.Append("</body>");
+            doc.LoadHtml(html.ToString());
+            doc.SetCss("html,body{margin:0}div{position:absolute;left:0;top:0;width:1px;height:1px;background:red}");
+            doc.Update(0);
+            renderer.Sync(doc);
+            Assert.That(renderer.BatchCount, Is.EqualTo(1));
+            Assert.That(renderer.TrianglesUploaded, Is.GreaterThan(32768), "merged quads exceed 16-bit vertex addressing");
+            Texture2D image = renderer.RenderToTexture(doc, 8, 8, Color.black);
+            try
+            {
+                Assert.That(Near(PageTopDown(image, 0, 0), new Color32(255, 0, 0, 255)), Is.True);
+                Assert.That(Near(PageTopDown(image, 7, 7), new Color32(0, 0, 0, 255)), Is.True);
+            }
+            finally { Object.DestroyImmediate(image); }
+        }
+
+        [Test]
         public void Render_PutsABoxWhereTheCoreLaidItOut()
         {
             Assume.That(HasGraphics, "a graphics device is required");
