@@ -1,0 +1,408 @@
+{
+  "baseline": "c61070f2",
+  "summaries": [
+    {
+      "run": 0,
+      "scenario": "idle-hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.00030000000000000003,
+        "p95": 0.0004,
+        "max": 0.0024000000000000002
+      },
+      "sync_ms": {
+        "median": 0.0001,
+        "p95": 0.0001,
+        "max": 0.0005
+      },
+      "record_ms": {
+        "median": 0.016900000000000002,
+        "p95": 0.0357,
+        "max": 0.20950000000000002
+      },
+      "total_cpu_ms": {
+        "median": 0.017200000000000003,
+        "p95": 0.0362,
+        "max": 0.20990000000000003
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "uploaded_triangles": {
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      },
+      "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+    },
+    {
+      "run": 0,
+      "scenario": "hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.06380000000000001,
+        "p95": 0.0971,
+        "max": 0.1663
+      },
+      "sync_ms": {
+        "median": 0.0341,
+        "p95": 0.054,
+        "max": 0.1008
+      },
+      "record_ms": {
+        "median": 0.0172,
+        "p95": 0.0304,
+        "max": 0.0407
+      },
+      "total_cpu_ms": {
+        "median": 0.1162,
+        "p95": 0.16860000000000003,
+        "max": 0.28490000000000004
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 56.0,
+        "p95": 56,
+        "max": 56
+      },
+      "uploaded_triangles": {
+        "median": 92.0,
+        "p95": 92,
+        "max": 94
+      },
+      "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+    },
+    {
+      "run": 0,
+      "scenario": "inventory",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.1208,
+        "p95": 0.2253,
+        "max": 0.7037
+      },
+      "sync_ms": {
+        "median": 0.1062,
+        "p95": 0.1695,
+        "max": 4.7328
+      },
+      "record_ms": {
+        "median": 0.037200000000000004,
+        "p95": 0.049800000000000004,
+        "max": 0.09230000000000001
+      },
+      "total_cpu_ms": {
+        "median": 0.2661,
+        "p95": 0.4565,
+        "max": 4.963800000000001
+      },
+      "batches": {
+        "median": 137.0,
+        "p95": 137,
+        "max": 137
+      },
+      "reused": {
+        "median": 128.0,
+        "p95": 128,
+        "max": 128
+      },
+      "uploaded_triangles": {
+        "median": 1244.0,
+        "p95": 1244,
+        "max": 1550
+      },
+      "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+    },
+    {
+      "run": 1,
+      "scenario": "idle-hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.0002,
+        "p95": 0.00030000000000000003,
+        "max": 0.0025
+      },
+      "sync_ms": {
+        "median": 0.0,
+        "p95": 0.0001,
+        "max": 0.0005
+      },
+      "record_ms": {
+        "median": 0.017400000000000002,
+        "p95": 0.023,
+        "max": 0.1514
+      },
+      "total_cpu_ms": {
+        "median": 0.0177,
+        "p95": 0.0234,
+        "max": 0.1519
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "uploaded_triangles": {
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      },
+      "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+    },
+    {
+      "run": 1,
+      "scenario": "hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.0631,
+        "p95": 0.0791,
+        "max": 0.34140000000000004
+      },
+      "sync_ms": {
+        "median": 0.0333,
+        "p95": 0.040600000000000004,
+        "max": 0.1728
+      },
+      "record_ms": {
+        "median": 0.0181,
+        "p95": 0.020900000000000002,
+        "max": 0.1236
+      },
+      "total_cpu_ms": {
+        "median": 0.11470000000000001,
+        "p95": 0.13970000000000002,
+        "max": 0.49900000000000005
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 56.0,
+        "p95": 56,
+        "max": 56
+      },
+      "uploaded_triangles": {
+        "median": 92.0,
+        "p95": 92,
+        "max": 94
+      },
+      "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+    },
+    {
+      "run": 1,
+      "scenario": "inventory",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.1252,
+        "p95": 0.26430000000000003,
+        "max": 0.7688
+      },
+      "sync_ms": {
+        "median": 0.1063,
+        "p95": 0.18080000000000002,
+        "max": 0.34650000000000003
+      },
+      "record_ms": {
+        "median": 0.04,
+        "p95": 0.0695,
+        "max": 0.24500000000000002
+      },
+      "total_cpu_ms": {
+        "median": 0.2754,
+        "p95": 0.5164,
+        "max": 1.1378000000000001
+      },
+      "batches": {
+        "median": 137.0,
+        "p95": 137,
+        "max": 137
+      },
+      "reused": {
+        "median": 128.0,
+        "p95": 128,
+        "max": 128
+      },
+      "uploaded_triangles": {
+        "median": 1244.0,
+        "p95": 1244,
+        "max": 1550
+      },
+      "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+    },
+    {
+      "run": 2,
+      "scenario": "idle-hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.00030000000000000003,
+        "p95": 0.00030000000000000003,
+        "max": 0.0162
+      },
+      "sync_ms": {
+        "median": 0.0,
+        "p95": 0.0001,
+        "max": 0.0073
+      },
+      "record_ms": {
+        "median": 0.0166,
+        "p95": 0.0333,
+        "max": 0.2061
+      },
+      "total_cpu_ms": {
+        "median": 0.016900000000000002,
+        "p95": 0.0338,
+        "max": 0.2064
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "uploaded_triangles": {
+        "median": 0.0,
+        "p95": 0,
+        "max": 0
+      },
+      "image_sha256": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d"
+    },
+    {
+      "run": 2,
+      "scenario": "hud",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.07060000000000001,
+        "p95": 0.0956,
+        "max": 0.2927
+      },
+      "sync_ms": {
+        "median": 0.0339,
+        "p95": 0.046900000000000004,
+        "max": 0.1313
+      },
+      "record_ms": {
+        "median": 0.0175,
+        "p95": 0.023,
+        "max": 0.09290000000000001
+      },
+      "total_cpu_ms": {
+        "median": 0.12229999999999999,
+        "p95": 0.1609,
+        "max": 0.3786
+      },
+      "batches": {
+        "median": 60.0,
+        "p95": 60,
+        "max": 60
+      },
+      "reused": {
+        "median": 56.0,
+        "p95": 56,
+        "max": 56
+      },
+      "uploaded_triangles": {
+        "median": 92.0,
+        "p95": 92,
+        "max": 94
+      },
+      "image_sha256": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117"
+    },
+    {
+      "run": 2,
+      "scenario": "inventory",
+      "unity": "6000.4.1f1",
+      "device": "NVIDIA GeForce RTX 5080",
+      "update_ms": {
+        "median": 0.1307,
+        "p95": 0.2661,
+        "max": 0.9470000000000001
+      },
+      "sync_ms": {
+        "median": 0.10605,
+        "p95": 0.18910000000000002,
+        "max": 0.5148
+      },
+      "record_ms": {
+        "median": 0.038400000000000004,
+        "p95": 0.0745,
+        "max": 0.2089
+      },
+      "total_cpu_ms": {
+        "median": 0.27885000000000004,
+        "p95": 0.5461,
+        "max": 1.3068000000000002
+      },
+      "batches": {
+        "median": 137.0,
+        "p95": 137,
+        "max": 137
+      },
+      "reused": {
+        "median": 128.0,
+        "p95": 128,
+        "max": 128
+      },
+      "uploaded_triangles": {
+        "median": 1244.0,
+        "p95": 1244,
+        "max": 1550
+      },
+      "image_sha256": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234"
+    }
+  ],
+  "sha256": {
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\0.log": "1f2c3564c31f6ea215b99f385089fcae498ab60d9b43cb3ee3629d25edeb72b3",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\1.log": "d57a0772964db67675327a0f7da8132c68a114dc7b11c4597b216f0248273ca0",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\2.log": "8df8110c4cf338a447852c1887c54100f7a8d91440d35ffae70fdf430acb408b",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\0\\hud.json": "05a921abf24a74e6ccd554b6f389ff19e75b7fe605191f26e2ce49d40567e042",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\0\\idle-hud.json": "5bfd805fd175d1dd344e9c058409c4e064645201c30a35c6afcf7d782a23bfe4",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\0\\inventory.json": "33957bc6e4cdf184864f45712b64961c46b47ac264ebb3d632e89bedaccb2e02",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\1\\hud.json": "f6a8142b00f15f061972d2799816a033b79ffe27d89e1ab2daae7f3fd8576f0e",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\1\\idle-hud.json": "5d9583d645ef20309f3c5b8e580e9845857cd88c647c199629f6f5ec7371b4f2",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\1\\inventory.json": "a208e2d9fa60204d8c04e87d5ea03912a6b9d1d4c6c39049d583ea623a7a9123",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\2\\hud.json": "33589fdde2237ad97271e6026c0136da648071b90ae249a9f5f59c5253ea7f79",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\2\\idle-hud.json": "31b8c72f4de9a2c24d4eddb165c6e34ffdc1cf97e49ce7c484bd57ba2f1e0762",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\2\\inventory.json": "ccfc2beec577e5282fc093dad49026d064d1f179d99e8243ae46d0ee50909855",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\0\\hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\0\\idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\0\\inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\1\\hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\1\\idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\1\\inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\2\\hud.png": "5371fea6f1bde7b8e061b842683e94047ae99778b7cce0a23d10aa20bf22e117",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\2\\idle-hud.png": "d9c26a55c19b47bb9bfd7c9e1f42ef13b222047f4dc963364874257d3ff8685d",
+    ".utmp\\render-audit-20261030\\unity-runtime-stages-repeated\\2\\inventory.png": "5780c986642aebe0f6e319f568fa674053735f6a3b9f363bdfb13b5d8a0af234",
+    "Packages\\com.wevaui\\Editor\\DevTools\\RuntimeRenderingBenchmark.cs": "bcc2fc0d80e94bbecdf4a6249083c21ee00896c7fdb6ed91df1ac94c98a34725",
+    "Tools\\performance\\run_unity_runtime_audit.py": "c2cdd9a27aebca018a0becdabb6ab92857edbd9d42cafd98b9c63b4920b898da"
+  }
+}
