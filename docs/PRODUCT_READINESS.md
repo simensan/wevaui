@@ -3,10 +3,16 @@
 The local Agentic audit branch adds explicit hidden CPU preparation through
 `html_prepare()`. Paired runtime checks show lower interactive opening cost
 by moving layout/glyph/paint work into loading; GPU first-use work remains.
-This is not yet an upstream integration or a new Unity/Godot API. See the
+This is not yet an upstream Agentic integration. See the
 [October 31 preparation receipt](verification/script-preparation-20261031.md).
 
-Updated October 30, 2026 · Integration verification through October 30.
+Unity 2.0 adds retained `Visible` and explicit `Prepare()` controls, with
+247 EditMode passes (two environment-gated inconclusive) and seven URP render
+passes. Godot's existing hidden manual-update workflow is verified on Windows
+and the rebuilt qualified Linux addon. See the
+[host preparation receipt](verification/unity-hidden-preparation-20261031.md).
+
+Updated October 31, 2026 · Latest full integration gate: October 30; scoped host verification: October 31.
 
 Scoped October 25 core/Agentic checks cover filtered downscaled icons and
 antialiased thin rounded borders; see the

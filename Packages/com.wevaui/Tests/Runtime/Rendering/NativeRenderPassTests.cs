@@ -78,6 +78,40 @@ namespace Weva.Tests.Rendering {
         }
         int captures;
 
+        [UnityTest]
+        public IEnumerator HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow() {
+            Assume.That(UrpFeatureStatus.UrpActive, "the project renders with URP");
+            var doc = NewDocument("prepared-doc", "<body><div id=panel></div></body>",
+                "html,body{margin:0;background:transparent}#panel{position:absolute;inset:0;background:red}");
+            var document = doc.Document;
+            int generation = doc.Generation;
+            try {
+                doc.Visible = false;
+                doc.Prepare();
+                for (int i = 0; i < SettleFrames; i++) yield return null;
+                Capture();
+                AssertColour(Band(0, Width), 0, 0, 0, "hidden prepared UI is absent");
+                ulong serial = document.DrawSerial;
+                doc.Visible = true;
+                Capture();
+                AssertColour(Band(0, Width), 1, 0, 0, "prepared UI appears");
+                Assert.That(document.DrawSerial, Is.EqualTo(serial));
+                doc.Visible = false;
+                doc.Query("#panel").SetAttribute("style", "background:blue");
+                doc.Prepare();
+                Capture();
+                AssertColour(Band(0, Width), 0, 0, 0, "changed prepared UI stays hidden");
+                doc.Visible = true;
+                Capture();
+                AssertColour(Band(0, Width), 0, 0, 1, "latest prepared data appears");
+                Assert.That(doc.Document, Is.SameAs(document));
+                Assert.That(doc.Generation, Is.EqualTo(generation));
+            } finally {
+                Object.Destroy(doc.gameObject);
+            }
+            yield return null;
+        }
+
         // The dominant colour of a column band, averaged over the full height:
         // orientation-independent, and a text line or a stray edge cannot flip it.
         Color Band(int x0, int x1) {

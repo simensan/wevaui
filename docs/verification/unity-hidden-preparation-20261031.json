@@ -1,0 +1,37 @@
+{
+  "package_version": "2.0.0",
+  "tests": {
+    "editmode": {
+      "total": "249",
+      "passed": "247",
+      "failed": "0",
+      "inconclusive": "2",
+      "duration": "30.4585877"
+    },
+    "native_subset": {
+      "Passed": 246,
+      "Failed": 0,
+      "Inconclusive": 2
+    },
+    "playmode": {
+      "total": "7",
+      "passed": "7",
+      "failed": "0",
+      "inconclusive": "0",
+      "duration": "2.7625583"
+    }
+  },
+  "artifacts": {
+    ".utmp\\render-audit-20261030\\unity-hidden-editmode-verified.xml": "bd5b9ce9bf7ffa8d7469c91ac10fe958585faaf8d21368e96dc215d012b91b84",
+    ".utmp\\render-audit-20261030\\unity-hidden-playmode-final.xml": "844aceeadb7a59891fe6df384a3e1edbcbd9b2d7c6114862b3b4a7041a30f7ff",
+    ".utmp\\render-audit-20261030\\hidden-prepare-godot-verified.log": "f12ef29dbd0b42c277fb12ea3fc7890d677c94f25dc80d70faac82539579b85d",
+    ".utmp\\render-audit-20261030\\hidden-prepare-godot-linux-verified.log": "7eb9023ae17f30b39fb0eb2dea4136d4c88b5644fcaf11be18108678753cc9a6",
+    ".utmp\\render-audit-20261030\\unity-hidden-renders-final\\HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-0.png": "77c469cf8bb2fa944d7fbd0ee29fd95353364ff205449abd5058aa521fbd58eb",
+    ".utmp\\render-audit-20261030\\unity-hidden-renders-final\\HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-1.png": "7a19c77169035a2e9c3c4f8b771a4fc0b8465fa1517ae5d3de11c3369f0d4e0f",
+    ".utmp\\render-audit-20261030\\unity-hidden-renders-final\\HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-2.png": "77c469cf8bb2fa944d7fbd0ee29fd95353364ff205449abd5058aa521fbd58eb",
+    ".utmp\\render-audit-20261030\\unity-hidden-renders-final\\HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow-3.png": "75e0aa28f0afb40e37e2b09e5c6de9b8d1ecbc61afb644b7d988db67153cca5a",
+    "Library/ScriptAssemblies/Weva.Runtime.dll": "56c49e1c4838d4dda7c1ac5d172f95675011189e124292223ce18b38b1cbd10b",
+    "hosts/godot/project/addons/weva/bin/libweva_godot.so": "4bdacb693240c2cf5104280b10056532dee491fb788e9b5ce28d784dbbc7f572",
+    "hosts/godot/project/addons/weva/bin/weva_godot.dll": "ed8627726953743cbc7a8564cf007cb437678ee5b9e9582d1396c47f0ac45754"
+  }
+}

@@ -52,8 +52,15 @@ replay the hidden interval. Explicit `update_document` and geometry queries
 still work for prewarming. `timing_tests.gd` pins direct/ancestor hiding,
 pending changes on show, and explicit hidden preparation.
 
-Unity uses a different lifecycle: disabling the component/GameObject stops its
-Update calls and `OnDisable` unregisters the paint source and releases the
-native document. `NativeControllerBindingTests.DictionaryBinding_SurvivesBindingWhileDisabled_AndReenable`
-pins binding restoration. This is not retained-document visibility parity;
-CSS visibility/display rules remain core-owned and unchanged.
+Unity `Visible=false` unregisters rendering and input, pauses automatic updates,
+and clears core focus/pointer gestures while retaining the document. `Prepare()`
+applies bindings and CPU paint explicitly without showing it. The controller
+tests `HiddenPreparation_RetainsDocumentAndUsesCurrentController` cover ordinary
+and versioned controllers; `HiddenPreparation_DoesNotDrawAndReusesTheDocumentOnShow`
+checks actual URP pixels. An activation that hides/reloads the UI remains
+consumed for that frame, preventing duplicate gameplay activation.
+
+Disabling the Unity component/GameObject still releases the native document.
+`NativeControllerBindingTests.DictionaryBinding_SurvivesBindingWhileDisabled_AndReenable`
+pins binding restoration. Godot Control visibility and Unity's explicit property
+are host lifecycle controls; CSS visibility/display remain core-owned and unchanged.

@@ -85,6 +85,47 @@ namespace Weva
         internal NativeDocumentRenderer Renderer => _renderer;
         public string LastError { get; private set; }
 
+        private bool _visible = true;
+        /// <summary>Whether this retained document draws and receives automatic input/updates. Hiding clears focus and pointer gestures; disabling the component still releases resources.</summary>
+        public bool Visible
+        {
+            get => _visible;
+            set
+            {
+                if (_visible == value) return;
+                _visible = value;
+                if (!value)
+                {
+                    InputConsumed = false;
+#if WEVA_INPUTSYSTEM
+                    _input?.Dispose();
+                    _input = null;
+#endif
+                    _doc?.ClearPointer();
+                    _doc?.SetFocus(WevaNative.WEVA_ELEMENT_NONE);
+                }
+#if WEVA_URP
+                if (value && isActiveAndEnabled && _doc != null) UIPaintSourceRegistry.Register(this);
+                else UIPaintSourceRegistry.Unregister(this);
+#endif
+            }
+        }
+
+        /// <summary>Synchronously prepares current bindings, layout, glyphs and CPU paint at zero elapsed time, including while hidden. Requires an enabled component; does not show it or upload GPU resources.</summary>
+        public void Prepare()
+        {
+            if (_doc == null) return;
+            if (_reloadPending)
+            {
+                _reloadPending = false;
+                Reload();
+            }
+            SyncSafeArea();
+            PollController();
+            if (_refreshPending) Refresh();
+            _doc?.Update(0, 0);
+        }
+
         /// <summary>Bumped whenever the tree is replaced (Reload, enable): an element handle from an earlier generation is stale.</summary>
         internal int Generation { get; private set; }
 
@@ -154,6 +195,10 @@ namespace Weva
             try
             {
                 Create();
+                // Creation already loaded the current serialized settings.
+                // An earlier OnValidate must not reload the same tree again
+                // on the first update/preparation after enabling.
+                _reloadPending = false;
             }
             catch (Exception ex)
             {
@@ -163,7 +208,7 @@ namespace Weva
                 return;
             }
 #if WEVA_URP
-            UIPaintSourceRegistry.Register(this);
+            if (_visible) UIPaintSourceRegistry.Register(this);
 #endif
         }
 
@@ -543,7 +588,7 @@ namespace Weva
         {
             get
             {
-                if (_input == null && _doc != null) CreateInputFeed();
+                if (_input == null && _doc != null && _visible) CreateInputFeed();
                 return _input;
             }
         }
@@ -569,14 +614,17 @@ namespace Weva
         // markup. Finish this frame only if it still belongs to the same tree.
         internal bool TickInput()
         {
-            if (_doc == null) return false;
+            if (_doc == null || !_visible) { InputConsumed = false; return false; }
             if (_input == null) CreateInputFeed();
             NativeInputFeed input = _input;
             NativeDocument document = _doc;
             int generation = Generation;
             input.Tick(_width, _height);
+            bool current = _visible && ReferenceEquals(_input, input) && ReferenceEquals(_doc, document) && Generation == generation;
+            // The input that triggered a hide/reload was still consumed by UI;
+            // do not also deliver that same activation to gameplay.
             InputConsumed = input.Consumed;
-            return ReferenceEquals(_input, input) && ReferenceEquals(_doc, document) && Generation == generation;
+            return current;
         }
 #else
         private void ApplyInputKnobs() { }
@@ -608,7 +656,7 @@ namespace Weva
 
         private void Update()
         {
-            if (_doc == null) return;
+            if (_doc == null || !_visible) return;
             try
             {
                 if (_reloadPending)
@@ -850,7 +898,7 @@ namespace Weva
 
         public void PrepareForRenderViewport(int width, int height)
         {
-            if (_doc == null || width <= 0 || height <= 0 || (width == _width && height == _height)) return;
+            if (_doc == null || !_visible || width <= 0 || height <= 0 || (width == _width && height == _height)) return;
             _width = width;
             _height = height;
             _doc.SetViewport(width, height);
@@ -860,7 +908,7 @@ namespace Weva
         // Explicit: the target type is the host's (internal), the class is not.
         void IUINativePaintSource.EmitNative(UnityEngine.Rendering.CommandBuffer cmd, int viewportWidth, int viewportHeight, in NativeRenderTarget target)
         {
-            if (_doc == null || _renderer == null || cmd == null) return;
+            if (_doc == null || !_visible || _renderer == null || cmd == null) return;
             _renderer.Sync(_doc);
             // A camera pass into the camera's colour buffer: the shader takes
             // the flip from _ProjectionParams.x and blends in linear space.
@@ -874,7 +922,7 @@ namespace Weva
         {
             get
             {
-                if (_doc == null || _renderer == null) return false;
+                if (_doc == null || !_visible || _renderer == null) return false;
                 _renderer.Sync(_doc);
                 return _renderer.BackdropDraws > 0;
             }

@@ -1,5 +1,11 @@
 # AI_REFERENCE.md — orientation for AI agents
 
+The [Unity retained preparation pass](docs/verification/unity-hidden-preparation-20261031.md)
+adds Visible/Prepare in package 2.0.0 and removes redundant enable-time reloads.
+Full EditMode passes 247 tests (Native 246), with two existing inconclusive;
+URP PlayMode passes 7/7. Godot hidden preparation passes 39 checks on Windows
+and rebuilt qualified Linux. No Unity timing speedup is claimed.
+
 The [scripted hidden preparation pass](docs/verification/script-preparation-20261031.md)
 adds native Agentic html_prepare on the local audit branch. Three paired runs
 reduce opening main CPU from 20.42 to 0.55 ms by moving about 20 ms to loading;

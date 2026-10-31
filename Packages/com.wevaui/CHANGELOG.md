@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (2.0 API surface)
+- `WevaDocument.Visible` hides rendering, automatic updates and input while
+  retaining the native document, bindings and render resources. Hiding clears
+  focus and pointer gestures. Disabling still releases resources.
+- `WevaDocument.Prepare()` applies bindings and prepares CPU layout, glyphs
+  and paint during loading without showing a hidden document. Work is
+  synchronous; first GPU upload and later content changes can still cost time.
+- Package version moves to 2.0.0 as required by the repository contract for
+  changes to the supported component surface. Existing default visibility and
+  component enable/disable behavior are unchanged.
+
 ### Changed
 - Documents open faster. A paint pass rasterizes its gradients, shadows and
   blurs side by side, and wide blurs are drawn at the resolution they need,

@@ -1,6 +1,6 @@
 {
   "name": "com.wevaui",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "displayName": "Weva",
   "description": "HTML/CSS UI for Unity: standard HTML and CSS, laid out and painted by the Weva core (C++, checked against Chrome), drawn through URP. Windows x64 plugin.",
   "unity": "6000.3",

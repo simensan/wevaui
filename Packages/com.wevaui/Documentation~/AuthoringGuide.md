@@ -447,7 +447,33 @@ Sans); a face of your own comes in through `@font-face` (`url()` or
 `vertical-lr` support orthogonal flow with rotated glyph geometry; full mixed
 upright/sideways orientation is not implemented. See [CSS Layout](css-layout.md).
 
-## 16. Where to look next
+## 16. Prepare a retained menu during loading
+
+Keep the component enabled and hide it through `Visible`, then prepare the
+current data during your loading phase:
+
+```csharp
+ui.Visible = false;
+ui.SetController(menuController);
+ui.Prepare();
+// Later, when the player opens the menu:
+ui.Visible = true;
+```
+
+`Prepare()` synchronously applies pending controller/binding changes and builds
+CPU layout, glyphs and paint data at zero elapsed time. It does not show the UI
+or upload GPU resources. Use the intended viewport and current data; changed
+content, fonts or dimensions can require more work later. This moves work into
+loading rather than eliminating it.
+
+While hidden, automatic updates and input stop. Hiding clears focus and pointer
+gestures, but retains the document, form values, controller and render resources.
+Call `Prepare()` again after loading-phase data changes if needed. Showing does
+not restore keyboard focus automatically; focus the desired element explicitly.
+Disabling the component or GameObject still releases the document. `Prepare()`
+does nothing when there is no enabled, initialized document.
+
+## 17. Where to look next
 
 * **Package [`README.md`](../README.md)** — setup and adoption limits.
 * **[Supported CSS](supported-css.md)** — the property matrix and the known

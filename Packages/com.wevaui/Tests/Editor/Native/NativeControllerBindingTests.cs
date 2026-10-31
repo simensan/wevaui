@@ -99,6 +99,59 @@ namespace Weva.Tests.EditorTests.Native
             Object.DestroyImmediate(_go);
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void HiddenPreparation_RetainsDocumentAndUsesCurrentController(bool versioned)
+        {
+            Controller controller = versioned ? new VersionedController() : new Controller();
+            _host.SetController(controller);
+            _host.Prepare();
+            var document = _host.Document;
+            int generation = _host.Generation;
+            Assert.That(_host.Query("#name").Focus(), Is.True);
+            _host.Visible = false;
+            Assert.That(_host.FocusedElement.IsValid, Is.False);
+#if WEVA_INPUTSYSTEM
+            Assert.That(_host.Input, Is.Null, "hidden documents must not register an input feed");
+            Assert.That(_host.TickInput(), Is.False);
+#endif
+            Assert.That(_host.InputConsumed, Is.False);
+            ulong serial = document.DrawSerial;
+            controller.PlayerName = "Prepared while hidden";
+            if (controller is VersionedController changed) changed.Bump();
+            _go.SendMessage("Update");
+            Assert.That(document.DrawSerial, Is.EqualTo(serial), "automatic hidden updates defer paint");
+            _host.Prepare();
+            Assert.That(_host.Visible, Is.False);
+            Assert.That(_host.Query("#title").Text, Is.EqualTo("Prepared while hidden"));
+            Assert.That(_host.Document, Is.SameAs(document));
+            Assert.That(_host.Generation, Is.EqualTo(generation));
+            serial = document.DrawSerial;
+            _host.Prepare();
+            Assert.That(document.DrawSerial, Is.EqualTo(serial), "idle preparation reuses paint");
+            _host.Visible = true;
+            _host.Prepare();
+            Assert.That(document.DrawSerial, Is.EqualTo(serial), "showing does not rebuild unchanged paint");
+            Assert.That(_host.Query("#name").Focus(), Is.True);
+            _host.enabled = false;
+            Assert.That(_host.Document, Is.Null, "disable still releases the document");
+        }
+
+        [Test]
+        public void EnablingConsumesThePendingInspectorReload()
+        {
+            _go.SetActive(false);
+            _host.InlineHtml = "<p id=current>Latest settings</p>";
+            typeof(WevaDocument).GetMethod("OnValidate",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).Invoke(_host, null);
+            _go.SetActive(true);
+            int generation = _host.Generation;
+            _host.Prepare();
+            _go.SendMessage("Update");
+            Assert.That(_host.Generation, Is.EqualTo(generation), "Create already applied the pending settings");
+            Assert.That(_host.Query("#current").Text, Is.EqualTo("Latest settings"));
+        }
+
         private string Text(string selector) => _host.Document.ElementText(_host.Document.Query(selector));
         private string Value(string selector) => _host.Document.ElementValue(_host.Document.Query(selector));
         private string Class(string selector) => _host.Document.ElementAttribute(_host.Document.Query(selector), "class");
