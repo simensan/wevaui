@@ -7,6 +7,8 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <chrono>
+#include <thread>
 
 #if defined(WEVA_STATIC_PLUGIN)
 // The standalone static consumer links only the archives in the artifact
@@ -45,11 +47,13 @@ int main(int argc, char** argv) {
     (void)argc;
     (void)argv;
 #define WEVA_SYMBOL(name) &name
+    {
 #else
     if (argc < 2) {
         std::fprintf(stderr, "usage: weva_core_load_test <path to weva_core plugin>\n");
         return 2;
     }
+    for (int iteration = 0; iteration < 2; ++iteration) {
     void* library = open_library(argv[1]);
     check(library != nullptr, "plugin loads through the dynamic loader");
     if (!library) return 1;
@@ -60,6 +64,8 @@ int main(int argc, char** argv) {
     auto create = WEVA_SYMBOL(weva_document_create);
     auto load_html = WEVA_SYMBOL(weva_document_load_html);
     auto set_css = WEVA_SYMBOL(weva_document_set_css);
+    auto set_reader = WEVA_SYMBOL(weva_document_set_asset_reader);
+    auto animating = WEVA_SYMBOL(weva_document_is_animating);
     auto update = WEVA_SYMBOL(weva_document_update);
     auto focus_next = WEVA_SYMBOL(weva_document_focus_next);
     auto bounds = WEVA_SYMBOL(weva_element_bounds);
@@ -102,7 +108,42 @@ int main(int argc, char** argv) {
     const auto* list = draws(doc, &count);
     check(list != nullptr && count > 0, "the document produces draws");
     std::printf("%zu draws\n", count);
+    // Real async image work must retire before native code is unloaded.
+    // The old process-global worker owner pinned Windows DLLs forever.
+    static const uint8_t png[] = {
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82,
+    0, 0, 0, 2, 0, 0, 0, 2, 8, 6, 0, 0, 0, 114, 182, 13,
+    36, 0, 0, 0, 24, 73, 68, 65, 84, 120, 156, 99, 224, 18, 145, 211,
+    56, 49, 45, 229, 63, 3, 8, 252, 255, 255, 191, 1, 0, 46, 215, 6,
+    163, 211, 42, 222, 53, 0, 0, 0, 0, 73, 69, 78, 68, 174, 66, 96,
+    130,
+};
+    int reads = 0;
+    const auto reader = [](void* user, const char*, uint8_t* buffer, size_t capacity) -> size_t {
+        ++*static_cast<int*>(user);
+        if (buffer && capacity >= sizeof(png)) std::memcpy(buffer, png, sizeof(png));
+        return sizeof(png);
+    };
+    check(set_reader(doc, reader, &reads) == WEVA_OK, "asset reader installed");
+    const std::string async_html = "<img decoding='async' src='icon.png' style='display:block;width:64px;height:64px'>";
+    check(load_html(doc, async_html.data(), async_html.size()) == WEVA_OK, "async image mounts");
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+    do {
+        check(update(doc, 0.016) == WEVA_OK, "async image updates");
+        if (reads >= 2 && !animating(doc)) break;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    } while (std::chrono::steady_clock::now() < deadline);
+    check(reads >= 2 && !animating(doc), "async read/decode settles");
     destroy(doc);
+#ifndef WEVA_STATIC_PLUGIN
+#if defined(_WIN32)
+    check(FreeLibrary(static_cast<HMODULE>(library)) != 0, "plugin release succeeds");
+    check(GetModuleHandleA(argv[1]) == nullptr, "async workers do not pin the unloaded module");
+#else
+    check(dlclose(library) == 0, "plugin closes after async decode");
+#endif
+#endif
+    }
     std::printf("weva_core plugin: %s\n", failures ? "FAILED" : "ok");
     return failures ? 1 : 0;
 }

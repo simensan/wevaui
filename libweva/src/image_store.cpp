@@ -1,5 +1,7 @@
 #include "weva/image_store.h"
+#include "image_decode_queue.h"
 
+#include <algorithm>
 #include <fstream>
 #include <atomic>
 #include <condition_variable>
@@ -10,72 +12,95 @@
 
 namespace weva {
 
-struct ImageDecodeState {
-    std::mutex mutex;
-    std::deque<std::pair<std::string, DecodedImage>> ready;
-};
+namespace detail {
+
+ImageDecoders::ImageDecoders(Decoder decoder, void* user) : decoder_(decoder), user_(user) {
+    for (auto& worker : workers_) worker = std::thread([this] { run(); });
+}
+
+ImageDecoders::~ImageDecoders() {
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        stopping_ = true;
+        jobs_.clear();
+    }
+    wake_.notify_all();
+    for (auto& worker : workers_) worker.join();
+}
+
+namespace { constexpr size_t kOutstandingPerGeneration = 4; }
+
+bool ImageDecoders::has_capacity(const std::shared_ptr<ImageDecodeState>& state) {
+    std::lock_guard<std::mutex> lock(state->mutex);
+    return state->outstanding < kOutstandingPerGeneration;
+}
+
+bool ImageDecoders::submit(const std::shared_ptr<ImageDecodeState>& state, std::string path,
+                           std::vector<uint8_t> bytes) {
+    {
+        std::lock_guard<std::mutex> lock(state->mutex);
+        if (state->outstanding >= kOutstandingPerGeneration) return false;
+        state->queued.push_back({std::move(path), std::move(bytes)});
+        ++state->outstanding;
+    }
+    {
+        std::lock_guard<std::mutex> lock(mutex_);
+        // Do not accumulate cancelled tickets while a large decode occupies
+        // both workers and screens continue to be replaced.
+        jobs_.erase(std::remove_if(jobs_.begin(), jobs_.end(),
+                                  [](const auto& ticket) { return ticket.expired(); }), jobs_.end());
+        jobs_.push_back(state);
+    }
+    wake_.notify_one();
+    return true;
+}
+
+void ImageDecoders::run() {
+    for (;;) {
+        std::weak_ptr<ImageDecodeState> ticket;
+        {
+            std::unique_lock<std::mutex> lock(mutex_);
+            wake_.wait(lock, [this] { return stopping_ || !jobs_.empty(); });
+            if (stopping_) return;
+            ticket = std::move(jobs_.front());
+            jobs_.pop_front();
+        }
+        ImageDecodeJob job;
+        {
+            const auto state = ticket.lock();
+            if (!state) continue;
+            std::lock_guard<std::mutex> lock(state->mutex);
+            job = std::move(state->queued.front());
+            state->queued.pop_front();
+        }
+        // No strong generation reference crosses the potentially long decode.
+        DecodedImage image = decoder_(job.bytes, user_);
+        if (const auto state = ticket.lock()) {
+            std::lock_guard<std::mutex> lock(state->mutex);
+            state->ready.emplace_back(std::move(job.path), std::move(image));
+        }
+    }
+}
+
+} // namespace detail
 
 namespace {
 
-// A bounded number of workers shared by documents. Jobs borrow a generation
-// weakly: clear/reload/destruction drops queued work without joining a decoder
-// on the render thread. No host callback or DOM state crosses this boundary.
-class ImageDecoders {
-public:
-    ImageDecoders() {
-        for (auto& worker : workers_) worker = std::thread([this] { run(); });
-    }
-    ~ImageDecoders() {
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            stopping_ = true;
-            jobs_.clear();
-        }
-        wake_.notify_all();
-        for (auto& worker : workers_) worker.join();
-    }
-    void submit(const std::shared_ptr<ImageDecodeState>& state, std::string path,
-                std::vector<uint8_t> bytes) {
-        {
-            std::lock_guard<std::mutex> lock(mutex_);
-            jobs_.push_back({state, std::move(path), std::move(bytes)});
-        }
-        wake_.notify_one();
-    }
-private:
-    struct Job {
-        std::weak_ptr<ImageDecodeState> state;
-        std::string path;
-        std::vector<uint8_t> bytes;
-    };
-    void run() {
-        for (;;) {
-            Job job;
-            {
-                std::unique_lock<std::mutex> lock(mutex_);
-                wake_.wait(lock, [this] { return stopping_ || !jobs_.empty(); });
-                if (stopping_) return;
-                job = std::move(jobs_.front());
-                jobs_.pop_front();
-            }
-            if (job.state.expired()) continue;
-            DecodedImage image = decode_image(job.bytes.data(), job.bytes.size());
-            prepare_image_sampling(image);
-            if (const auto state = job.state.lock()) {
-                std::lock_guard<std::mutex> lock(state->mutex);
-                state->ready.emplace_back(std::move(job.path), std::move(image));
-            }
-        }
-    }
-    std::thread workers_[2];
-    std::mutex mutex_;
-    std::condition_variable wake_;
-    std::deque<Job> jobs_;
-    bool stopping_ = false;
-};
+DecodedImage decode_prepared(const std::vector<uint8_t>& bytes, void*) {
+    DecodedImage image = decode_image(bytes.data(), bytes.size());
+    prepare_image_sampling(image);
+    return image;
+}
 
-ImageDecoders& image_decoders() {
-    static ImageDecoders workers;
+std::shared_ptr<detail::ImageDecoders> image_decoders() {
+    static std::mutex mutex;
+    static std::weak_ptr<detail::ImageDecoders> shared;
+    std::lock_guard<std::mutex> lock(mutex);
+    auto workers = shared.lock();
+    if (!workers) {
+        workers = std::make_shared<detail::ImageDecoders>(decode_prepared, nullptr);
+        shared = workers;
+    }
     return workers;
 }
 
@@ -113,7 +138,11 @@ bool read_file(const std::string& path, std::vector<uint8_t>* out) {
 
 } // namespace
 
-ImageStore::~ImageStore() = default;
+ImageStore::~ImageStore() {
+    // Cancel payloads before releasing the last worker-pool lease. The lease
+    // joins at most the running decodes here, outside the DLL loader lock.
+    async_.reset();
+}
 ImageStore::ImageStore(ImageStore&&) noexcept = default;
 ImageStore& ImageStore::operator=(ImageStore&&) noexcept = default;
 
@@ -132,15 +161,20 @@ bool ImageStore::poll() {
     // on one frame. Readers remain on their owning host thread.
     constexpr size_t batch = 2;
     for (size_t i = 0; i < batch && !requests_.empty(); ++i) {
-        std::string path = std::move(requests_.front());
-        requests_.pop_front();
+        // Backpressure before invoking the host reader: inactive/slow
+        // generations may retain at most four encoded, decoding or ready jobs.
+        if (!detail::ImageDecoders::has_capacity(async_)) break;
+        std::string path = requests_.front();
         std::vector<uint8_t> bytes;
         const bool read = reader_ ? reader_(path, &bytes) : read_file(path, &bytes);
-        if (read && !bytes.empty()) image_decoders().submit(async_, std::move(path), std::move(bytes));
-        else {
+        if (read && !bytes.empty()) {
+            if (!decoders_) decoders_ = image_decoders();
+            if (!decoders_->submit(async_, path, std::move(bytes))) break;
+        } else {
             pending_.erase(path);
             cache_.emplace(std::move(path), DecodedImage{});
         }
+        requests_.pop_front();
     }
     std::deque<std::pair<std::string, DecodedImage>> ready;
     {
@@ -148,6 +182,7 @@ bool ImageStore::poll() {
         for (size_t i = 0; i < batch && !async_->ready.empty(); ++i) {
             ready.push_back(std::move(async_->ready.front()));
             async_->ready.pop_front();
+            --async_->outstanding;
         }
     }
     bool changed = false;

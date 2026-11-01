@@ -2,7 +2,7 @@
 
 Weva is a **development preview** for HTML/CSS game UI in Unity and Godot.
 The latest integrated checks and remaining engineering debt are recorded in the
-[technical audit](verification/tech-debt-20261101.md). Older checkpoints and
+[integration receipt](verification/image-queue-20261101.md). Older checkpoints and
 measurements are retained in [readiness history](PRODUCT_READINESS_HISTORY.md)
 and [verification receipts](verification/README.md).
 
@@ -58,18 +58,18 @@ and browser-level visual/text fidelity remain incomplete.
   guarantee first GPU execution is complete. Historical speedups describe their
   own builds and workloads; see [measurement receipts](verification/README.md).
 - **Memory:** Unity callback/font retention fixes have regressions; Godot
-  passes short rendered lifecycle checks. A current locally built Agentic SDK
-  does not reproduce the older SDK's five-minute reload growth in matched
-  idle/reload controls with a cooldown. The historical allocation owner remains
-  unresolved; C++/driver attribution and long hardware soaks remain incomplete.
-  See [the current SDK follow-up](verification/agentic-memory-20261101.md) and
-  [preserved host memory evidence](verification/host-memory-20261101.md).
+  passes short rendered lifecycle checks. Shared-core async image cancellation,
+  backlog and native-module retention fixes have [regressions and a full gate](verification/image-queue-20261101.md).
+  A locally built Agentic SDK did not reproduce the older SDK's five-minute
+  reload growth in [matched controls with cooldown](verification/agentic-memory-20261101.md).
+  Its historical allocation owner remains unresolved; image-cache byte budgets,
+  complete C++/driver attribution and long hardware soaks remain incomplete.
 
 - **Deep markup:** content nested more than 64 elements deep is not rendered,
   so layout stays within a 1 MB thread stack.
 
 ## Evidence behind this status
 
-Use the [latest integration audit](verification/tech-debt-20261101.md) for exact
+Use the [latest integration audit](verification/image-queue-20261101.md) for exact
 build identities, suites and exceptions. These are local checkout results, not
 certification of every platform or a published stable release.

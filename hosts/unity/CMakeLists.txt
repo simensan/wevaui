@@ -110,10 +110,12 @@ add_custom_target(weva_core_metadata ALL COMMAND ${weva_metadata_command}
 # document end to end through the exported entry points alone. Only where it
 # can run: a cross-compiled plugin (Android, iOS) is verified on the device.
 if(NOT CMAKE_CROSSCOMPILING AND NOT WEVA_UNITY_STATIC)
+    find_package(Threads REQUIRED)
     add_executable(weva_core_load_test tests/load_test.cpp)
     target_include_directories(weva_core_load_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../libweva/include ${CMAKE_CURRENT_SOURCE_DIR}/src)
     if(NOT WIN32)
         target_link_libraries(weva_core_load_test PRIVATE ${CMAKE_DL_LIBS})
     endif()
+    target_link_libraries(weva_core_load_test PRIVATE Threads::Threads)
     add_dependencies(weva_core_load_test weva_core)
 endif()

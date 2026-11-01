@@ -12,6 +12,7 @@
 
 namespace weva {
 struct ImageDecodeState;
+namespace detail { class ImageDecoders; }
 
 // Decoded images, kept for the life of the document and looked up by the URL
 // the stylesheet wrote.
@@ -125,6 +126,9 @@ private:
     std::set<std::string> pending_;
     std::deque<std::string> requests_;
     std::shared_ptr<ImageDecodeState> async_;
+    // Keep the shared pool on live stores, never on a process-global owner.
+    // The final store joins active decodes before a host can unload core code.
+    std::shared_ptr<detail::ImageDecoders> decoders_;
 };
 
 } // namespace weva

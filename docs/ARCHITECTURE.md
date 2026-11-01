@@ -752,15 +752,22 @@ do not bump them. Identical images share a texture, while position, opacity and 
 remain per-draw work. End-of-pass retention and eviction use the existing
 texture ownership contract.
 
-`<img decoding="async">` opts into nonblocking PNG decoding. The asset reader
+`<img decoding="async">` opts into nonblocking PNG/JPEG decoding. The asset reader
 still runs on the caller thread; two shared workers receive owned encoded bytes
 and return owned pixels. `ImageStore::poll` publishes completions at the start
 of a document update and requests layout for changed intrinsic sizes and paint
 for the new pixels. `weva_document_is_animating` stays true until these jobs have
 been published, including for hosts that otherwise skip idle updates. Pending
-images are not reported as missing. Clear, reader/base-path replacement and
-destruction retire the generation without waiting on a decoder: queued jobs
-hold weak generation references and obsolete results cannot reach a new store.
+images are not reported as missing. Clear and reader/base-path replacement
+retire the generation without joining a decoder. The generation owns its queued
+encoded bytes and completed pixels; the global queue holds weak tickets, so
+cancellation releases payloads before busy workers can dequeue those tickets.
+Each generation admits at most four queued, decoding or unpublished jobs;
+capacity is checked before the host reader runs. Publication releases slots.
+Live image stores lease the shared worker pool. Destroying the final lease
+joins at most two active decodes before native code can be unloaded; an idle
+process-global owner no longer pins the Windows module. Other live stores keep
+their workers. This is a job-count bound, not a total cache/image byte budget.
 Each update admits at most two reads and publishes at most two decoded images,
 so file reads and first-use downsampling cannot accumulate into one opening
 frame. Workers also prepare summed 8×8 source blocks for large images. The
