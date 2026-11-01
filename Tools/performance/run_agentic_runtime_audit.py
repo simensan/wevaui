@@ -44,6 +44,18 @@ def check_lifecycle_state(current, mode, last_reload, last_progress, now):
     return last_reload, last_progress
 
 
+def memory_snapshot(call, name):
+    """Require an allocator observation, not merely a successful command."""
+    response = call(name, ['memory', 'snapshot', '--request-key', name])
+    artifacts = [a for a in response['artifacts'] if a['kind'] == 'memory_snapshot']
+    if len(artifacts) != 1:
+        raise RuntimeError('Memory snapshot must publish one immutable artifact')
+    snapshot = json.loads(Path(artifacts[0]['path']).read_text(encoding='utf-8'))
+    if snapshot.get('rust_allocations', {}).get('available') is not True:
+        raise RuntimeError('Memory ownership requires the diagnostic allocator')
+    return artifacts[0]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--project', type=Path, required=True)
@@ -58,6 +70,10 @@ def main():
                         help='Endpoints avoids runtime query allocations during process-memory sampling; progress verified at endpoints only')
     parser.add_argument('--lifecycle-warmup', type=float, default=0,
                         help='Seconds in the selected lifecycle mode before memory sampling')
+    parser.add_argument('--memory-snapshots', action='store_true',
+                        help='Collect native ownership artifacts at warm, active-end and cooldown boundaries')
+    parser.add_argument('--lifecycle-cooldown', type=float, default=0,
+                        help='Seconds to hold the same UI idle after the active interval, recording process memory')
     parser.add_argument('--gpu-memory', action='store_true',
                         help='Record Windows per-process GPU allocation counters during reloads')
     parser.add_argument('--skip-profiles', action='store_true',
@@ -71,6 +87,8 @@ def main():
         parser.error('reload-seconds must be between 0 and 86400')
     if not 0 <= args.lifecycle_warmup <= 3600:
         parser.error('lifecycle-warmup must be between 0 and 3600')
+    if not 0 <= args.lifecycle_cooldown <= 3600:
+        parser.error('lifecycle-cooldown must be between 0 and 3600')
     if args.lifecycle_observation == 'endpoints' and args.reload_seconds <= 0:
         parser.error('endpoints requires a positive lifecycle duration')
     if args.gpu_memory and os.name != 'nt':
@@ -186,6 +204,9 @@ def main():
                 controls('reload-start', {'keys': ['Num6' if args.lifecycle_mode == 'reload' else 'Num5'], 'pointer': [20, 20]})
                 if args.lifecycle_warmup:
                     time.sleep(args.lifecycle_warmup)
+                ownership = {}
+                if args.memory_snapshots:
+                    ownership['warm'] = memory_snapshot(call, prefix + '-memory-warm')
                 memory_before = process.memory_info()._asdict()
                 started = time.monotonic()
                 deadline = started + args.reload_seconds + 30
@@ -220,8 +241,26 @@ def main():
                 check_lifecycle_state(endpoint, args.lifecycle_mode, last_reload, last_progress, time.monotonic())
                 if args.lifecycle_mode == 'reload' and endpoint['audit_reloads'] < actions['audit_reloads'] + 100:
                     raise RuntimeError('Lifecycle endpoint did not reach 100 reloads')
+                if args.memory_snapshots:
+                    ownership['active_end'] = memory_snapshot(call, prefix + '-memory-active-end')
                 controls('reload-stop', {'keys': ['Num5']})
                 settled = state('reload-final')
+                cooldown_samples = []
+                cooldown_started = time.monotonic()
+                if args.lifecycle_cooldown:
+                    while True:
+                        cooldown_elapsed = time.monotonic() - cooldown_started
+                        cooldown_samples.append(dict(elapsed_seconds=cooldown_elapsed,
+                            memory=process.memory_info()._asdict()))
+                        (output / f'{prefix}-cooldown-memory.json').write_text(
+                            json.dumps(cooldown_samples, indent=2), encoding='utf-8')
+                        if cooldown_elapsed >= args.lifecycle_cooldown:
+                            break
+                        time.sleep(min(5, args.lifecycle_cooldown - cooldown_elapsed))
+                    cooled = state('cooldown-final')
+                    check_lifecycle_state(cooled, 'idle', settled['audit_reloads'], 0, time.monotonic())
+                if args.memory_snapshots:
+                    ownership['cooldown_end'] = memory_snapshot(call, prefix + '-memory-cooldown-end')
                 controls('after-reload-click', {'pointer': satchel_point(307, 295), 'buttons': [True, False, False]})
                 final = state('final')
                 if final['audit_clicks'] != settled['audit_clicks'] + 1 or final['audit_selected'] != 1:
@@ -231,6 +270,8 @@ def main():
                     reload_seconds=elapsed, lifecycle_mode=args.lifecycle_mode,
                     lifecycle_observation=args.lifecycle_observation, lifecycle_endpoint=endpoint,
                     lifecycle_warmup=args.lifecycle_warmup, memory_samples=len(samples),
+                    lifecycle_cooldown=args.lifecycle_cooldown, cooldown_samples=len(cooldown_samples),
+                    ownership_snapshots=ownership,
                     capture_artifacts=capture['artifacts'], launch=launch['data']['session']))
                 (output / 'lifecycle.json').write_text(json.dumps(lifecycle, indent=2), encoding='utf-8')
                 print(prefix, 'five modes, clicks, actions and', args.lifecycle_mode, 'lifecycle passed',

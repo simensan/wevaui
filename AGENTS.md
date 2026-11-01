@@ -102,9 +102,11 @@ Per chunk, the local recipe is:
 Current evidence is indexed by the [latest integration audit](docs/verification/tech-debt-20261101.md).
 Latest verified checkpoint: GCC 18 suites / 809,530 main checks; Clang
 ASan/UBSan 20 suites / 809,524 checks; 341 Chrome layouts within 1.5 px;
-69 Chrome behavior scripts pass plus one known IME exception. Tooling: 87 pass
-on Linux, 78 pass plus nine skips on Windows. Unity: 259 EditMode passes plus
+69 Chrome behavior scripts pass plus one known IME exception. Tooling: 90 pass
+on Linux, 81 pass plus nine skips on Windows. Unity: 259 EditMode passes plus
 two inconclusive, Mono player 7/7. See the audit for scope and build identities.
+The [Agentic memory follow-up](docs/verification/agentic-memory-20261101.md)
+records the newer tooling checks and current-SDK lifecycle measurements.
 
 The qualified full gate uses the patched Linux Godot editor and templates, pinned
 Windows Chrome through WSL, and a private Xvfb display. See the

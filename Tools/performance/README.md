@@ -193,6 +193,26 @@ Agentic’s optional fifth authored argument is a JSON mutation sequence. Set
 [GPU/selection receipt](../../docs/verification/agentic-gpu-20261030.md) records
 actual hardware intervals and distinguishes them from changing-frame CPU cost.
 
+For rendered memory investigations, generate a 60-update/s survival project with
+`create_agentic_audit_project.py FIXTURES NEW_PROJECT --max-fps 60`, then run:
+
+```text
+run_agentic_runtime_audit.py --project PROJECT --output NEW_OUTPUT --engine current=SDK --rounds 1 --skip-profiles --reload-seconds 300 --lifecycle-warmup 30 --lifecycle-observation endpoints --memory-snapshots --lifecycle-cooldown 60
+```
+
+Repeat with `--lifecycle-mode idle` as the control. The opt-in ownership snapshots
+require an Agentic SDK with `memory snapshot` and its diagnostic allocator. They
+are taken after warmup, at the active endpoint and after the idle cooldown;
+their artifact references are saved in `lifecycle.json`. Process counters are
+sampled separately during the active interval and cooldown. Cooldown keeps the
+inventory loaded, verifies that reloads stop, and checks interaction afterward.
+It observes resource retirement without forcing cache eviction or GPU completion.
+Endpoint mode avoids repeated runtime queries during each measurement window;
+the boundary snapshots still have diagnostic overhead. Allocator live bytes,
+process-private commit and GPU allocations are different metrics; do not add
+them or call process growth alone a proved leak. The runner owns and stops only
+its launched sessions and never retargets a game's configured SDK.
+
 ## Unity full inventory CPU workload
 
 Run `run_unity_runtime_audit.py --unity EDITOR --project REPO --fixtures FIXTURES

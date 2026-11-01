@@ -1,0 +1,905 @@
+{
+  "schema": 1,
+  "date": "2026-11-01",
+  "verdict": "Historical-sized process growth not reproduced in current identified local SDK; no runtime allocation defect proved; complete attribution remains open",
+  "weva": {
+    "weva_revision": "d9d32caecab4bc5f7929df0236fec8fe0c48cc38",
+    "core_build_paths": [
+      "CMakeLists.txt",
+      "libweva/CMakeLists.txt",
+      "libweva/include",
+      "libweva/src",
+      "third_party"
+    ],
+    "core_build_inputs_sha256": "a299e5186ffa404113617837d70403644118daa2c27ee2c185e90d3e5f987dd8",
+    "native_inputs_dirty": false
+  },
+  "agentic": {
+    "source_commit": "a8bab554e77ad5177ea03ceccb92083d2ce2e728",
+    "sdk_key": "36a5c06a91b3dfb8f401e26f5ac09f447107fce62ed943c530c151de90470c2c",
+    "sdk_manifest": {
+      "path": ".utmp\\agentic-memory-20261101\\sdk\\36a5c06a91b3dfb8f401e26f5ac09f447107fce62ed943c530c151de90470c2c\\sdk.json",
+      "sha256": "b0fcdf0e172e36573e4cf6aaa1a18a8e4de7f014829d3c0e53d549d217a3a816",
+      "bytes": 12899
+    },
+    "runtime_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
+    "cli_sha256": "ab055d17e269a7d129166e21557caa0f7c6cdd36cd7f653759ea779b63cc7a78",
+    "headless_sha256": "912f4a70ac60dab7dcfb81aad632b5e397b52c6ce91a8bf17f67732f89da4548",
+    "coherent": true,
+    "profile": "fast",
+    "build_context": {
+      "environment": {
+        "WEVA_SOURCE_DIR": "C:/Users/simen/Documents/GitHub/unityui"
+      },
+      "config_sha256": [
+        "1f1588efdf674fbda217407cafc7ad049d8ba84b4ca8dccf4e9787fd360ee019",
+        "ae8737a4d5ee525077ff57c30826d53b7e2ab5ff6625e8b9b37441e6617ecf54"
+      ],
+      "cargo": "cargo 1.99.1 (5f94df478 2026-08-27)",
+      "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: x86_64-pc-windows-msvc\nrelease: 1.99.1\nLLVM version: 23.1.1",
+      "schema_version": 3
+    },
+    "default_sdk_pin_changed": false,
+    "runtime_source_changed_by_this_pass": false
+  },
+  "method": {
+    "viewport": [
+      1280,
+      720
+    ],
+    "world_cubes": 240,
+    "foreground_background_fps_cap": 60,
+    "warmup_seconds": 30,
+    "active_seconds": 300,
+    "cooldown_seconds": 60,
+    "execution": "idle and reload in separate fresh concurrent rendered processes; other workspace activity allowed",
+    "active_observation": "process counters every 5 seconds; script globals queried once at start and checked at endpoint",
+    "ownership_observations": [
+      "warm",
+      "active_end",
+      "cooldown_end"
+    ],
+    "cooldown": "inventory remains loaded; reload count verified unchanged before post-soak click",
+    "no_performance_comparison": true
+  },
+  "results": {
+    "idle": {
+      "active_seconds": 300.1363770000171,
+      "cooldown_seconds": 60.00105459999759,
+      "process_samples": 61,
+      "cooldown_samples": 13,
+      "runtime_global_queries_during_samples": 1,
+      "reloads": 0.0,
+      "ticks": 18009.0,
+      "private_start_bytes": 872730624,
+      "private_end_bytes": 870580224,
+      "private_delta_bytes": -2150400,
+      "private_range_after_120_seconds_bytes": [
+        866275328,
+        870580224
+      ],
+      "cooldown_private_start_bytes": 874455040,
+      "cooldown_private_end_bytes": 875220992,
+      "rust_live_requested_delta_active_bytes": 150187,
+      "rust_live_requested_delta_cooldown_bytes": 236930,
+      "rust_owner_deltas_active_bytes": {
+        "script-host": 0,
+        "audio": 0,
+        "startup": 68705,
+        "ui": 0,
+        "script-runtime": 0,
+        "physics": 0,
+        "vulkan-host": 0,
+        "shader-pipelines": 0,
+        "asset-import": 0,
+        "gameplay": 0,
+        "renderer": 2153,
+        "unscoped": 79329,
+        "resource-reload": 0,
+        "diagnostics": 0,
+        "render-assets": 0,
+        "native-jobs": 0,
+        "native-cache": 0,
+        "shader-modules": 0,
+        "script-compile": 0
+      },
+      "rust_owner_deltas_cooldown_bytes": {
+        "script-host": 0,
+        "audio": 0,
+        "startup": 142306,
+        "ui": 0,
+        "script-runtime": 0,
+        "physics": 0,
+        "vulkan-host": 0,
+        "shader-pipelines": 0,
+        "asset-import": 0,
+        "gameplay": 1063,
+        "renderer": 7164,
+        "unscoped": 86397,
+        "resource-reload": 0,
+        "diagnostics": 0,
+        "render-assets": 0,
+        "native-jobs": 0,
+        "native-cache": 0,
+        "shader-modules": 0,
+        "script-compile": 0
+      },
+      "system_heap_active_delta_bytes": {
+        "allocated_bytes": 14706,
+        "committed_bytes": 4096,
+        "reserved_bytes": 0,
+        "committed_not_allocated_bytes": -10610
+      },
+      "system_heap_cooldown_delta_bytes": {
+        "allocated_bytes": 384292,
+        "committed_bytes": 4096,
+        "reserved_bytes": 0,
+        "committed_not_allocated_bytes": -380196
+      },
+      "interaction_and_cleanup_passed": true,
+      "snapshots": {
+        "warm": {
+          "artifact": {
+            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e87ad86627a8-73.json",
+            "sha256": "4eb740423413380a4f304108e4f1190f5448392d553e2e16b7b5d654110ee419",
+            "bytes": 39226
+          },
+          "identity": {
+            "session_id": "932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2",
+            "pid": 50464,
+            "process_birth": 134380062535340159,
+            "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
+            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "tick": 1981,
+            "unix_ms": 1793532690937
+          },
+          "rust_live_requested_bytes": 34045921,
+          "rust_live_backing_bytes": 35185848,
+          "process": {
+            "resident_bytes": 381411328,
+            "private_commit_bytes": 871510016,
+            "virtual_bytes": null,
+            "source": "GetProcessMemoryInfo; working set and private commit are separate views",
+            "error": null
+          },
+          "default_heap": {
+            "available": true,
+            "source": "Windows HeapSummary(GetProcessHeap)",
+            "allocated_bytes": 68329631,
+            "committed_bytes": 80875520,
+            "reserved_bytes": 93491200,
+            "committed_not_allocated_bytes": 12545889,
+            "scope": "default process heap, including Rust System and foreign users of this heap; excludes other heaps, direct virtual/GPU mappings; committed-not-allocated includes free capacity and heap overhead, not exact resident bytes"
+          },
+          "guest_linear_memory_bytes": 1048576,
+          "wasm_sha256": "537e18b5d85cbbf1b25a05990ee54c843fe687a855e8a68ddc1ad0168fbdf88f",
+          "vulkan_shader_ir": {
+            "enabled": true,
+            "live_modules": 52,
+            "compressed_bytes": 433449,
+            "serialized_bytes": 754019,
+            "restores": 115,
+            "skipped_modules": 0
+          },
+          "vulkan_host_allocations": {
+            "enabled": true,
+            "requested_bytes_by_scope": [
+              0,
+              970776,
+              0,
+              0,
+              0,
+              0
+            ],
+            "allocations_by_scope": [
+              0,
+              125,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_bytes_by_scope": [
+              0,
+              971832,
+              0,
+              0,
+              0,
+              0
+            ],
+            "scopes": [
+              "command",
+              "object",
+              "cache",
+              "device",
+              "instance",
+              "unknown"
+            ],
+            "coverage": "Vulkan shader modules, pipelines, pipeline layouts and caches; excludes driver-global heaps, device memory, imported resources and other Vulkan object classes"
+          },
+          "native_script_libraries": 0
+        },
+        "active_end": {
+          "artifact": {
+            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e8c0c36d1aa0-84.json",
+            "sha256": "b1a733937808f59dc4f18f5a7ff4a9a8861716810914106d5c1d1c5e540e3f08",
+            "bytes": 39248
+          },
+          "identity": {
+            "session_id": "932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2",
+            "pid": 50464,
+            "process_birth": 134380062535340159,
+            "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
+            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "tick": 19998,
+            "unix_ms": 1793532991233
+          },
+          "rust_live_requested_bytes": 34196108,
+          "rust_live_backing_bytes": 35340056,
+          "process": {
+            "resident_bytes": 388939776,
+            "private_commit_bytes": 870633472,
+            "virtual_bytes": null,
+            "source": "GetProcessMemoryInfo; working set and private commit are separate views",
+            "error": null
+          },
+          "default_heap": {
+            "available": true,
+            "source": "Windows HeapSummary(GetProcessHeap)",
+            "allocated_bytes": 68344337,
+            "committed_bytes": 80879616,
+            "reserved_bytes": 93491200,
+            "committed_not_allocated_bytes": 12535279,
+            "scope": "default process heap, including Rust System and foreign users of this heap; excludes other heaps, direct virtual/GPU mappings; committed-not-allocated includes free capacity and heap overhead, not exact resident bytes"
+          },
+          "guest_linear_memory_bytes": 1048576,
+          "wasm_sha256": "537e18b5d85cbbf1b25a05990ee54c843fe687a855e8a68ddc1ad0168fbdf88f",
+          "vulkan_shader_ir": {
+            "enabled": true,
+            "live_modules": 52,
+            "compressed_bytes": 433449,
+            "serialized_bytes": 754019,
+            "restores": 115,
+            "skipped_modules": 0
+          },
+          "vulkan_host_allocations": {
+            "enabled": true,
+            "requested_bytes_by_scope": [
+              0,
+              970776,
+              0,
+              0,
+              0,
+              0
+            ],
+            "allocations_by_scope": [
+              0,
+              125,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_bytes_by_scope": [
+              0,
+              971832,
+              0,
+              0,
+              0,
+              0
+            ],
+            "scopes": [
+              "command",
+              "object",
+              "cache",
+              "device",
+              "instance",
+              "unknown"
+            ],
+            "coverage": "Vulkan shader modules, pipelines, pipeline layouts and caches; excludes driver-global heaps, device memory, imported resources and other Vulkan object classes"
+          },
+          "native_script_libraries": 0
+        },
+        "cooldown_end": {
+          "artifact": {
+            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e8ced168fe68-98.json",
+            "sha256": "906e561c01a31c89e53a96094be0c0841b42c1df2aa4e553e68b09c9a8c1e3aa",
+            "bytes": 39238
+          },
+          "identity": {
+            "session_id": "932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2",
+            "pid": 50464,
+            "process_birth": 134380062535340159,
+            "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
+            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "tick": 23619,
+            "unix_ms": 1793533051597
+          },
+          "rust_live_requested_bytes": 34282851,
+          "rust_live_backing_bytes": 35431344,
+          "process": {
+            "resident_bytes": 392253440,
+            "private_commit_bytes": 875274240,
+            "virtual_bytes": null,
+            "source": "GetProcessMemoryInfo; working set and private commit are separate views",
+            "error": null
+          },
+          "default_heap": {
+            "available": true,
+            "source": "Windows HeapSummary(GetProcessHeap)",
+            "allocated_bytes": 68713923,
+            "committed_bytes": 80879616,
+            "reserved_bytes": 93491200,
+            "committed_not_allocated_bytes": 12165693,
+            "scope": "default process heap, including Rust System and foreign users of this heap; excludes other heaps, direct virtual/GPU mappings; committed-not-allocated includes free capacity and heap overhead, not exact resident bytes"
+          },
+          "guest_linear_memory_bytes": 1048576,
+          "wasm_sha256": "537e18b5d85cbbf1b25a05990ee54c843fe687a855e8a68ddc1ad0168fbdf88f",
+          "vulkan_shader_ir": {
+            "enabled": true,
+            "live_modules": 52,
+            "compressed_bytes": 433449,
+            "serialized_bytes": 754019,
+            "restores": 115,
+            "skipped_modules": 0
+          },
+          "vulkan_host_allocations": {
+            "enabled": true,
+            "requested_bytes_by_scope": [
+              0,
+              970776,
+              0,
+              0,
+              0,
+              0
+            ],
+            "allocations_by_scope": [
+              0,
+              125,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_bytes_by_scope": [
+              0,
+              971832,
+              0,
+              0,
+              0,
+              0
+            ],
+            "scopes": [
+              "command",
+              "object",
+              "cache",
+              "device",
+              "instance",
+              "unknown"
+            ],
+            "coverage": "Vulkan shader modules, pipelines, pipeline layouts and caches; excludes driver-global heaps, device memory, imported resources and other Vulkan object classes"
+          },
+          "native_script_libraries": 0
+        }
+      },
+      "selected_capture": {
+        "kind": "image",
+        "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\captures\\50464-18e3e873c0ffa348-56\\frame.png",
+        "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
+      }
+    },
+    "reload": {
+      "active_seconds": 300.1737529000384,
+      "cooldown_seconds": 60.000948199944105,
+      "process_samples": 61,
+      "cooldown_samples": 13,
+      "runtime_global_queries_during_samples": 1,
+      "reloads": 1801.0,
+      "ticks": 18009.0,
+      "private_start_bytes": 872759296,
+      "private_end_bytes": 870322176,
+      "private_delta_bytes": -2437120,
+      "private_range_after_120_seconds_bytes": [
+        866078720,
+        870322176
+      ],
+      "cooldown_private_start_bytes": 870715392,
+      "cooldown_private_end_bytes": 870785024,
+      "rust_live_requested_delta_active_bytes": 707110,
+      "rust_live_requested_delta_cooldown_bytes": 224828,
+      "rust_owner_deltas_active_bytes": {
+        "script-host": 0,
+        "audio": 0,
+        "startup": 626641,
+        "ui": 0,
+        "script-runtime": 0,
+        "physics": 0,
+        "vulkan-host": 0,
+        "shader-pipelines": 0,
+        "asset-import": 0,
+        "gameplay": 0,
+        "renderer": 2788,
+        "unscoped": 77681,
+        "resource-reload": 0,
+        "diagnostics": 0,
+        "render-assets": 0,
+        "native-jobs": 0,
+        "native-cache": 0,
+        "shader-modules": 0,
+        "script-compile": 0
+      },
+      "rust_owner_deltas_cooldown_bytes": {
+        "script-host": 0,
+        "audio": 0,
+        "startup": 141508,
+        "ui": 0,
+        "script-runtime": 0,
+        "physics": 0,
+        "vulkan-host": 0,
+        "shader-pipelines": 0,
+        "asset-import": 0,
+        "gameplay": 1063,
+        "renderer": 2964,
+        "unscoped": 79293,
+        "resource-reload": 0,
+        "diagnostics": 0,
+        "render-assets": 0,
+        "native-jobs": 0,
+        "native-cache": 0,
+        "shader-modules": 0,
+        "script-compile": 0
+      },
+      "system_heap_active_delta_bytes": {
+        "allocated_bytes": 549517,
+        "committed_bytes": 4096,
+        "reserved_bytes": 0,
+        "committed_not_allocated_bytes": -545421
+      },
+      "system_heap_cooldown_delta_bytes": {
+        "allocated_bytes": 273684,
+        "committed_bytes": 4096,
+        "reserved_bytes": 0,
+        "committed_not_allocated_bytes": -269588
+      },
+      "interaction_and_cleanup_passed": true,
+      "snapshots": {
+        "warm": {
+          "artifact": {
+            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e87ad5b7a20c-73.json",
+            "sha256": "7ab7cccf8e95bef51527d96e5e2520c020bec86d7a462534e9080b1be93bea50",
+            "bytes": 39215
+          },
+          "identity": {
+            "session_id": "76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982",
+            "pid": 22176,
+            "process_birth": 134380062535409941,
+            "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
+            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "tick": 1983,
+            "unix_ms": 1793532690892
+          },
+          "rust_live_requested_bytes": 34049377,
+          "rust_live_backing_bytes": 35189384,
+          "process": {
+            "resident_bytes": 380964864,
+            "private_commit_bytes": 872812544,
+            "virtual_bytes": null,
+            "source": "GetProcessMemoryInfo; working set and private commit are separate views",
+            "error": null
+          },
+          "default_heap": {
+            "available": true,
+            "source": "Windows HeapSummary(GetProcessHeap)",
+            "allocated_bytes": 64358973,
+            "committed_bytes": 78741504,
+            "reserved_bytes": 91369472,
+            "committed_not_allocated_bytes": 14382531,
+            "scope": "default process heap, including Rust System and foreign users of this heap; excludes other heaps, direct virtual/GPU mappings; committed-not-allocated includes free capacity and heap overhead, not exact resident bytes"
+          },
+          "guest_linear_memory_bytes": 1048576,
+          "wasm_sha256": "537e18b5d85cbbf1b25a05990ee54c843fe687a855e8a68ddc1ad0168fbdf88f",
+          "vulkan_shader_ir": {
+            "enabled": true,
+            "live_modules": 52,
+            "compressed_bytes": 433449,
+            "serialized_bytes": 754019,
+            "restores": 115,
+            "skipped_modules": 0
+          },
+          "vulkan_host_allocations": {
+            "enabled": true,
+            "requested_bytes_by_scope": [
+              0,
+              970776,
+              0,
+              0,
+              0,
+              0
+            ],
+            "allocations_by_scope": [
+              0,
+              125,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_bytes_by_scope": [
+              0,
+              971832,
+              0,
+              0,
+              0,
+              0
+            ],
+            "scopes": [
+              "command",
+              "object",
+              "cache",
+              "device",
+              "instance",
+              "unknown"
+            ],
+            "coverage": "Vulkan shader modules, pipelines, pipeline layouts and caches; excludes driver-global heaps, device memory, imported resources and other Vulkan object classes"
+          },
+          "native_script_libraries": 0
+        },
+        "active_end": {
+          "artifact": {
+            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e8c0c314c364-84.json",
+            "sha256": "562420548463835e3f85c28258e28d859089e4ce365757b38536fdc6b45edebd",
+            "bytes": 39238
+          },
+          "identity": {
+            "session_id": "76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982",
+            "pid": 22176,
+            "process_birth": 134380062535409941,
+            "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
+            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "tick": 20000,
+            "unix_ms": 1793532991227
+          },
+          "rust_live_requested_bytes": 34756487,
+          "rust_live_backing_bytes": 35900504,
+          "process": {
+            "resident_bytes": 387805184,
+            "private_commit_bytes": 870375424,
+            "virtual_bytes": null,
+            "source": "GetProcessMemoryInfo; working set and private commit are separate views",
+            "error": null
+          },
+          "default_heap": {
+            "available": true,
+            "source": "Windows HeapSummary(GetProcessHeap)",
+            "allocated_bytes": 64908490,
+            "committed_bytes": 78745600,
+            "reserved_bytes": 91369472,
+            "committed_not_allocated_bytes": 13837110,
+            "scope": "default process heap, including Rust System and foreign users of this heap; excludes other heaps, direct virtual/GPU mappings; committed-not-allocated includes free capacity and heap overhead, not exact resident bytes"
+          },
+          "guest_linear_memory_bytes": 1048576,
+          "wasm_sha256": "537e18b5d85cbbf1b25a05990ee54c843fe687a855e8a68ddc1ad0168fbdf88f",
+          "vulkan_shader_ir": {
+            "enabled": true,
+            "live_modules": 52,
+            "compressed_bytes": 433449,
+            "serialized_bytes": 754019,
+            "restores": 115,
+            "skipped_modules": 0
+          },
+          "vulkan_host_allocations": {
+            "enabled": true,
+            "requested_bytes_by_scope": [
+              0,
+              970776,
+              0,
+              0,
+              0,
+              0
+            ],
+            "allocations_by_scope": [
+              0,
+              125,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_bytes_by_scope": [
+              0,
+              971832,
+              0,
+              0,
+              0,
+              0
+            ],
+            "scopes": [
+              "command",
+              "object",
+              "cache",
+              "device",
+              "instance",
+              "unknown"
+            ],
+            "coverage": "Vulkan shader modules, pipelines, pipeline layouts and caches; excludes driver-global heaps, device memory, imported resources and other Vulkan object classes"
+          },
+          "native_script_libraries": 0
+        },
+        "cooldown_end": {
+          "artifact": {
+            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e8ced14e6440-98.json",
+            "sha256": "d09d4ec25c5780ebeb2c95d7e4a63e238f07daeafe814c2dfc4b9d547238441c",
+            "bytes": 39240
+          },
+          "identity": {
+            "session_id": "76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982",
+            "pid": 22176,
+            "process_birth": 134380062535409941,
+            "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
+            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "tick": 23621,
+            "unix_ms": 1793533051595
+          },
+          "rust_live_requested_bytes": 34274205,
+          "rust_live_backing_bytes": 35422600,
+          "process": {
+            "resident_bytes": 388276224,
+            "private_commit_bytes": 870838272,
+            "virtual_bytes": null,
+            "source": "GetProcessMemoryInfo; working set and private commit are separate views",
+            "error": null
+          },
+          "default_heap": {
+            "available": true,
+            "source": "Windows HeapSummary(GetProcessHeap)",
+            "allocated_bytes": 64632657,
+            "committed_bytes": 78745600,
+            "reserved_bytes": 91369472,
+            "committed_not_allocated_bytes": 14112943,
+            "scope": "default process heap, including Rust System and foreign users of this heap; excludes other heaps, direct virtual/GPU mappings; committed-not-allocated includes free capacity and heap overhead, not exact resident bytes"
+          },
+          "guest_linear_memory_bytes": 1048576,
+          "wasm_sha256": "537e18b5d85cbbf1b25a05990ee54c843fe687a855e8a68ddc1ad0168fbdf88f",
+          "vulkan_shader_ir": {
+            "enabled": true,
+            "live_modules": 52,
+            "compressed_bytes": 433449,
+            "serialized_bytes": 754019,
+            "restores": 115,
+            "skipped_modules": 0
+          },
+          "vulkan_host_allocations": {
+            "enabled": true,
+            "requested_bytes_by_scope": [
+              0,
+              970776,
+              0,
+              0,
+              0,
+              0
+            ],
+            "allocations_by_scope": [
+              0,
+              125,
+              0,
+              0,
+              0,
+              0
+            ],
+            "peak_bytes_by_scope": [
+              0,
+              971832,
+              0,
+              0,
+              0,
+              0
+            ],
+            "scopes": [
+              "command",
+              "object",
+              "cache",
+              "device",
+              "instance",
+              "unknown"
+            ],
+            "coverage": "Vulkan shader modules, pipelines, pipeline layouts and caches; excludes driver-global heaps, device memory, imported resources and other Vulkan object classes"
+          },
+          "native_script_libraries": 0
+        }
+      },
+      "selected_capture": {
+        "kind": "image",
+        "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\captures\\22176-18e3e873bd6c7d8c-56\\frame.png",
+        "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
+      }
+    }
+  },
+  "smoke": {
+    "passed": true,
+    "active_seconds": 20.081195300037507,
+    "cooldown_seconds": 3.0,
+    "snapshots": 3,
+    "stopped": true
+  },
+  "validation": {
+    "version_doctor_discovery": "passed",
+    "memory_diff": "both stage pairs in both controls passed",
+    "linux_tooling": {
+      "passed": 90,
+      "skipped": 0
+    },
+    "windows_tooling": {
+      "passed": 81,
+      "skipped": 9
+    },
+    "new_regressions": 3,
+    "render_visually_inspected": true,
+    "prior_inventory_capture_sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e",
+    "core_unity_godot_runtime_sources_changed": false,
+    "applicable_integration_receipt": "docs/verification/tech-debt-20261101.json"
+  },
+  "limits": [
+    "One five-minute interval plus one-minute cooldown per mode, no long hardware soak",
+    "Historical Agentic and core versions differ; no causal improvement attribution",
+    "Diagnostic allocator overhead; not production performance data",
+    "C++ allocations, most driver/resource heaps and direct virtual mappings remain outside Rust ledger",
+    "Default heap overlaps Rust and foreign allocations; no additive reconciliation with process commit",
+    "Startup/unscoped allocation origin does not identify every retaining subsystem",
+    "Known old SDK growth is not disproved",
+    "No global SDK retargeting, remote publication or macOS execution"
+  ],
+  "historical_comparison": {
+    "receipt": "docs/verification/host-memory-20261101.json",
+    "sdk_key": "db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248",
+    "reload_60fps_private_growth_mib": 78.2,
+    "owner_proved": false
+  },
+  "fixture_files_sha256": {
+    "assets/GameConfig.ron": "d4582d2ce41e63b5953068ca9e83f3d010f2e2345c8881b159f4ae4d661281ef",
+    "assets/Scenes/audit.scene.ron": "8ff111fd7e34a4ecc3653529df849952efb310f881ac9c0238dea269c63ec949",
+    "assets/Scripts/audit.ts": "ba470a3b75a074ce8ce178b80a55236eb8b6dae2686b90dbd23b15324afad835",
+    "assets/Ui/ammo.svg.png": "d4520a84fd2b3fb782fff62a8db6309dcc73a01341283e86a878c9db48a2b4c9",
+    "assets/Ui/bandage.svg.png": "21a0b64549df57ec47a4268213a6b6224c6b9fe8ba7397cba905f0c9e853f355",
+    "assets/Ui/beans.svg.png": "cba3c4dc9418d7f358d2fa08ee84fabd465d4833024e39fc1512fe0df7b12eb4",
+    "assets/Ui/bolt.svg.png": "b3377182cda4864d4e856bbafdc770cbdac253e87de7842346be45fc5b1e720a",
+    "assets/Ui/campfire.svg.png": "5e041c7efcd01ebf13145c4a77d4e28b661d01f8d0551c330218705abcaac848",
+    "assets/Ui/canteen.svg.png": "977f51dee7dff4001e396afe93a25d8111821b0b6317f4b15d9a9df79b276e86",
+    "assets/Ui/cloth.svg.png": "2df601d83f95c1afc1196b852b4a41000d73155fdef701af74af5fffd638858b",
+    "assets/Ui/drop.svg.png": "35271db3426bfd7e67188c7dc68684b1bf15508b12db0ccb6485c2afe9652424",
+    "assets/Ui/food.svg.png": "ca655dfac85122ab568f6bb76c5d609447f10a3c5ad9916764803f6fbeb97e34",
+    "assets/Ui/hatchet.svg.png": "02508c1e246f60fdab8b2af5afa217582cbd327198dd614de98148655408ed49",
+    "assets/Ui/heart.svg.png": "30d3a74ae6b0ec0d310a5603fe8071e0ad8538a5e25647980f4eb8bca65ab146",
+    "assets/Ui/knife.svg.png": "ceda161ae3ae746f80250b104a9146972159dfe6dfc75a06b6c65f512e1daa21",
+    "assets/Ui/main.css": "fc9ad3c79e0f6796ef18b0df349c38bd9fd51674fb91408123b2934aa3db4180",
+    "assets/Ui/main.html": "59495c719e69f51940cbf0c8c56787eca6125a13ef618174e75ca610d0afb6c7",
+    "assets/Ui/open-sans-semibold.ttf": "445ac29890c338bc293873ec8da462193755346499903133b1b4d6f16eb708ca",
+    "assets/Ui/revolver.svg.png": "730e040dd4dc0f0ab0e0919c29a9e00fe293fdf4b2d89544a3135c73b191c692",
+    "assets/Ui/rope.svg.png": "39d42acb1a7b28cc761e4c9c00512ea601627fb0674cf994d53bc6fe86fdf09d",
+    "assets/Ui/stone.svg.png": "64403858edb3564e0b034cf7da6d652286a5b55785f94547f56cf361f08f639b",
+    "assets/Ui/wood.svg.png": "cbb723754580f23cfdd5a47f1640058bee21c510d89f95e7cdb9d42aef95bd7d"
+  },
+  "source_files": [
+    {
+      "path": "Tools\\performance\\run_agentic_runtime_audit.py",
+      "sha256": "2bdd7032360234db1037b0db413b71a8f71f0ca0b7b607534356413bf2e2bad3",
+      "bytes": 17939
+    },
+    {
+      "path": "Tools\\tests\\test_agentic_lifecycle.py",
+      "sha256": "5464a0a5828e0c915f002ae6f246e680910cea068e42a0aae9434f1611a4acca",
+      "bytes": 4080
+    },
+    {
+      "path": "Tools\\performance\\README.md",
+      "sha256": "683c034d295ef211ea776731a15815034f9020c27e18e92e0426845de9eab96f",
+      "bytes": 14635
+    }
+  ],
+  "evidence": [
+    {
+      "path": ".utmp\\agentic-memory-20261101\\sdk-build.log",
+      "sha256": "b6e9e3213af619f7b2e10cbac9a10a8a9fba99675aa9c210e015abf05aa005ad",
+      "bytes": 24965
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\doctor.log",
+      "sha256": "894ab3f0d5247fe39f9d2567b156b158e66777c72385e092a9796c1f6a73d138",
+      "bytes": 17388
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\version.log",
+      "sha256": "f552945a9d1a0bf35c9bc35f163eaf81f864f1fb9282ad5d09a1f2ea804681f7",
+      "bytes": 767
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\lifecycle-tests.log",
+      "sha256": "044d37055ae3333bc752e0095c93b7bab2e3a698ac375a9379eda3a6dd3b3ccf",
+      "bytes": 1434
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\tooling-windows.log",
+      "sha256": "6ec44ca59ac178a0f1eec4d873c115501c5e20273c144df3b8049dec3a8af44c",
+      "bytes": 16664
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\tooling-linux.log",
+      "sha256": "a1c48c1881fc97e62fcff74146ef3b81bf5382cc3e5568a5d9dba21883f714f5",
+      "bytes": 15769
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\smoke.log",
+      "sha256": "a2729d047f351903f474ddbe0f360802331f8c5cacff453decd32f8e4e3b03b2",
+      "bytes": 86
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\smoke\\lifecycle.json",
+      "sha256": "d1430de99849b33ac2b0d1d95ba170d22f8145a717534524bc4c6838fdf9915a",
+      "bytes": 5436
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\core-identity.json",
+      "sha256": "04a2789dad65f9620f0d02fd7de8f065d9a44cf0c16fc51cff701878dc061981",
+      "bytes": 349
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\idle\\lifecycle.json",
+      "sha256": "476d5d8c9de94021c3665507da52252f36ee3504bceba1af2c0bc19cd27e737e",
+      "bytes": 5428
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\idle\\current-0-reload-memory.json",
+      "sha256": "f775cda19effb9c7e75378a5138158712a05fbfc1b7033b0ef20bae184ca879e",
+      "bytes": 40906
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\idle\\current-0-cooldown-memory.json",
+      "sha256": "6798e173bb23f56e1f96fe745c321b6891c5f0fb7c3aad4cb2f0d2e52567be1c",
+      "bytes": 5798
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\idle\\current-0-stop.json",
+      "sha256": "eff987c02b3ea0034a6ac7e68486e307b7e904884d6c5a363da7d2f74624a24a",
+      "bytes": 284
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\idle\\memory-diff-active_end.json",
+      "sha256": "ceb59c731f2171c8cef84ada7192dab89521527c168d556d251891dd7ac7d267",
+      "bytes": 4656
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\idle\\memory-diff-cooldown_end.json",
+      "sha256": "f82ab2d0c4adb4f1309b4fd476ca0c11c085e05d3f8fcb81a5c839345258ad21",
+      "bytes": 4669
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\reload\\lifecycle.json",
+      "sha256": "4c129838edb08659cf7d806ec15f342168505f6d28fd656398a3d13a972ceaaa",
+      "bytes": 5445
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\reload\\current-0-reload-memory.json",
+      "sha256": "f4fd09d04dccc6ab3b228950870af51b9c609355d637b8f41fd37903fbc0a4c3",
+      "bytes": 40958
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\reload\\current-0-cooldown-memory.json",
+      "sha256": "9ded23b7b45ccad9df619e9b4108fbc2141e18b64dd9df32ff1238afee379dd2",
+      "bytes": 5787
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\reload\\current-0-stop.json",
+      "sha256": "3c8581d4964f43b9ba870be7d9ae02127c67bb6662dc289533e3d6501ad649a8",
+      "bytes": 284
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\reload\\memory-diff-active_end.json",
+      "sha256": "4aabbf4e7d2d427a02f019938a7133e9b0f4e4360648eb6843e8969fff40282a",
+      "bytes": 4662
+    },
+    {
+      "path": ".utmp\\agentic-memory-20261101\\reload\\memory-diff-cooldown_end.json",
+      "sha256": "d9d64fed03dae5c82fbe97e6228183792c5ac8fd19495fa22b286c3c54282c20",
+      "bytes": 4668
+    }
+  ]
+}

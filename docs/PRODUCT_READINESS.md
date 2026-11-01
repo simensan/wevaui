@@ -57,10 +57,13 @@ and browser-level visual/text fidelity remain incomplete.
   universally. Explicit preparation can move work into loading; it does not
   guarantee first GPU execution is complete. Historical speedups describe their
   own builds and workloads; see [measurement receipts](verification/README.md).
-- **Memory:** Unity callback/font retention fixes have regressions. Godot's
-  short rendered lifecycle checks pass. A preserved Agentic SDK still grows
-  in controlled reload runs, including at 60 updates/s; allocation ownership
-  remains unresolved. See [the host memory audit](verification/host-memory-20261101.md).
+- **Memory:** Unity callback/font retention fixes have regressions; Godot
+  passes short rendered lifecycle checks. A current locally built Agentic SDK
+  does not reproduce the older SDK's five-minute reload growth in matched
+  idle/reload controls with a cooldown. The historical allocation owner remains
+  unresolved; C++/driver attribution and long hardware soaks remain incomplete.
+  See [the current SDK follow-up](verification/agentic-memory-20261101.md) and
+  [preserved host memory evidence](verification/host-memory-20261101.md).
 
 - **Deep markup:** content nested more than 64 elements deep is not rendered,
   so layout stays within a 1 MB thread stack.
