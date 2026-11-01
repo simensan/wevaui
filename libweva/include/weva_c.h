@@ -1322,7 +1322,8 @@ weva_status weva_document_set_base_path(weva_document_t doc, const char* path);
 size_t weva_document_resolve_asset_path(weva_document_t doc, const char* url,
                                        char* buffer, size_t capacity);
 
-/* Every asset the document asked for and could not load, newline-separated.
+/* Retained failed image URLs, newline-separated. Current image references
+ * remain diagnosable; the bounded cache can evict inactive failure history.
  *
  * Worth asking, because the failure mode is silence: a document whose images
  * do not load draws no backgrounds, no <img> and no border images, and looks

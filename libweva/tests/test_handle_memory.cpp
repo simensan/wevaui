@@ -9,39 +9,8 @@
 #include <cstring>
 #include <array>
 #include <cstddef>
-// Count requested live C++ storage, not allocator arenas/RSS. The header also
-// handles aligned allocations; counters are atomic for prepared raster workers.
-static std::atomic<size_t> live{0};
-struct Header { void* raw; size_t size; };
-static void* alloc(size_t size, size_t alignment) {
-    alignment = std::max(alignment, alignof(Header));
-    if (size > SIZE_MAX - alignment - sizeof(Header)) std::abort();
-    void* raw = std::malloc(size + alignment + sizeof(Header));
-    if (!raw) std::abort();
-    const auto address = (reinterpret_cast<uintptr_t>(raw) + sizeof(Header) + alignment - 1) & ~(alignment - 1);
-    auto* header = reinterpret_cast<Header*>(address) - 1;
-    header->raw = raw;
-    header->size = size;
-    live += size;
-    return reinterpret_cast<void*>(address);
-}
-void* operator new(size_t size) { return alloc(size, alignof(std::max_align_t)); }
-void* operator new[](size_t size) { return ::operator new(size); }
-void* operator new(size_t size, std::align_val_t alignment) { return alloc(size, static_cast<size_t>(alignment)); }
-void* operator new[](size_t size, std::align_val_t alignment) { return ::operator new(size, alignment); }
-void operator delete(void* pointer) noexcept {
-    if (!pointer) return;
-    auto* header = static_cast<Header*>(pointer) - 1;
-    live -= header->size;
-    std::free(header->raw);
-}
-void operator delete[](void* p) noexcept { ::operator delete(p); }
-void operator delete(void* p, size_t) noexcept { ::operator delete(p); }
-void operator delete[](void* p, size_t) noexcept { ::operator delete(p); }
-void operator delete(void* p, std::align_val_t) noexcept { ::operator delete(p); }
-void operator delete[](void* p, std::align_val_t) noexcept { ::operator delete(p); }
-void operator delete(void* p, size_t, std::align_val_t) noexcept { ::operator delete(p); }
-void operator delete[](void* p, size_t, std::align_val_t) noexcept { ::operator delete(p); }
+#include "tracked_allocations.h"
+using weva::test_allocations::live;
 
 static int checks = 0, failures = 0;
 static void check(bool passed, const char* what) {

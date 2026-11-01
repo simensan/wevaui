@@ -25,6 +25,7 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -1466,19 +1467,20 @@ template<class T> void append_texture_input(std::string& key, T value) {
     key.append(reinterpret_cast<const char*>(&value), sizeof(value));
 }
 
-void append_image_version(std::string& key, const PaintContext& paint) {
-    append_texture_input(key, paint.images ? paint.images->content_version() : uint64_t{0});
+void append_image_versions(std::string& key, const std::vector<BackgroundLayer>& layers) {
+    for (const auto& layer : layers) {
+        if (!layer.url.empty()) append_texture_input(key, layer.image ? layer.image->resource_version : uint64_t{0});
+    }
 }
 
 // <img> uses the same rasterizer as layered backgrounds, but its inputs come
 // from src/object-fit/object-position. Own the key; never retain image pointers.
 std::string replaced_image_key(const BackgroundLayer& layer, const Rect& area,
                               int tex_w, int tex_h, const LayoutContext& ctx,
-                              double font_size, const PaintContext& paint,
-                              const ColorFilter* filter) {
+                              double font_size, const ColorFilter* filter) {
     std::string key("img|");
     key.reserve(256 + layer.url.size());
-    append_texture_input(key, paint.images ? paint.images->generation_version() : uint64_t{0});
+    append_texture_input(key, layer.image ? layer.image->resource_version : uint64_t{0});
     const auto text = [&](std::string_view value) {
         append_texture_input(key, value.size());
         key.append(value);
@@ -2676,7 +2678,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     TextureHandle tex;
     if (paint.texture_cache && (style || replaced)) {
         if (replaced) {
-            key = replaced_image_key(*replaced, area, tex_w, tex_h, ctx, font_size, paint, filter);
+            key = replaced_image_key(*replaced, area, tex_w, tex_h, ctx, font_size, filter);
             // Keep the expensive high-resolution downsample in the bounded
             // pixel LRU when an unmounted screen releases its GPU textures.
             shared_key = key;
@@ -2684,7 +2686,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
             key = background_key(style, color, area.width, area.height, radii, font_size, 0, filter,
                                  &layers, tex_w, tex_h);
             shared_key = shared_background_key("layers", key, layers, ctx);
-            append_image_version(key, paint);
+            append_image_versions(key, layers);
         }
         tex = paint.texture_cache->get(key);
     }
@@ -2723,19 +2725,21 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
     return true;
 }
 
-// The image a `border-image-source` names, or null.
-const DecodedImage* border_image_source(const Box& b, const PaintContext& paint) {
-    if (!paint.images || !b.style) return nullptr;
-    std::string_view raw = trim_view(get(b.style, "border-image-source"));
-    if (raw.empty() || raw == "none") return nullptr;
+// One source parser for painting and the cache's live-reference sweep.
+std::string_view border_image_url(const ComputedStyle* style) {
+    std::string_view raw = trim_view(get(style, "border-image-source"));
+    if (raw.empty() || raw == "none") return {};
     if (raw.size() > 5 && raw.substr(0, 4) == "url(") {
         raw = trim_view(raw.substr(4, raw.size() - 5));
-        if (raw.size() >= 2 && (raw.front() == '"' || raw.front() == '\'')) {
+        if (raw.size() >= 2 && (raw.front() == '"' || raw.front() == char(39)))
             raw = raw.substr(1, raw.size() - 2);
-        }
     }
-    if (raw.empty()) return nullptr;
-    return paint.images->get(raw);
+    return raw;
+}
+
+const DecodedImage* border_image_source(const Box& b, const PaintContext& paint) {
+    if (!paint.images || !b.style) return nullptr;
+    return paint.images->get(border_image_url(b.style));
 }
 
 // What decides a border image's pixels, as a string.
@@ -2804,7 +2808,7 @@ bool paint_border_image(const Box& b, const Rect& border_box, const LayoutContex
     TextureHandle tex;
     if (paint.texture_cache) {
         key = border_image_key(b.style, border_box.width, border_box.height, bi);
-        append_image_version(key, paint);
+        append_texture_input(key, source->resource_version);
         tex = paint.texture_cache->get(key);
     }
     if (!tex) {
@@ -3579,7 +3583,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                 key = background_key(b.style, bg, border_box.width, border_box.height, radii, fs, blur, nullptr,
                                      &layers, tex_w, tex_h);
                 shared_key = shared_background_key("filter", key, layers, ctx);
-                append_image_version(key, paint);
+                append_image_versions(key, layers);
                 tex = paint.texture_cache->get(key);
             }
             if (!tex) {
@@ -4234,6 +4238,32 @@ BoxId paint_canvas(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
 }
 
 } // namespace
+
+void trim_image_cache(const BoxTree& tree, BoxId root, ImageStore& images) {
+    if (!images.needs_trim()) return;
+    std::set<std::string> live;
+    const auto retain = [&](std::string_view url) {
+        if (!url.empty()) live.insert(images.resolve(url));
+    };
+    for (BoxId id = root; tree.valid(id);) {
+        const Box& box = tree[id];
+        if (box.element && box.element->tag_name() == "img") retain(box.element->get_attribute("src"));
+        retain(box.list_marker_image);
+        if (box.style) {
+            retain(border_image_url(box.style));
+            const auto background = get(box.style, "background-image"), mask = get(box.style, "mask-image");
+            if ((!background.empty() && background != "none") || (!mask.empty() && mask != "none")) {
+                for (const auto& layer : resolve_background_layers(box.style, resolve_color(box.style, "color")))
+                    retain(layer.url);
+            }
+        }
+        if (box.first_child != kNoBox) { id = box.first_child; continue; }
+        while (id != root && tree[id].next_sibling == kNoBox) id = tree[id].parent;
+        if (id == root) break;
+        id = tree[id].next_sibling;
+    }
+    images.trim_unused(live);
+}
 
 double resolve_opacity(const ComputedStyle* style) {
     std::string_view raw = style ? style->get("opacity") : std::string_view();

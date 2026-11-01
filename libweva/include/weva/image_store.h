@@ -14,8 +14,8 @@ namespace weva {
 struct ImageDecodeState;
 namespace detail { class ImageDecoders; }
 
-// Decoded images, kept for the life of the document and looked up by the URL
-// the stylesheet wrote.
+// Decoded images, cached by resolved URL. The document trims unused sources
+// only after layout and all raster jobs release their borrowed pointers.
 //
 // The cache is the point rather than a nicety: a background-image is
 // rasterized into its box's texture on every layout that changes the box, and
@@ -55,6 +55,7 @@ public:
     // The caller then paints what it painted before this existed: nothing.
     // `decoding="async"` opts an <img> into deferred decoding. Readers stay
     // on the calling thread; workers own only bytes and decoded pixels.
+    // Returned pixels remain valid until clear() or an explicit trim boundary.
     const DecodedImage* get(std::string_view url, bool async = false);
     // A source swap between published images with equal natural dimensions
     // changes pixels, not layout inputs. Never starts a read or decode.
@@ -73,15 +74,29 @@ public:
     bool read(std::string_view url, std::vector<uint8_t>* out) const;
 
     void clear();
-    // Decoded inputs remain immutable until a reset. Versions are unique
-    // across stores too, so a paint cache can safely receive a different one.
+    // Reset/deferred-publication notification. Eviction changes no live pixels.
     uint64_t content_version() const { return content_version_; }
-    // Published images are immutable within a generation. New arrivals must
-    // not invalidate another <img>'s already-filtered pixels.
+    // Reader/base-path epoch. Each published image's resource_version also
+    // distinguishes eviction/reload within this epoch without invalidating
+    // unrelated filtered pixels.
     uint64_t generation_version() const { return generation_version_; }
     size_t size() const { return cache_.size(); }
+    static constexpr size_t kCacheBytes = 64 * 1024 * 1024;
+    static constexpr size_t kCacheEntries = 1024;
+    // Charged vector capacity, URL storage and entry metadata, not allocator/RSS.
+    size_t retained_bytes() const { return cached_bytes_ + pending_bytes_; }
+    bool needs_trim() const {
+        return trim_dirty_ && (retained_bytes() > kCacheBytes ||
+                               cache_.size() + pending_.size() > kCacheEntries);
+    }
+    void request_trim() { trim_dirty_ = true; }
+    // Must run after all borrowed images/raster jobs are finished. Current box
+    // references are pinned even when their live working set exceeds the budget.
+    // Unreferenced queued URLs are cancelled before they invoke a host reader.
+    void trim_unused(const std::set<std::string>& live_resolved_urls,
+                     size_t bytes = kCacheBytes, size_t entries = kCacheEntries);
 
-    // Every URL that was asked for and could not be produced.
+    // Retained failed URLs, including every currently referenced failure.
     //
     // Worth surfacing rather than swallowing, because the failure mode is
     // silence: a document whose images do not load draws no backgrounds, no
@@ -94,14 +109,14 @@ public:
     std::vector<std::string> missing() const {
         std::vector<std::string> out;
         for (const auto& entry : cache_) {
-            if (!entry.second.valid()) out.push_back(entry.first);
+            if (!entry.second.image.valid()) out.push_back(entry.first);
         }
         return out;
     }
     size_t missing_count() const {
         size_t n = 0;
         for (const auto& entry : cache_) {
-            if (!entry.second.valid()) ++n;
+            if (!entry.second.image.valid()) ++n;
         }
         return n;
     }
@@ -115,14 +130,26 @@ public:
     }
 
 private:
+    struct Entry {
+        DecodedImage image;
+        uint64_t used = 0;
+    };
+    using Cache = std::map<std::string, Entry>;
     static uint64_t next_content_version();
+    static size_t charge(const Cache::value_type& entry);
+    const DecodedImage* publish(std::string path, DecodedImage image);
+    void erase_pending(const std::string& path);
+    void swap(ImageStore& other) noexcept;
+    size_t cached_bytes_ = 0, pending_bytes_ = 0;
+    uint64_t use_serial_ = 0;
+    bool trim_dirty_ = false;
     uint64_t generation_version_ = next_content_version();
     uint64_t content_version_ = generation_version_;
     std::string base_;
     Reader reader_;
     // Keyed by the RESOLVED path, so two stylesheets reaching the same file by
     // different relative routes share one decode.
-    std::map<std::string, DecodedImage> cache_;
+    Cache cache_;
     std::set<std::string> pending_;
     std::deque<std::string> requests_;
     std::shared_ptr<ImageDecodeState> async_;

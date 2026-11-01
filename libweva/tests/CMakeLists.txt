@@ -158,3 +158,7 @@ add_test(NAME weva_charconv_fallback COMMAND weva_charconv_fallback)
 add_executable(weva_image_queue_memory test_image_queue_memory.cpp)
 target_link_libraries(weva_image_queue_memory PRIVATE weva Threads::Threads)
 add_test(NAME weva_image_queue_memory COMMAND weva_image_queue_memory)
+
+add_executable(weva_image_cache_memory test_image_cache_memory.cpp)
+target_link_libraries(weva_image_cache_memory PRIVATE weva Threads::Threads)
+add_test(NAME weva_image_cache_memory COMMAND weva_image_cache_memory)

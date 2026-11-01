@@ -11,10 +11,10 @@ disagree, the code wins — tell the user.
 > - **Check if something is supported** → [`supported-css.md`](Packages/com.wevaui/Documentation~/supported-css.md) / [`supported-html.md`](Packages/com.wevaui/Documentation~/supported-html.md), and `Tools/oracle/known-gaps/` for what the Chrome gate excuses.
 
 
-Current readiness and verification: [integration audit](docs/verification/image-queue-20261101.md).
+Current readiness and verification: [integration audit](docs/verification/image-cache-20261101.md).
 
-Latest verified checkpoint: GCC 19 suites / 809,530 main checks; Clang
-ASan/UBSan 21 suites / 809,524 checks; 341 Chrome layouts within 1.5 px;
+Latest verified checkpoint: GCC 20 suites / 809,530 main checks; Clang
+ASan/UBSan 22 suites / 809,524 checks; 341 Chrome layouts within 1.5 px;
 69 Chrome behavior scripts pass plus one known IME exception. Tooling: 90 pass
 on Linux, 81 pass plus nine skips on Windows. Unity: 259 EditMode passes plus
 two inconclusive, Mono player 7/7. See the audit for scope and build identities.
@@ -156,7 +156,7 @@ check.sh                          the gate
 - `Tools/run_unity_player_tests.py`: real Windows test players.
   `hosts/unity/goldens_from_unity.py`: fresh Unity/Chrome images for review;
   captures do not themselves prove pixel conformance.
-- [Latest validation and open debt](docs/verification/image-queue-20261101.md);
+- [Latest validation and open debt](docs/verification/image-cache-20261101.md);
   [historical checkpoints](docs/verification/agent-progress-history.md).
   Keep one latest gate summary here; archive earlier checkpoints.
 
@@ -172,5 +172,5 @@ check.sh                          the gate
 | Input decisions on both hosts, with tests | `docs/INPUT_PARITY.md` |
 | Readiness, requirements and limitations for users | `docs/PRODUCT_READINESS.md` |
 | User guides, engineering references and historical records | `docs/README.md` |
-| Verification counts, configuration and evidence | `docs/verification/image-queue-20261101.md` |
+| Verification counts, configuration and evidence | `docs/verification/image-cache-20261101.md` |
 | What changed for 1.0 and how to migrate | `Packages/com.wevaui/CHANGELOG.md` |

@@ -304,4 +304,8 @@ void paint_box_decorations(const BoxTree& tree, BoxId id, const LayoutContext& c
                            // this border and replaces it.
                            bool skip_border = false);
 
+// A safe update boundary, after layout and deferred raster jobs release images.
+// Below the cache budget this performs no box walk or allocation.
+void trim_image_cache(const BoxTree& tree, BoxId root, ImageStore& images);
+
 } // namespace weva

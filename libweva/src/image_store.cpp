@@ -143,14 +143,77 @@ ImageStore::~ImageStore() {
     // joins at most the running decodes here, outside the DLL loader lock.
     async_.reset();
 }
-ImageStore::ImageStore(ImageStore&&) noexcept = default;
-ImageStore& ImageStore::operator=(ImageStore&&) noexcept = default;
+ImageStore::ImageStore(ImageStore&& other) noexcept : ImageStore() { swap(other); }
+ImageStore& ImageStore::operator=(ImageStore&& other) noexcept {
+    if (this != &other) {
+        ImageStore moved(std::move(other));
+        swap(moved);
+    }
+    return *this;
+}
+
+void ImageStore::swap(ImageStore& other) noexcept {
+    using std::swap;
+    swap(cached_bytes_, other.cached_bytes_); swap(pending_bytes_, other.pending_bytes_);
+    swap(use_serial_, other.use_serial_); swap(trim_dirty_, other.trim_dirty_);
+    swap(generation_version_, other.generation_version_); swap(content_version_, other.content_version_);
+    swap(base_, other.base_); swap(reader_, other.reader_); swap(cache_, other.cache_);
+    swap(pending_, other.pending_); swap(requests_, other.requests_);
+    swap(async_, other.async_); swap(decoders_, other.decoders_);
+}
+
+size_t ImageStore::charge(const Cache::value_type& entry) {
+    return sizeof(Cache::value_type) + 4 * sizeof(void*) + entry.first.capacity() +
+           entry.second.image.rgba.capacity() + entry.second.image.block_sums.capacity() * sizeof(uint64_t);
+}
+
+const DecodedImage* ImageStore::publish(std::string path, DecodedImage image) {
+    const auto inserted = cache_.emplace(std::move(path), Entry{std::move(image), ++use_serial_});
+    auto& entry = *inserted.first;
+    if (inserted.second) {
+        if (entry.second.image.valid()) entry.second.image.resource_version = next_content_version();
+        cached_bytes_ += charge(entry);
+        trim_dirty_ = true;
+    }
+    return entry.second.image.valid() ? &entry.second.image : nullptr;
+}
+
+void ImageStore::erase_pending(const std::string& path) {
+    const auto found = pending_.find(path);
+    if (found == pending_.end()) return;
+    pending_bytes_ -= sizeof(std::string) + 4 * sizeof(void*) + found->capacity();
+    pending_.erase(found);
+}
+
+void ImageStore::trim_unused(const std::set<std::string>& live_urls, size_t bytes, size_t entries) {
+    // Discard unadmitted obsolete reads even when no worker is available.
+    requests_.erase(std::remove_if(requests_.begin(), requests_.end(), [&](const std::string& path) {
+        if (live_urls.count(path)) return false;
+        erase_pending(path);
+        pending_bytes_ -= sizeof(std::string) + path.capacity();
+        return true;
+    }), requests_.end());
+    std::vector<Cache::iterator> candidates;
+    for (auto it = cache_.begin(); it != cache_.end(); ++it)
+        if (!live_urls.count(it->first)) candidates.push_back(it);
+    std::sort(candidates.begin(), candidates.end(), [](auto a, auto b) {
+        return a->second.used < b->second.used;
+    });
+    for (const auto entry : candidates) {
+        if (retained_bytes() <= bytes && cache_.size() + pending_.size() <= entries) break;
+        cached_bytes_ -= charge(*entry);
+        cache_.erase(entry);
+    }
+    trim_dirty_ = false;
+}
 
 void ImageStore::clear() {
     async_.reset();
     pending_.clear();
     requests_.clear();
     cache_.clear();
+    cached_bytes_ = pending_bytes_ = 0;
+    use_serial_ = 0; trim_dirty_ = false;
     generation_version_ = content_version_ = next_content_version();
 }
 
@@ -171,9 +234,10 @@ bool ImageStore::poll() {
             if (!decoders_) decoders_ = image_decoders();
             if (!decoders_->submit(async_, path, std::move(bytes))) break;
         } else {
-            pending_.erase(path);
-            cache_.emplace(std::move(path), DecodedImage{});
+            erase_pending(path);
+            publish(path, DecodedImage{});
         }
+        pending_bytes_ -= sizeof(std::string) + requests_.front().capacity();
         requests_.pop_front();
     }
     std::deque<std::pair<std::string, DecodedImage>> ready;
@@ -187,9 +251,9 @@ bool ImageStore::poll() {
     }
     bool changed = false;
     for (auto& entry : ready) {
-        pending_.erase(entry.first);
+        erase_pending(entry.first);
         changed = changed || entry.second.valid();
-        cache_.emplace(std::move(entry.first), std::move(entry.second));
+        publish(std::move(entry.first), std::move(entry.second));
     }
     if (changed) content_version_ = next_content_version();
     return changed;
@@ -221,8 +285,9 @@ bool ImageStore::same_intrinsic_dimensions(std::string_view a, std::string_view 
     if (a.empty() || b.empty()) return false;
     const auto first = cache_.find(resolve(a)), second = cache_.find(resolve(b));
     return first != cache_.end() && second != cache_.end() &&
-        first->second.valid() && second->second.valid() &&
-        first->second.width == second->second.width && first->second.height == second->second.height;
+        first->second.image.valid() && second->second.image.valid() &&
+        first->second.image.width == second->second.image.width &&
+        first->second.image.height == second->second.image.height;
 }
 
 const DecodedImage* ImageStore::get(std::string_view url, bool async) {
@@ -233,14 +298,19 @@ const DecodedImage* ImageStore::get(std::string_view url, bool async) {
     if (it != cache_.end()) {
         // A cached failure is an empty image, and answering with null is what
         // stops the next frame trying the same missing file again.
-        return it->second.valid() ? &it->second : nullptr;
+        it->second.used = ++use_serial_;
+        trim_dirty_ = true;
+        return it->second.image.valid() ? &it->second.image : nullptr;
     }
     if (pending_.count(path)) return nullptr;
 
     if (async) {
         if (!async_) async_ = std::make_shared<ImageDecodeState>();
-        pending_.insert(path);
+        const auto inserted = pending_.insert(path).first;
         requests_.push_back(path);
+        pending_bytes_ += sizeof(std::string) + 4 * sizeof(void*) + inserted->capacity() +
+                          sizeof(std::string) + requests_.back().capacity();
+        trim_dirty_ = true;
         return nullptr;
     }
     std::vector<uint8_t> bytes;
@@ -248,8 +318,7 @@ const DecodedImage* ImageStore::get(std::string_view url, bool async) {
     DecodedImage image;
     if (read && !bytes.empty()) image = decode_image(bytes.data(), bytes.size());
 
-    const auto inserted = cache_.emplace(path, std::move(image)).first;
-    return inserted->second.valid() ? &inserted->second : nullptr;
+    return publish(path, std::move(image));
 }
 
 } // namespace weva

@@ -745,10 +745,10 @@ and comments between components, replacing the former literal-space split.
 Replaced images (`<img>`) reuse their raster textures through `TextureCache`.
 The key owns the source URL, resolved object-fit/position layer inputs, exact
 content and texel dimensions, length-resolution context and accumulated color
-filter. ImageStore content versions distinguish reader/base-path resets and
-replacement stores without retaining decoded-image pointers. Versions change
-when resource inputs reset or asynchronous pixels are published; cached lookups
-do not bump them. Identical images share a texture, while position, opacity and clipping
+filter. Each published decoded image has a unique resource version, including
+eviction and reload of the same URL, so keys need no decoded-image pointer.
+Cached lookups do not bump that version; loading a different icon leaves it
+unchanged. Identical images share a texture, while position, opacity and clipping
 remain per-draw work. End-of-pass retention and eviction use the existing
 texture ownership contract.
 
@@ -767,7 +767,9 @@ capacity is checked before the host reader runs. Publication releases slots.
 Live image stores lease the shared worker pool. Destroying the final lease
 joins at most two active decodes before native code can be unloaded; an idle
 process-global owner no longer pins the Windows module. Other live stores keep
-their workers. This is a job-count bound, not a total cache/image byte budget.
+their workers. This is a job-count bound; it does not cap individual encoded
+inputs or decoding peaks. Published decoded storage has the separate cache
+policy below.
 Each update admits at most two reads and publishes at most two decoded images,
 so file reads and first-use downsampling cannot accumulate into one opening
 frame. Workers also prepare summed 8×8 source blocks for large images. The
@@ -778,17 +780,32 @@ it avoids moving a full-resolution downsampling hitch to the completion frame.
 Image completion does not restyle unchanged DOM. The default decoding
 path stays synchronous for deterministic one-shot tools.
 
-Replaced-image raster keys use the immutable image-store generation rather
-than the arrival counter, so a newly loaded icon cannot evict every earlier
-icon's texture. Filtered icon pixels also use the existing bounded shared raster
-LRU: unmounting a screen still releases GPU textures, while reopening reuses
-its small downsampled pixels. Reader/base-path replacement changes the generation
-and cannot reuse old pixels.
+Decoded-image retention targets 64 MiB of charged storage and 1,024 entries
+per document. Charges include RGBA and sampling-table vector capacity, URL
+storage and estimated entry metadata, including deferred URL bookkeeping.
+After a dirty update, pressure triggers a reachable-box reference sweep over
+image sources, backgrounds, masks, border images and list markers. Current
+references are pinned, even when their working set exceeds the target; least
+recently used unreferenced entries are evicted. Failed URL history shares the
+entry limit. Obsolete unadmitted requests are pruned before later host reads;
+already admitted jobs retain the four-job policy above. Under-budget updates
+do no reference sweep, and settled idle updates do not retry an above-target
+live set. Dirty updates above the target may repeat the sweep.
 
-The public base-path and asset-reader setters schedule layout on changed
-resource inputs, preserving published views until the next update. Background,
-blurred-background and border-image texture keys include the same resource
-version, so replacing asset bytes cannot reuse old raster pixels.
+Trimming runs at the end of each update, including geometry-only paths, after
+all layout/raster image borrows finish. It does not invalidate published draw
+textures. Internal ImageStore pixel pointers last through the next explicit
+trim or clear boundary. The measured total update time includes this work.
+This target excludes encoded inputs, decode peaks, raster caches and host/GPU
+allocations; it is not a process memory cap.
+
+Filtered icon pixels also use the existing bounded shared raster LRU:
+unmounting a screen releases GPU textures, while reopening may reuse its
+small downsampled pixels. The public base-path and asset-reader setters schedule
+layout on changed resource inputs, preserving published views until the next
+update. Replaced-image, layered background/mask and border-image keys use their
+actual source versions, so an evicted URL returning new bytes cannot reuse
+stale raster pixels or invalidate unrelated source textures.
 
 Painting and hit testing share `ChildPaintOrder`. It checks the current
 sibling sequence and traverses the existing links forwards or backwards when

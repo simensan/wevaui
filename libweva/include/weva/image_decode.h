@@ -34,6 +34,9 @@ struct DecodedImage {
     int block_stride = 0;
     std::vector<uint64_t> block_sums;
 
+    // Assigned by ImageStore on publication; never reused after eviction.
+    uint64_t resource_version = 0;
+
     bool valid() const { return width > 0 && height > 0 && !rgba.empty(); }
 };
 

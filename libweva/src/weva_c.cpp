@@ -4618,6 +4618,10 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
             ++d->stats.updates;
         }
     } stats_scope(doc);
+    struct ImageTrimScope {
+        weva_document* d;
+        ~ImageTrimScope() { trim_image_cache(d->tree, d->root, d->images); }
+    } image_trim_scope{doc};
     // Decode completion changes intrinsic dimensions and pixels without a DOM
     // mutation. Publish only here, never from the worker or during painting.
     const Invalidation before_images = doc->pending;
@@ -4735,6 +4739,7 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
         lap("paint");
         return WEVA_OK;
     }
+    doc->images.request_trim();
     // Past the settled early-out: this update does work, so the change list
     // it hands out is its own. An update with nothing to do leaves the
     // previous list standing, so a host that ran an update of its own

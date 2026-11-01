@@ -1,0 +1,480 @@
+{
+  "schema": 1,
+  "date": "2026-11-01",
+  "base_revision": "f987e1eaa410d653caeadf88e968027ec9facf59",
+  "verdict": "Decoded-image retention budget and stale reload keys fixed in shared core; final qualified integration gate passes",
+  "policy": {
+    "charged_byte_target": 67108864,
+    "entry_target": 1024,
+    "scope": "one document ImageStore",
+    "charges": [
+      "RGBA capacity",
+      "sampling-table capacity",
+      "URL storage",
+      "estimated entry metadata",
+      "pending URL bookkeeping"
+    ],
+    "pinned": "reachable box img/background/mask/border/list-marker references, including hidden references",
+    "active_working_set_may_exceed_target": true,
+    "eviction": "least recently used unreferenced entries at end of pressured update",
+    "idle_under_budget_reference_sweep": false,
+    "settled_idle_repeats_above_target_sweep": false,
+    "obsolete_unadmitted_reads_pruned": true,
+    "already_admitted_jobs_cancelled_by_trim": false,
+    "failed_url_history_bounded": true,
+    "per_image_versions_prevent_stale_raster_reuse": true
+  },
+  "paired_retention": {
+    "compiler": "GCC 13.3 Release",
+    "measurement": "requested live C++ new storage; not RSS/private commit",
+    "fixture": "original C ABI image churn portion; candidate policy checks run afterward",
+    "source_swaps": 640,
+    "baseline": {
+      "warm_bytes": 4581873,
+      "after_bytes": 172596617,
+      "added_bytes": 168014744,
+      "checks": 1303,
+      "failures": 3
+    },
+    "candidate": {
+      "warm_bytes": 4582001,
+      "after_bytes": 70052377,
+      "added_bytes": 65470376,
+      "total_checks_including_later_policy_tests": 1451,
+      "failures": 0
+    },
+    "total_reduction_percent": 59.4127,
+    "added_reduction_percent": 61.033
+  },
+  "expanded_regression": {
+    "checks": 1469,
+    "failures": 0,
+    "gcc_clang_warm_bytes": 5418901,
+    "gcc_clang_after_bytes": 70085017,
+    "gcc_clang_added_bytes": 64666116,
+    "msvc_warm_bytes": 5416704,
+    "msvc_after_bytes": 70092414,
+    "msvc_added_bytes": 64675710,
+    "idle_updates": 128,
+    "idle_allocations": 0,
+    "cases": [
+      "geometry-only updates preserve published pixels and serial",
+      "all live image consumers pinned",
+      "hidden background/border/mask reload versions",
+      "failed live URL diagnoses without rereads",
+      "1024-entry history",
+      "LRU and move/reuse accounting",
+      "unadmitted obsolete async requests",
+      "sampling-table capacity released"
+    ]
+  },
+  "validation": {
+    "full_gate": {
+      "command": "bash check.sh --release",
+      "exit": 0,
+      "gcc_ctest_suites": 20,
+      "gcc_main_checks": 809530,
+      "clang_asan_ubsan_ctest_suites": 22,
+      "sanitizer_main_checks": 809524,
+      "sanitizer_small_stack_checks_skipped": 6,
+      "cache_checks_per_build": 1469,
+      "queue_checks_per_build": 150,
+      "handle_checks_per_build": 8352,
+      "geometry_checks": 322,
+      "geometry_hash": "e45be54e6504f2cd",
+      "chrome_layout_captures": 341,
+      "chrome_layout_ceiling_px": 1.5,
+      "chrome_layout_failures": 0,
+      "chrome_behavior_pass": 69,
+      "chrome_behavior_known_ime_exception": 1,
+      "chrome_behavior_unexpected_failures": 0,
+      "godot_font_checks": 19833,
+      "godot_unicode_backend_install_export_scenes": "passed",
+      "tooling_linux_pass": 90,
+      "environment": "pinned Windows Chrome 152.0.7977.82 via WSL, qualified patched Linux Godot editor/templates, private Xvfb and software rendering"
+    },
+    "unity_windows": {
+      "editor": "6000.4.1f1",
+      "full_editmode_pass": 259,
+      "inconclusive": 2,
+      "failed": 0,
+      "editor_exit": 2,
+      "mono_development_player_pass": 7,
+      "plugin_load_decode_unload_cycles": 2,
+      "prior_rgba_pixel_matches": 16
+    },
+    "msvc_standalone": {
+      "targets": [
+        "weva_handle_memory",
+        "weva_image_queue_memory",
+        "weva_image_cache_memory"
+      ],
+      "passed": 3,
+      "failed": 0
+    },
+    "godot_pressure": {
+      "changed_pixel": [
+        0.0,
+        0.0,
+        1.0,
+        1.0
+      ],
+      "checks": 651,
+      "failures": 0,
+      "pinned_pixel": [
+        1.0,
+        0.0,
+        0.0,
+        1.0
+      ],
+      "source_swaps": 320,
+      "runtime": "qualified patched Godot 4.7.2",
+      "renderer": "Vulkan Forward Mobile llvmpipe LLVM 20.1.2, private Xvfb",
+      "inspected": true,
+      "automatically_in_full_gate": false
+    }
+  },
+  "native_libraries": [
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll",
+      "sha256": "c87ba25d2617654ef296af41427e1dd4a460fb5375d4b0a8d8a2cfed5a0eb0ec",
+      "bytes": 5234176,
+      "metadata": {
+        "schema": 1,
+        "host": "unity",
+        "library_sha256": "c87ba25d2617654ef296af41427e1dd4a460fb5375d4b0a8d8a2cfed5a0eb0ec",
+        "source": {
+          "revision": "f987e1eaa410d653caeadf88e968027ec9facf59",
+          "dirty": true,
+          "sha256": "bd8af9be96f48d88d0da474e305b78c17ce2503c70ace54216851865f5d69382"
+        },
+        "abi": {
+          "major": 0,
+          "minor": 45
+        },
+        "configuration": "Release",
+        "compiler": {
+          "id": "MSVC",
+          "version": "19.44.35222.0"
+        },
+        "cmake_version": "4.3.2",
+        "sanitizers": false
+      }
+    },
+    {
+      "path": "hosts/godot/project/addons/weva/bin/weva_godot.dll",
+      "sha256": "fd766d4c515ef0a33b5a03b6501b1d0711d8c8195870826f49a3790e641bc783",
+      "bytes": 5799424,
+      "metadata": {
+        "schema": 1,
+        "library_sha256": "fd766d4c515ef0a33b5a03b6501b1d0711d8c8195870826f49a3790e641bc783",
+        "source": {
+          "revision": "f987e1eaa410d653caeadf88e968027ec9facf59",
+          "dirty": true,
+          "sha256": "db7928907c310d795085e0e7cd8f27d95703fe633928fefa5efe862ea9901c95"
+        },
+        "godot_cpp": {
+          "revision": null,
+          "dirty": null,
+          "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+        },
+        "configuration": "Release",
+        "compiler": {
+          "id": "MSVC",
+          "version": "19.44.35222.0"
+        },
+        "cmake_version": "4.3.2",
+        "godot_api": "4.7",
+        "precision": "single",
+        "custom_api": null,
+        "sanitizers": false
+      }
+    },
+    {
+      "path": "hosts/godot/project/addons/weva/bin/libweva_godot.so",
+      "sha256": "db3abad72ef9ef89e5b91bc2725b866e6c3818b9c12443cf179eb54ed7f3eeb9",
+      "bytes": 11200080,
+      "metadata": {
+        "schema": 1,
+        "library_sha256": "db3abad72ef9ef89e5b91bc2725b866e6c3818b9c12443cf179eb54ed7f3eeb9",
+        "source": {
+          "revision": "f987e1eaa410d653caeadf88e968027ec9facf59",
+          "dirty": true,
+          "sha256": "db7928907c310d795085e0e7cd8f27d95703fe633928fefa5efe862ea9901c95"
+        },
+        "godot_cpp": {
+          "revision": "26fb7ab5821e6a1096f62c22f7462d1d70caa332",
+          "dirty": true,
+          "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+        },
+        "configuration": "Release",
+        "compiler": {
+          "id": "GNU",
+          "version": "13.3.0"
+        },
+        "cmake_version": "3.28.3",
+        "godot_api": "4.7",
+        "precision": "single",
+        "custom_api": null,
+        "sanitizers": false
+      }
+    }
+  ],
+  "agentic": {
+    "source_commit": "a8bab554e77ad5177ea03ceccb92083d2ce2e728",
+    "sdk_key": "c3ee6fc181578758c0689f2d0aa6272e099f547e8fbe1fcac4d104af1f81aade",
+    "runtime_sha256": "ff3f6c717eed4beb4cf0871348c3e725d270972ceede3c2aa3dbbcb6d5bad405",
+    "coherent": true,
+    "source_override": "WEVA_SOURCE_DIR=C:/Users/simen/Documents/GitHub/unityui",
+    "core_input_paths": [
+      "CMakeLists.txt",
+      "libweva/CMakeLists.txt",
+      "libweva/include",
+      "libweva/src",
+      "third_party"
+    ],
+    "core_input_sha256": "9d79fc473dccfe19e0a7c7db7f9ecfe73545106f27c8b1fdebbf50e40f1f5ece",
+    "external_core_was_dirty_candidate": true,
+    "lifecycle_smoke": {
+      "passed": true,
+      "five_modes_and_clicks": true,
+      "reload_seconds": 20.069827000028454,
+      "endpoint_requested_loads": 133.0,
+      "cooldown_seconds": 3.0,
+      "ownership_snapshot_stages": [
+        "warm",
+        "active_end",
+        "cooldown_end"
+      ],
+      "owned_session_stopped": true,
+      "directly_exercises_cache_pressure_or_async": false
+    },
+    "engine_slot_released": true,
+    "global_sdk_or_remote_pin_changed": false
+  },
+  "abi": {
+    "minor": 45,
+    "changed": false
+  },
+  "failed_checkpoint": {
+    "first_gate_exit": 1,
+    "reason": "Test allocation tracker lacked nothrow new/delete forms; libstdc++ stable_sort scratch allocation used ASan allocator and custom delete expected a tracking header",
+    "fix": "Shared matching tracked allocator covers ordinary, array, aligned and nothrow forms in all three header-based probes",
+    "runtime_cache_uaf": false,
+    "sanitizers_disabled": false,
+    "evidence_preserved": true,
+    "final_gate_exit": 0
+  },
+  "limits": [
+    "Live references may exceed cache target; dirty above-target updates may rescan",
+    "No individual encoded file or decode peak byte cap",
+    "Raster caches, active worker payloads, host/GPU storage, allocator spare pages and direct malloc are outside paired measurement",
+    "No overall RSS, leak-free or frame-time claim",
+    "Historical Agentic growth remains unattributed; no new long soak",
+    "No IL2CPP/release stripping, macOS or hardware GPU qualification"
+  ],
+  "source_files": [
+    {
+      "path": "libweva/include/weva/image_decode.h",
+      "sha256": "053ed7182086ed626f7290b36fa474c082ff7feb604e1d09b251a80738a6ecf2",
+      "bytes": 2868
+    },
+    {
+      "path": "libweva/include/weva/image_store.h",
+      "sha256": "5ca46dda22125c1ef6a89b97ec77afaa8b34f2c9ea33ccc8b20fc44fcee7c009",
+      "bytes": 7292
+    },
+    {
+      "path": "libweva/include/weva/paint.h",
+      "sha256": "5c0e1ecdf98f85644dc6d70e443cc773f109243ac9858780e6fd67c60b8fb55e",
+      "bytes": 15469
+    },
+    {
+      "path": "libweva/include/weva_c.h",
+      "sha256": "a63c394c8d4049dc14e83a17ed1ce1e8f3d5fb22c7461470606bd02942fa13fc",
+      "bytes": 89167
+    },
+    {
+      "path": "libweva/src/image_store.cpp",
+      "sha256": "89a3836ef8884ee840fbcd6245fd346759796b37b90ba0539c4f88bf4ab3c7e7",
+      "bytes": 12259
+    },
+    {
+      "path": "libweva/src/paint.cpp",
+      "sha256": "bb768b88bf5806e7c9ea170627caf0298c15d335cc47057a754908cd07bf9f82",
+      "bytes": 256266
+    },
+    {
+      "path": "libweva/src/weva_c.cpp",
+      "sha256": "fb7760af7ccdd869fb246539341b180c01642028b8ed655d4b34ab23aaa11945",
+      "bytes": 471555
+    },
+    {
+      "path": "libweva/tests/CMakeLists.txt",
+      "sha256": "0d174ff69ce637f37f02421261a3abc0b13723881bd1d78ec604959bd92b3e97",
+      "bytes": 6320
+    },
+    {
+      "path": "libweva/tests/test_handle_memory.cpp",
+      "sha256": "5e80be039286004011379e05a4a430886540f33406208232bf2efe2d504a224d",
+      "bytes": 3491
+    },
+    {
+      "path": "libweva/tests/test_image_queue_memory.cpp",
+      "sha256": "732a71c284222e0d356a769fdc146a594454ae048b25f9bf7ee5e363d8f1d95f",
+      "bytes": 4792
+    },
+    {
+      "path": "libweva/tests/test_image_cache_memory.cpp",
+      "sha256": "706a41235827c226c20114984f11c83474e06f236836a18a7f8aea0cf03bc79b",
+      "bytes": 13994
+    },
+    {
+      "path": "libweva/tests/image_cache_fixtures.inc",
+      "sha256": "886a6ea7f8a40a4fd3d7e70706ce77ac87e376bcc27047b26a1b749bf95915a6",
+      "bytes": 8913
+    },
+    {
+      "path": "libweva/tests/tracked_allocations.h",
+      "sha256": "4b7b239430947cfdb32d35391c7b5337fb48b44333051a81a7b0f1fbe9d5d356",
+      "bytes": 3521
+    },
+    {
+      "path": "hosts/godot/project/image_cache_budget_tests.gd",
+      "sha256": "3d107be5e6478db82dfd64157b6313951c3284cabc114826ed2dcd976c6d4757",
+      "bytes": 3752
+    }
+  ],
+  "evidence": [
+    {
+      "path": ".utmp/image-cache-20261101/baseline-failed.log",
+      "sha256": "f7673e00f359fcf1631a3340501c0bdbcd5cccec732fe9b2ee34fe0b85c3e9e8",
+      "bytes": 291
+    },
+    {
+      "path": ".utmp/image-cache-20261101/candidate-policy-final.log",
+      "sha256": "605991b9ac51a967a40ae030e84b296af9e999caa5fdbea6e9fd246afab8710c",
+      "bytes": 137
+    },
+    {
+      "path": ".utmp/image-cache-20261101/asan-original-failed.log",
+      "sha256": "3b451dca7da64adc2225ffb938ffdea0fb6ad4de55fc64572205974d0c740c61",
+      "bytes": 28648
+    },
+    {
+      "path": ".utmp/image-cache-20261101/asan-fixed.log",
+      "sha256": "509a4a51e26e9a1fa217ea561f7a6f31a121a09897f4b020231074685974a26e",
+      "bytes": 499
+    },
+    {
+      "path": ".utmp/image-cache-20261101/gate/full-gate-verified.log",
+      "sha256": "42dddcdfd3f43e0dc9563a8b4c434fd089b32ee3bc96440b9565cb6ae2512e24",
+      "bytes": 15340
+    },
+    {
+      "path": ".utmp/image-cache-20261101/gate/full-gate-verified.exit",
+      "sha256": "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865",
+      "bytes": 2
+    },
+    {
+      "path": ".utmp/image-cache-20261101/final-gate/full-gate-verified.log",
+      "sha256": "46542e57bb9c9a31f975d0e2f4611f49725be4f4950f3013b45845bb40b88246",
+      "bytes": 16018
+    },
+    {
+      "path": ".utmp/image-cache-20261101/final-gate/full-gate-verified.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    {
+      "path": ".utmp/image-cache-20261101/final-gate/run-gate.sh",
+      "sha256": "b96f73c1acc385cb13ea92fe89fb2f586374f057dedb8039a5107328c31e0ce3",
+      "bytes": 1998
+    },
+    {
+      "path": ".utmp/image-cache-20261101/final-gate/linux-gate-verified-logs/gcc-last-test.log",
+      "sha256": "f3a5c477febb6829d56576d87c7657b86247610e6ed25ec23db5d1b98452bf47",
+      "bytes": 18026
+    },
+    {
+      "path": ".utmp/image-cache-20261101/final-gate/linux-gate-verified-logs/clang-last-test.log",
+      "sha256": "8244b73a0349664241594c8784dfbe1d6e57eab0ac5310e3ae1cd951dc469f52",
+      "bytes": 19619
+    },
+    {
+      "path": ".utmp/image-cache-20261101/windows/unity-full.xml",
+      "sha256": "22a73bd51f749b9d735f46031226ab63104e601e67b967044ac1c3bf161e190c",
+      "bytes": 228767
+    },
+    {
+      "path": ".utmp/image-cache-20261101/windows/unity-player/receipt.json",
+      "sha256": "9e140402ef1be7aaa64852071e56594018dc199a10a126876df84d7293dc798c",
+      "bytes": 1446
+    },
+    {
+      "path": ".utmp/image-cache-20261101/windows/plugin-load.log",
+      "sha256": "5a5c1dd070886850f682fdfc9bc6728d9fa229c334492d9680507e0e3b150776",
+      "bytes": 152
+    },
+    {
+      "path": ".utmp/image-cache-20261101/msvc-fixed-build.log",
+      "sha256": "9b88f67893b88065c33b77b6ecf7feb29a7b43908e0098ecd0be77b01e3deec3",
+      "bytes": 2202
+    },
+    {
+      "path": ".utmp/image-cache-20261101/msvc-fixed.log",
+      "sha256": "b9a8873c1be1035d3e477e3c4db9fd1db5eebc4c0f976ba67fa604421d480fff",
+      "bytes": 481
+    },
+    {
+      "path": ".utmp/image-cache-20261101/godot-pressure-files.log",
+      "sha256": "500d8787d89f43d59d2cedf9d9f51bbc9e1b7d80af39056c3f8486832f87797a",
+      "bytes": 212
+    },
+    {
+      "path": ".utmp/image-cache-20261101/godot-pressure-files/result.json",
+      "sha256": "d33bd5c1b956ef892f11304cd81c5021358f97d4fb38be025a95560e45fcf12c",
+      "bytes": 180
+    },
+    {
+      "path": ".utmp/image-cache-20261101/godot-pressure-files/before.png",
+      "sha256": "2e5c0438c9c19bcaae8828214437ba8a189ee6edcb6d23685c170e3d809de207",
+      "bytes": 204
+    },
+    {
+      "path": ".utmp/image-cache-20261101/godot-pressure-files/after.png",
+      "sha256": "9002711e6feeda21aa11cefc29aea631869ab913178bfb7dd67f73bbf63a564c",
+      "bytes": 208
+    },
+    {
+      "path": ".utmp/image-cache-20261101/sdk-build.log",
+      "sha256": "29dfd4aa0a3a6b23424a2d7955d2d21c79f8fa75eb823624a6e86a649d173352",
+      "bytes": 16502
+    },
+    {
+      "path": ".utmp/image-cache-20261101/smoke.log",
+      "sha256": "a2729d047f351903f474ddbe0f360802331f8c5cacff453decd32f8e4e3b03b2",
+      "bytes": 86
+    },
+    {
+      "path": ".utmp/image-cache-20261101/smoke/lifecycle.json",
+      "sha256": "a2416ee1178d713c507a41d02b0d1f662b4831f8c77764a10a06be2a4f8abbbc",
+      "bytes": 5408
+    },
+    {
+      "path": ".utmp/image-cache-20261101/smoke/current-0-stop.json",
+      "sha256": "ad07fcf0ca04db21ece6e54d7fb08784f7a59f1eb835c21c25c70fdef47615e8",
+      "bytes": 284
+    },
+    {
+      "path": ".utmp/image-cache-20261101/artifact-checks.json",
+      "sha256": "8c64e29d4e7d8b88a5fb969d31785da3cdfa0703234838e440075b1a5d98b9e1",
+      "bytes": 1264
+    },
+    {
+      "path": ".utmp/image-cache-20261101/sdk/c3ee6fc181578758c0689f2d0aa6272e099f547e8fbe1fcac4d104af1f81aade/sdk.json",
+      "sha256": "bdcd931abc121373fe8d3042844356c5a11aa64aa5c535916b9b5466d6623e00",
+      "bytes": 12899
+    }
+  ]
+}
