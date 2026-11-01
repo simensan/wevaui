@@ -1,5 +1,11 @@
 # AGENTS.md — engineering contract for AI tools
 
+The [Wavebound UI core corrections](docs/verification/wavebound-ui-20261101.md)
+fix pointer inheritance and solid backgrounds covering replaced images. GCC
+18/18, sanitizers 20/20, Unity Native 258 pass plus two inconclusive, and Godot
+input/host checks pass. The receipt records failed baselines, actual renders and
+the corrected stale-plugin validation attempt. Agentic SDK adoption is pending.
+
 The [glyph lookup experiment](docs/verification/glyph-map-20261031.md) was
 rejected after six paired native selection runs: the hash-table candidate lost
 four pairs. The original source and byte-identical GCC core library are restored;

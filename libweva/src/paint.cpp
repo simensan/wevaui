@@ -3706,6 +3706,21 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
         }
     }
 
+    const std::vector<BackgroundLayer> replaced =
+        decorated && !hidden && !blurred && b.width > 0 && b.height > 0
+            ? replaced_layer(b, paint) : std::vector<BackgroundLayer>{};
+    if (!replaced.empty() && !background_done) {
+        // Solid colours have no paintable layer, so the ordinary decoration
+        // pass below has not drawn them yet. Replaced content must sit above
+        // that fill, including when its transparent pixels reveal the colour.
+        Mesh background;
+        tessellate_rounded_rect(border_box, radii,
+                               resolve_color(b.style, "background-color"), &background);
+        draw_mesh(std::move(background), paint.backend, {}, state.opacity, xf,
+                  state.clip.get(), state.filter.get());
+        background_done = true;
+    }
+
     // A border image, which replaces the border drawn below.
     const bool border_image_drawn =
         decorated && !hidden && !blurred && !collapsed_table_part(b) && b.width > 0 && b.height > 0 &&
@@ -3716,7 +3731,6 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     // inside the CONTENT box rather than the border box -- padding on an
     // image insets the picture, it does not scale it.
     if (decorated && !hidden && !blurred && b.width > 0 && b.height > 0) {
-        const std::vector<BackgroundLayer> replaced = replaced_layer(b, paint);
         if (!replaced.empty()) {
             const double inset_l = b.border_left + b.padding_left;
             const double inset_t = b.border_top + b.padding_top;

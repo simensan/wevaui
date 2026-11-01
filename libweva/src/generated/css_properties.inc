@@ -1,5 +1,5 @@
-// Generated from Runtime/Css/Cascade/CssProperties.cs BuildRegistry() — do
-// not hand-edit (the scroll-snap block at the end is the one appendix). 334 + 13 properties in REGISTRATION ORDER, which is
+// Core property registry, originally migrated from the retired C# engine.
+// Preserve REGISTRATION ORDER, which is
 // load-bearing: ids are assigned sequentially and hot paths cache them, so
 // reordering this table silently repoints every cached id.
 static const PropertyDef kProperties[] = {
@@ -256,7 +256,7 @@ static const PropertyDef kProperties[] = {
     {"visibility", true, "visible"},
     {"cursor", true, "auto"},
     {"box-shadow", false, "none"},
-    {"pointer-events", false, "auto"},
+    {"pointer-events", true, "auto"},
     {"isolation", false, "auto"},
     {"container-type", false, "normal"},
     {"container-name", false, "none"},

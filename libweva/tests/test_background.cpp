@@ -663,6 +663,33 @@ void test_background_image() {
 void test_replaced_img() {
     weva::ImageStore store = quad_store();   // the 2x2 red/green/blue/white PNG
 
+    // Replaced content must remain above its own solid background. Checking
+    // texture identities alone misses a later fill that hides the picture.
+    for (const char* extra : {"", "border-radius:8px", "padding:4px;border:2px solid blue",
+                              "opacity:.5", "transform:translateX(7px)",
+                              "border-radius:8px;overflow:hidden"}) {
+        Fixture f;
+        f.ctx.images = &store;
+        CHECK(f.css(std::string("html,body{margin:0}img{display:block;width:40px;"
+                                "height:40px;background:yellow;") + extra + "}"));
+        CHECK(f.layout("<body><img src='quad.png'></body>", 100, 100));
+        RecordingBackend backend;
+        PaintContext p; p.images = &store; p.backend = &backend;
+        paint_tree(f.tree, f.root, f.ctx, p);
+        size_t fill = backend.draws.size(), picture = backend.draws.size();
+        for (size_t i = 0; i < backend.draws.size(); ++i) {
+            const auto& draw = backend.draws[i];
+            if (draw.texture) picture = std::min(picture, i);
+            else for (const Vertex& v : draw.geometry.vertices) {
+                if (v.color.r == 1 && v.color.g == 1 && v.color.b == 0 && v.color.a > 0)
+                    fill = std::min(fill, i);
+            }
+        }
+        CHECK(fill < backend.draws.size());
+        CHECK(picture < backend.draws.size());
+        CHECK(fill < picture);
+    }
+
     struct Sized { double w, h; };
     const auto lay_out = [&](const char* css, const char* html) -> Sized {
         Fixture f;

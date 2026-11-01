@@ -344,6 +344,47 @@ void test_abi_hover_active_focus() {
 // `pointer-events: none` and `visibility: hidden` are not hit targets.
 void test_abi_hit_testing_opt_out() {
     {
+        // Chrome's pointer-inheritance oracle: default/unset inherit, initial
+        // resets to auto, and an opted-in descendant remains interactive.
+        Doc doc("html,body{margin:0}#world,#hud{position:absolute;inset:0}"
+                "#hud{pointer-events:none}#plain,#active{display:block;width:100px;height:50px}"
+                "#active{pointer-events:auto}",
+                "<div id=world on-click=world></div><div id=hud>"
+                "<div id=plain on-click=plain></div><button id=active on-click=active></button></div>");
+        const auto hud = weva_document_query(doc.d, "#hud");
+        const auto plain = weva_document_query(doc.d, "#plain");
+        const auto active = weva_document_query(doc.d, "#active");
+        const auto world = weva_document_query(doc.d, "#world");
+        struct Case { const char* parent; const char* child; bool none; };
+        for (const auto& c : {Case{"none", "", true}, Case{"none", "auto", false},
+                Case{"none", "inherit", true}, Case{"none", "initial", false},
+                Case{"none", "unset", true}, Case{"auto", "", false}, Case{"none", "", true}}) {
+            CHECK(weva_element_set_attribute(doc.d, hud, "style",
+                (std::string("pointer-events:") + c.parent).c_str()) == WEVA_OK);
+            CHECK(weva_element_set_attribute(doc.d, plain, "style",
+                (*c.child ? std::string("pointer-events:") + c.child : std::string()).c_str()) == WEVA_OK);
+            weva_document_update(doc.d, 0);
+            char value[16]{};
+            weva_element_computed_style(doc.d, plain, "pointer-events", value, sizeof(value));
+            CHECK(std::strcmp(value, c.none ? "none" : "auto") == 0);
+            const auto target = c.none ? world : plain;
+            CHECK(weva_document_element_at(doc.d, 25, 25) == target);
+            CHECK(weva_document_element_at(doc.d, 25, 75) == active);
+            std::vector<weva_element_t> clicks;
+            for (int y : {25, 75}) {
+                weva_document_set_pointer(doc.d, 25, y, WEVA_BUTTON_PRIMARY);
+                weva_document_update(doc.d, 0);
+                weva_document_set_pointer(doc.d, 25, y, 0);
+                weva_document_update(doc.d, 0);
+                weva_event event{};
+                while (weva_document_poll_event(doc.d, &event)) {
+                    if (event.kind == WEVA_EVENT_CLICK) clicks.push_back(event.target);
+                }
+            }
+            CHECK((clicks == std::vector<weva_element_t>{target, active}));
+        }
+    }
+    {
         Doc doc("html, body { margin: 0 }"
                 "div { width: 100px; height: 60px; background: #202020 }"
                 "span { display: block; width: 40px; height: 20px; background: #303030;"
