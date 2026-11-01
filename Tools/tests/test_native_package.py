@@ -19,7 +19,7 @@ class NativePackageTests(unittest.TestCase):
         self.build = self.root / "build"
         self.build.mkdir()
         self.target = "x86_64-pc-windows-msvc"
-        self.metadata = dict(configuration="Release", system="Windows", processor="AMD64",
+        self.metadata = dict(sanitizers=False, configuration="Release", system="Windows", processor="AMD64",
                              pointer_size=8, compiler="MSVC", cmake="3.30", libraries={})
         for name in native.LIBRARIES:
             lib = self.build / (name + ".lib")
@@ -59,6 +59,11 @@ class NativePackageTests(unittest.TestCase):
                            ("pointer_size", 4), ("configuration", "Debug"), ("libraries", {})]:
             with self.subTest(key=key), self.assertRaises(ValueError):
                 native.validate_build(self.target, dict(self.metadata, **{key: value}))
+
+    def test_instrumented_or_unqualified_archives_cannot_ship(self):
+        for flag in [True, None, "OFF", 0]:
+            with self.subTest(sanitizers=flag), self.assertRaisesRegex(ValueError, "sanitizer"):
+                native.validate_build(self.target, dict(self.metadata, sanitizers=flag))
 
     def test_native_macos_and_linux_architectures(self):
         for target, (system, arch) in native.TARGETS.items():

@@ -2,8 +2,8 @@
 #define WEVA_C_H
 
 /*
- * The C ABI: the seam a Godot GDExtension binds through, and the one a Unity
- * host would bind through later.
+ * The C ABI: the seam a Godot GDExtension binds through, and the one a
+ * Unity host binds through as well.
  *
  * This is the narrowest part of the system and the hardest to change once
  * anything depends on it, so the rules are strict:
@@ -59,15 +59,12 @@ typedef enum weva_status {
 } weva_status;
 
 typedef struct weva_document* weva_document_t;
-/* An element handle is an index into the document, not a pointer: the DOM is
- * refcounted and may move between calls, and a stale index is detectable
- * where a stale pointer is not.
- *
- * Detectable after a REMOVAL -- the slot is tombstoned and answers NOT_FOUND
- * forever. NOT across weva_document_load_html, which empties the table so
- * indices restart at 0: an old handle is then valid and names a different
- * element, and nothing can tell. Re-query after loading. (Reload is the
- * exception and says so -- see weva_document_reload_html.) */
+/* An element handle is a document-local numeric ID, not a pointer. IDs are
+ * never recycled during a document's lifetime, including across load_html.
+ * Removed elements and elements replaced by a full load remain NOT_FOUND;
+ * matched elements in reload_html keep their handles. Empty storage pages
+ * are reclaimed without making retired IDs name replacement elements.
+ * Handles are not transferable between documents. */
 typedef uint32_t weva_element_t;
 #define WEVA_ELEMENT_NONE ((weva_element_t)0xFFFFFFFFu)
 

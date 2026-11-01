@@ -27,7 +27,7 @@ game integration.
   [Godot](../hosts/godot/README.md).
 - [Chrome oracle](../Tools/oracle/README.md), [input parity](INPUT_PARITY.md),
   [sanitizers](SANITIZERS.md) and [release checks](RELEASE.md).
-- [Latest full review](verification/review-three-days-20260915.md) and
+- [Latest integration audit](verification/tech-debt-20261101.md) and
   [performance measurements](RUNTIME_PERFORMANCE.md). Results apply to their
   recorded builds and machines; they are not platform-wide guarantees.
 

@@ -277,3 +277,6 @@ Select search embeds ICU 78.3 and its data; see `ICU_LICENSE.txt` and
 Unsupported CSS at-rules produce warnings when replacing stylesheets.
 Use `get_css_diagnostics()` to inspect the current compiled rules without
 updating the document; requires ABI minor 24. See [CSS diagnostics](CSS_DIAGNOSTICS.md).
+
+JPEG decoding statically includes stb_image (MIT/public-domain dual license);
+see `STB_LICENSE.txt`. The package dependency inventory includes this decoder.

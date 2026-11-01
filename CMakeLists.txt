@@ -35,7 +35,7 @@ endif()
 #   -fno-exceptions : throwing across a GDExtension boundary is undefined.
 #                     Errors return weva::Status.
 #   NO fast-math    : layout computes in double and the oracle compares
-#                     bit-identical geometry against the C# implementation.
+#                     geometry against the tracked Chrome layout oracle.
 #                     -ffast-math / -Ofast silently break that. Do not add them.
 add_library(weva_flags INTERFACE)
 target_link_libraries(weva_flags INTERFACE weva_sanitizers)

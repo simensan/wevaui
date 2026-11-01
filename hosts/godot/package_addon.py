@@ -8,8 +8,13 @@ from pathlib import Path
 import re
 import struct
 import zipfile
+import sys
 
 from build_metadata import validate_metadata
+
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "Tools"))
+from third_party_notices import godot_dependencies, godot_notices  # noqa: E402
 
 
 def verify_library(path, platform):
@@ -62,15 +67,10 @@ def main():
             .replace(b'(../third_party/icu/README.md)', b'(ICU_DATA.md)')
             .replace(b'(../third_party/decimal/README.md)', b'(DECIMAL.md)')
             .replace(b'(../third_party/ada/README.md)', b'(ADA.md)'),
-        'ICU_LICENSE.txt': (host.parents[1] / 'third_party/icu/LICENSE.txt').read_bytes(),
         'ICU_DATA.md': (host.parents[1] / 'third_party/icu/README.md').read_bytes()
             .replace(b'(LICENSE.txt)', b'(ICU_LICENSE.txt)'),
-        'UNICODE_LICENSE.txt': (host.parents[1] / 'third_party/unicode/LICENSE.txt').read_bytes(),
-        'DECIMAL_LICENSE.txt': (host.parents[1] / 'third_party/decimal/LICENSE.txt').read_bytes(),
         'DECIMAL.md': (host.parents[1] / 'third_party/decimal/README.md').read_bytes()
             .replace(b'(LICENSE.txt)', b'(DECIMAL_LICENSE.txt)'),
-        'ADA_LICENSE_MIT.txt': (host.parents[1] / 'third_party/ada/LICENSE-MIT').read_bytes(),
-        'ADA_LICENSE_APACHE.txt': (host.parents[1] / 'third_party/ada/LICENSE-APACHE').read_bytes(),
         'ADA.md': (host.parents[1] / 'third_party/ada/README.md').read_bytes()
             .replace(b'(LICENSE-MIT)', b'(ADA_LICENSE_MIT.txt)')
             .replace(b'(LICENSE-APACHE)', b'(ADA_LICENSE_APACHE.txt)'),
@@ -80,17 +80,10 @@ def main():
         'GODOT_CPP_LICENSE.md': (args.godot_cpp_dir / 'LICENSE.md').read_bytes(),
         'weva_view.gd': (host / 'addon' / 'weva_view.gd').read_bytes(),
     }
+    files.update(godot_notices(ROOT))
     metadata = {'schema': 1, 'version': args.version, 'status': 'development-preview',
                 'godot_api': '4.7', 'architecture': 'x86_64',
-                'dependencies': {'icu': {'version': '78.3', 'linkage': 'static', 'search_locale': 'en',
-                                        'source_sha256': '3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0'},
-                                 'decimal': {'upstream': 'Chromium Blink WTF Decimal',
-                                             'revision': '9596b537e435c5c23d247cb7d9925d81e8f7707e',
-                                             'linkage': 'static', 'license': 'DECIMAL_LICENSE.txt'},
-                                 'ada': {'version': '4.0.0',
-                                         'revision': 'b12a893a45809da8103bb4f1e2f6f5ee13f9100b',
-                                         'linkage': 'static', 'license': 'ADA_LICENSE_MIT.txt',
-                                         'url_pattern': False}},
+                'dependencies': godot_dependencies(),
                 'libraries': {}}
     descriptor = '[configuration]\nentry_symbol = "weva_library_init"\ncompatibility_minimum = "4.7"\nreloadable = true\n\n[libraries]\n'
     for platform, path, name in libraries:

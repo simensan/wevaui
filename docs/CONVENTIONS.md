@@ -17,7 +17,9 @@ for implementation details.
 ## Ownership and lifetime
 
 - DOM nodes use intrusive `Ref` ownership. Host APIs expose opaque handles,
-  not owning C++ node pointers. Removal and reload invalidate associated handles.
+  not owning C++ node pointers. Removal and full markup loads invalidate removed handles;
+  reconciled reloads preserve matched elements. IDs are never recycled within
+  a document.
 - Box trees use reusable storage and stable `BoxId` indices. Do not retain a
   pointer into a growable box vector across allocation or reconstruction.
 - Paint, layout and cache buffers retain capacity where useful. A cache owns

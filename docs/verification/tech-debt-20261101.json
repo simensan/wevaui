@@ -1,0 +1,558 @@
+{
+  "schema": 1,
+  "date": "2026-11-01",
+  "base_revision": "63a968ebf66be7683047514e74a1820438626cda",
+  "status": "confirmed tooling/contract defects fixed; qualified local integration gate passes; runtime debt remains",
+  "scope": [
+    "shared core ownership/lifetime contracts and image cache",
+    "Unity and Godot native hosts",
+    "native SDK and host packages",
+    "verification tooling and current documentation"
+  ],
+  "runtime_behavior_changed": false,
+  "fixes": [
+    "native SDK workflow omitted engine/dependency/build inputs",
+    "SDK distribution lacked a sanitizer-free metadata contract",
+    "duplicated dependency inventories omitted stb from Unity/Godot",
+    "stale handle-lifetime and Unity/reference comments",
+    "dated journals displaced current engineering guidance",
+    "relative render-output directory differed between renderer working directories",
+    "non-ASCII report failed with redirected cp1252 stdout"
+  ],
+  "validation": {
+    "full_gate": {
+      "command": "bash check.sh --release",
+      "exit": 0,
+      "gcc_ctest_suites": 18,
+      "gcc_main_checks": 809530,
+      "clang_asan_ubsan_ctest_suites": 20,
+      "sanitizer_main_checks": 809524,
+      "geometry_checks": 322,
+      "geometry_hash": "e45be54e6504f2cd",
+      "chrome_layouts": {
+        "hand": 69,
+        "samples": 47,
+        "harvest": 225,
+        "ceiling_px": 1.5,
+        "over_ceiling": 0,
+        "missing": 0,
+        "crashes": 0,
+        "known_gap_excuses": 0
+      },
+      "chrome_behavior": {
+        "scripts": 70,
+        "passed": 69,
+        "known_ime_failure": 1,
+        "unexpected_failures": 0
+      },
+      "godot_font_checks": 19833,
+      "godot_unicode_scenes_install_exports": "passed"
+    },
+    "tooling": {
+      "linux": {
+        "passed": 87,
+        "skipped": 0
+      },
+      "windows": {
+        "passed": 78,
+        "skipped": 9
+      }
+    },
+    "unity": {
+      "editor": "6000.4.1f1",
+      "editmode": {
+        "passed": 259,
+        "inconclusive": 2,
+        "failed": 0
+      },
+      "windows_x64_mono_development_player": {
+        "passed": 7,
+        "failed": 0
+      }
+    },
+    "native_sdk": {
+      "windows_ctest_suites": 19,
+      "linux_sdk_smoke_suites": 1,
+      "dirty_local_validation_only": true
+    },
+    "generated_bindings": {
+      "functions": 144,
+      "structs": 15,
+      "enums": 10,
+      "current": true
+    },
+    "unity_notices_current": true,
+    "render": {
+      "godot_forms": {
+        "width": 440,
+        "height": 460,
+        "relative_out_dir": true,
+        "mean_channel_delta": 0.02,
+        "max_channel_delta": 1,
+        "pixels_over_tolerance": 0,
+        "structural_mismatches": 0,
+        "visually_inspected": true
+      },
+      "prior_render_matches": {
+        "unity_player_images": 16,
+        "godot_forms_images": 1
+      },
+      "images": [
+        {
+          "path": ".utmp/tech-debt-20261101/render-final/godot.png",
+          "sha256": "4efc04095bbb73e12ca28f10df27d099e6a23febdcb47c08d887f1f913b244c3",
+          "bytes": 8065
+        },
+        {
+          "path": ".utmp/tech-debt-20261101/unity-player/renders/Pass_LoadsPackagedImageAndFonts_AndUpdatesBindings-15.png",
+          "sha256": "ddf16ccc5bcf6aa8e4ff0df92dd9523a6cb7767a691fe89d98224846aac858e0",
+          "bytes": 3721
+        }
+      ]
+    },
+    "ordering": "Full gate at core/packaging checkpoint. Final render tooling fixes covered by regressions, real capture and both complete tooling suites afterward. Final header wording edit is comment-only; both Windows native hosts, Linux Godot and both SDK packages rebuilt afterward."
+  },
+  "environment": {
+    "os": "Windows / WSL Ubuntu",
+    "chrome": "Windows 152.0.7977.82 via WSL bridge",
+    "godot": "qualified patched 4.7.2 Linux editor and matching templates",
+    "rendering": "Mesa software rendering under private Xvfb",
+    "qualified_setup": "docs/verification/review-three-days-20260915.md",
+    "wrapper": {
+      "path": ".utmp/tech-debt-20261101/gate/run-gate.sh",
+      "sha256": "221cabc18cc04ef9e4c5c2dc7cba5a8ab6bc9617c1f5a0c605f860d38b5f722a",
+      "bytes": 1934
+    }
+  },
+  "final_native_builds": [
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll",
+      "sha256": "5d81dc12d9463a5260eab887ae0495a3c35d32cba7ccf49e00e131eaec69d86b",
+      "bytes": 5222912,
+      "build": {
+        "schema": 1,
+        "host": "unity",
+        "library_sha256": "5d81dc12d9463a5260eab887ae0495a3c35d32cba7ccf49e00e131eaec69d86b",
+        "source": {
+          "revision": "63a968ebf66be7683047514e74a1820438626cda",
+          "dirty": true,
+          "sha256": "9b96ac1547c4c0e425ae6d33c1e0944f6a9e7f404e42b80f5446734724812557"
+        },
+        "abi": {
+          "major": 0,
+          "minor": 45
+        },
+        "configuration": "Release",
+        "compiler": {
+          "id": "MSVC",
+          "version": "19.44.35222.0"
+        },
+        "cmake_version": "4.3.2",
+        "sanitizers": false
+      }
+    },
+    {
+      "path": "hosts/godot/project/addons/weva/bin/weva_godot.dll",
+      "sha256": "e3fe4da55b73147d4f42a8f8fc1fd759aa4843e62dcc5ca095c9f664abdae033",
+      "bytes": 5788160,
+      "build": {
+        "schema": 1,
+        "library_sha256": "e3fe4da55b73147d4f42a8f8fc1fd759aa4843e62dcc5ca095c9f664abdae033",
+        "source": {
+          "revision": "63a968ebf66be7683047514e74a1820438626cda",
+          "dirty": true,
+          "sha256": "53e80523db23a42158b5f7232800cadbd457bc543fb24d5a94e484932de60d57"
+        },
+        "godot_cpp": {
+          "revision": null,
+          "dirty": null,
+          "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+        },
+        "configuration": "Release",
+        "compiler": {
+          "id": "MSVC",
+          "version": "19.44.35222.0"
+        },
+        "cmake_version": "4.3.2",
+        "godot_api": "4.7",
+        "precision": "single",
+        "custom_api": null,
+        "sanitizers": false
+      }
+    },
+    {
+      "path": "hosts/godot/project/addons/weva/bin/libweva_godot.so",
+      "sha256": "b3c354827f8bf0dadfb39666a41aac939714c65522ea2e552a9754d2025e3a58",
+      "bytes": 11167152,
+      "build": {
+        "schema": 1,
+        "library_sha256": "b3c354827f8bf0dadfb39666a41aac939714c65522ea2e552a9754d2025e3a58",
+        "source": {
+          "revision": "63a968ebf66be7683047514e74a1820438626cda",
+          "dirty": true,
+          "sha256": "53e80523db23a42158b5f7232800cadbd457bc543fb24d5a94e484932de60d57"
+        },
+        "godot_cpp": {
+          "revision": "26fb7ab5821e6a1096f62c22f7462d1d70caa332",
+          "dirty": true,
+          "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+        },
+        "configuration": "Release",
+        "compiler": {
+          "id": "GNU",
+          "version": "13.3.0"
+        },
+        "cmake_version": "3.28.3",
+        "godot_api": "4.7",
+        "precision": "single",
+        "custom_api": null,
+        "sanitizers": false
+      }
+    }
+  ],
+  "sdk_packages": [
+    {
+      "path": ".utmp/tech-debt-20261101/windows-package-final/sdk/x86_64-pc-windows-msvc/manifest.json",
+      "sha256": "b4d3de41514a20acb6fe9b0b577f4dae403c498cc8758ce8c4314bdda3da25b9",
+      "bytes": 2541,
+      "manifest": {
+        "abi": {
+          "major": 0,
+          "minor": 45
+        },
+        "cmake": "4.3.2",
+        "compiler": "MSVC 19.44.35222.0",
+        "configuration": "Release",
+        "crt": "dynamic",
+        "files": {
+          "include/weva_c.h": {
+            "asset": "x86_64-pc-windows-msvc--include--weva_c.h",
+            "sha256": "c711aa5de4def984dc163fd62ac31ba15c9a9add4814b0ffb13f60070deff128",
+            "size": 89092
+          },
+          "lib/weva.lib": {
+            "asset": "x86_64-pc-windows-msvc--lib--weva.lib",
+            "sha256": "c1aedb3e848a4b5db06f3ec539c942afb7b9bc3e4aa9bf2e89a48910e58a00b8",
+            "size": 45612692
+          },
+          "lib/weva_icu_common.lib": {
+            "asset": "x86_64-pc-windows-msvc--lib--weva_icu_common.lib",
+            "sha256": "d60d91194799a45cc5c56d073b1626f228b9b341fb30028d1e56b39e8d24c178",
+            "size": 9234778
+          },
+          "lib/weva_icu_i18n.lib": {
+            "asset": "x86_64-pc-windows-msvc--lib--weva_icu_i18n.lib",
+            "sha256": "6634bba5b220e187e07243d20fa8b651b5509862b8a6bc7bf0706b2c5e10c157",
+            "size": 2826838
+          },
+          "licenses/Ada-Apache.txt": {
+            "asset": "x86_64-pc-windows-msvc--licenses--Ada-Apache.txt",
+            "sha256": "508d4676d4083e874df706f302d9d42e5e7f9aed3f5a7ea614dc6d2b2252a22f",
+            "size": 11342
+          },
+          "licenses/Ada-MIT.txt": {
+            "asset": "x86_64-pc-windows-msvc--licenses--Ada-MIT.txt",
+            "sha256": "af0d7d2cef91fc243cf4ad98570b03d1f26f5e0227cad0f5f4a7376e2feb3160",
+            "size": 1071
+          },
+          "licenses/Decimal.txt": {
+            "asset": "x86_64-pc-windows-msvc--licenses--Decimal.txt",
+            "sha256": "9223f4874a0ea140744989276f607e1fea653341d252dd94c077112dd953ffd2",
+            "size": 1563
+          },
+          "licenses/ICU.txt": {
+            "asset": "x86_64-pc-windows-msvc--licenses--ICU.txt",
+            "sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af",
+            "size": 27718
+          },
+          "licenses/Unicode.txt": {
+            "asset": "x86_64-pc-windows-msvc--licenses--Unicode.txt",
+            "sha256": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96",
+            "size": 1995
+          },
+          "licenses/Weva.txt": {
+            "asset": "x86_64-pc-windows-msvc--licenses--Weva.txt",
+            "sha256": "8e6f3a4d701223216288cc65f0a5ef1332efc960b3562d8cf30c786301104e90",
+            "size": 1074
+          },
+          "licenses/stb.txt": {
+            "asset": "x86_64-pc-windows-msvc--licenses--stb.txt",
+            "sha256": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+            "size": 2510
+          }
+        },
+        "schema": 1,
+        "source_dirty": true,
+        "source_revision": "63a968ebf66be7683047514e74a1820438626cda",
+        "target": "x86_64-pc-windows-msvc"
+      }
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/linux-package-final/sdk/x86_64-unknown-linux-gnu/manifest.json",
+      "sha256": "f23011f64ff954daa8fc63acc477acd19771e01d0634f13845b719cfcf754185",
+      "bytes": 2562,
+      "manifest": {
+        "abi": {
+          "major": 0,
+          "minor": 45
+        },
+        "cmake": "3.28.3",
+        "compiler": "GNU 13.3.0",
+        "configuration": "Release",
+        "crt": "system",
+        "files": {
+          "include/weva_c.h": {
+            "asset": "x86_64-unknown-linux-gnu--include--weva_c.h",
+            "sha256": "c711aa5de4def984dc163fd62ac31ba15c9a9add4814b0ffb13f60070deff128",
+            "size": 89092
+          },
+          "lib/libweva.a": {
+            "asset": "x86_64-unknown-linux-gnu--lib--libweva.a",
+            "sha256": "ffd1bd61cdbd25715cea9fc28e00c1848ad4a936f8030eb0d50b6384d4186225",
+            "size": 5611800
+          },
+          "lib/libweva_icu_common.a": {
+            "asset": "x86_64-unknown-linux-gnu--lib--libweva_icu_common.a",
+            "sha256": "e5a7b10400955193d588182502c9dbb1dca86dc57191c25803b4fc75f8e43849",
+            "size": 4855584
+          },
+          "lib/libweva_icu_i18n.a": {
+            "asset": "x86_64-unknown-linux-gnu--lib--libweva_icu_i18n.a",
+            "sha256": "f47a48976db7b3f60e3c91d912ebe3cc464738cbdeb7169efa57ab3140f87959",
+            "size": 1395128
+          },
+          "licenses/Ada-Apache.txt": {
+            "asset": "x86_64-unknown-linux-gnu--licenses--Ada-Apache.txt",
+            "sha256": "508d4676d4083e874df706f302d9d42e5e7f9aed3f5a7ea614dc6d2b2252a22f",
+            "size": 11342
+          },
+          "licenses/Ada-MIT.txt": {
+            "asset": "x86_64-unknown-linux-gnu--licenses--Ada-MIT.txt",
+            "sha256": "af0d7d2cef91fc243cf4ad98570b03d1f26f5e0227cad0f5f4a7376e2feb3160",
+            "size": 1071
+          },
+          "licenses/Decimal.txt": {
+            "asset": "x86_64-unknown-linux-gnu--licenses--Decimal.txt",
+            "sha256": "9223f4874a0ea140744989276f607e1fea653341d252dd94c077112dd953ffd2",
+            "size": 1563
+          },
+          "licenses/ICU.txt": {
+            "asset": "x86_64-unknown-linux-gnu--licenses--ICU.txt",
+            "sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af",
+            "size": 27718
+          },
+          "licenses/Unicode.txt": {
+            "asset": "x86_64-unknown-linux-gnu--licenses--Unicode.txt",
+            "sha256": "e7a93b009565cfce55919a381437ac4db883e9da2126fa28b91d12732bc53d96",
+            "size": 1995
+          },
+          "licenses/Weva.txt": {
+            "asset": "x86_64-unknown-linux-gnu--licenses--Weva.txt",
+            "sha256": "8e6f3a4d701223216288cc65f0a5ef1332efc960b3562d8cf30c786301104e90",
+            "size": 1074
+          },
+          "licenses/stb.txt": {
+            "asset": "x86_64-unknown-linux-gnu--licenses--stb.txt",
+            "sha256": "bebfe904b14301657e4e5d655c811d51fd31b97c455b9cc2d8600d6bac6cff63",
+            "size": 2510
+          }
+        },
+        "schema": 1,
+        "source_dirty": true,
+        "source_revision": "63a968ebf66be7683047514e74a1820438626cda",
+        "target": "x86_64-unknown-linux-gnu"
+      }
+    }
+  ],
+  "godot_package": {
+    "archive": ".utmp\\tech-debt-20261101\\godot-addon-verified.zip",
+    "sha256": "9dbf546ad77ed2e226c08faed696d44a5c1f3211d801bc6f6e95f28774d11dd0",
+    "notices": [
+      "ICU_LICENSE.txt",
+      "UNICODE_LICENSE.txt",
+      "DECIMAL_LICENSE.txt",
+      "ADA_LICENSE_MIT.txt",
+      "ADA_LICENSE_APACHE.txt",
+      "STB_LICENSE.txt"
+    ],
+    "sbom": {
+      "icu": {
+        "version": "78.3",
+        "linkage": "static",
+        "search_locale": "en",
+        "source_sha256": "3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0",
+        "license": "ICU_LICENSE.txt"
+      },
+      "unicode": {
+        "version": "17.0.0",
+        "linkage": "generated-tables",
+        "license": "UNICODE_LICENSE.txt"
+      },
+      "decimal": {
+        "upstream": "Chromium Blink WTF Decimal",
+        "revision": "9596b537e435c5c23d247cb7d9925d81e8f7707e",
+        "linkage": "static",
+        "license": "DECIMAL_LICENSE.txt"
+      },
+      "ada": {
+        "version": "4.0.0",
+        "revision": "b12a893a45809da8103bb4f1e2f6f5ee13f9100b",
+        "linkage": "static",
+        "license": "ADA_LICENSE_MIT.txt",
+        "url_pattern": false
+      },
+      "stb": {
+        "revision": "013ac3beddff3dbffafd5177e7972067cd2b5083",
+        "linkage": "static",
+        "license": "STB_LICENSE.txt"
+      }
+    }
+  },
+  "documentation_consolidation": {
+    "AGENTS.md": {
+      "sha256": "ac246c23c105f0514d94f4806b31935c2a01bf6346f933ffc1a96c2364a85f99",
+      "lines": 666
+    },
+    "AI_REFERENCE.md": {
+      "sha256": "eab66298b4e652280a7df482fe28aaaf66ec5bc027b5d3b354890abf7d94a065",
+      "lines": 660
+    },
+    "docs/PRODUCT_READINESS.md": {
+      "sha256": "4c0707e27efab2db377d1eef2004e5cb7894b80150c9084ef68c5cfa64810059",
+      "lines": 267
+    },
+    "after": {
+      "AGENTS.md": 163,
+      "AI_REFERENCE.md": 174,
+      "docs/PRODUCT_READINESS.md": 72
+    }
+  },
+  "remaining": [
+    {
+      "priority": "P1",
+      "debt": "Agentic memory allocation ownership and current SDK adoption",
+      "evidence": "docs/verification/host-memory-20261101.md",
+      "historical_sdk_reload_private_growth_mib": 78.2,
+      "current_core_leak_proven": false
+    },
+    {
+      "priority": "P2",
+      "debt": "Safe byte budget for decoded-image and failure cache under unique URL churn",
+      "source": "libweva/include/weva/image_store.h",
+      "new_unreachable_memory_leak_proven": false
+    },
+    {
+      "priority": "P2",
+      "debt": "Large lifecycle modules; extract by ownership domain alongside substantive changes",
+      "module_lines": {
+        "libweva/src/weva_c.cpp": 9696,
+        "libweva/src/paint.cpp": 4896,
+        "libweva/src/block_layout.cpp": 2237,
+        "hosts/godot/src/weva_node.cpp": 3915
+      }
+    },
+    {
+      "priority": "P2",
+      "debt": "Consumer/platform qualification and hardware acceptance"
+    }
+  ],
+  "limits": [
+    "No runtime speedup or leak-free claim",
+    "No macOS SDK or remote CI execution",
+    "No new IL2CPP qualification",
+    "No physical input/accessibility acceptance or long hardware GPU soak",
+    "Full gate precedes final tooling/comment-only edits; see ordering"
+  ],
+  "evidence": [
+    {
+      "path": ".utmp/tech-debt-20261101/gate/full-gate-verified.log",
+      "sha256": "8aeed6f66915ab6fcc185be0e683129cb214345cc2735f182e0de816fbccabc7",
+      "bytes": 15169
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/gate/run-gate.sh",
+      "sha256": "221cabc18cc04ef9e4c5c2dc7cba5a8ab6bc9617c1f5a0c605f860d38b5f722a",
+      "bytes": 1934
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/gate/linux-gate-verified-logs/gcc-last-test.log",
+      "sha256": "76e5970232df3229bbf05ffd73d57f4085efcf77327ecd29363b0929c724902c",
+      "bytes": 16571
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/gate/linux-gate-verified-logs/clang-last-test.log",
+      "sha256": "ac25e5e691d4aa3319bfa6d8b9fa4667a0268adbf25977e7937911bf5b99134d",
+      "bytes": 18156
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/gate/linux-gate-verified-logs/chrome-checks.log",
+      "sha256": "3c363e68b12b16940184f43f2a7efd90aa1799049568417a770619b523c77dc1",
+      "bytes": 6673
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/tooling-linux-final.log",
+      "sha256": "03bb5ce64b0dddbb54dc34a2dfb9010dae5479b67b66c703c2a179a31fe69d98",
+      "bytes": 15281
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/tooling-windows-final.log",
+      "sha256": "5af3e16c22f2031811f736377fd446e998c3a6a7f3935b1d406c52a3cd782971",
+      "bytes": 16173
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/unity-full.xml",
+      "sha256": "ee7a0b51e7db4fd69a276f5dee8d6aabe3af67940a69b48f1e6ba64ab045b7f5",
+      "bytes": 228752
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/unity-player/receipt.json",
+      "sha256": "272a333bbe18fcbe855cbb27b2cb0d29bc70a5bdd406ce6b1920dc5a5865686c",
+      "bytes": 1402
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/unity-player/results.xml",
+      "sha256": "751ebb40591ccd90812212d21768d6effe2f0b011863cd4387694f40a27bc4d5",
+      "bytes": 7736
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/native-windows-final.log",
+      "sha256": "a38587b356f3b379f20a703aa5c802d6aba71f78e15e7572f37e1bc3d9cf4a63",
+      "bytes": 8288
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/native-linux-final.log",
+      "sha256": "0ecdff93ecb54cbe8a60179ce9e3e96e1d98b6f1e5a7082c6c2f1352de508077",
+      "bytes": 960
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/render-final.log",
+      "sha256": "6e617007a7ed4e461a8c6022f7f155f113039020c75510fe5988173f981fbee6",
+      "bytes": 655
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/baseline-package-tests.log",
+      "sha256": "8d128348d76c45772ef72a184e25a96f6dedf9ed02e648b1a3aba8e8bad970a1",
+      "bytes": 3031
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/baseline-workflow-tests.log",
+      "sha256": "1c84f39f09413634b3da8b86852e87d98b0d8d72bfdcdf0590124c42adbb9e7a",
+      "bytes": 6723
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/rejected-configure.log",
+      "sha256": "256238b203af53759b29ac15435725d3cad9aa5b835819992cbc060dc73b2d32",
+      "bytes": 677
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/render-relative-baseline.log",
+      "sha256": "d4aed7468e34a0df7d5547e3506f4d7b134cdf7cefa59e672f1a7da6cd4ecbc7",
+      "bytes": 967
+    },
+    {
+      "path": ".utmp/tech-debt-20261101/render-encoding-first-failed.log",
+      "sha256": "20be74a52f377fe49a4dccfc3625746e92bb8552805f94b76fc8d2d107cf9e3b",
+      "bytes": 1639
+    }
+  ]
+}

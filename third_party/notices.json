@@ -1,0 +1,91 @@
+{
+  "schema": 1,
+  "notices": [
+    {
+      "component": "icu",
+      "heading": "ICU4C",
+      "version": "78.3",
+      "license": "Unicode Licence V3",
+      "source": "third_party/icu/LICENSE.txt",
+      "native": "ICU.txt",
+      "godot": "ICU_LICENSE.txt"
+    },
+    {
+      "component": "unicode",
+      "heading": "Unicode Character Database (generated tables)",
+      "version": "17.0.0",
+      "license": "Unicode Licence V3",
+      "source": "third_party/unicode/LICENSE.txt",
+      "native": "Unicode.txt",
+      "godot": "UNICODE_LICENSE.txt"
+    },
+    {
+      "component": "decimal",
+      "heading": "Blink WTF Decimal",
+      "version": "rev 9596b537e435c5c23d247cb7d9925d81e8f7707e",
+      "license": "BSD-3-Clause",
+      "source": "third_party/decimal/LICENSE.txt",
+      "native": "Decimal.txt",
+      "godot": "DECIMAL_LICENSE.txt"
+    },
+    {
+      "component": "ada",
+      "heading": "ada URL parser (MIT option)",
+      "version": "4.0.0, rev b12a893a4580",
+      "license": "MIT",
+      "source": "third_party/ada/LICENSE-MIT",
+      "native": "Ada-MIT.txt",
+      "godot": "ADA_LICENSE_MIT.txt"
+    },
+    {
+      "component": "ada",
+      "heading": "ada URL parser (Apache-2.0 option)",
+      "version": "4.0.0, rev b12a893a4580",
+      "license": "Apache-2.0",
+      "source": "third_party/ada/LICENSE-APACHE",
+      "native": "Ada-Apache.txt",
+      "godot": "ADA_LICENSE_APACHE.txt"
+    },
+    {
+      "component": "stb",
+      "heading": "stb_image JPEG decoder",
+      "version": "rev 013ac3beddff3dbffafd5177e7972067cd2b5083",
+      "license": "MIT or public domain",
+      "source": "third_party/stb/LICENSE.txt",
+      "native": "stb.txt",
+      "godot": "STB_LICENSE.txt"
+    }
+  ],
+  "dependencies": {
+    "icu": {
+      "version": "78.3",
+      "linkage": "static",
+      "search_locale": "en",
+      "source_sha256": "3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0",
+      "license": "ICU_LICENSE.txt"
+    },
+    "unicode": {
+      "version": "17.0.0",
+      "linkage": "generated-tables",
+      "license": "UNICODE_LICENSE.txt"
+    },
+    "decimal": {
+      "upstream": "Chromium Blink WTF Decimal",
+      "revision": "9596b537e435c5c23d247cb7d9925d81e8f7707e",
+      "linkage": "static",
+      "license": "DECIMAL_LICENSE.txt"
+    },
+    "ada": {
+      "version": "4.0.0",
+      "revision": "b12a893a45809da8103bb4f1e2f6f5ee13f9100b",
+      "linkage": "static",
+      "license": "ADA_LICENSE_MIT.txt",
+      "url_pattern": false
+    },
+    "stb": {
+      "revision": "013ac3beddff3dbffafd5177e7972067cd2b5083",
+      "linkage": "static",
+      "license": "STB_LICENSE.txt"
+    }
+  }
+}

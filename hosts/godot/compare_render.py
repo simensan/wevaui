@@ -131,8 +131,8 @@ def compare(a_path, b_path, tolerance, coverage_tolerance, structural_tolerance)
     structural_pct = 100.0 * structural / total
 
     print(f"  size            {aw}x{ah} ({total} px)")
-    print(f"  mean channel Δ  {mean:.2f}/255")
-    print(f"  worst channel Δ {worst}/255 at {worst_at}")
+    print(f"  mean channel delta  {mean:.2f}/255")
+    print(f"  worst channel delta {worst}/255 at {worst_at}")
     print(f"  over tolerance  {differing} px ({differing_pct:.2f}%), tolerance {tolerance}")
     print(f"  structural      {structural} px ({structural_pct:.2f}%), tolerance {structural_tolerance}")
 
@@ -199,7 +199,8 @@ def main():
     width, _, height = args.size.partition("x")
     height = height or width
 
-    tmp = args.out_dir or tempfile.mkdtemp(prefix="weva-render-")
+    # Godot resolves relative file paths from the project, unlike the core CLI.
+    tmp = os.path.abspath(args.out_dir) if args.out_dir else tempfile.mkdtemp(prefix="weva-render-")
     os.makedirs(tmp, exist_ok=True)
     soft = os.path.join(tmp, "software.ppm")
     godot = os.path.join(tmp, "godot.ppm")

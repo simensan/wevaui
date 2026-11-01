@@ -1,4 +1,6 @@
 import importlib.util
+import io
+from contextlib import redirect_stdout
 import json
 import os
 from pathlib import Path
@@ -162,6 +164,48 @@ class MetadataTests(unittest.TestCase):
         struct.pack_into('<H', elf, 16, 3)
         self.library.write_bytes(elf)
         self.assertEqual(package_addon.verify_library(self.library, 'linux'), elf)
+
+
+class RenderOutputDirectoryTests(unittest.TestCase):
+    def test_report_can_be_redirected_with_windows_legacy_encoding(self):
+        spec = importlib.util.spec_from_file_location('render_comparison', HOST / 'compare_render.py')
+        render = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(render)
+        with tempfile.TemporaryDirectory() as directory:
+            image = Path(directory) / 'image.ppm'
+            image.write_bytes(b'P6\n1 1\n255\n' + bytes([0, 0, 255]))
+            stream = io.TextIOWrapper(io.BytesIO(), encoding='cp1252')
+            with redirect_stdout(stream):
+                self.assertTrue(render.compare(str(image), str(image), 8, 2.0, 64))
+            stream.flush()
+
+    def test_relative_output_is_shared_across_renderer_working_directories(self):
+        spec = importlib.util.spec_from_file_location('render_comparison', HOST / 'compare_render.py')
+        render = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(render)
+        with tempfile.TemporaryDirectory() as directory:
+            work = Path(directory); project = work / 'project'; project.mkdir()
+            ppm = b'P6\n1 1\n255\n' + bytes([0, 0, 255])
+            def run(command, **kwargs):
+                if command[0] == 'software':
+                    Path(command[5]).write_bytes(ppm)
+                else:
+                    target = Path(command[command.index('--out') + 1])
+                    if not target.is_absolute(): target = project / target
+                    if not target.parent.exists():
+                        return subprocess.CompletedProcess(command, 1, '', 'project-relative output parent is missing')
+                    target.write_bytes(ppm)
+                return subprocess.CompletedProcess(command, 0, '', '')
+            previous = Path.cwd()
+            try:
+                os.chdir(work)
+                with patch.object(sys, 'argv', ['compare_render.py', 'fixture.html', '--size', '1x1',
+                        '--project', str(project), '--weva-render', 'software', '--godot', 'engine', '--out-dir', 'captures']), \
+                        patch.object(render.subprocess, 'run', side_effect=run):
+                    self.assertEqual(render.main(), 0)
+                self.assertTrue((work / 'captures/godot.ppm').is_file())
+            finally:
+                os.chdir(previous)
 
 
 @unittest.skipIf(os.name == 'nt' or not shutil.which('bash'), 'Bash integration runs on Linux')

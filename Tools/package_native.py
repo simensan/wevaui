@@ -12,6 +12,7 @@ import platform
 import re
 import shutil
 import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 TARGETS = {
@@ -21,15 +22,10 @@ TARGETS = {
     "x86_64-apple-darwin": ("Darwin", "x86_64"),
 }
 LIBRARIES = ("weva", "weva_icu_i18n", "weva_icu_common")
-LICENSES = {
-    "Weva.txt": "LICENSE.md",
-    "ICU.txt": "third_party/icu/LICENSE.txt",
-    "Unicode.txt": "third_party/unicode/LICENSE.txt",
-    "Ada-MIT.txt": "third_party/ada/LICENSE-MIT",
-    "Ada-Apache.txt": "third_party/ada/LICENSE-APACHE",
-    "Decimal.txt": "third_party/decimal/LICENSE.txt",
-    "stb.txt": "third_party/stb/LICENSE.txt",
-}
+sys.path.insert(0, str(ROOT / 'Tools'))
+from third_party_notices import native_licenses  # noqa: E402
+
+LICENSES = native_licenses()
 
 
 def digest(path):
@@ -42,6 +38,8 @@ def architecture(value):
 
 
 def validate_build(target, metadata):
+    if metadata.get("sanitizers") is not False:
+        raise ValueError("Native SDK requires explicit sanitizer-free build metadata; reconfigure and rebuild it")
     system, arch = TARGETS[target]
     actual = (metadata.get("osx_architectures") or metadata.get("compiler_architecture")
               or metadata.get("processor", ""))
@@ -59,7 +57,7 @@ def package(root, build, output, target, allow_dirty=False):
     if not re.fullmatch(r"[0-9a-f]{40}", revision):
         raise ValueError("A full source commit is required")
     # Do not describe changed or untracked native inputs as a published commit.
-    inputs = ["CMakeLists.txt", "libweva", "third_party", "Tools/native", "Tools/package_native.py"]
+    inputs = ["CMakeLists.txt", "libweva", "third_party", "Tools/native", "Tools/package_native.py", "Tools/third_party_notices.py"]
     dirty = bool(subprocess.check_output(["git", "-C", str(root), "status", "--porcelain", "--", *inputs], text=True).strip())
     if dirty and not allow_dirty:
         raise ValueError("Commit native SDK inputs before packaging a release; --allow-dirty is for local validation only")

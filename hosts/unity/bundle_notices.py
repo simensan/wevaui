@@ -2,7 +2,7 @@
 """Generate the UPM package's `Third Party Notices.md`.
 
 `weva_core` statically links ICU, the Unicode character tables generated from
-the UCD, Blink's WTF Decimal and the ada URL parser. The package ships that
+the UCD, Blink's WTF Decimal, the ada URL parser and stb_image JPEG decoding. The package ships that
 binary, so it has to ship their notices with it -- BSD-3-Clause and the Unicode
 licence both require the notice to travel with a binary distribution, and the
 package's own LICENSE.md covers only Weva's MIT terms.
@@ -30,18 +30,10 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 OUT = ROOT / 'Packages' / 'com.wevaui' / 'Third Party Notices.md'
 
-# (heading, version/revision, licence name, path to the text in this repo)
-COMPONENTS = [
-    ('ICU4C', '78.3', 'Unicode Licence V3', 'third_party/icu/LICENSE.txt'),
-    ('Unicode Character Database (generated tables)', '17.0.0', 'Unicode Licence V3',
-     'third_party/unicode/LICENSE.txt'),
-    ('Blink WTF Decimal', 'rev 9596b537e435c5c23d247cb7d9925d81e8f7707e', 'BSD-3-Clause',
-     'third_party/decimal/LICENSE.txt'),
-    ('ada URL parser (MIT option)', '4.0.0, rev b12a893a4580', 'MIT',
-     'third_party/ada/LICENSE-MIT'),
-    ('ada URL parser (Apache-2.0 option)', '4.0.0, rev b12a893a4580', 'Apache-2.0',
-     'third_party/ada/LICENSE-APACHE'),
-]
+sys.path.insert(0, str(ROOT / 'Tools'))
+from third_party_notices import unity_components  # noqa: E402
+
+COMPONENTS = unity_components()
 
 HEADER = """# Third-party notices
 

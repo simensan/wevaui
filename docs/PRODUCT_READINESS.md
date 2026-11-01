@@ -1,167 +1,15 @@
 # Product readiness
 
-The [Godot/Agentic memory audit](verification/host-memory-20261101.md) passes
-268 rendered Godot lifecycle checks. The preserved Agentic SDK still shows
-process-private growth at 60 updates/s (+15.4 MiB idle, +78.2 MiB reloading over
-five minutes). Allocation ownership remains unresolved; these historical-SDK
-measurements neither qualify the current SDK nor establish a fixed leak.
+Weva is a **development preview** for HTML/CSS game UI in Unity and Godot.
+The latest integrated checks and remaining engineering debt are recorded in the
+[technical audit](verification/tech-debt-20261101.md). Older checkpoints and
+measurements are retained in [readiness history](PRODUCT_READINESS_HISTORY.md)
+and [verification receipts](verification/README.md).
 
-The [binding-lifetime fix](verification/binding-lifetime-20261031.md) removes
-a Unity callback root that prevented abandoned bound documents and models from
-being collected. Live documents keep adapters alive through managed ownership;
-finalization uses the same cleanup path as explicit disposal.
-
-The [Unity font-retention fix](verification/font-retention-20261031.md) addresses
-both findings from the memory-leak audit: rejected bytes are cached only after
-validation, and repeated accepted font versions reuse their face records.
-The previous Agentic process-memory growth remains unattributed.
-
-The [lazy glyph atlas](verification/lazy-atlas-20261031.md) saves 1 MiB of
-core CPU storage per newly created document and 2 MiB in the measured text-free
-panel after font setup. Text-bearing UI uses the same storage as before; this
-is not a general text-UI reduction or a fix for the earlier Agentic soak growth.
-
-The [handle-memory fix](verification/handle-memory-20261031.md) removes
-document-lifetime growth from retired element handles. In a core-only test
-with 32 live children and 5,000 subtree replacements, tracked live C++ storage
-is 2,488,382 bytes versus 4,581,294 before (45.7% lower). This is a synthetic
-retention result, not a host-process or GPU memory reduction. The earlier
-Agentic soak growth remains unattributed.
-
-The [matched property-ID pass](verification/inventory-property-ids-20261031.md)
-measures a provisional 4.3% paired reduction in inventory style/layout CPU
-after the [bidi mapping pass](verification/inventory-bidi-20261031.md).
-Complete update CPU is effectively flat. That optimization batch measures 0.150 ms
-versus Chrome's 0.140 ms for style/layout, and 0.194 versus 0.193 ms for paint.
-Chrome parity is not established.
-Other-workspace activity remains in these requested runs; separate batch
-percentages are not a combined speedup claim.
-
-The [pseudo keyword follow-up](verification/pseudo-keywords-20261031.md) fixes
-explicit inherited colors and CSS-wide keyword rollback on pseudo-elements,
-using the same resolver as ordinary elements. Its focused render matches Chrome.
-The subsequent [currentColor fix](verification/currentcolor-and-layout-probes-20261031.md)
-corrects background painting through the common color resolver, with an exact
-Chrome pixel comparison. Its local-layout investigation rejected a width-reuse
-experiment after six paired runs failed to establish a runtime improvement.
-
-The [combined vertical-metrics pass](verification/vertical-metrics-20261031.md)
-removes redundant cached font lookups. Six provisional pairs measure 12.5%
-lower inventory style/layout CPU, with medians of 0.167 ms versus Chrome's
-0.170 ms. Paint remains higher and HUD results are flat; this is not stable
-Chrome parity or a new release qualification.
-
-The [combined containing-block query](verification/paint-state-20261031.md)
-removes a repeated CSS property scan during paint. Six provisional pairs
-measure 2.6% lower inventory paint CPU, with a 3.5 microsecond saving in the
-instrumented containing-block stage. Browser timings remain variable;
-consistent Chrome parity is not established.
-
-The [empty-glyph cache](verification/empty-glyphs-20261031.md) removes repeated
-host raster/metric calls for spaces. Six provisional pairs measure 3.8% lower
-inventory paint CPU and effectively flat complete CPU; HUD paint is unchanged.
-Inventory paint medians are 0.213 ms versus Chrome's 0.208 ms in that batch,
-with inconsistent individual pairs. This does not establish stable parity.
-
-The [glyph preparation buffer](verification/glyph-scratch-20261031.md) cuts
-shaping allocations from 1,200 to 606 in a 100-label regression. Its six
-provisional pairs do not establish a frame-time improvement; this is an
-allocation reduction, not a further speedup claim.
-
-The [clean Chrome comparison](verification/clean-render-comparison-20261031.md)
-still finds an inventory CPU gap: style/layout 0.280 vs 0.142 ms, paint recording
-0.255 vs 0.201 ms. The [30-minute reload soak](verification/lifecycle-soak-20261031.md)
-passes interaction checks but leaves 13.7 MiB of CPU-memory growth unexplained.
-
-The [IL2CPP qualification follow-up](verification/il2cpp-qualification-20261031.md) fixes callback registration and passes Windows development and high-stripping non-development test players. It also found leftover audit test players: earlier timing percentages need clean remeasurement because of uncontrolled background rendering load. Correctness and pixel comparisons remain applicable.
-
-The [completed rendering audit](verification/render-audit-final-20261031.md) consolidates verified improvements, current binary/test evidence and the remaining Chrome, cold-start and hardware qualification gaps. It does not change development-preview release status.
-
-The local Agentic audit branch adds explicit hidden CPU preparation through
-`html_prepare()`. Paired runtime checks show lower interactive opening cost
-by moving layout/glyph/paint work into loading; GPU first-use work remains.
-This is now integrated into local Agentic main; see the [integration receipt](verification/agentic-integration-20261031.md). See the
-[October 31 preparation receipt](verification/script-preparation-20261031.md).
-The [Agentic scissor follow-up](verification/agentic-scissor-dedup-20261031.md)
-preserves captures and is integrated into local Agentic main. Its historical
-4–5% command-encoding result needs clean remeasurement after the leftover-player
-discovery; no remote publication is claimed.
-The [resolution audit](verification/resolution-audit-20261031.md) measures
-native 720p/1080p/4K targets on RTX 5080. Retained inventory GPU draw time
-reaches 0.034 ms at 4K; this excludes target clear, presentation and the game
-world, and does not qualify high-DPI UI scaling or lower-end hardware.
-
-Unity 2.0 adds retained `Visible`, CPU `Prepare()` and texture/mesh/material
-`PrepareRenderer()` loading controls, with 255 EditMode passes (two existing
-environment-gated inconclusive), seven URP render passes and seven Windows
-Mono player passes. Renderer preparation moves work into loading; first shader
-execution and cold-opening player timing remain unverified. See the
-[renderer preparation receipt](verification/unity-renderer-api-20261031.md).
-The [material preparation follow-up](verification/unity-material-preparation-20261031.md)
-moves lazy material setup into loading and reduces first command recording
-in the paired editor benchmark; it does not warm GPU shader execution.
-The [direct vertex upload follow-up](verification/unity-direct-vertices-20261031.md)
-reduces median inventory mesh synchronization CPU; tail results remain mixed.
-Godot's existing hidden manual-update workflow is verified on Windows
-and the rebuilt qualified Linux addon. See the
-[host preparation receipt](verification/unity-hidden-preparation-20261031.md).
-
-Updated October 31, 2026 · Latest full integration gate: October 31.
-
-The [rendering integration audit](verification/render-audit-integration-20261031.md)
-passes the qualified release gate with no skipped stages, plus full Unity
-EditMode and Windows Mono player rendering. It separates accepted improvements
-from rejected experiments and remaining timing/hardware gaps; it does not
-establish universal Chrome parity or hitch-free cold rendering.
-
-The [flex-row allocation follow-up](verification/flex-row-allocation-20261031.md)
-reduces full-inventory update/render CPU by 14.9% in four paired Unity editor
-runs and fixes padding-dependent flex shrink weights. The shared change is
-rebuilt into both hosts; the full gate, including 341 Chrome captures, passes.
-The [Godot follow-up](verification/flex-row-godot-20261031.md) measures a 10.49%
-median paired inventory-update reduction; HUD and frame-tail results are mixed.
-The [matched Chrome rerun](verification/optimized-render-comparison-20261031.md)
-still measures an inventory style/layout gap (0.336 versus 0.242 ms). Its
-separated CPU stages do not establish complete rendering or GPU parity.
-
-Scoped October 25 core/Agentic checks cover filtered downscaled icons and
-antialiased thin rounded borders; see the
-[rendering receipt](verification/image-filtering-20261025.md).
-The [October 30 receipt](verification/chrome-target-20261030.md) records the preceding
-full local gate and Unity EditMode results: 244 pass, zero failures and two
-environment-gated inconclusive. Godot rendering, exports and scene checks pass
-with the qualified patched editor and templates.
-
-The [merge integration receipt](verification/merge-20261020.md) records
-validation of the combined engine and host changes. Performance measurements
-remain specific to the earlier builds identified in their reports.
-
-**Weva is a development preview** for building game UI with HTML/CSS in Unity
-and Godot. HUDs, menus, settings screens and data-bound lists are ready to try.
-Production adoption still needs validation in your game, on your target devices.
-
-The rendering audit's nested first-baseline discrepancy is fixed for the
-captured block/grid/flex cases, including reordered children. See the
-[baseline receipt](verification/nested-baseline-20261030.md) for the scoped
-Chrome and host checks; this is not complete CSS baseline conformance.
-
-The [Agentic runtime audit](verification/agentic-runtime-20261030.md) validates
-the current core in an immutable Agentic SDK with a scripted survival UI over
-a synthetic 3D scene: clicks/bindings, 9,000 profiled frames and 339 short-cycle
-reloads. This is scoped runtime evidence, not a new supported-host release or
-a matched Chrome rendering comparison.
-
-The [cold renderer follow-up](verification/agentic-cold-render-20261030.md)
-reduces Agentic's median threaded opening frame by 6.6% in that synthetic
-scene, but retains a 69 ms outlier. Cold opening is not yet hitch-free.
-
-The [hidden UI follow-up](verification/agentic-hidden-ui-20261030.md) removes
-unnecessary Agentic direct rendering work while hidden data continues changing.
-This improves that specific workload; it does not change release status.
-
-Godot also [defers automatic hidden updates](verification/godot-hidden-ui-20261030.md).
-Explicit `update_document(0)` can prewarm a hidden document before showing it.
-Unity disabling releases the native document rather than retaining it.
+The core now decodes JPEG as well as PNG, including JPEG bytes with a PNG file
+name. Pointer inheritance and replaced-image backgrounds have Chrome-backed
+regressions. Adoption into a separate Agentic SDK is a distinct qualification
+step; a passing core/Unity/Godot receipt does not prove that SDK contains it.
 
 ## Choose your host
 
@@ -204,64 +52,21 @@ and browser-level visual/text fidelity remain incomplete.
 - **Input and accessibility:** automated input tests cover mouse, keyboard,
   gamepad, touch and IME composition. Physical gamepad, touchscreen and system
   IME acceptance, plus accessibility, remain incomplete.
-- **Performance:** measure screen opening as well as steady gameplay. Across the
-  earlier runs, the slowest core-only cold-creation samples averaged 52–56 ms.
-  [Parallel rasterization](verification/cold-raster-20261011.md) lowers paired
-  GCC cold HUD creation by 35.5% to 33.368 ms, using additional CPU cores. This
-  still exceeds a 60 Hz frame budget before host rendering or asset loading.
-  Preparing and reusing screens may help.
-  Since the [September 25 audit](verification/tech-audit-20260925.md), cold paint
-  uses up to four threads, and wide blurs are drawn at the resolution they need.
-  The [screen-opening pass](verification/screen-open-20260925.md) measured
-  first opens up to 2.5× faster. A screen created again, such as a Unity menu
-  re-enabled, was up to 8× faster on paint-heavy pages, because rasterized
-  textures are kept across documents. `weva_set_raster_cache_limit` bounds
-  that cache (32 MiB by default). `WEVA_RASTER_THREADS=1` keeps everything on
-  the calling thread.
-  The [two performance passes](verification/performance-20260915-pass2.md) cover
-  standalone Godot fixtures on a Ryzen 7 9800X3D/RTX 5080; they do not establish
-  Unity performance, full-game FPS or lower-end hardware suitability.
-  The [October audit](verification/performance-audit-20261011.md) repeats the
-  runtime workloads and identifies cold paint preparation and scrolling as the
-  leading investigation targets; it adds no whole-game performance qualification.
-  The [runtime geometry change](verification/runtime-geometry-20261011.md)
-  lowers paired inventory scrolling API CPU p95 by 11.9% to 1.097 ms with
-  identical pixels; whole-game and lower-end testing remain outstanding.
-  Those performance reports describe separate pre-merge builds. The
-  [latest October 30 comparison](verification/chrome-target-20261030.md) keeps
-  fourteen matched workloads unchanged. All improve against the previous native
-  build by 5.1-53.3%. Thirteen beat Chrome; autosizing-flex leaf updates remain
-  0.000971 ms slower (0.009621 vs 0.008650 ms). Both engines exclude paint in
-  this comparison. Separate native measurements include paint preparation.
-  Cold fixture creation is mixed, including a 2.5% populated-inventory regression.
-  These results do not measure host/GPU presentation or game load.
-  The separate [rendering probe](verification/rendering-20261030.md) now measures
-  Godot CPU/GPU rendering of the actual survival sample on an RTX 5080 at
-  1280x720, including a background-only control. It covers OpenGL and Vulkan;
-  the [same-scene Chrome follow-up](verification/rendering-chrome-20261030.md)
-  adds CPU rendering-stage traces. Inventory selection remains more expensive
-  in Weva. End-to-end/GPU parity, weaker hardware and busy 3D scenes remain
-  unverified.
-  The [Unity player timing audit](verification/unity-player-timing-20261031.md)
-  adds 9,000 presented frames at 60 Hz on D3D12/RTX 5080. It reports whole-player
-  CPU/GPU timing with a background control and explicit GPU availability
-  (8,997/9,000), not isolated UI GPU time or uncapped FPS.
-  A [synthetic 3D follow-up](verification/unity-player-world-20261031.md) adds
-  321 renderers, camera motion and 64 rotating objects with 9,000/9,000 GPU
-  readings. This scene has no active shadows and is not GPU-saturated.
+- **Performance:** measure first opening, active updates, rendering and a busy
+  game scene on target hardware. CPU/GPU and Chrome parity are not established
+  universally. Explicit preparation can move work into loading; it does not
+  guarantee first GPU execution is complete. Historical speedups describe their
+  own builds and workloads; see [measurement receipts](verification/README.md).
+- **Memory:** Unity callback/font retention fixes have regressions. Godot's
+  short rendered lifecycle checks pass. A preserved Agentic SDK still grows
+  in controlled reload runs, including at 60 updates/s; allocation ownership
+  remains unresolved. See [the host memory audit](verification/host-memory-20261101.md).
 
 - **Deep markup:** content nested more than 64 elements deep is not rendered,
   so layout stays within a 1 MB thread stack.
 
 ## Evidence behind this status
 
-The October 11 technical audit fixed Unity callback ownership and renderer reuse,
-repaired browser tooling and passed the complete local release gate with the
-specified patched Godot builds and Windows Chrome reference. Unity full EditMode
-passes 243 tests with two environment-dependent tests inconclusive; five PlayMode
-rendering tests pass. Exact findings, coverage and remaining exceptions are in the
-[technical audit](verification/tech-audit-20261011.md).
-The subsequent [Windows player audit](verification/unity-player-20261011.md)
-removed a stale legacy renderer reference that blocked builds and passed six
-rendering/asset/binding checks in an actual standalone player.
-These are local checkout results, not certification of a published release.
+Use the [latest integration audit](verification/tech-debt-20261101.md) for exact
+build identities, suites and exceptions. These are local checkout results, not
+certification of every platform or a published stable release.

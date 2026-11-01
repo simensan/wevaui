@@ -7,7 +7,8 @@ and all dependency licenses. Windows uses the dynamic MSVC CRT; Linux uses
 libstdc++ from GCC 12 (Ubuntu 22.04 / glibc 2.35 baseline), and macOS uses libc++ (macOS 11 minimum).
 The normal host C/C++ linker/toolchain is still required.
 
-Run **Native SDK** manually on a committed revision. It builds and runs the core
+Native input changes trigger the **Native SDK** CI matrix. For publication,
+run **Native SDK** manually on a committed revision. It builds and runs the core
 suite and a C ABI consumer smoke test on Windows x64, Linux x64, and macOS ARM64
 and x64. Enable `publish` to create `native-<full commit>` only after every job
 passes. Releases are immutable; the workflow refuses to replace an existing one.
@@ -31,3 +32,9 @@ the manifest SHA-256, verify all files before use, and link in this order:
 `weva`, `weva_icu_i18n`, `weva_icu_common`. Header and library versions must match.
 Windows also links `advapi32`. Unavailable targets require an explicit source
 build; they must not silently download or build another version.
+
+Shipping SDKs reject sanitizer instrumentation at configure and packaging time.
+Older native build metadata without an explicit `sanitizers: false` field must
+be regenerated. Use the root project for sanitizer diagnostics.
+Dependency licenses for SDK, Unity and Godot distributions come from
+`third_party/notices.json`; register new vendored notices there.

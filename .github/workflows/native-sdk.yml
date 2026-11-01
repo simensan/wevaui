@@ -1,7 +1,7 @@
 name: Native SDK
 on:
   pull_request:
-    paths: ['Tools/native/**', 'Tools/package_native.py', 'Tools/tests/test_native_package.py', '.github/workflows/native-sdk.yml']
+    paths: ['libweva/**', 'third_party/**', 'CMakeLists.txt', 'LICENSE.md', 'Tools/native/**', 'Tools/package_native.py', 'Tools/third_party_notices.py', 'Tools/tests/test_native_package.py', 'Tools/weva_*/**', 'Tools/gradsize/**', 'Tools/sanitizer_probe.cpp', 'Tools/check_sanitizer.cmake', '.github/workflows/native-sdk.yml']
   workflow_dispatch:
     inputs:
       publish:
