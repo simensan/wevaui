@@ -454,7 +454,11 @@ DecodedImage decode_png(const uint8_t* data, size_t size) {
     return image;
 }
 
-DecodedImage decode_image(const uint8_t* data, size_t size) { return decode_png(data, size); }
+DecodedImage decode_image(const uint8_t* data, size_t size) {
+    if (data && size >= 3 && data[0] == 0xff && data[1] == 0xd8 && data[2] == 0xff)
+        return decode_jpeg(data, size);
+    return decode_png(data, size);
+}
 
 void prepare_image_sampling(DecodedImage& image) {
     if (!image.valid() || image.width < 128 || image.height < 128 || !image.block_sums.empty()) return;

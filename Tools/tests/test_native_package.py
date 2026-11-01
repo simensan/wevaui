@@ -41,7 +41,10 @@ class NativePackageTests(unittest.TestCase):
         manifest = self.package()
         self.assertFalse(manifest["source_dirty"])
         self.assertEqual(manifest["abi"], {"major": 0, "minor": 45})
-        self.assertEqual(len(manifest["files"]), 10)
+        self.assertEqual(set(manifest["files"]), {
+            "include/weva_c.h", *("lib/" + name + ".lib" for name in native.LIBRARIES),
+            *("licenses/" + name for name in native.LICENSES),
+        })
         sdk = self.root / "out/sdk" / self.target
         release = self.root / "out/release"
         self.assertEqual((sdk / "manifest.json").read_bytes(), (release / (self.target + ".json")).read_bytes())

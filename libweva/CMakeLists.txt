@@ -57,6 +57,7 @@ add_library(weva STATIC
     src/user_agent_stylesheet.cpp
     src/font_metrics.cpp
     src/image_decode.cpp
+    src/image_decode_jpeg.cpp
     src/image_store.cpp
     src/border_image.cpp
     src/inline_layout.cpp
@@ -83,6 +84,7 @@ add_library(weva STATIC
     src/diagnostic_cycles.cpp
 )
 target_include_directories(weva PUBLIC include)
+target_include_directories(weva SYSTEM PRIVATE ../third_party/stb)
 target_link_libraries(weva PUBLIC weva_flags PRIVATE weva_icu_i18n)
 
 # Opt-in frame pointers for Tools/weva_bench --profile. Off by default so the

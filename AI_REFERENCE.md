@@ -1,5 +1,11 @@
 # AI_REFERENCE.md — orientation for AI agents
 
+The [JPEG decoder pass](docs/verification/jpeg-20261101.md) adds content-sniffed
+baseline/progressive, grayscale and CMYK JPEG decoding to the shared core.
+Windows/GCC pass 597,253 checks, Clang 597,247; Unity Native 258 pass plus two
+inconclusive and Godot host 247 checks pass. Native SDKs now include stb.txt.
+Agentic integration and late failure reporting are separate pending work.
+
 The [Wavebound UI core corrections](docs/verification/wavebound-ui-20261101.md)
 fix pointer inheritance and solid backgrounds covering replaced images. GCC
 18/18, sanitizers 20/20, Unity Native 258 pass plus two inconclusive, and Godot

@@ -21,6 +21,8 @@ using namespace weva;
 
 namespace {
 
+#include "jpeg_fixtures.inc"
+
 // truecolour, filter 0 on every row
 const uint8_t k_rgb_unfiltered[] = {
     137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82,
@@ -1510,6 +1512,49 @@ void decodes(const uint8_t* data, size_t size, int width, int height, const uint
 } // namespace
 
 void test_image_decode() {
+    // Expected constant pixels were decoded independently by pinned Chrome
+    // 152; the baseline/progressive/gray/CMYK files came from Pillow.
+    struct Jpeg { const uint8_t* data; size_t size; uint8_t r, g, b; };
+    for (const Jpeg& row : {
+            Jpeg{k_jpeg_baseline, sizeof(k_jpeg_baseline), 64, 128, 192},
+            Jpeg{k_jpeg_progressive, sizeof(k_jpeg_progressive), 64, 128, 192},
+            Jpeg{k_jpeg_gray, sizeof(k_jpeg_gray), 96, 96, 96},
+            Jpeg{k_jpeg_cmyk, sizeof(k_jpeg_cmyk), 167, 111, 55}}) {
+        const auto image = decode_image(row.data, row.size);
+        CHECK(image.valid() && image.width == 16 && image.height == 8);
+        CHECK(image.rgba.size() == 16 * 8 * 4);
+        for (size_t i = 0; i + 3 < image.rgba.size(); i += 4) {
+            CHECK(image.rgba[i] == row.r && image.rgba[i + 1] == row.g &&
+                  image.rgba[i + 2] == row.b && image.rgba[i + 3] == 255);
+        }
+        // Extension-independent reads and cache reuse matter for authored
+        // JPEGs carrying .png names, not just direct decoder calls.
+        ImageStore store;
+        int reads = 0;
+        store.set_reader([&](const std::string&, std::vector<uint8_t>* out) {
+            ++reads; out->assign(row.data, row.data + row.size); return true;
+        });
+        const auto* stored = store.get("jpeg-named.png");
+        CHECK(stored && stored->rgba == image.rgba && stored->valid());
+        CHECK(store.get("jpeg-named.png") == stored && reads == 1);
+        CHECK(store.missing_count() == 0);
+        for (size_t n = 0; n < 32; ++n) CHECK(!decode_image(row.data, n).valid());
+    }
+    CHECK(!decode_jpeg(nullptr, 0).valid());
+    CHECK(!decode_jpeg(k_jpeg_baseline, SIZE_MAX).valid());
+    auto oversized = std::vector<uint8_t>(k_jpeg_baseline,
+                                         k_jpeg_baseline + sizeof(k_jpeg_baseline));
+    bool changed_header = false;
+    for (size_t i = 0; i + 8 < oversized.size(); ++i) {
+        if (oversized[i] == 0xff && oversized[i + 1] == 0xc0) {
+            for (size_t j = i + 5; j < i + 9; ++j) oversized[j] = 0xff;
+            changed_header = true;
+            break;
+        }
+    }
+    CHECK(changed_header);
+    CHECK(!decode_image(oversized.data(), oversized.size()).valid());
+
     decodes(k_rgb_unfiltered, sizeof(k_rgb_unfiltered), 4, 3, k_rgb_unfiltered_rgba, sizeof(k_rgb_unfiltered_rgba), "truecolour, filter 0 on every row");
     decodes(k_rgb_all_filters, sizeof(k_rgb_all_filters), 4, 10, k_rgb_all_filters_rgba, sizeof(k_rgb_all_filters_rgba), "truecolour, a different filter on every row");
     decodes(k_rgba, sizeof(k_rgba), 2, 2, k_rgba_rgba, sizeof(k_rgba_rgba), "truecolour with alpha, straight through");
@@ -1564,6 +1609,22 @@ void test_image_decode() {
 }
 
 void test_async_images() {
+    {
+        ImageStore jpeg_store;
+        jpeg_store.set_reader([](const std::string&, std::vector<uint8_t>* out) {
+            out->assign(k_jpeg_progressive, k_jpeg_progressive + sizeof(k_jpeg_progressive));
+            return true;
+        });
+        CHECK(!jpeg_store.get("progressive.png", true));
+        const auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
+        while (jpeg_store.pending() && std::chrono::steady_clock::now() < deadline) {
+            jpeg_store.poll();
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+        const auto* decoded = jpeg_store.get("progressive.png");
+        CHECK(!jpeg_store.pending() && decoded && decoded->width == 16 && decoded->height == 8);
+        CHECK(jpeg_store.missing_count() == 0);
+    }
     const auto caller = std::this_thread::get_id();
     int reads = 0;
     ImageStore store;

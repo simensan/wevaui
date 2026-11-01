@@ -17,9 +17,9 @@
 // A host-side decoder would have put two different libraries on the two sides
 // of that comparison.
 //
-// PNG only, and only the subset UI art is actually stored in: 8 bits per
-// channel, no interlacing. Anything else is refused rather than guessed at,
-// and a refused image degrades to the flat fill it already did.
+// PNG (8 bits per channel, non-interlaced) and JPEG (baseline/progressive,
+// including grayscale and CMYK). Other formats are refused rather than
+// guessed at; callers can report failures through the missing-assets API.
 
 namespace weva {
 
@@ -51,9 +51,10 @@ bool inflate_zlib(const uint8_t* data, size_t size, std::vector<uint8_t>* out,
 
 // A PNG's bytes to RGBA8. Returns an invalid image on anything unsupported.
 DecodedImage decode_png(const uint8_t* data, size_t size);
+DecodedImage decode_jpeg(const uint8_t* data, size_t size);
 
 // Dispatches on the content, not on the file extension: a .png that is really
-// something else should fail as what it is.
+// a JPEG is decoded as JPEG.
 DecodedImage decode_image(const uint8_t* data, size_t size);
 void prepare_image_sampling(DecodedImage& image);
 

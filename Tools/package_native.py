@@ -28,6 +28,7 @@ LICENSES = {
     "Ada-MIT.txt": "third_party/ada/LICENSE-MIT",
     "Ada-Apache.txt": "third_party/ada/LICENSE-APACHE",
     "Decimal.txt": "third_party/decimal/LICENSE.txt",
+    "stb.txt": "third_party/stb/LICENSE.txt",
 }
 
 
