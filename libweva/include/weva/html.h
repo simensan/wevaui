@@ -133,6 +133,12 @@ class Document;
 Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
                          const ParseOptions& options, HtmlParseError* error);
 
+// Parse-local identifiers. The returned DOM owns its names and values; it does
+// not need the token symbols after parsing. Prefer this for markup replacement
+// so obsolete source names do not accumulate for the document's whole lifetime.
+Ref<Document> parse_html(std::string_view source, const ParseOptions& options,
+                         HtmlParseError* error);
+
 namespace html_entities {
 // Resolves a named entity ("amp") to its replacement text.
 bool lookup(std::string_view name, std::string_view* out);

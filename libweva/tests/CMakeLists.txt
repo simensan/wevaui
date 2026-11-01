@@ -162,3 +162,7 @@ add_test(NAME weva_image_queue_memory COMMAND weva_image_queue_memory)
 add_executable(weva_image_cache_memory test_image_cache_memory.cpp)
 target_link_libraries(weva_image_cache_memory PRIVATE weva Threads::Threads)
 add_test(NAME weva_image_cache_memory COMMAND weva_image_cache_memory)
+
+add_executable(weva_parser_memory test_parser_memory.cpp)
+target_link_libraries(weva_parser_memory PRIVATE weva)
+add_test(NAME weva_parser_memory COMMAND weva_parser_memory)

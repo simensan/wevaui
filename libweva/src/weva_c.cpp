@@ -2080,7 +2080,6 @@ public:
 // The one type the opaque document handle points at.
 struct weva_document {
     weva_config config{};
-    SymbolTable symbols;
     Ref<Document> doc;
     std::unique_ptr<Stylesheet> ua_sheet;
     std::vector<std::unique_ptr<Stylesheet>> sheets; // author sheets only
@@ -4023,7 +4022,7 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     // Parsed into a fresh tree first. Assigning straight to doc->doc freed the
     // live document before the null check, so a rejected string returned with
     // every handle, focus pointer and box still aimed at the freed tree.
-    Ref<Document> fresh = parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
+    Ref<Document> fresh = parse_html(std::string_view(html ? html : "", length), opts, &err);
     if (!fresh) return WEVA_ERR_PARSE;
     // The replaced tree is kept alive until everything below has let go of it.
     const Ref<Document> replaced = std::move(doc->doc);
@@ -8384,7 +8383,7 @@ static std::vector<Ref<Node>> parse_fragment(weva_document* doc, const char* htm
     ParseOptions opts;
     opts.strict = false;
     Ref<Document> parsed =
-        parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
+        parse_html(std::string_view(html ? html : "", length), opts, &err);
     if (!parsed) return out;
     // Components expand before the cascade sees them, exactly as they do on
     // load, so appended markup gets the expansion the same markup would have
@@ -8622,7 +8621,7 @@ weva_status weva_document_reload_html(weva_document_t doc, const char* html, siz
     opts.strict = false;
     doc->html_diagnostics.clear();
     opts.diagnostics = &doc->html_diagnostics;
-    Ref<Document> fresh = parse_html(std::string_view(html ? html : "", length), &doc->symbols, opts, &err);
+    Ref<Document> fresh = parse_html(std::string_view(html ? html : "", length), opts, &err);
     if (!fresh) return WEVA_ERR_PARSE;
     // The live tree is expanded; the fresh one has to be too, or the diff
     // would put every host's light-dom back in place of its rendering.

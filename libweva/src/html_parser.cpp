@@ -612,4 +612,10 @@ Ref<Document> parse_html(std::string_view source, SymbolTable* symbols,
     return doc;
 }
 
+Ref<Document> parse_html(std::string_view source, const ParseOptions& options,
+                         HtmlParseError* error) {
+    SymbolTable symbols;
+    return parse_html(source, &symbols, options, error);
+}
+
 } // namespace weva

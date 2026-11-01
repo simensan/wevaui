@@ -110,6 +110,17 @@ The earlier row-only scheduler is superseded by the raster-job scheduling
 below. `WEVA_RASTER_SERIAL` remains an alias for serial execution, including
 benchmark sampling. The 24 serial/production raster comparisons remain.
 
+## Parser identifier lifetime
+
+HTML tokens use interned numeric identifiers while a parse is active. The DOM
+owns its tag names, attribute names and values separately, so ABI full loads,
+reconciled reloads and fragment insertion use the scoped `parse_html` overload.
+The table is destroyed before the parsed DOM is returned; unique obsolete
+source names cannot accumulate across replacements. C++ tokenizer/tools can
+still supply an explicit caller-owned `SymbolTable` when they need token IDs.
+Input size determines transient parsing storage; there is no new identifier
+limit. See the [retention regression](verification/parser-memory-20261101.md).
+
 ## Bounds on hostile input, and raster threads
 
 The core treats markup and stylesheets as untrusted: a mod, a save file or a

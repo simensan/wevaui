@@ -1,0 +1,391 @@
+{
+  "schema": 1,
+  "date": "2026-11-01",
+  "verdict": "Confirmed obsolete HTML parser symbol retention fixed for all ABI markup paths; complete qualified integration gate passes",
+  "finding": {
+    "owner": "shared-core ABI document retained its tokenizer SymbolTable across markup replacements",
+    "kind": "reachable obsolete retention until document destruction; not unreachable memory",
+    "fix": "parse-local SymbolTable overload; returned DOM owns its names/values; remove table from ABI document",
+    "paths": [
+      "full document load",
+      "reconciled reload",
+      "fragment parse for DOM insertion/replacement"
+    ],
+    "explicit_cpp_caller_owned_symbol_overload_preserved": true,
+    "hard_identifier_limit_added": false
+  },
+  "paired_probe": {
+    "compiler": "GCC 13.3 Release",
+    "replacements_per_path": 512,
+    "settled_after_replacements": 64,
+    "unique_long_attributes_per_replacement": 32,
+    "unique_custom_tags_per_replacement": 1,
+    "counted": "requested live C++ new storage",
+    "budget_above_settled_bytes": 65536,
+    "checks": 9740,
+    "baseline_failures": 3,
+    "candidate_failures": 0,
+    "paths": [
+      {
+        "path": "load",
+        "baseline_settled_bytes": 2591187,
+        "baseline_after_bytes": 4919960,
+        "baseline_delta_bytes": 2328773,
+        "candidate_settled_bytes": 2259749,
+        "candidate_after_bytes": 2243758,
+        "candidate_delta_bytes": -15991
+      },
+      {
+        "path": "reload",
+        "baseline_settled_bytes": 2593995,
+        "baseline_after_bytes": 4922768,
+        "baseline_delta_bytes": 2328773,
+        "candidate_settled_bytes": 2262557,
+        "candidate_after_bytes": 2246566,
+        "candidate_delta_bytes": -15991
+      },
+      {
+        "path": "fragment",
+        "baseline_settled_bytes": 2595435,
+        "baseline_after_bytes": 4952880,
+        "baseline_delta_bytes": 2357445,
+        "candidate_settled_bytes": 2263997,
+        "candidate_after_bytes": 2276678,
+        "candidate_delta_bytes": 12681
+      }
+    ],
+    "correctness": [
+      "DOM owns long tag/attribute names and values beyond parser lifetime",
+      "keyed reload handles preserved",
+      "replaced child handles not recycled",
+      "fragment owner preserved"
+    ],
+    "test_log_negative_growth_prints_zero": true
+  },
+  "validation": {
+    "full_gate": {
+      "command": "bash check.sh --release",
+      "exit": 0,
+      "gcc_ctest_suites": 21,
+      "gcc_main_checks": 809530,
+      "clang_asan_ubsan_ctest_suites": 23,
+      "sanitizer_main_checks": 809524,
+      "small_stack_sanitizer_exclusion_checks": 6,
+      "parser_checks_each": 9740,
+      "chrome_layout_captures": 341,
+      "chrome_layout_ceiling_px": 1.5,
+      "chrome_layout_failures": 0,
+      "chrome_behavior_pass": 69,
+      "chrome_behavior_known_ime_exception": 1,
+      "chrome_behavior_unexpected_failures": 0,
+      "tooling_linux_pass": 90,
+      "godot_font_checks": 19833,
+      "godot_unicode_backend_install_export_scenes": "passed",
+      "environment": "qualified patched Linux Godot editor/templates, pinned Windows Chrome 152.0.7977.82 via WSL, private Xvfb/software rendering"
+    },
+    "msvc": {
+      "parser_checks": 9740,
+      "failures": 0,
+      "fragment_added_bytes": 18077
+    },
+    "unity": {
+      "editor": "6000.4.1f1",
+      "full_editmode_pass": 259,
+      "inconclusive": 2,
+      "failures": 0,
+      "editor_exit": 2,
+      "mono_development_player_pass": 7,
+      "plugin_load_decode_unload_pass": true,
+      "rgba_pixel_matches_prior": 16
+    },
+    "agentic_capture": {
+      "inspected": true,
+      "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e",
+      "matches_prior": true
+    }
+  },
+  "native_libraries": [
+    {
+      "path": "Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll",
+      "sha256": "7edc31042900cf08b10404305d2f6b5791c1f985a95f29f524ef6c07daececa3",
+      "bytes": 5234176,
+      "metadata": {
+        "schema": 1,
+        "host": "unity",
+        "library_sha256": "7edc31042900cf08b10404305d2f6b5791c1f985a95f29f524ef6c07daececa3",
+        "source": {
+          "revision": "791ac12a16901482c8c94d3526842f90c191036e",
+          "dirty": true,
+          "sha256": "88e6ae0a3e9b0f384a73a6e88ebbb81620ef4aef862fa7e917033ae215cd0ab8"
+        },
+        "abi": {
+          "major": 0,
+          "minor": 45
+        },
+        "configuration": "Release",
+        "compiler": {
+          "id": "MSVC",
+          "version": "19.44.35222.0"
+        },
+        "cmake_version": "4.3.2",
+        "sanitizers": false
+      }
+    },
+    {
+      "path": "hosts/godot/project/addons/weva/bin/weva_godot.dll",
+      "sha256": "3fc3489688aab2101292c4cdb25bd69a11f820a5b69b6f900f0648a21600cab0",
+      "bytes": 5799424,
+      "metadata": {
+        "schema": 1,
+        "library_sha256": "3fc3489688aab2101292c4cdb25bd69a11f820a5b69b6f900f0648a21600cab0",
+        "source": {
+          "revision": "791ac12a16901482c8c94d3526842f90c191036e",
+          "dirty": true,
+          "sha256": "8d8b4387f134ca3ea00dff650c5096d953fb0a0d70df79f069b8b21f22aaef5c"
+        },
+        "godot_cpp": {
+          "revision": null,
+          "dirty": null,
+          "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+        },
+        "configuration": "Release",
+        "compiler": {
+          "id": "MSVC",
+          "version": "19.44.35222.0"
+        },
+        "cmake_version": "4.3.2",
+        "godot_api": "4.7",
+        "precision": "single",
+        "custom_api": null,
+        "sanitizers": false
+      }
+    },
+    {
+      "path": "hosts/godot/project/addons/weva/bin/libweva_godot.so",
+      "sha256": "c0915f93645b1e63dccb95a827e173c4180abe660b83d5e106f5d0614fed7e3b",
+      "bytes": 11195984,
+      "metadata": {
+        "schema": 1,
+        "library_sha256": "c0915f93645b1e63dccb95a827e173c4180abe660b83d5e106f5d0614fed7e3b",
+        "source": {
+          "revision": "791ac12a16901482c8c94d3526842f90c191036e",
+          "dirty": true,
+          "sha256": "8d8b4387f134ca3ea00dff650c5096d953fb0a0d70df79f069b8b21f22aaef5c"
+        },
+        "godot_cpp": {
+          "revision": "26fb7ab5821e6a1096f62c22f7462d1d70caa332",
+          "dirty": true,
+          "sha256": "cc9b4989a94150690d6cd1b1795432056f35e1c29be3a6495b0e8581e7d9629d"
+        },
+        "configuration": "Release",
+        "compiler": {
+          "id": "GNU",
+          "version": "13.3.0"
+        },
+        "cmake_version": "3.28.3",
+        "godot_api": "4.7",
+        "precision": "single",
+        "custom_api": null,
+        "sanitizers": false
+      }
+    }
+  ],
+  "agentic": {
+    "source_commit": "a8bab554e77ad5177ea03ceccb92083d2ce2e728",
+    "sdk_key": "b6a2aee14348903ada66aafcd8bac048ca95ebe0ea757c0ca8b9fc4c18f876e8",
+    "runtime_sha256": "c92f7c00898580e3839a4386b5f51f2f5b60cea19b7fac99695b891ef494c85a",
+    "source_override": "WEVA_SOURCE_DIR=C:/Users/simen/Documents/GitHub/unityui",
+    "core_input_paths": [
+      "CMakeLists.txt",
+      "libweva/CMakeLists.txt",
+      "libweva/include",
+      "libweva/src",
+      "third_party"
+    ],
+    "core_input_sha256": "684dac9d1e91115bb8902dcc5d5352db52ecac11bf4e28e8365b4390fc4cd338",
+    "external_core_was_dirty_candidate": true,
+    "coherent": true,
+    "smoke": {
+      "passed": true,
+      "reload_seconds": 20.08094610000262,
+      "endpoint_requested_loads": 134.0,
+      "cooldown_seconds": 3.0,
+      "ownership_snapshot_stages": [
+        "warm",
+        "active_end",
+        "cooldown_end"
+      ],
+      "owned_session_stopped": true,
+      "fixture_fixed_identifiers": true
+    },
+    "engine_slot_released": true,
+    "global_selection_or_remote_pin_changed": false
+  },
+  "abi": {
+    "minor": 45,
+    "changed": false
+  },
+  "limits": [
+    "Input size still determines transient parse peaks",
+    "Explicit caller-owned C++ symbol tables follow caller lifetime",
+    "Parse-local symbols may allocate again on later parses; no parse-speed or FPS claim",
+    "C++ counter excludes direct malloc, allocator spare pages, process RSS/private commit, host/GPU storage",
+    "No new long hardware soak, IL2CPP/release stripping or macOS qualification",
+    "Historical Agentic memory attribution remains unresolved"
+  ],
+  "source_files": [
+    {
+      "path": "libweva/include/weva/html.h",
+      "sha256": "879262c7400c586fb31da38e1aa2b2b6a0818d81e5c9c07d8d13ad0228c1e63b",
+      "bytes": 5953
+    },
+    {
+      "path": "libweva/src/html_parser.cpp",
+      "sha256": "9798f6a9ed88d3ed64e234ea204563147de94d5bfd0a9f504d6bb3297a45c4d3",
+      "bytes": 27032
+    },
+    {
+      "path": "libweva/src/weva_c.cpp",
+      "sha256": "b2fa75e5395670a761a87e123bd49db51879349dbf13bb8155b801922e2ee3f4",
+      "bytes": 471485
+    },
+    {
+      "path": "libweva/tests/CMakeLists.txt",
+      "sha256": "05da7d984bc5ac0164bfbf30ab08bbdde91fb81d708f250fdc6f50759f3f6006",
+      "bytes": 6495
+    },
+    {
+      "path": "libweva/tests/test_parser_memory.cpp",
+      "sha256": "754faed7b7a70a7d341575ba24489c91775a4e1e3cb7878e0c30eae4cd5c5937",
+      "bytes": 3956
+    },
+    {
+      "path": "libweva/tests/tracked_allocations.h",
+      "sha256": "4b7b239430947cfdb32d35391c7b5337fb48b44333051a81a7b0f1fbe9d5d356",
+      "bytes": 3521
+    }
+  ],
+  "evidence": [
+    {
+      "path": ".utmp/parser-memory-20261101/baseline-build.log",
+      "sha256": "82d24248dceb542ff3bcb5910a5f9313685f95bb530148fab27c20669b8c16f7",
+      "bytes": 298
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/baseline.log",
+      "sha256": "a6c8051b2efcf552e17ef56eea96afee71bb48dbaffb907fc73b0a8e28c26311",
+      "bytes": 528
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/candidate-build.log",
+      "sha256": "0d8484f4a782795ba757d313f780ad60e9514f36cab479905d2310f1baf2991d",
+      "bytes": 493
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/candidate.log",
+      "sha256": "a810ce42fddc033b6cf4e964a694ac742e872ac6573ecc7e29828604a4823219",
+      "bytes": 313
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/gate/full-gate-verified.log",
+      "sha256": "7540e2321f7f38e41add75d33424764cfef6c040dd5ffbc6bc560c7924c7e116",
+      "bytes": 16235
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/gate/full-gate-verified.exit",
+      "sha256": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+      "bytes": 2
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/gate/run-gate.sh",
+      "sha256": "274315ded944cdcf2b5be520be10f47b5ed1231eb5c4bf8bb27dc4485c210373",
+      "bytes": 1731
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/gate/linux-gate-verified-logs/gcc-last-test.log",
+      "sha256": "b482a581826f194441a39d57db6e2a65f3a250ccd79409e9c5d99f5c06db50e8",
+      "bytes": 18895
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/gate/linux-gate-verified-logs/clang-last-test.log",
+      "sha256": "9832cdfe8ddb949c9f5f3fe47a4077a571037ce846bb1ad6f41ea7df106edf8d",
+      "bytes": 20492
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/windows/unity-full.xml",
+      "sha256": "fa32179f5135b910887f01efcf077befaaa1b31b2cd7cbe3f18edef50f13c0ea",
+      "bytes": 228754
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/windows/unity-player/receipt.json",
+      "sha256": "8ae0cb3b7e980b8f25e88c9920bf994320e0a21c4c29afe0d44f2ddef81f710b",
+      "bytes": 1454
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/windows/plugin-load.log",
+      "sha256": "5a5c1dd070886850f682fdfc9bc6728d9fa229c334492d9680507e0e3b150776",
+      "bytes": 152
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/windows/verify-windows.ps1",
+      "sha256": "67a451ab8ed056ce47a9dde937d2e39a3951250af9ca1a662329f529deb25464",
+      "bytes": 660
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/windows/verify_unity.py",
+      "sha256": "1a424046da59c42b50bee15923de8e17c92a34a21fcf736ab7e54c56c30d9b4d",
+      "bytes": 826
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/msvc-build.log",
+      "sha256": "1ab0c82a290a7e17c1b633ffad8ca55b8a9664a72907b5fedc0a4933a3a7a9c5",
+      "bytes": 1534
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/msvc.log",
+      "sha256": "6da4ffffaf704720d2524265f0c8449b8a364fa24d6c5ddcfbd62d071b81452b",
+      "bytes": 261
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/msvc-last-test.log",
+      "sha256": "3e4aaa2f653ad48d6ec323d0e16c0f1d7aef6c346832331cacc897ab22ed86bc",
+      "bytes": 1186
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/sdk-build.log",
+      "sha256": "f86d8d9b64fc2ac648a34c8affed5f8faf7961063aef69b4c4ed9464beea4d38",
+      "bytes": 16505
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/smoke.py",
+      "sha256": "00913808dd6ac619c77edc65464fb85441b871661790d2111f711ac7c0b4f9df",
+      "bytes": 700
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/smoke.log",
+      "sha256": "a2729d047f351903f474ddbe0f360802331f8c5cacff453decd32f8e4e3b03b2",
+      "bytes": 86
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/smoke/lifecycle.json",
+      "sha256": "476fd303341c60600162957ed0369dac10db25e74077f42e7a029e9edfd65d4f",
+      "bytes": 5423
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/smoke/current-0-stop.json",
+      "sha256": "b66187f8f61f3232d73a68b365e48ac6d2e51f01de50cade20b84a7593f48284",
+      "bytes": 284
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/artifact-checks.json",
+      "sha256": "4b536dba259d894d6ab29edee7ece3e48c243b6ead167508a57c0c68eb203a4e",
+      "bytes": 1302
+    },
+    {
+      "path": ".utmp/parser-memory-20261101/sdk/b6a2aee14348903ada66aafcd8bac048ca95ebe0ea757c0ca8b9fc4c18f876e8/sdk.json",
+      "sha256": "8dfc95e099dddfa2e8c332e7daab89f709f2a35c66878836518a708250664e87",
+      "bytes": 12899
+    }
+  ],
+  "base_revision": "791ac12a16901482c8c94d3526842f90c191036e"
+}

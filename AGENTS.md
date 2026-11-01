@@ -6,7 +6,7 @@ chunks. Stop at findings only when the user explicitly requests an audit-only
 or read-only pass. Prioritize root causes and useful changes over cosmetic work.
 
 For current gate results and remaining debt, read the
-[latest integration audit](docs/verification/image-cache-20261101.md). Dated
+[latest integration audit](docs/verification/parser-memory-20261101.md). Dated
 checkpoints live in [the archive](docs/verification/agent-progress-history.md);
 do not append experiment journals to this instruction file.
 
@@ -99,9 +99,9 @@ Per chunk, the local recipe is:
 * Godot: the affected scenes in `hosts/godot/project` through the runner
   `check.sh` uses.
 
-Current evidence is indexed by the [latest integration audit](docs/verification/image-cache-20261101.md).
-Latest verified checkpoint: GCC 20 suites / 809,530 main checks; Clang
-ASan/UBSan 22 suites / 809,524 checks; 341 Chrome layouts within 1.5 px;
+Current evidence is indexed by the [latest integration audit](docs/verification/parser-memory-20261101.md).
+Latest verified checkpoint: GCC 21 suites / 809,530 main checks; Clang
+ASan/UBSan 23 suites / 809,524 checks; 341 Chrome layouts within 1.5 px;
 69 Chrome behavior scripts pass plus one known IME exception. Tooling: 90 pass
 on Linux, 81 pass plus nine skips on Windows. Unity: 259 EditMode passes plus
 two inconclusive, Mono player 7/7. See the audit for scope and build identities.

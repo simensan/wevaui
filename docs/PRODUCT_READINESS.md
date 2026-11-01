@@ -2,7 +2,7 @@
 
 Weva is a **development preview** for HTML/CSS game UI in Unity and Godot.
 The latest integrated checks and remaining engineering debt are recorded in the
-[integration receipt](verification/image-cache-20261101.md). Older checkpoints and
+[integration receipt](verification/parser-memory-20261101.md). Older checkpoints and
 measurements are retained in [readiness history](PRODUCT_READINESS_HISTORY.md)
 and [verification receipts](verification/README.md).
 
@@ -60,9 +60,10 @@ and browser-level visual/text fidelity remain incomplete.
 - **Memory:** Unity callback/font retention fixes have regressions; Godot
   passes short rendered lifecycle checks. Shared-core async image cancellation,
   backlog, native-module retention and decoded-image cache fixes have
-  [regressions and a full gate](verification/image-cache-20261101.md). The cache
+  [regressions and a full gate](verification/parser-memory-20261101.md). The cache
   targets 64 MiB and 1,024 entries; current box references remain pinned even
-  when their working set exceeds that target.
+  when their working set exceeds that target. Markup replacement also releases
+  obsolete parser names at parse completion.
   A locally built Agentic SDK did not reproduce the older SDK's five-minute
   reload growth in [matched controls with cooldown](verification/agentic-memory-20261101.md).
   Its historical allocation owner remains unresolved. Individual decode peaks,
@@ -73,6 +74,6 @@ and browser-level visual/text fidelity remain incomplete.
 
 ## Evidence behind this status
 
-Use the [latest integration audit](verification/image-cache-20261101.md) for exact
+Use the [latest integration audit](verification/parser-memory-20261101.md) for exact
 build identities, suites and exceptions. These are local checkout results, not
 certification of every platform or a published stable release.
