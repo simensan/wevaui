@@ -539,6 +539,15 @@ void truncate_line_with_ellipsis(BoxTree* tree, BoxId line, double content_width
     for (BoxId c : tree->children(line)) runs.push_back(c);
     if (runs.empty()) return;
 
+    // A line that fits is left whole. The budget below is the box LESS the
+    // ellipsis, so without this a label whose box is exactly as wide as its
+    // text -- every shrink-to-fit flex item -- lost its last letters to an
+    // ellipsis it had no need of. The reference makes the same test before
+    // it truncates (EllipsisHelper.ApplyIfNeeded).
+    double line_end = 0;
+    for (BoxId r : runs) line_end = std::max(line_end, (*tree)[r].x + (*tree)[r].width);
+    if (line_end <= content_width + kFitEpsilon) return;
+
     // The last run's face draws the ellipsis, as it is the one the eye was
     // following when the text ran out.
     const Box& last = (*tree)[runs.back()];

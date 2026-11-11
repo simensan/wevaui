@@ -1403,6 +1403,14 @@ void test_text_overflow_conditions() {
                 "     overflow: hidden; text-overflow: ellipsis }"));
     CHECK(f.layout(html));
     CHECK(f.line_text(f.lines("w")[0]) == full);
+
+    // Nor on one that fits with less than an ellipsis to spare: 160px of text
+    // in a box of exactly 160px, and in one of 165px.
+    for (const char* width : {"160px", "165px"}) {
+        const std::string css = std::string("#w { display: block; width: ") + width +
+            "; font-size: 20px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }";
+        CHECK(text_of(css.c_str()) == full);
+    }
 }
 
 // CSS Lists L3 3. `li { display: list-item }` is in the user-agent
