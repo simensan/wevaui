@@ -1507,6 +1507,31 @@ void test_paint_clip_path_and_rounded_overflow() {
         }
     }
     CHECK(red && blue && green);
+
+    // A polygon coordinate may be a calc() with spaces in it, in either
+    // position of the pair. This one is a 2px diagonal band across a 100px
+    // square: 396 square px. Cut at the calc()'s spaces, each pair was read
+    // from its first two pieces and the shape was no longer that band.
+    Fixture g;
+    CHECK(g.css("html, body { margin: 0 }"
+                "#l { width: 100px; height: 100px; background: #f00;"
+                "     clip-path: polygon(0 0, 2px 0, 100% calc(100% - 2px), 100% 100%,"
+                "                        calc(100% - 2px) 100%, 0 2px) }"));
+    CHECK(g.layout("<body><div id=l></div></body>"));
+    RecordingBackend band_backend;
+    PaintContext band_paint;
+    band_paint.backend = &band_backend;
+    paint_tree(g.tree, g.root, g.ctx, band_paint);
+    double band = 0;
+    for (const RecordingBackend::Draw& d : band_backend.draws) {
+        for (size_t i = 0; i + 2 < d.geometry.indices.size(); i += 3) {
+            const auto& p = d.geometry.vertices[d.geometry.indices[i]].position;
+            const auto& q = d.geometry.vertices[d.geometry.indices[i + 1]].position;
+            const auto& r = d.geometry.vertices[d.geometry.indices[i + 2]].position;
+            band += std::fabs((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x)) * 0.5;
+        }
+    }
+    CHECK(std::fabs(band - 396) < 1e-3);
 }
 
 // CSS Transforms 2 functions land on the plane instead of being dropped:

@@ -1796,13 +1796,21 @@ std::string_view trim_view(std::string_view s) {
     return s;
 }
 
+// Splits at whitespace OUTSIDE parentheses. A component may be a function
+// with spaces of its own -- `calc(100% - 2px)` is one coordinate, and cut at
+// its spaces it became three, of which the caller read the first two.
 std::vector<std::string_view> split_ws(std::string_view s) {
     std::vector<std::string_view> out;
     size_t i = 0;
     while (i < s.size()) {
         while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) ++i;
         const size_t start = i;
-        while (i < s.size() && !std::isspace(static_cast<unsigned char>(s[i]))) ++i;
+        int depth = 0;
+        while (i < s.size() && (depth > 0 || !std::isspace(static_cast<unsigned char>(s[i])))) {
+            if (s[i] == '(') ++depth;
+            else if (s[i] == ')' && depth > 0) --depth;
+            ++i;
+        }
         if (i > start) out.push_back(s.substr(start, i - start));
     }
     return out;
