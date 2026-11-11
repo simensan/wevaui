@@ -4880,6 +4880,17 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
         std::vector<ShapedGlyph> glyphs;
         prepare_glyphs(tree, root, ctx, paint, glyphs);
         prepare_popup_glyphs(tree, ctx, paint, glyphs);
+        // The atlas keeps every size it was ever asked for. When that leaves
+        // no room for a glyph this frame draws, it starts over and the frame
+        // is requested again from nothing; the new slot version stops the
+        // prepass skipping subtrees whose glyphs are no longer packed. This
+        // is the one place that can do it: nothing has been drawn yet, so no
+        // quad holds the coordinates of a slot that is about to move.
+        while (paint.atlas->make_room()) {
+            if (paint.reuse) paint.reuse->begin_glyphs(*paint.atlas);
+            prepare_glyphs(tree, root, ctx, paint, glyphs);
+            prepare_popup_glyphs(tree, ctx, paint, glyphs);
+        }
         atlas_texture = paint.atlas->texture(paint.backend);
         glyphs_ms =
             std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count();

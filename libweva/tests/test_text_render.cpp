@@ -193,6 +193,73 @@ void test_glyph_atlas() {
     CHECK(empty_atlas.slot_count() == 0);
     empty_font.ink = true;
     CHECK(empty_atlas.get(&empty_font, face, 2000, 16) != nullptr);
+
+    // The atlas only adds, so sizes no longer drawn fill it. A caller that
+    // requests a whole frame up front then asks it to make room. The stub's
+    // glyph at 16px is 9x13, an 11x15 cell with its gutter: twenty to a 64x64
+    // atlas, and one quantised size step is a slot of its own.
+    GlyphAtlas small(64, 64, 128);
+    CHECK(!small.make_room());
+    int stale = 0;
+    while (small.get(&font, face, a, 16 + ++stale / 64.0)) {}
+    CHECK(stale == 21 && small.overflowed() && small.slot_count() == 20);
+    CHECK(small.get(&font, face, b, 16) == nullptr);
+    const uint64_t full_version = small.slot_version();
+    // It starts over at the size it was built with, and the frame fits.
+    CHECK(small.make_room());
+    CHECK(small.slot_count() == 0 && small.slot_version() != full_version);
+    CHECK(small.width() == 64 && !small.overflowed());
+    CHECK(small.get(&font, face, b, 16) != nullptr);
+    CHECK(!small.make_room() && small.slot_count() == 1);
+
+    // A frame that does not fit on its own gets a bigger atlas. At 40px the
+    // glyph is 23x32: one row of two is all 64x64 holds.
+    const auto big_frame = [&](int count) {
+        int packed = 0;
+        for (int i = 0; i < count; ++i)
+            if (small.get(&font, face, a + i, 40)) ++packed;
+        return packed;
+    };
+    CHECK(big_frame(5) == 2 && small.overflowed());
+    CHECK(small.make_room() && small.width() == 64);      // shed the stale slot first
+    CHECK(big_frame(5) == 2);
+    CHECK(small.make_room() && small.width() == 128 && small.height() == 128);
+    CHECK(small.pixels().empty());
+    CHECK(big_frame(5) == 5 && !small.make_room());
+    CHECK(small.pixels().size() == 128 * 128 * 4);
+    const GlyphSlot* grown = small.get(&font, face, a, 40);
+    CHECK(grown && near(grown->u1 - grown->u0, double(grown->width) / 128, 1e-5));
+
+    // The next time it fills, it goes back to the size it was built with.
+    for (int i = 0; !small.overflowed(); ++i) small.get(&font, face, b, 20 + i);
+    CHECK(small.make_room() && small.width() == 64);
+    CHECK(big_frame(1) == 1 && !small.make_room());
+
+    // A frame too big for the largest size keeps what fits, and is not
+    // rasterised from nothing again on every call after that. At 100px the
+    // glyph is 57x80, so 128x128 holds two.
+    const auto huge_frame = [&] {
+        int packed = 0;
+        for (int i = 0; i < 3; ++i)
+            if (small.get(&font, face, a + i, 100)) ++packed;
+        return packed;
+    };
+    CHECK(huge_frame() == 0 && small.make_room() && small.width() == 64);
+    CHECK(huge_frame() == 0 && small.make_room() && small.width() == 128);
+    CHECK(huge_frame() == 2 && !small.make_room());
+    const uint64_t kept_version = small.slot_version();
+    for (int frame = 0; frame < 10; ++frame)
+        CHECK(huge_frame() == 2 && !small.make_room());
+    CHECK(small.slot_version() == kept_version && small.slot_count() == 2);
+    // It does try again later: by then the frame may be one that fits.
+    int frames = 0;
+    while (frames < 1000 && (huge_frame(), !small.make_room())) ++frames;
+    CHECK(frames < 1000 && small.width() == 64 && small.slot_count() == 0);
+
+    // A glyph bigger than the largest atlas is not a reason to start over.
+    GlyphAtlas tiny(64, 64, 128);
+    CHECK(tiny.get(&font, face, a, 400) == nullptr);
+    CHECK(!tiny.overflowed() && !tiny.make_room());
 }
 
 void test_text_geometry() {

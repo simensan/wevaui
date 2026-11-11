@@ -2,6 +2,7 @@
 #include "weva/font_interface.h"
 #include "weva/render_interface.h"
 
+#include <algorithm>
 #include <map>
 #include <array>
 #include <vector>
@@ -17,7 +18,8 @@ struct GlyphSlot {
     double bearing_x = 0, bearing_y = 0;
     double advance = 0;
     // Normalised texture coordinates, precomputed because every emitted quad
-    // needs them and the atlas size does not change between uploads.
+    // needs them. The atlas changes size only when it starts over, which
+    // drops every slot.
     float u0 = 0, v0 = 0, u1 = 0, v1 = 0;
     // The atlas texels hold the glyph's own colours (an emoji); the text
     // colour must not modulate them.
@@ -26,12 +28,33 @@ struct GlyphSlot {
 
 class GlyphAtlas {
 public:
-    GlyphAtlas(int width = 512, int height = 512) : width_(width), height_(height) {}
+    // The atlas is built at width x height and goes back to that whenever it
+    // starts over. make_room may double it, up to max_size a side, for a
+    // frame that does not fit.
+    GlyphAtlas(int width = 512, int height = 512, int max_size = 2048)
+        : width_(width), height_(height), base_width_(width), base_height_(height),
+          max_size_(std::max({width, height, max_size})) {}
 
     // Returns the slot for a glyph at a size, rasterizing and packing it on
     // first request. Null when the glyph has no bitmap (a space, or a missing
-    // glyph) or when the atlas is full.
+    // glyph) or when the atlas has no room for it, which overflowed() reports.
     const GlyphSlot* get(FontInterface* font, FaceHandle face, uint32_t glyph, double px);
+
+    // A glyph was refused for lack of room since the atlas last started over.
+    bool overflowed() const { return overflowed_; }
+
+    // The atlas only adds, so sizes that nothing draws any more stay in it:
+    // text under an animated scale leaves a set of glyphs behind at every
+    // step. Once they fill it, a glyph not yet packed has nowhere to go and
+    // draws nothing from then on.
+    //
+    // A caller that requests every glyph of a frame before drawing any of them
+    // calls this after those requests. True means the atlas has started over
+    // empty and the caller must request them all again: the first time at the
+    // constructed size, which sheds what the frame does not draw, and then
+    // doubled for as long as the frame alone does not fit. False means no
+    // glyph was refused, or that starting over again would not help.
+    bool make_room();
 
     // Uploads the atlas if anything changed since the last call, and returns
     // the texture. Uploading once per frame rather than per glyph is the point
@@ -72,7 +95,16 @@ private:
         }
     };
 
+    void start_over(int width, int height);
+
     int width_, height_;
+    int base_width_, base_height_, max_size_;
+    bool overflowed_ = false;
+    // Every slot was requested since the atlas last started over, so an
+    // overflow now means the frame itself is too big for this size.
+    bool only_this_frame_ = false;
+    // Calls left to sit out after a frame did not fit at the largest size.
+    int hold_off_ = 0;
     std::vector<uint8_t> pixels_;
     std::map<Key, GlyphSlot> slots_;
     // Successful rasters without ink need no slot or texture space. Keep a

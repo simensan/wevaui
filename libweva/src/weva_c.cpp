@@ -179,6 +179,10 @@ public:
     void begin_glyphs(const GlyphAtlas& atlas) override {
         same_glyph_slots_ = prepared_atlas_ == &atlas &&
                             prepared_slot_version_ == atlas.slot_version();
+        // Recorded quads carry slot coordinates. Once the slots have moved
+        // they are wrong whatever id the host gives the next upload, and a
+        // pass calls this a second time when the atlas starts over under it.
+        if (!same_glyph_slots_) glyph_slots_moved_ = true;
         prepared_atlas_ = &atlas;
         prepared_slot_version_ = atlas.slot_version();
     }
@@ -188,7 +192,8 @@ public:
         return r.version && r.version == input_versions_[id];
     }
     void begin_paint(TextureHandle atlas) override {
-        same_atlas_ = atlas.id == atlas_id_;
+        same_atlas_ = atlas.id == atlas_id_ && !glyph_slots_moved_;
+        glyph_slots_moved_ = false;
         atlas_id_ = atlas.id;
     }
     bool tracks_inputs(BoxId id) const override {
@@ -427,6 +432,7 @@ private:
     const GlyphAtlas* prepared_atlas_ = nullptr;
     uint64_t prepared_slot_version_ = 0;
     bool same_glyph_slots_ = false;
+    bool glyph_slots_moved_ = false;
     std::vector<uint64_t> input_versions_;
     std::vector<bool> track_inputs_;
     std::unordered_map<BoxId, PaintReplayInputs> boundary_inputs_;

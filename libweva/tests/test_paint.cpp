@@ -932,3 +932,56 @@ void test_paint_registered_font_families() {
     paint_tree(f.tree, f.root, f.ctx, paint);
     CHECK(font.shaped["Popup"] == 2);
 }
+
+// A document that had drawn enough distinct text sizes -- a number popping
+// under an animated scale packs a set of digits per step -- filled the glyph
+// atlas, and from then on any glyph it had not drawn before drew nothing.
+void test_paint_makes_room_in_a_full_glyph_atlas() {
+    Fixture f;
+    CHECK(f.css("body { margin:0; font-size:16px; color:black }"));
+    CHECK(f.layout("<body><div>AB</div></body>", 64, 32));
+    StubFont font;
+    const FaceHandle face = StubFont::builtin();
+    uint32_t a = 0, c = 0;
+    font.glyph_index(face, 'A', &a);
+    font.glyph_index(face, 'C', &c);
+
+    const auto draw = [&](GlyphAtlas* atlas, SoftwareRenderer* backend) {
+        backend->clear(LinearColor::white());
+        PaintContext paint;
+        paint.backend = backend;
+        paint.font = &font;
+        paint.atlas = atlas;
+        paint.face = face;
+        paint.styles = &f.styles;
+        paint_tree(f.tree, f.root, f.ctx, paint);
+    };
+    const auto ink = [](const SoftwareRenderer& backend) {
+        int dark = 0;
+        for (int y = 0; y < 32; ++y)
+            for (int x = 0; x < 64; ++x)
+                if (backend.pixel(x, y).g < 0.5f) ++dark;
+        return dark;
+    };
+
+    SoftwareRenderer expected(64, 32);
+    GlyphAtlas fresh(64, 64);
+    draw(&fresh, &expected);
+    CHECK(ink(expected) > 0 && fresh.slot_count() == 2);
+
+    // Twenty 16px-class cells fill a 64x64 atlas with sizes this document
+    // does not draw.
+    GlyphAtlas full(64, 64);
+    int stale = 0;
+    while (full.get(&font, face, c, 16 + ++stale / 64.0)) {}
+    CHECK(full.slot_count() == 20 && full.get(&font, face, a, 16) == nullptr);
+    SoftwareRenderer actual(64, 32);
+    draw(&full, &actual);
+    CHECK(ink(actual) == ink(expected));
+    CHECK(full.slot_count() == 2 && full.width() == 64);
+    CHECK(full.get(&font, face, a, 16) != nullptr);
+    // And a frame with nothing new leaves the slots where they are.
+    const uint64_t version = full.slot_version();
+    draw(&full, &actual);
+    CHECK(full.slot_version() == version && ink(actual) == ink(expected));
+}

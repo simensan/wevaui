@@ -12,7 +12,46 @@ void GlyphAtlas::clear() {
     empty_glyphs_ = {};
     std::fill(pixels_.begin(), pixels_.end(), 0);
     shelf_x_ = shelf_y_ = shelf_height_ = 0;
+    overflowed_ = false;
     dirty_ = true;
+}
+
+void GlyphAtlas::start_over(int width, int height) {
+    clear();
+    if (width == width_ && height == height_) return;
+    width_ = width;
+    height_ = height;
+    // Sized again by the next glyph with ink.
+    std::vector<uint8_t>().swap(pixels_);
+}
+
+bool GlyphAtlas::make_room() {
+    if (!overflowed_) {
+        only_this_frame_ = false;
+        hold_off_ = 0;
+        return false;
+    }
+    if (!only_this_frame_) {
+        // A frame that fits at no size overflows on every call. Rasterising
+        // all of it three times over each time would cost far more than the
+        // glyphs it is missing.
+        if (hold_off_ > 0) {
+            --hold_off_;
+            overflowed_ = false;
+            return false;
+        }
+        start_over(base_width_, base_height_);
+        only_this_frame_ = true;
+        return true;
+    }
+    if (width_ < max_size_ || height_ < max_size_) {
+        start_over(std::min(width_ * 2, max_size_), std::min(height_ * 2, max_size_));
+        return true;
+    }
+    only_this_frame_ = false;
+    overflowed_ = false;
+    hold_off_ = 120;
+    return false;
 }
 
 void GlyphAtlas::release_texture(RenderInterface* backend) {
@@ -53,16 +92,28 @@ const GlyphSlot* GlyphAtlas::get(FontInterface* font, FaceHandle face, uint32_t 
     // One pixel of padding, so bilinear filtering in a GPU backend cannot bleed
     // a neighbouring glyph into this one.
     const int pad = 1;
-    if (bmp.width > width_ - 2 * pad || bmp.height > height_ - 2 * pad) return nullptr;
-    if (shelf_x_ + bmp.width + 2 * pad > width_) {
+    // Larger than the atlas can ever be: not something making room can fix.
+    if (bmp.width > max_size_ - 2 * pad || bmp.height > max_size_ - 2 * pad) return nullptr;
+    if (bmp.width > width_ - 2 * pad || bmp.height > height_ - 2 * pad) {
+        overflowed_ = true;
+        return nullptr;
+    }
+    // Decide before moving to a new shelf: a glyph that is refused must not
+    // cost the smaller ones after it the rest of this row.
+    const bool wraps = shelf_x_ + bmp.width + 2 * pad > width_;
+    if ((wraps ? shelf_y_ + shelf_height_ : shelf_y_) + bmp.height + 2 * pad > height_) {
+        overflowed_ = true;
+        return nullptr;
+    }
+    if (wraps) {
         shelf_x_ = 0;
         shelf_y_ += shelf_height_;
         shelf_height_ = 0;
     }
-    if (shelf_y_ + bmp.height + 2 * pad > height_) return nullptr;   // full
 
     // Documents without visible glyphs need neither CPU atlas storage nor an
-    // uploaded blank texture. Keep dimensions fixed so existing UVs stay valid.
+    // uploaded blank texture. The dimensions change only in start_over, which
+    // drops every slot, so the UVs of the slots that exist stay valid.
     if (pixels_.empty()) pixels_.resize(static_cast<size_t>(width_) * height_ * 4, 0);
 
     GlyphSlot slot;
