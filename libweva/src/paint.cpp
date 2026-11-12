@@ -543,8 +543,16 @@ TextureHandle make_texture(const PaintContext& paint, int w, int h, const char* 
             return t;
         }
     }
+    // WEVA_RASTER_JOB_LOG: a texture made here is not a job, and its time is
+    // spent inside whichever paint scope asked for it, so it is named too.
+    static const bool job_log = std::getenv("WEVA_RASTER_JOB_LOG") != nullptr;
+    const auto t0 = job_log ? std::chrono::steady_clock::now() : std::chrono::steady_clock::time_point{};
     std::vector<uint8_t> rgba;
     raster(&rgba);
+    if (job_log) {
+        std::fprintf(stderr, "  [raster inline] %-7s cost %10lld  %8.3f ms\n", kind, cost,
+                     std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now() - t0).count());
+    }
     if (!shared_key.empty()) {
         shared_raster_insert(shared_key, std::make_shared<const SharedPixels>(SharedPixels{rgba, w, h}));
     }
@@ -571,13 +579,23 @@ bool uses_font_units(std::string_view css) {
 }
 
 // The document-independent form of a background texture key, or empty when
-// the picture depends on the document: an image layer (its pixels belong to
-// the document's image store), or a font-relative unit.
+// the picture depends on the document: a font-relative unit, or an image
+// layer with nothing to name its pixels by.
+//
+// A decoded image has such a name. Its resource_version is unique in the
+// process (ImageStore::publish), so two documents that hold the same number
+// hold the same pixels whatever their URLs and base paths say; it is what an
+// <img> is already shared under (replaced_image_key). The caller appends the
+// versions (append_image_versions) to what this returns. An image that has
+// not decoded has no version yet, and one without a URL is not versioned by
+// the caller, so neither is shared.
 std::string shared_background_key(const char* kind, const std::string& key,
                                   const std::vector<BackgroundLayer>& layers,
                                   const LayoutContext& ctx) {
     for (const BackgroundLayer& l : layers) {
-        if (l.image || !l.url.empty()) return {};
+        if (l.url.empty() ? l.image != nullptr : !l.image || l.image->resource_version == 0) {
+            return {};
+        }
     }
     if (uses_font_units(key)) return {};
     char buf[160];
@@ -2695,6 +2713,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
                                  &layers, tex_w, tex_h);
             shared_key = shared_background_key("layers", key, layers, ctx);
             append_image_versions(key, layers);
+            if (!shared_key.empty()) append_image_versions(shared_key, layers);
         }
         tex = paint.texture_cache->get(key);
     }
@@ -3592,6 +3611,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
                                      &layers, tex_w, tex_h);
                 shared_key = shared_background_key("filter", key, layers, ctx);
                 append_image_versions(key, layers);
+                if (!shared_key.empty()) append_image_versions(shared_key, layers);
                 tex = paint.texture_cache->get(key);
             }
             if (!tex) {

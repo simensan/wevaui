@@ -256,6 +256,7 @@ void test_async_images();
 void test_focus_move();
 void test_background_image();
 void test_replaced_image_cache();
+void test_image_background_shared_raster();
 void test_background_size_independence();
 void test_background_no_repeat_tile_edge_supersampled();
 void test_background_blend_and_mask();
@@ -740,6 +741,7 @@ int main() {
     test_focus_move();
     test_background_image();
     test_replaced_image_cache();
+    test_image_background_shared_raster();
     test_background_size_independence();
     test_background_no_repeat_tile_edge_supersampled();
     test_background_blend_and_mask();

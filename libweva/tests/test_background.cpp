@@ -470,6 +470,69 @@ void test_replaced_image_cache() {
     weva_document_destroy(siblings);
 }
 
+// A background or mask drawn from an image keeps its pixels in the shared
+// cache as one drawn from a gradient does: a screen that comes back after its
+// textures were released uploads them instead of resampling the source.
+void test_image_background_shared_raster() {
+    ImageStore store;
+    bool readable = true;
+    store.set_reader([&readable](const std::string&, std::vector<uint8_t>* out) {
+        if (!readable) return false;
+        out->assign(k_quad_png, k_quad_png + sizeof(k_quad_png));
+        return true;
+    });
+    TextureCache cache;
+    RecordingBackend retained;
+    // Paints one box, and returns the pixels of the texture it drew with.
+    const auto run = [&](std::string_view css) {
+        Fixture f;
+        f.ctx.images = &store;
+        CHECK(f.css("html,body{margin:0}div{width:40px;height:30px;" + std::string(css) + "}"));
+        CHECK(f.layout("<body><div></div></body>", 400, 300));
+        retained.draws.clear();
+        PaintContext p;
+        p.images = &store;
+        p.backend = &retained;
+        p.texture_cache = &cache;
+        cache.begin_pass();
+        paint_tree(f.tree, f.root, f.ctx, p);
+        cache.end_pass(&retained);
+        std::vector<uint8_t> pixels;
+        for (const RecordingBackend::Draw& d : retained.draws) {
+            if (d.texture) pixels = retained.texture_bytes[d.texture];
+        }
+        return pixels;
+    };
+    for (const char* css : {"background-image:url(quad.png);background-size:100% 100%",
+                            "background-color:red;mask-image:url(quad.png);mask-size:100% 100%"}) {
+        readable = true;
+        store.clear();
+        cache.release_all(&retained);
+        const size_t before = shared_raster_bytes();
+        const std::vector<uint8_t> first = run(css);
+        CHECK(!first.empty());
+        const size_t kept = shared_raster_bytes();
+        CHECK(kept > before);
+        // The screen closes. Reopening it rasterizes nothing and draws the same.
+        cache.release_all(&retained);
+        CHECK(run(css) == first);
+        CHECK(shared_raster_bytes() == kept);
+        // A reloaded image is a new picture, whatever its URL says.
+        store.clear();
+        cache.release_all(&retained);
+        CHECK(run(css) == first);
+        const size_t reloaded = shared_raster_bytes();
+        CHECK(reloaded > kept);
+        // One that has not decoded has no pixels to name, and is not kept.
+        readable = false;
+        store.clear();
+        cache.release_all(&retained);
+        run(css);
+        CHECK(shared_raster_bytes() == reloaded);
+    }
+    cache.release_all(&retained);
+}
+
 void test_background_image() {
     weva::ImageStore store = quad_store();
     const weva::DecodedImage* image = store.get("quad.png");
