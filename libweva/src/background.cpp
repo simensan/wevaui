@@ -9,6 +9,7 @@
 #include <atomic>
 #include <chrono>
 #include <cmath>
+#include <limits>
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -1157,6 +1158,10 @@ struct EdgeTest {
     double half_width = 0;
     double span = 0;        // repeating period, 0 when not repeating
     std::vector<double> positions;
+    // A conic gradient's t-range across a texel depends on how far the texel
+    // is from the centre, so `half_width` is worked out per texel from these.
+    bool conic = false;
+    double cx = 0, cy = 0;
 };
 // Everything rasterize_background resolves from CSS text, resolved: the
 // tiles with their prepared gradients, and which shortcuts apply. See
@@ -1395,14 +1400,18 @@ std::shared_ptr<const BackgroundPlan> prepare_background(
     // steps on a few percent.
     //
     // A linear gradient's parameter is affine, so the half-width of a texel's
-    // t-range is the same everywhere and comes out of prepare(). Radial and
-    // conic have no such constant -- their gradient of t blows up at the centre
-    // -- so they keep sampling as before.
+    // t-range is the same everywhere and comes out of prepare(). A radial
+    // one's is a norm in scaled coordinates, so it changes at most
+    // max(1/rx, 1/ry) per pixel anywhere: a constant bound too. A conic one's
+    // grows without bound towards the centre, so its bound is taken per texel
+    // from the texel's distance to it (texel_crosses_edge). Before that, a
+    // conic gradient nine-sampled every texel: a skill slot's 56x56 cooldown
+    // sweep took 0.7 ms a step, and it steps every degree.
     std::vector<EdgeTest>& edges = plan->edges;
     bool adaptive = samples > 1;
     for (const Tile& t : tiles) {
         const PreparedGradient& g = t.prepared;
-        if (!g.g || g.g->kind != Gradient::Kind::Linear || g.stops.size() < 2) {
+        if (!g.g || g.stops.size() < 2) {
             adaptive = false;
             break;
         }
@@ -1410,8 +1419,16 @@ std::shared_ptr<const BackgroundPlan> prepare_background(
         // edge at its own boundary; the per-texel test below finds the texels
         // whose footprint crosses one.
         EdgeTest e;
-        e.half_width = 0.5 * (std::abs(g.dx) * (width / tex_w) + std::abs(g.dy) * (height / tex_h)) /
-                       g.line_length;
+        const double texel_x = width / tex_w, texel_y = height / tex_h;
+        if (g.g->kind == Gradient::Kind::Linear) {
+            e.half_width = 0.5 * (std::abs(g.dx) * texel_x + std::abs(g.dy) * texel_y) / g.line_length;
+        } else if (g.g->kind == Gradient::Kind::Radial) {
+            e.half_width = 0.5 * std::hypot(texel_x, texel_y) * std::max(g.inv_rx, g.inv_ry) * 1.0001;
+        } else {
+            e.conic = true;
+            e.cx = g.cx;
+            e.cy = g.cy;
+        }
         const double first = g.stops.front().position, last = g.stops.back().position;
         if (g.g->repeating && last > first) e.span = last - first;
         for (const GradientStop& st : g.stops) e.positions.push_back(st.position);
@@ -1440,17 +1457,17 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
 
     // True when the texel's t-range reaches a stop, so the value across it is
     // not one straight ramp.
-    const auto steps_here = [&](size_t i, double t) {
+    const auto steps_here = [&](size_t i, double t, double half_width) {
         const EdgeTest& e = edges[i];
-        const double lo = t - e.half_width, hi = t + e.half_width;
+        const double lo = t - half_width, hi = t + half_width;
         if (e.span > 0) {
-            if (2 * e.half_width >= e.span) return true;
+            if (2 * half_width >= e.span) return true;
             const double base = e.positions.front();
             const double w = base + wrap_positive(t - base, e.span);
             for (const double pos : e.positions) {
                 for (int k = -1; k <= 1; ++k) {
                     const double q = pos + k * e.span;
-                    if (q >= w - e.half_width && q <= w + e.half_width) return true;
+                    if (q >= w - half_width && q <= w + half_width) return true;
                 }
             }
             return false;
@@ -1473,8 +1490,11 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
     // demo's first update spent 84 ms nine-sampling every texel of a 1024x324
     // texture whose edges cover a few percent of it.
     const double sx = width / tex_w, sy = height / tex_h;
-    const auto texel_crosses_edge = [&](size_t i, int px, int py) {
+    // `centre_t`: the gradient's t at the texel centre, as the single-sample
+    // path below would compute it, or NaN when the test returned before it.
+    const auto texel_crosses_edge = [&](size_t i, int px, int py, double* centre_t) {
         const Tile& t = tiles[i];
+        *centre_t = std::numeric_limits<double>::quiet_NaN();
         double lx = px * sx - t.ox, ly = py * sy - t.oy;
         if (t.wrap_x) {
             lx = wrap_positive(lx, t.tw);
@@ -1490,9 +1510,28 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
             if (ly + sy <= 0 || ly >= t.th) return false;
             if (ly < 0 || ly + sy > t.th) return true;
         }
-        // The same tile-local centre the samples below wrap into.
-        return steps_here(i, gradient_t(t.prepared, lx + 0.5 * sx, ly + 0.5 * sy));
+        // The tile-local centre, computed the way the single-sample path
+        // below computes its sample, so the t found here can stand in for it.
+        double cx = (px + 0.5) * sx - t.ox, cy = (py + 0.5) * sy - t.oy;
+        if (t.wrap_x) cx = wrap_positive(cx, t.tw);
+        if (t.wrap_y) cy = wrap_positive(cy, t.th);
+        double half_width = edges[i].half_width;
+        if (edges[i].conic) {
+            // Every sample lies within half a diagonal of the centre, so the
+            // angle it sees differs by at most asin(that / r) <= x / sqrt(1 - x^2)
+            // with x = that / r; a texel that holds the centre sees every angle.
+            const double ex = cx - edges[i].cx, ey = cy - edges[i].cy;
+            const double r = std::sqrt(ex * ex + ey * ey);
+            const double reach = 0.5 * std::sqrt(sx * sx + sy * sy);
+            if (r <= reach * 1.5) return true;
+            const double x = reach / r;
+            half_width = x / std::sqrt(1 - x * x) / (2 * kPi) * 1.0001;
+        }
+        *centre_t = gradient_t(t.prepared, cx, cy);
+        return steps_here(i, *centre_t, half_width);
     };
+    // A single gradient tile: its texels' one sample can be the edge test's.
+    const bool reuse_centre = tiles.size() == 1 && edges.size() == 1 && !tiles[0].image;
 
     // How much of the adaptive path actually pays off, which the sample count
     // alone does not say: `3^2 samples` is the ceiling, not the bill.
@@ -1533,15 +1572,17 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
                 }
                 float ar = 0, ag = 0, ab = 0, aa = 0;
                 int texel_samples = samples;
+                double centre_t = std::numeric_limits<double>::quiet_NaN();
                 if (!edges.empty()) {
                     texel_samples = 1;
                     for (size_t i = 0; i < edges.size(); ++i) {
-                        if (texel_crosses_edge(i, px, py)) {
+                        if (texel_crosses_edge(i, px, py, &centre_t)) {
                             texel_samples = samples;
                             break;
                         }
                     }
                 }
+                const bool use_centre = reuse_centre && texel_samples == 1 && !std::isnan(centre_t);
                 if (gradient_log && texel_samples > 1) ++local_supersampled;
                 const double tinv = texel_samples == samples ? samples_inv : 1.0;
                 for (int oy = 0; oy < texel_samples; ++oy) {
@@ -1562,7 +1603,8 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
                             if (t.wrap_y) ly = wrap_positive(ly, t.th);
                             else if (!t.repeat_y && (ly < 0 || ly >= t.th)) continue;
                             const Srgb s = t.image ? sample_image(*t.image, lx, ly, t.tw, t.th, sx * tinv, sy * tinv)
-                                                   : sample_prepared(t.prepared, lx, ly);
+                                         : use_centre ? sample_stops(t.prepared, centre_t)
+                                                      : sample_prepared(t.prepared, lx, ly);
                             const float sa = s.a;
                             if (t.is_mask) {
                                 uncovered *= 1 - mask_coverage(s, t.luminance);

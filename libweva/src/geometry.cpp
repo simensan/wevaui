@@ -18,7 +18,9 @@ Transform2D Transform2D::multiply(const Transform2D& o) const {
     float nd  = c * o.b + d * o.d;
     float ntx = tx * o.a + ty * o.c + o.tx;
     float nty = tx * o.b + ty * o.d + o.ty;
-    return Transform2D(na, nb, nc, nd, ntx, nty);
+    Transform2D result(na, nb, nc, nd, ntx, nty);
+    result.animated = animated || o.animated;
+    return result;
 }
 
 } // namespace weva

@@ -31,6 +31,10 @@ const int kId_max_height = CssPropertyRegistry::instance().id_of("max-height");
 const int kId_min_height = CssPropertyRegistry::instance().id_of("min-height");
 const int kId_right = CssPropertyRegistry::instance().id_of("right");
 const int kId_top = CssPropertyRegistry::instance().id_of("top");
+const int kId_flex_direction = CssPropertyRegistry::instance().id_of("flex-direction");
+const int kId_flex_wrap = CssPropertyRegistry::instance().id_of("flex-wrap");
+const int kId_align_items = CssPropertyRegistry::instance().id_of("align-items");
+const int kId_align_self = CssPropertyRegistry::instance().id_of("align-self");
 // Aggregate opt-in modal diagnostics in memory; print once at thread teardown.
 // No clock reads or retained trace storage are used by ordinary updates.
 struct ModalTrace {
@@ -90,6 +94,71 @@ bool fixed_inline_boundary(const BoxTree& tree, const Box& box, const LayoutCont
     return box.style->get(kId_width).find('%') == std::string_view::npos &&
         !intrinsic_limit(box.style->get(kId_min_width)) && !intrinsic_limit(box.style->get(kId_max_width)) &&
         resolve_length(box.style, kId_width, ctx, box.font_size, std::nullopt).kind == LengthKind::Length;
+}
+// An absolutely positioned or fixed box whose used width does not depend on
+// its content: an authored length or percentage (of a containing block a
+// replacement does not change), or both horizontal insets set. A shrink-to-fit
+// box is excluded -- relaying it at its old width would hide a real change.
+bool out_of_flow_width_fixed(const Box& b) {
+    if (!b.style) return false;
+    const auto intrinsic = [](std::string_view value) {
+        return value.find("min-content") != std::string_view::npos ||
+               value.find("max-content") != std::string_view::npos ||
+               value.find("fit-content") != std::string_view::npos;
+    };
+    if (intrinsic(b.style->get(kId_min_width)) || intrinsic(b.style->get(kId_max_width))) return false;
+    const std::string_view width = b.style->get(kId_width);
+    if (!width.empty() && width != "auto" && !intrinsic(width)) return true;
+    const std::string_view left = b.style->get(kId_left), right = b.style->get(kId_right);
+    return !left.empty() && left != "auto" && !right.empty() && right != "auto";
+}
+// Whether no layout reads this block's first baseline. Ordinary block
+// ancestors only pass a first baseline up to their own parents; a flex, grid,
+// table, list-item or inline formatting context aligns by it. An absolute,
+// fixed or floated box on the way up ends the chain unread: its parent's
+// baseline skips it. A damage number in a HUD is an in-flow span inside a
+// one-pixel absolute anchor, and every new number (an empty span gaining its
+// first line, a crit's larger font) relaid the whole document.
+bool baseline_unread(const BoxTree& tree, BoxId id) {
+    for (BoxId c = id; tree[c].parent != kNoBox; c = tree[c].parent) {
+        const Box& child = tree[c];
+        if (child.is_float() || child.position == PositionType::Absolute ||
+            child.position == PositionType::Fixed)
+            return true;
+        const Box& p = tree[child.parent];
+        if (!ordinary(p) || p.orthogonal_root || p.vertical_text) return false;
+    }
+    return false;
+}
+// An item of a single-line column flexbox whose own width does not depend on
+// its content, stretched across it: the item's min- and max-content widths
+// reach neither its used width (the container's) nor the container's width.
+// A HUD's top bar in a full-screen column is this, and its timer's digits
+// changing width relaid the whole document once a second.
+bool column_stretch_item(const BoxTree& tree, const Box& item, const Box& outer, const LayoutContext& ctx) {
+    if (outer.display != DisplayKind::Flex || !outer.style || !item.style) return false;
+    const std::string_view direction = outer.style->get(kId_flex_direction);
+    if (direction != "column" && direction != "column-reverse") return false;
+    const std::string_view wrap = outer.style->get(kId_flex_wrap);
+    if (!wrap.empty() && wrap != "nowrap") return false;
+    const bool outer_width_fixed =
+        ((outer.position == PositionType::Absolute || outer.position == PositionType::Fixed) &&
+         out_of_flow_width_fixed(outer)) ||
+        fixed_inline_boundary(tree, outer, ctx);
+    if (!outer_width_fixed) return false;
+    const auto intrinsic = [](std::string_view value) {
+        return value.find("min-content") != std::string_view::npos ||
+               value.find("max-content") != std::string_view::npos ||
+               value.find("fit-content") != std::string_view::npos;
+    };
+    const std::string_view width = item.style->get(kId_width);
+    if (!width.empty() && width != "auto") return false;
+    if (intrinsic(item.style->get(kId_min_width)) || intrinsic(item.style->get(kId_max_width))) return false;
+    if (item.style->get(kId_margin_left) == "auto" || item.style->get(kId_margin_right) == "auto") return false;
+    const auto stretches = [](std::string_view v) { return v.empty() || v == "normal" || v == "stretch"; };
+    const std::string_view self = item.style->get(kId_align_self);
+    if (self.empty() || self == "auto") return stretches(outer.style->get(kId_align_items));
+    return self == "normal" || self == "stretch";
 }
 bool within(const BoxTree& tree, BoxId child, BoxId ancestor) {
     for (; child != kNoBox; child = tree[child].parent) if (child == ancestor) return true;
@@ -358,9 +427,23 @@ int IncrementalLayout::index_subtree(const BoxTree& tree, BoxId id, const Layout
     // placement inside a replacement, so both are local to any subtree that
     // holds the containing block too. Fixed boxes, anchor functions and
     // absolute boxes placed against the viewport stay nonlocal.
+    // A fixed box placed against the VIEWPORT is local too: no replacement
+    // can move the viewport, and position_descendants places it there as
+    // run_positioning does. A HUD region holding a fixed toast or corner
+    // widget otherwise relaid the whole document for any text inside it.
+    // A fixed box under a transform/filter (its own containing block) or
+    // with anchor functions stays nonlocal.
+    bool viewport_fixed = false;
+    if (b.position == PositionType::Fixed &&
+        resolve_fixed_containing_block(tree, id, ctx).box == kNoBox) {
+        viewport_fixed = true;
+        for (const int property : {kId_left, kId_right, kId_top, kId_bottom, kId_width, kId_height})
+            if (b.style && looks_like_anchor_function(b.style->get(property))) viewport_fixed = false;
+    }
     bool local = !b.pseudo_host && b.display != DisplayKind::ListItem && !b.is_multicol &&
                  !is_table_display(b.display) && !b.is_float() &&
-                 b.position != PositionType::Fixed && b.position != PositionType::Sticky;
+                 (b.position != PositionType::Fixed || viewport_fixed) &&
+                 b.position != PositionType::Sticky;
     // The outermost containing block an absolute box in this subtree is placed
     // against, while that block is still above this box.
     BoxId escapes = kNoBox;
@@ -549,9 +632,18 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
                 tag = (*tree)[id].element->tag_name();
                 classes = (*tree)[id].element->get_attribute("class");
             }
-            std::fprintf(stderr, "  layout probe: %s box=%u <%.*s class='%.*s'> changes=%zu\n",
+            std::string origin;
+            for (const auto& change : changes) {
+                if (change.second < Invalidation::Layout) continue;
+                const auto found = by_style_.find(change.first);
+                if (found == by_style_.end() || !tree->valid(found->second) || !(*tree)[found->second].element) continue;
+                const Element* el = (*tree)[found->second].element;
+                origin += "<" + std::string(el->tag_name()) + "." + std::string(el->get_attribute("class")) +
+                          "#" + std::string(el->get_attribute("id")) + "> ";
+            }
+            std::fprintf(stderr, "  layout probe: %s box=%u <%.*s class='%.*s'> changes=%zu from %s\n",
                          reason, static_cast<unsigned>(id), static_cast<int>(tag.size()), tag.data(),
-                         static_cast<int>(classes.size()), classes.data(), changes.size());
+                         static_cast<int>(classes.size()), classes.data(), changes.size(), origin.c_str());
         }
         return false;
     };
@@ -559,7 +651,14 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
     // exports stay equal. Positioned descendants are excluded by local_.
     // Floats, sticky constraints and named anchors can cross that boundary.
     if (global_dependencies_) return reject("float/sticky/anchor dependency");
-    if (changes.empty() || changes.size() > 16 || !tree->valid(root))
+    // Only changes that reach layout count against the cap. Paint-level
+    // changes are skipped below anyway, and a game HUD moving forty labels by
+    // transform in the same frame as one text edit was refused here, which
+    // relaid and repainted its whole document for the one edit.
+    size_t layout_changes = 0;
+    for (const auto& change : changes)
+        if (change.second >= Invalidation::Layout) ++layout_changes;
+    if (changes.empty() || layout_changes > 16 || !tree->valid(root))
         return reject("change count/root");
     ++input_serial_;
     for (const auto& change : changes) {
@@ -627,6 +726,13 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             for (const auto& change : changes)
                 if (change.first == b.style && change.second >= Invalidation::Layout) return kNoBox;
             if (fixed_inline_boundary(*tree, b, ctx) || b.parent_row_intrinsics_independent)
+                return p;
+            // An absolutely positioned or fixed box with an authored width:
+            // nothing inside it can change that width, and being out of flow
+            // it exports nothing to its own parent. A HUD panel pinned to a
+            // corner is this, and a timer ticking inside it relaid the page.
+            if ((b.position == PositionType::Absolute || b.position == PositionType::Fixed) &&
+                out_of_flow_width_fixed(b))
                 return p;
         }
         return kNoBox;
@@ -781,6 +887,9 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
                     (outer.display == DisplayKind::Grid
                         ? old.width > old_frame && new_frame <= old.width
                         : outer.display == DisplayKind::Flex && old.parent_layout_input.width == old.width);
+                if (!independent_inline_contribution && !own_change &&
+                    column_stretch_item(*tree, old, outer, ctx))
+                    independent_inline_contribution = true;
                 // The solver proved the intrinsic minimum cannot affect this
                 // row allocation. Unlike fixed grid/column inputs, the item's
                 // ancestor exports still undergo the comparison below.
@@ -840,7 +949,8 @@ bool IncrementalLayout::update(BoxTree* tree, BoxId root, StyleProvider* styles,
             // Flex/grid and ordinary block ancestors consume the first
             // baseline. Last-line baselines belong to inline-block atoms;
             // those roots and ancestor chains are excluded from this path.
-            if (first_in_flow_baseline(*tree, id) != first_in_flow_baseline(r.tree, r.from))
+            if (!baseline_unread(*tree, id) &&
+                first_in_flow_baseline(*tree, id) != first_in_flow_baseline(r.tree, r.from))
                 { reject("baseline", id); continue; }
             // Dimensions alone do not prove stable intrinsic contributions to
             // a flex/grid ancestor. Compare the exports cached BEFORE styles

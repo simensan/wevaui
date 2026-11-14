@@ -35,6 +35,16 @@
 namespace weva {
 
 struct BoxModelMemo;
+// A property named by a literal at a call site, with its id looked up the
+// first time that site runs: each WEVA_PROP lambda has its own static. Paint
+// and hit testing read a dozen properties by name for every box, every frame,
+// and hashing the names was a tenth of a HUD's update.
+struct PropertyName {
+    int id;
+    std::string_view name;
+};
+#define WEVA_PROP(literal)                                                                  (::weva::PropertyName{[]() -> int {                                                                               static const int id =                                                                      ::weva::CssPropertyRegistry::instance().id_of(literal);                               return id;                                                                          }(),                                                                                    std::string_view(literal)})
+
 class ComputedStyle {
 public:
     // Transparent comparison lets reads use string_view without allocating
@@ -115,6 +125,11 @@ public:
 
     // Name-keyed access, routing custom properties to the side map.
     std::string_view get(std::string_view property) const;
+    // A name whose id the call site looked up once (WEVA_PROP): an id read,
+    // without hashing the name on every box of every frame.
+    std::string_view get(PropertyName property) const {
+        return property.id != kCustomPropertyId ? get(property.id) : get(property.name);
+    }
     void set(std::string_view property, std::string_view value);
     bool contains(std::string_view property) const;
 
@@ -150,6 +165,35 @@ public:
     const CssValue* parsed(std::string_view property) const;
     int set_count() const { return set_count_; }
     int64_t version() const { return version_; }
+
+    // paint.cpp's memo of this style's resolved transform (see TransformMemo
+    // there), kept on the style so it lives and dies with it. Valid only while
+    // `version` equals version(): every write moves the version on.
+    struct TransformMemo {
+        int64_t version = -1;
+        bool xform_known = false, has = false, present_known = false, present = false;
+        double width = 0, height = 0, font_size = 0;
+        double viewport_w = 0, viewport_h = 0, root_font = 0;
+        float m[6] = {1, 0, 0, 1, 0, 0};
+    };
+    mutable TransformMemo transform_memo;
+    // Whether an animation or transition is moving one of this element's
+    // transform properties this frame. Set by the style map's animation tick;
+    // paint carries it into the transforms it builds (Transform2D::animated).
+    bool transform_animating() const { return transform_animating_.value; }
+    void set_transform_animating(bool value) const { transform_animating_.value = value; }
+    // A fact about the element this style object belongs to, not about the
+    // values in it: the cascade computes into a shared scratch style and
+    // swaps the contents in, and a flag that travelled with the contents
+    // leaked one element's animation onto the next one computed. Copies
+    // start clear and assignment leaves each object's own flag alone.
+    struct OwnFlag {
+        bool value = false;
+        OwnFlag() = default;
+        OwnFlag(const OwnFlag&) {}
+        OwnFlag& operator=(const OwnFlag&) { return *this; }
+    };
+    mutable OwnFlag transform_animating_;
     static void report_storage_profile();
 
     const std::vector<uint64_t>& occupied_bits() const { return occupied_bits_; }

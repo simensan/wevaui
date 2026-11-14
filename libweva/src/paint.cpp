@@ -28,6 +28,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 namespace weva {
 
@@ -354,6 +355,9 @@ namespace {
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
+std::string_view get(const ComputedStyle* s, PropertyName property) {
+    return s ? s->get(property) : std::string_view();
+}
 
 double radius_component(const CssValue* value, const LayoutContext& ctx, double font_size,
                         double basis) {
@@ -387,7 +391,7 @@ CornerRadius corner(const ComputedStyle* style, int property,
 // `letter-spacing` in px: a length, or a percentage of the font size (the
 // reading inline layout takes, css-text-4).
 double letter_spacing_of(const ComputedStyle* style, const LayoutContext& ctx, double font_size) {
-    const std::string_view raw = get(style, "letter-spacing");
+    const std::string_view raw = get(style, WEVA_PROP("letter-spacing"));
     if (raw.empty() || raw == "normal") return 0;
     const ResolvedLength r = resolve_length(style, "letter-spacing", ctx, font_size, std::nullopt);
     if (r.kind == LengthKind::Length) return r.pixels;
@@ -796,18 +800,90 @@ void filter_backdrop(Mesh&& cur, RenderInterface* backend, const BackdropEffect&
 
 // ---- transform (CSS Transforms L1) ---------------------------------------
 
+bool parse_transform_uncached(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
+                              double width, double height, Transform2D* out);
+
+// A box's transform, parsed once per version of its style and the inputs its
+// lengths resolve against. Paint and hit testing both resolve the transform of
+// every box they visit, and each resolution parsed the `transform` text into
+// heap-allocated function names and looked five properties up by name: a game
+// HUD placing ~100 boxes by translate() spent 18% of all its instructions in
+// one hover hit test a frame doing that, for transforms that had not changed.
+//
+// Kept on the style (ComputedStyle::transform_memo) and validated by its
+// version, which comes from a process-wide counter and moves on every write;
+// a swap of contents carries the memo with them.
+using TransformMemo = ComputedStyle::TransformMemo;
+
+TransformMemo& transform_memo(const ComputedStyle* style) {
+    TransformMemo& memo = style->transform_memo;
+    if (memo.version != style->version()) {
+        memo = TransformMemo{};
+        memo.version = style->version();
+    }
+    return memo;
+}
+
+// Lengths in these units read font metrics the memo key does not hold.
+bool metric_dependent(std::string_view v) {
+    for (const char* unit : {"ch", "ex", "lh", "ic", "cap"}) {
+        if (v.find(unit) != std::string_view::npos) return true;
+    }
+    return false;
+}
+
 // `<transform-list>` applied about `transform-origin`, as a matrix in the
 // coordinates of the box's border box; identity when there is none. skew and
 // matrix() are read; 3D functions are ignored.
 bool parse_transform(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
                      double width, double height, Transform2D* out) {
-    const std::string_view raw = get(style, "transform");
+    if (!style) return parse_transform_uncached(style, ctx, font_size, width, height, out);
+    TransformMemo& memo = transform_memo(style);
+    if (memo.xform_known && memo.width == width && memo.height == height &&
+        memo.font_size == font_size && memo.viewport_w == ctx.viewport_width_px &&
+        memo.viewport_h == ctx.viewport_height_px && memo.root_font == ctx.root_font_size_px) {
+        if (memo.has && out) {
+            *out = Transform2D(memo.m[0], memo.m[1], memo.m[2], memo.m[3], memo.m[4], memo.m[5]);
+            out->animated = style->transform_animating();
+        }
+        return memo.has;
+    }
+    static const int ids[] = {
+        CssPropertyRegistry::instance().id_of("transform"),
+        CssPropertyRegistry::instance().id_of("translate"),
+        CssPropertyRegistry::instance().id_of("rotate"),
+        CssPropertyRegistry::instance().id_of("scale"),
+        CssPropertyRegistry::instance().id_of("transform-origin"),
+    };
+    Transform2D local;
+    const bool has = parse_transform_uncached(style, ctx, font_size, width, height, &local);
+    local.animated = style->transform_animating();
+    if (out && has) *out = local;
+    for (const int id : ids) {
+        if (metric_dependent(style->get(id))) return has;
+    }
+    memo.xform_known = true;
+    memo.width = width;
+    memo.height = height;
+    memo.font_size = font_size;
+    memo.viewport_w = ctx.viewport_width_px;
+    memo.viewport_h = ctx.viewport_height_px;
+    memo.root_font = ctx.root_font_size_px;
+    memo.has = has;
+    const float m[6] = {local.a, local.b, local.c, local.d, local.tx, local.ty};
+    std::copy(m, m + 6, memo.m);
+    return has;
+}
+
+bool parse_transform_uncached(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
+                              double width, double height, Transform2D* out) {
+    const std::string_view raw = get(style, WEVA_PROP("transform"));
     // CSS Transforms 2 §8: the individual `translate`, `rotate` and `scale`
     // properties compose with the list -- the list applies first, then
     // scale, rotate, translate -- all about the same transform-origin.
-    const std::string_view translate_raw = get(style, "translate");
-    const std::string_view rotate_raw = get(style, "rotate");
-    const std::string_view scale_raw = get(style, "scale");
+    const std::string_view translate_raw = get(style, WEVA_PROP("translate"));
+    const std::string_view rotate_raw = get(style, WEVA_PROP("rotate"));
+    const std::string_view scale_raw = get(style, WEVA_PROP("scale"));
     const auto set = [](std::string_view v) { return !v.empty() && v != "none"; };
     const bool has_list = set(raw);
     if (!has_list && !set(translate_raw) && !set(rotate_raw) && !set(scale_raw)) return false;
@@ -1013,7 +1089,7 @@ bool parse_transform(const ComputedStyle* style, const LayoutContext& ctx, doubl
     }
     // transform-origin, default 50% 50%; keywords and one-value forms.
     double ox = width * 0.5, oy = height * 0.5;
-    const std::string_view origin_raw = get(style, "transform-origin");
+    const std::string_view origin_raw = get(style, WEVA_PROP("transform-origin"));
     if (!origin_raw.empty()) {
         std::vector<std::string_view> toks = split_shadow_list(origin_raw, ' ');
         const auto axis = [&](std::string_view s, double extent, bool horizontal) {
@@ -1045,7 +1121,7 @@ struct TextShadow {
 std::vector<TextShadow> parse_text_shadows(const ComputedStyle* style, const LayoutContext& ctx,
                                            double font_size, const LinearColor& current) {
     std::vector<TextShadow> out;
-    const std::string_view raw = get(style, "text-shadow");
+    const std::string_view raw = get(style, WEVA_PROP("text-shadow"));
     if (raw.empty() || raw == "none") return out;
     for (std::string_view layer : split_shadow_list(raw, ',')) {
         TextShadow sh;
@@ -1083,7 +1159,7 @@ bool clips_background_to_text(const ComputedStyle* style) {
     // The prefixed name is not a registered property, so it is found among
     // the custom ones by name; only the standard one can be read by id.
     static const int standard = CssPropertyRegistry::instance().id_of("background-clip");
-    return (style && style->get(standard) == "text") || get(style, "-webkit-background-clip") == "text";
+    return (style && style->get(standard) == "text") || get(style, WEVA_PROP("-webkit-background-clip")) == "text";
 }
 
 // `filter: blur(<length>)` — the one filter painted; the rest pass through.
@@ -1132,7 +1208,7 @@ std::vector<std::string_view> split_shadow_list(std::string_view s, char sep) {
 std::vector<Shadow> parse_box_shadows(const ComputedStyle* style, const LayoutContext& ctx,
                                       double font_size, const LinearColor& current) {
     std::vector<Shadow> out;
-    const std::string_view raw = get(style, "box-shadow");
+    const std::string_view raw = get(style, WEVA_PROP("box-shadow"));
     if (raw.empty() || raw == "none") return out;
     for (std::string_view layer : split_shadow_list(raw, ',')) {
         Shadow sh;
@@ -1853,7 +1929,7 @@ void ellipse_points(double cx, double cy, double rx, double ry, std::vector<Clip
 
 bool parse_clip_path(const ComputedStyle* style, const LayoutContext& ctx, double font_size,
                      const Rect& box, std::vector<ClipPoint>* out) {
-    const std::string_view raw = trim_view(get(style, "clip-path"));
+    const std::string_view raw = trim_view(get(style, WEVA_PROP("clip-path")));
     if (raw.empty() || ci_equal(raw, "none")) return false;
     const size_t open = raw.find('(');
     const size_t close = raw.rfind(')');
@@ -1980,7 +2056,7 @@ Recti intersect(const Recti& a, const Recti& b) {
 FaceHandle family_face(const ComputedStyle* style, const LayoutContext& ctx,
                        const PaintContext& paint) {
     if (ctx.fonts.empty()) return paint.face;
-    const auto* metrics = ctx.font_for(get(style, "font-family"));
+    const auto* metrics = ctx.font_for(get(style, WEVA_PROP("font-family")));
     const auto face = metrics ? metrics->rendering_face(paint.font) : FaceHandle{};
     return face.id ? face : paint.face;
 }
@@ -2180,8 +2256,8 @@ int decoration_flags_of(const ComputedStyle* style) {
     if (!style) return kNoDecoration;
     // The longhand first; the shorthand's other components (style, colour,
     // thickness) are read separately, and either may carry the line.
-    std::string raw(get(style, "text-decoration-line"));
-    if (raw.empty() || raw == "none") raw = std::string(get(style, "text-decoration"));
+    std::string raw(get(style, WEVA_PROP("text-decoration-line")));
+    if (raw.empty() || raw == "none") raw = std::string(get(style, WEVA_PROP("text-decoration")));
     if (raw.empty() || raw == "none") return kNoDecoration;
     int flags = kNoDecoration;
     if (raw.find("underline") != std::string::npos) flags |= kUnderline;
@@ -2203,18 +2279,18 @@ void paint_text_decorations(int flags, double x, double baseline, double width, 
     // CSS Text Decoration L4 3.2: `auto` is the font's own, and this is the
     // reference's fallback for a face that does not say.
     double thickness = std::max(1.0, ascent / 12.0);
-    const std::string_view declared = get(style, "text-decoration-thickness");
+    const std::string_view declared = get(style, WEVA_PROP("text-decoration-thickness"));
     if (!declared.empty() && declared != "auto" && declared != "from-font") {
         const ResolvedLength r = resolve_length(declared, ctx, font_size, font_size);
         if (r.kind == LengthKind::Length && r.pixels > 0) thickness = r.pixels;
     }
     LinearColor color = text_color;
-    const std::string_view decl_color = get(style, "text-decoration-color");
+    const std::string_view decl_color = get(style, WEVA_PROP("text-decoration-color"));
     if (!decl_color.empty() && decl_color != "currentcolor" && decl_color != "currentColor") {
         color = resolve_color(style, "text-decoration-color");
     }
     double extra = 0;
-    const std::string_view offset = get(style, "text-underline-offset");
+    const std::string_view offset = get(style, WEVA_PROP("text-underline-offset"));
     if (!offset.empty() && offset != "auto") {
         const ResolvedLength r = resolve_length(offset, ctx, font_size, font_size);
         if (r.kind == LengthKind::Length) extra = std::max(0.0, r.pixels);
@@ -2224,7 +2300,7 @@ void paint_text_decorations(int flags, double x, double baseline, double width, 
     // by one engine and drawn by the other has the same dashes in the same
     // places -- and `wavy` is drawn as dashed by both, since a sine needs a
     // curve primitive neither renderer has.
-    const std::string_view deco_style = get(style, "text-decoration-style");
+    const std::string_view deco_style = get(style, WEVA_PROP("text-decoration-style"));
     const auto segment = [&](double sx, double sy, double sw) {
         if (sw <= 0) return;
         Mesh m;
@@ -2260,7 +2336,7 @@ void paint_text_decorations(int flags, double x, double baseline, double width, 
 }
 
 const FontMetrics* control_metrics(const LayoutContext& ctx, const ComputedStyle* style) {
-    const FontMetrics* base = ctx.font_for(get(style, "font-family"));
+    const FontMetrics* base = ctx.font_for(get(style, WEVA_PROP("font-family")));
     if (!ctx.variant_metrics || !base) return base;
     const int weight = resolve_font_weight(style);
     const bool italic = resolve_font_italic(style);
@@ -2273,7 +2349,7 @@ const FontMetrics* control_metrics(const LayoutContext& ctx, const ComputedStyle
 // indigo.
 LinearColor accent_color_of(const ComputedStyle* style) {
     const LinearColor kCheck(0.090f, 0.196f, 0.671f, 1.f);
-    const std::string_view raw = get(style, "accent-color");
+    const std::string_view raw = get(style, WEVA_PROP("accent-color"));
     if (raw.empty() || ci_equal(raw, "auto")) return kCheck;
     const LinearColor c = resolve_color(style, "accent-color");
     return c.a > 0 ? c : kCheck;
@@ -2294,7 +2370,7 @@ LinearColor selection_band_color(const PaintContext& paint, const Element* host)
     const LinearColor ua = LinearColor::from_srgb(51, 144, 255, 0.45f);
     const ComputedStyle* ps = pseudo_style_of(paint, host, "selection");
     if (!ps || !ps->contains_own("background-color")) return ua;
-    const std::string_view raw = ps->get("background-color");
+    const std::string_view raw = ps->get(WEVA_PROP("background-color"));
     if (raw.empty() || ci_equal(raw, "transparent")) return ua;
     const LinearColor c = resolve_color(ps, "background-color");
     return c.a > 0 ? c : ua;
@@ -2310,12 +2386,12 @@ LinearColor placeholder_color(const PaintContext& paint, const Element* host,
     LinearColor c = host_color;
     bool styled = false;
     if (ps->contains_own("color")) {
-        const std::string_view raw = ps->get("color");
+        const std::string_view raw = ps->get(WEVA_PROP("color"));
         if (!raw.empty() && !ci_equal(raw, "currentcolor")) { c = resolve_color(ps, "color"); styled = true; }
         else styled = true;   // currentcolor: the host's colour, at full strength
     }
     if (ps->contains_own("opacity")) {
-        const std::string t(ps->get("opacity"));
+        const std::string t(ps->get(WEVA_PROP("opacity")));
         char* end = nullptr;
         const double o = std::strtod(t.c_str(), &end);
         if (end != t.c_str()) { c.a *= static_cast<float>(std::clamp(o, 0.0, 1.0)); styled = true; }
@@ -2349,7 +2425,7 @@ BlendMode blend_mode_of(std::string_view raw) { return blend_mode_from_keyword(r
 // contrast adjustment the spec permits is not done). `transparent` is a
 // legitimate value -- a page that draws its own cursor hides the UA's.
 LinearColor caret_color_of(const ComputedStyle* style) {
-    const std::string_view raw = get(style, "caret-color");
+    const std::string_view raw = get(style, WEVA_PROP("caret-color"));
     if (raw.empty() || ci_equal(raw, "auto") || ci_equal(raw, "currentcolor")) {
         return resolve_color(style, "color");
     }
@@ -2372,7 +2448,7 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
                         const PaintState& state, const Transform2D* xf) {
     const Element& e = *b.element;
     const std::string_view tag = e.tag_name();
-    const bool skip_contents = b.style && b.style->get("content-visibility") == "hidden";
+    const bool skip_contents = b.style && b.style->get(WEVA_PROP("content-visibility")) == "hidden";
     const double cl = x + b.border_left + b.padding_left;
     const double ct = y + b.border_top + b.padding_top;
     const double cw = b.width - b.border_left - b.border_right - b.padding_left - b.padding_right;
@@ -2567,11 +2643,22 @@ void paint_form_control(const Box& b, const LayoutContext& ctx, double x, double
 // Axis-aligned uniform scales can draw one atlas texel per screen pixel.
 // Other transforms retain their normal geometry/filtering; do not distort
 // glyph proportions or snap a rotated/skewed run to an unrelated grid.
+//
+// While the transform is being animated the scale is a new number every
+// frame, and an exact raster would rasterize every glyph of the text again
+// each frame at a size never asked for twice -- a card popping in with a
+// `scale` keyframe spent 1-2 ms a frame in the font rasterizer and filled the
+// atlas. So an animated scale snaps to eighth-octave rungs (about 9% apart):
+// a pop-in crosses a handful of rungs, each rasterized once, and the quads
+// stretch the nearest rung to the exact size. At rest the flag is clear and
+// the text is exact again.
 double text_raster_scale(const Transform2D* xf) {
     if (!xf || std::abs(xf->b) > 1e-6 || std::abs(xf->c) > 1e-6 ||
         std::abs(std::abs(xf->a) - std::abs(xf->d)) > 1e-6) return 1;
-    const double scale = std::abs(xf->a);
-    return std::isfinite(scale) && scale >= 1.0 / 16 && scale <= 16 ? scale : 1;
+    double scale = std::abs(xf->a);
+    if (!std::isfinite(scale) || scale < 1.0 / 16 || scale > 16) return 1;
+    if (xf->animated) scale = std::exp2(std::round(std::log2(scale) * 8) / 8);
+    return scale;
 }
 
 void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
@@ -2599,8 +2686,8 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
         for (const ShapedGlyph& g : glyphs) {
             paint.atlas->get(paint.font, face, g.glyph, b.font_size * (b.vertical_text ? 1 : scale));
             // Blurred shadows composite a separate logical-size coverage mask.
-            if (!b.vertical_text && scale != 1 && b.style && b.style->get("text-shadow") != "none" &&
-                !b.style->get("text-shadow").empty())
+            if (!b.vertical_text && scale != 1 && b.style && b.style->get(WEVA_PROP("text-shadow")) != "none" &&
+                !b.style->get(WEVA_PROP("text-shadow")).empty())
                 paint.atlas->get(paint.font, face, g.glyph, b.font_size);
         }
     }
@@ -2608,7 +2695,7 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
     // same single up-front upload.
     ControlText t;
     if (paint.font && paint.atlas && is_form_control(b) &&
-        (!b.style || b.style->get("content-visibility") != "hidden") && form_control_text(b, &t)) {
+        (!b.style || b.style->get(WEVA_PROP("content-visibility")) != "hidden") && form_control_text(b, &t)) {
         const ComputedStyle* ps = b.parent == kNoBox ? nullptr : tree[b.parent].style;
         const double fs = b.style ? font_size_px(b.style, ps, ctx) : ctx.root_font_size_px;
         const FaceHandle face = face_for_run(b, ctx, paint);
@@ -2754,7 +2841,7 @@ bool paint_layered_background(const std::vector<BackgroundLayer>& layers, const 
 
 // One source parser for painting and the cache's live-reference sweep.
 std::string_view border_image_url(const ComputedStyle* style) {
-    std::string_view raw = trim_view(get(style, "border-image-source"));
+    std::string_view raw = trim_view(get(style, WEVA_PROP("border-image-source")));
     if (raw.empty() || raw == "none") return {};
     if (raw.size() > 5 && raw.substr(0, 4) == "url(") {
         raw = trim_view(raw.substr(4, raw.size() - 5));
@@ -2798,7 +2885,7 @@ std::string border_image_key(const ComputedStyle* style, double w, double h,
     num(bi.width.left);
     num(static_cast<double>(static_cast<int>(bi.repeat_x)));
     num(static_cast<double>(static_cast<int>(bi.repeat_y)));
-    k += get(style, "border-image-source");
+    k += get(style, WEVA_PROP("border-image-source"));
     k += '|';
     return k;
 }
@@ -2887,7 +2974,7 @@ std::vector<BackgroundLayer> replaced_layer(const Box& b, const PaintContext& pa
     layer.repeat_x = false;
     layer.repeat_y = false;
 
-    const std::string_view fit = get(b.style, "object-fit");
+    const std::string_view fit = get(b.style, WEVA_PROP("object-fit"));
     if (fit == "contain" || fit == "scale-down") {
         layer.size_x = "contain";
     } else if (fit == "cover") {
@@ -2907,7 +2994,7 @@ std::vector<BackgroundLayer> replaced_layer(const Box& b, const PaintContext& pa
     // crop evenly instead of off the bottom right.
     layer.pos_x = "50%";
     layer.pos_y = "50%";
-    const std::string_view pos = get(b.style, "object-position");
+    const std::string_view pos = get(b.style, WEVA_PROP("object-position"));
     if (!pos.empty()) {
         const std::string_view trimmed = trim_view(pos);
         const size_t space = trimmed.find(' ');
@@ -3131,7 +3218,7 @@ void paint_outline(const Box& b, double x, double y, const LayoutContext& ctx,
                    const BorderRadii& radii, const PaintContext& paint, double opacity,
                    const Transform2D* xf, const ClipNode* clip, const ColorFilter* filter) {
     if (!b.style) return;
-    const std::string_view style = get(b.style, "outline-style");
+    const std::string_view style = get(b.style, WEVA_PROP("outline-style"));
     if (style.empty() || ci_equal(style, "none") || ci_equal(style, "hidden")) return;
     const double fs = b.font_size > 0 ? b.font_size : ctx.root_font_size_px;
     double width = resolve_length(b.style, "outline-width", ctx, fs).pixels;
@@ -3212,7 +3299,7 @@ bool border_keyword(std::string_view value, std::string_view keyword) {
 
 bool collapsed_table_part(const Box& b) {
     return is_table_display(b.display) && b.display != DisplayKind::TableCaption &&
-           border_keyword(get(b.style, "border-collapse"), "collapse");
+           border_keyword(get(b.style, WEVA_PROP("border-collapse")), "collapse");
 }
 
 void paint_table_borders(const std::vector<TableBorderSegment>& segments, double x, double y,
@@ -3295,13 +3382,13 @@ void paint_resolved_decorations(const Box& b, const Rect& border_box, const Bord
     // width and style are the border's kinds; `none` and `hidden` draw
     // nothing, and a width wider than the gap is clipped to it.
     if (b.is_multicol && b.column_count_used > 1 && !b.column_sets.empty() && b.style) {
-        const std::string_view rule_style = get(b.style, "column-rule-style");
+        const std::string_view rule_style = get(b.style, WEVA_PROP("column-rule-style"));
         if (!rule_style.empty() && !border_keyword(rule_style, "none") && !border_keyword(rule_style, "hidden")) {
             double width = std::min(b.column_rule_width_used, b.column_gap_used);
             if (width > 0) {
-                const std::string_view raw_color = get(b.style, "column-rule-color");
+                const std::string_view raw_color = get(b.style, WEVA_PROP("column-rule-color"));
                 const LinearColor color = resolve_color(b.style, raw_color.empty() || border_keyword(raw_color, "currentcolor") ? "color" : "column-rule-color");
-                const bool rtl = ci_equal(get(b.style, "direction"), "rtl");
+                const bool rtl = ci_equal(get(b.style, WEVA_PROP("direction")), "rtl");
                 const double content_left = border_box.x + b.border_left + b.padding_left;
                 const double content_width = b.content_width();
                 const double stride = (content_width + b.column_gap_used) / b.column_count_used;
@@ -3527,7 +3614,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     // parent's mode.
     const BlendMode inherited_blend = state.blend;
     if (decorated && b.style) {
-        const BlendMode own = blend_mode_of(get(b.style, "mix-blend-mode"));
+        const BlendMode own = blend_mode_of(get(b.style, WEVA_PROP("mix-blend-mode")));
         if (own != BlendMode::Normal) state.blend = own;
     }
     struct RestoreBlend {
@@ -3551,7 +3638,7 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
             const Box& caption = tree[child];
             if (caption.display != DisplayKind::TableCaption) continue;
             const double extent = caption.margin_top + caption.height + caption.margin_bottom;
-            if (get(caption.style, "caption-side") == "bottom") bottom_captions += extent;
+            if (get(caption.style, WEVA_PROP("caption-side")) == "bottom") bottom_captions += extent;
             else top_captions += extent;
         }
         // Layout retains the wrapper (including captions) for flow and input.
@@ -4279,7 +4366,7 @@ void trim_image_cache(const BoxTree& tree, BoxId root, ImageStore& images) {
         retain(box.list_marker_image);
         if (box.style) {
             retain(border_image_url(box.style));
-            const auto background = get(box.style, "background-image"), mask = get(box.style, "mask-image");
+            const auto background = get(box.style, WEVA_PROP("background-image")), mask = get(box.style, WEVA_PROP("mask-image"));
             if ((!background.empty() && background != "none") || (!mask.empty() && mask != "none")) {
                 for (const auto& layer : resolve_background_layers(box.style, resolve_color(box.style, "color")))
                     retain(layer.url);
@@ -4294,7 +4381,7 @@ void trim_image_cache(const BoxTree& tree, BoxId root, ImageStore& images) {
 }
 
 double resolve_opacity(const ComputedStyle* style) {
-    std::string_view raw = style ? style->get("opacity") : std::string_view();
+    std::string_view raw = style ? style->get(WEVA_PROP("opacity")) : std::string_view();
     const auto space = [](char c) { return c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == '\f'; };
     while (!raw.empty() && space(raw.front())) raw.remove_prefix(1);
     while (!raw.empty() && space(raw.back())) raw.remove_suffix(1);
@@ -4346,11 +4433,22 @@ bool resolve_transform(const ComputedStyle* style, const LayoutContext& ctx,
 
 bool has_transform_property(const ComputedStyle* style) {
     if (!style) return false;
-    for (const char* prop : {"transform", "translate", "rotate", "scale"}) {
-        const std::string_view v = get(style, prop);
-        if (!v.empty() && v != "none") return true;
+    TransformMemo& memo = transform_memo(style);
+    if (memo.present_known) return memo.present;
+    static const int ids[] = {
+        CssPropertyRegistry::instance().id_of("transform"),
+        CssPropertyRegistry::instance().id_of("translate"),
+        CssPropertyRegistry::instance().id_of("rotate"),
+        CssPropertyRegistry::instance().id_of("scale"),
+    };
+    bool present = false;
+    for (const int id : ids) {
+        const std::string_view v = style->get(id);
+        if (!v.empty() && v != "none") { present = true; break; }
     }
-    return false;
+    memo.present_known = true;
+    memo.present = present;
+    return present;
 }
 
 BorderRadii resolve_border_radii(const ComputedStyle* style, double width, double height,

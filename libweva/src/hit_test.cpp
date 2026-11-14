@@ -17,17 +17,20 @@ namespace {
 std::string_view get(const ComputedStyle* s, std::string_view property) {
     return s ? s->get(property) : std::string_view();
 }
+std::string_view get(const ComputedStyle* s, PropertyName property) {
+    return s ? s->get(property) : std::string_view();
+}
 
 // CSS UI L4 §6: `pointer-events: none` makes the box and its descendants
 // invisible to hit testing. A descendant may take it back, so this is asked
 // per box on the way down rather than pruning the subtree.
 bool ignores_pointer(const ComputedStyle* style) {
-    return get(style, "pointer-events") == "none";
+    return get(style, WEVA_PROP("pointer-events")) == "none";
 }
 
 // CSS 2.1 §11.2: a hidden box is not a hit target. It still lays out, and its
 // children may set `visible` again, so this too is per box.
-bool is_invisible(const ComputedStyle* style) { return get(style, "visibility") == "hidden"; }
+bool is_invisible(const ComputedStyle* style) { return get(style, WEVA_PROP("visibility")) == "hidden"; }
 
 bool local_transform(const BoxTree& tree, BoxId id, const LayoutContext& ctx, Transform2D* out) {
     const Box& b = tree[id];

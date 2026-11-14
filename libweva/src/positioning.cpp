@@ -300,7 +300,7 @@ bool clips_overflow(const Box& b) {
     // that believed it stopped at the first line inside every scroller, which
     // is how a row of cards 360 wide reported nothing to scroll.
     if (b.kind != BoxKind::Block || (!b.element && !b.pseudo_host)) return false;
-    for (const char* prop : {"overflow-x", "overflow-y"}) {
+    for (const int prop : {kId_overflow_x, kId_overflow_y}) {
         const std::string_view v = get(b.style, prop);
         if (v == "hidden" || v == "clip" || v == "auto" || v == "scroll") return true;
     }
@@ -315,7 +315,7 @@ bool scrollable_on_axis(const Box& b, bool vertical) {
 
 bool establishes_scroll_container(const Box& b) {
     if (!clips_overflow(b)) return false;
-    for (const char* prop : {"overflow-x", "overflow-y"}) {
+    for (const int prop : {kId_overflow_x, kId_overflow_y}) {
         const auto value = get(b.style, prop);
         if (value == "hidden" || value == "auto" || value == "scroll") return true;
     }

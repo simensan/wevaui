@@ -64,6 +64,15 @@
 #include <string>
 #include <vector>
 
+// How many changed elements an update tracks before giving up on a scoped
+// cascade and restyling the whole document. It was 64: a game HUD moving its
+// world-anchored labels by inline style touches three or four elements per
+// enemy health bar and two per damage number, passed 64 in a busy fight, and
+// paid a full-document cascade (about 2 ms of a 3.4 ms update) on 17% of its
+// updates. The fold over overlapping scopes and the duplicate checks are
+// linear-to-quadratic in this count and stay cheap at a few hundred.
+constexpr size_t kTouchedLimit = 512;
+
 namespace {
 
 using namespace weva;
@@ -913,6 +922,20 @@ struct StyleMap : StyleProvider {
         bool active = false;
     };
     std::map<const Element*, std::map<int, AnimationValue>> animation_shown;
+    // Elements an animation or transition is moving a transform property of:
+    // last tick's, and the one being collected. Paint rasterizes text under
+    // them at quantized scales; leaving the set is a paint change.
+    std::unordered_set<const Element*> transform_moving, transform_moving_next;
+    static bool transform_family(int id) {
+        static const int ids[] = {
+            CssPropertyRegistry::instance().id_of("transform"),
+            CssPropertyRegistry::instance().id_of("translate"),
+            CssPropertyRegistry::instance().id_of("rotate"),
+            CssPropertyRegistry::instance().id_of("scale"),
+        };
+        for (const int t : ids) if (id == t) return true;
+        return false;
+    }
 
     // Puts back what an animation overwrote, WITHOUT calling it a change.
     //
@@ -934,8 +957,9 @@ struct StyleMap : StyleProvider {
         auto it = animation_saved.find(&e);
         if (it == animation_saved.end()) return;
         for (const auto& kv : it->second) {
+            const Invalidation kind = value_invalidation(kv.first, live->get(kv.first), kv.second);
             live->set(kv.first, kv.second);
-            note_change(live, invalidation_for_property(kv.first));
+            note_change(live, kind);
         }
         animation_saved.erase(it);
     }
@@ -1016,6 +1040,7 @@ struct StyleMap : StyleProvider {
         }
         const std::string_view names = clocks.names;
         bool has_definition = false;
+        bool moves_transform = false;
         auto& composed = animation_shown[&e];
         for (auto& entry : composed) entry.second.active = false;
 
@@ -1099,10 +1124,18 @@ struct StyleMap : StyleProvider {
                     result.active = true;
                 }
             }
+            if (!moves_transform && active && !paused && elapsed >= 0 && elapsed < iterations * duration) {
+                for (const std::string& property : it->second.properties)
+                    if (transform_family(CssPropertyRegistry::instance().id_of(property))) {
+                        moves_transform = true;
+                        break;
+                    }
+            }
             // A delay without backwards fill still needs ticks to reach its
             // active interval. Paused effects retain their value without ticks.
             any_animation = any_animation || (!paused && elapsed < iterations * duration);
         }
+        if (moves_transform) transform_moving_next.insert(&e);
         if (!has_definition) {
             // A name with no matching keyframes creates no CSS animation.
             // Removing its definition cancels it; later reappearance starts
@@ -1117,10 +1150,11 @@ struct StyleMap : StyleProvider {
             auto& result = it->second;
             if (result.active) {
                 if (saved.find(id) == saved.end()) saved[id] = std::string(live->get(id));
+                const Invalidation kind = value_invalidation(id, live->get(id), result.pending);
                 live->set(id, result.pending);
                 if (result.shown != result.pending) {
                     result.shown = result.pending;
-                    note_change(live, invalidation_for_property(id));
+                    note_change(live, kind);
                 }
                 ++it;
             } else {
@@ -1132,7 +1166,7 @@ struct StyleMap : StyleProvider {
                     saved.erase(base);
                 }
                 if (result.shown != live->get(id)) {
-                    note_change(live, invalidation_for_property(id));
+                    note_change(live, value_invalidation(id, result.shown, live->get(id)));
                 }
                 it = composed.erase(it);
             }
@@ -1217,6 +1251,7 @@ struct StyleMap : StyleProvider {
         // still SHOW the value its animation is holding, and a fill mode holds
         // one before the animation has even started.
         any_animation = false;
+        transform_moving_next.clear();
         for (const Element* e : animated) {
             auto it = by_element.find(e);
             if (it != by_element.end()) apply_animations(*e, it->second, dt);
@@ -1230,13 +1265,20 @@ struct StyleMap : StyleProvider {
             if (!animation_displayed(*kv.first)) {
                 for (const RunningTransition& transition : list) {
                     if (live->get(transition.property_id) != transition.to) {
+                        const Invalidation kind = value_invalidation(
+                            transition.property_id, live->get(transition.property_id), transition.to);
                         live->set(transition.property_id, transition.to);
-                        note_change(live, invalidation_for_property(transition.property_id));
+                        note_change(live, kind);
                     }
                 }
                 list.clear();
                 continue;
             }
+            for (const RunningTransition& t : list)
+                if (transform_family(t.property_id)) {
+                    transform_moving_next.insert(kv.first);
+                    break;
+                }
             if (dt <= 0) continue;
             for (size_t i = 0; i < list.size();) {
                 list[i].elapsed += dt;
@@ -1245,13 +1287,30 @@ struct StyleMap : StyleProvider {
                 // Delays and stepped timing can hold an unchanged value for
                 // many frames. Advance the clock without invalidating output.
                 if (live->get(list[i].property_id) != now) {
+                    const Invalidation kind =
+                        value_invalidation(list[i].property_id, live->get(list[i].property_id), now);
                     live->set(list[i].property_id, now);
-                    note_change(live, invalidation_for_property(list[i].property_id));
+                    note_change(live, kind);
                 }
                 if (finished) list.erase(list.begin() + static_cast<long>(i));
                 else ++i;
             }
         }
+        // Text under a transform that stopped moving was rasterized at a
+        // quantized scale; the box paints again, exactly. One that started
+        // moving changed a value this tick and repaints anyway.
+        for (const Element* e : transform_moving) {
+            if (transform_moving_next.count(e)) continue;
+            const auto it = by_element.find(e);
+            if (it == by_element.end()) continue;
+            it->second->set_transform_animating(false);
+            note_change(it->second, Invalidation::Paint);
+        }
+        for (const Element* e : transform_moving_next) {
+            const auto it = by_element.find(e);
+            if (it != by_element.end()) it->second->set_transform_animating(true);
+        }
+        transform_moving.swap(transform_moving_next);
     }
 
     void begin_pass() {
@@ -1498,9 +1557,55 @@ struct StyleMap : StyleProvider {
             return;
         }
         for (const int id : changed) {
-            note_change(live, invalidation_for_property(id), only_box_edges);
+            note_change(live, transform_aware_invalidation(id, *fresh, *live), only_box_edges);
             if (pending == Invalidation::Boxes) return;
         }
+    }
+
+    // `transform`, `translate`, `rotate` and `scale` are layout properties only
+    // for what their presence does: a transformed box is the containing block
+    // of its positioned descendants (positioning reads nothing else of them).
+    // A change from one value to another, neither `none`, leaves that
+    // unchanged; paint and hit testing read the matrix from the style when
+    // they run, and a paint-level change recomputes the box's visual overflow.
+    // So a moving or scaling box repaints instead of laying the document out
+    // again, and the rest of the paint is reused -- a game HUD placing
+    // world-anchored labels by `translate()` every frame relaid and repainted
+    // the whole document each frame, and a card's entry keyframes on `scale`
+    // and `translate` relaid it every frame of the animation. Every path that
+    // writes a value -- cascade, keyframes, transitions, restores -- asks here.
+    static Invalidation transform_aware_invalidation(int id, const ComputedStyle& before,
+                                                     const ComputedStyle& after) {
+        return value_invalidation(id, before.get(id), after.get(id));
+    }
+    static Invalidation value_invalidation(int id, std::string_view before, std::string_view after) {
+        static const int transform_id = CssPropertyRegistry::instance().id_of("transform");
+        static const int translate_id = CssPropertyRegistry::instance().id_of("translate");
+        static const int rotate_id = CssPropertyRegistry::instance().id_of("rotate");
+        static const int scale_id = CssPropertyRegistry::instance().id_of("scale");
+        static const int visibility_id = CssPropertyRegistry::instance().id_of("visibility");
+        const Invalidation kind = invalidation_for_property(id);
+        // `visibility` is a layout property only for `collapse`, which
+        // removes a table row; visible and hidden change what paints and
+        // what is hit, nothing else. A HUD hides pooled rows this way, where
+        // `display: none` rebuilt the boxes to show one damage number.
+        if (id == visibility_id && kind == Invalidation::Layout) {
+            const auto plain = [](std::string_view v) {
+                while (!v.empty() && (v.front() == ' ' || v.front() == '\t')) v.remove_prefix(1);
+                while (!v.empty() && (v.back() == ' ' || v.back() == '\t')) v.remove_suffix(1);
+                return v.empty() || v == "visible" || v == "hidden";
+            };
+            return plain(before) && plain(after) ? Invalidation::Paint : kind;
+        }
+        if (kind != Invalidation::Layout ||
+            (id != transform_id && id != translate_id && id != rotate_id && id != scale_id))
+            return kind;
+        const auto is_set = [](std::string_view v) {
+            while (!v.empty() && (v.front() == ' ' || v.front() == '\t')) v.remove_prefix(1);
+            while (!v.empty() && (v.back() == ' ' || v.back() == '\t')) v.remove_suffix(1);
+            return !v.empty() && v != "none";
+        };
+        return is_set(before) && is_set(after) ? Invalidation::Paint : kind;
     }
 
     void consume_control_inputs(const Element& e, const ComputedStyle* raw) {
@@ -2341,11 +2446,37 @@ struct weva_document {
     // attribute change reaches its own subtree, and -- when the sheets contain
     // a sibling combinator -- the siblings after it. Nothing else, unless a
     // :has() is about, which lets a descendant decide an ancestor's match and
-    // puts the whole document back in play.
+    // puts the whole document back in play. Past `kTouchedLimit` the list
+    // stops growing and the next cascade walks the whole document.
     std::vector<Element*> touched;
     std::vector<std::pair<const Element*, bool>> local_class_inputs;
     bool has_inputs_dirty = true;
     bool sibling_inputs_dirty = true;
+    // Whether a change since the last update can alter what a sibling
+    // combinator matches, so a scoped cascade must sweep following siblings.
+    // Narrower than `sibling_inputs_dirty`, which also tells the walk that
+    // more than an inline style moved (`local_inline_style`): a text edit or
+    // a class no `+`/`~` selector reads sets that flag and not this one.
+    bool sibling_scope_dirty = true;
+    // True while weva_element_set_text replaces a label whose text stays
+    // selector-equivalent (empty stays empty, text stays text): the text-node
+    // mutations it makes cannot change what any selector matches.
+    bool text_write_keeps_selectors = false;
+    // The last pointer hit test, reused while nothing that moves boxes or
+    // changes what may be hit has happened since. A host asks the same point
+    // several times a frame (hover, whether the page takes the pointer, the
+    // data under it), and each ask walked every box: about 0.1 ms each under
+    // a 400-element game HUD. `hit_generation` moves on every DOM mutation,
+    // update, load, viewport change and out-of-update scroll; updates turn
+    // the cache off while they run, since layout moves boxes mid-update.
+    uint64_t hit_generation = 0;
+    bool hit_cache_off = false;
+    struct HitCache {
+        double x = 0, y = 0;
+        uint64_t generation = ~uint64_t{0};
+        const Element* hit = nullptr;
+    };
+    mutable HitCache hit_cache;
     bool selector_state_dirty = true;
     bool default_inputs_dirty = true;
     std::vector<Ref<Element>> default_buttons;
@@ -2615,11 +2746,13 @@ bool is_table_span_attribute(std::string_view name) {
     return name == "rowspan" || name == "colspan" || name == "span";
 }
 
-bool text_keeps_selector_inputs(const Element& element, bool had_text, bool has_text) {
+bool text_keeps_selector_inputs(const Element& element, bool had_text, bool has_text,
+                                bool empty_observable = true) {
     // Replacing nonempty direct text does not change :empty, element ranks,
     // attributes or selector state. Auto direction and form defaults can read
-    // the text itself, so leave those on the ordinary cascade path.
-    if (!had_text || !has_text) return false;
+    // the text itself, so leave those on the ordinary cascade path. With no
+    // :empty in the sheets, text appearing or vanishing is neutral too.
+    if (empty_observable && (!had_text || !has_text)) return false;
     for (const Node* node = &element; node; node = node->parent()) {
         if (!node->is_element()) continue;
         const auto& ancestor = static_cast<const Element&>(*node);
@@ -2639,7 +2772,7 @@ void note_box_input(weva_document* doc, Element* e) {
     doc->dom_touched = true;
     if (doc->styles.engine.has_sibling_selectors() && e->parent() && e->parent()->is_element())
         e = static_cast<Element*>(e->parent());
-    if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), e) == doc->touched.end())
+    if (doc->touched.size() < kTouchedLimit && std::find(doc->touched.begin(), doc->touched.end(), e) == doc->touched.end())
         doc->touched.push_back(e);
 }
 
@@ -2661,7 +2794,7 @@ void note_binding_mutation(weva_document* doc, const DomMutation& mutation) {
             doc->dom_touched = true;
             if (doc->styles.engine.has_sibling_selectors() && parent->parent() && parent->parent()->is_element())
                 parent = static_cast<Element*>(parent->parent());
-            if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), parent) == doc->touched.end())
+            if (doc->touched.size() < kTouchedLimit && std::find(doc->touched.begin(), doc->touched.end(), parent) == doc->touched.end())
                 doc->touched.push_back(parent);
             return;
         }
@@ -2703,7 +2836,7 @@ void note_binding_mutation(weva_document* doc, const DomMutation& mutation) {
     if (!local_style && doc->styles.engine.has_sibling_selectors() && e->parent() && e->parent()->is_element() &&
         doc->styles.engine.sibling_subject_in_subtree(static_cast<const Element&>(*e->parent())))
         e = static_cast<Element*>(e->parent());
-    if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), e) == doc->touched.end())
+    if (doc->touched.size() < kTouchedLimit && std::find(doc->touched.begin(), doc->touched.end(), e) == doc->touched.end())
         doc->touched.push_back(e);
 }
 
@@ -3143,12 +3276,21 @@ bool input_blocked(const weva_document* doc, const Element* target) {
 extern "C" bool weva_internal_focus_unavailable_now(weva_document* doc, const Element& target);
 extern "C" bool weva_internal_focus_disabled(const Element& e, const weva_document* doc);
 
-const Element* input_element_at(const weva_document* doc, double x, double y) {
+static const Element* input_element_at_uncached(const weva_document* doc, double x, double y) {
     if (active_modal(doc) && (x < 0 || y < 0 || x >= doc->ctx.viewport_width_px || y >= doc->ctx.viewport_height_px)) return nullptr;
     const Element* hit = element_at_point(doc->tree, doc->root, x, y, &doc->ctx);
     // The modal backdrop targets its dialog, never a control underneath it.
     const Element* modal = active_modal(doc);
     if (modal && !is_within(hit, modal)) return form_is_inert(*modal) ? nullptr : modal;
+    return hit;
+}
+
+const Element* input_element_at(const weva_document* doc, double x, double y) {
+    if (doc->hit_cache_off) return input_element_at_uncached(doc, x, y);
+    const auto& cached = doc->hit_cache;
+    if (cached.generation == doc->hit_generation && cached.x == x && cached.y == y) return cached.hit;
+    const Element* hit = input_element_at_uncached(doc, x, y);
+    doc->hit_cache = {x, y, doc->hit_generation, hit};
     return hit;
 }
 
@@ -3206,7 +3348,7 @@ void note_value_change(weva_document* doc, Element& e, std::string_view value, b
     // descendant of the select just because it also emits a value event.
     if (e.tag_name() != "select") {
         doc->dom_touched = true;
-        if (doc->touched.size() < 64) doc->touched.push_back(&e);
+        if (doc->touched.size() < kTouchedLimit) doc->touched.push_back(&e);
     }
     weva_event ev{};
     ev.kind = input ? WEVA_EVENT_VALUE_CHANGED : WEVA_EVENT_CHANGE;
@@ -3486,6 +3628,7 @@ BoxId advance_list_autoscroll(weva_document* doc, double seconds) {
     auto& offset = doc->scroll[doc->list_drag];
     offset = {x,to};
     doc->tree[box].scroll_y = to;
+    ++doc->hit_generation;
     doc->pending = worst(doc->pending,Invalidation::Paint);
     doc->queue_event(WEVA_EVENT_SCROLL,doc->list_drag,offset.first,to,0);
     // Selection follows real pointer moves over options, as in Chrome. A
@@ -3682,6 +3825,7 @@ BoxId advance_text_autoscroll(weva_document* doc, double seconds) {
     if (multiline) {
         doc->scroll[doc->text_drag] = {x,y};
         b.scroll_x = x; b.scroll_y = y;
+        ++doc->hit_generation;
     } else state.text_scroll_x = x;
     // Selection, unlike listbox selectedness, follows newly exposed text
     // without another mousemove. Keep the initial anchor and source offsets.
@@ -4038,6 +4182,7 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     // rebuilds it, so it goes now; the published draws do not depend on it.
     doc->tree.reset();
     doc->root = kNoBox;
+    ++doc->hit_generation;
     doc->retired_nodes.clear();
     doc->incremental_layout.index(doc->tree, kNoBox, doc->ctx, true);
     doc->snap_settle = weva_document::SnapSettle{};
@@ -4047,6 +4192,7 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
             request_popover_hide(doc, doc->handle_of(&element), true, true) == WEVA_OK;
     });
     doc->doc->add_observer([doc](const DomMutation& mutation) {
+        ++doc->hit_generation;
         const Node* owner = mutation.target;
         if (owner && !owner->is_element()) owner = owner->parent();
         if (owner && owner->is_element()) {
@@ -4061,9 +4207,51 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
             else doc->selector_state_dirty = true;
         }
         const bool local_style = mutation.name == "style" && !doc->styles.engine.has_style_attribute_selectors();
+        // Text changing inside an element that stays non-empty is invisible to
+        // selectors: combinators and :nth-* count elements, and :empty sees
+        // only whether text is there. Marking sibling inputs dirty for it made
+        // every scoped cascade after a HUD label changed sweep all following
+        // siblings' subtrees -- 300 elements instead of 45 on 19% of a game
+        // HUD's updates. weva_element_set_text decides this for the labels it
+        // writes; a bound text node edited in place is decided here.
+        const bool selector_neutral_text = doc->text_write_keeps_selectors ||
+            (mutation.kind == MutationKind::TextChanged && mutation.target && mutation.target->parent() &&
+             mutation.target->parent()->is_element() &&
+             text_keeps_selector_inputs(static_cast<const Element&>(*mutation.target->parent()),
+                                        !mutation.old_value.empty(), !mutation.new_value.empty(),
+                                        doc->styles.engine.uses_empty()));
+        // A class change whose classes no selector uses left of a sibling
+        // combinator (nor :has, nor [class]) cannot change a sibling's match;
+        // its own subtree is restyled through `touched` as before. A HUD
+        // toggling "on-cooldown" on a skill slot otherwise swept every
+        // following sibling's subtree.
+        const bool local_class_attr = mutation.name == "class" &&
+            !doc->styles.engine.class_change_reaches_siblings(mutation.old_value, mutation.new_value);
+        // An attribute no selector reads (an image's src, by default).
+        const bool unobserved_attr = (mutation.kind == MutationKind::AttributeAdded ||
+                                      mutation.kind == MutationKind::AttributeChanged ||
+                                      mutation.kind == MutationKind::AttributeRemoved) &&
+            mutation.name != "class" && mutation.name != "style" &&
+            !doc->styles.engine.attribute_change_observable(mutation.name);
         if (!local_style) {
             doc->has_inputs_dirty = true;
             doc->sibling_inputs_dirty = true;
+        }
+        if (!local_style && !selector_neutral_text && !local_class_attr && !unobserved_attr) {
+            doc->sibling_scope_dirty = true;
+            static const bool sibling_log = std::getenv("WEVA_SIBLING_LOG") != nullptr;
+            if (sibling_log) {
+                const Node* at = mutation.target;
+                if (at && !at->is_element()) at = at->parent();
+                std::string_view tag = "", cls = "";
+                if (at && at->is_element()) {
+                    tag = static_cast<const Element*>(at)->tag_name();
+                    cls = static_cast<const Element*>(at)->get_attribute("class");
+                }
+                std::fprintf(stderr, "  sibling dirty: kind %d name '%s' on <%.*s class='%.*s'>\n",
+                             static_cast<int>(mutation.kind), mutation.name.c_str(),
+                             static_cast<int>(tag.size()), tag.data(), static_cast<int>(cls.size()), cls.data());
+            }
         }
         if (mutation.kind == MutationKind::ChildAdded || mutation.kind == MutationKind::ChildRemoved ||
             mutation.name == "type" || mutation.name == "form" || mutation.name == "id" ||
@@ -4133,7 +4321,7 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
             (!doc->styles.engine.has_range_selectors() ||
              seen->second.styled_range == form_range_selector_state(*e))) return;
         doc->dom_touched = true;
-        if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), e) == doc->touched.end())
+        if (doc->touched.size() < kTouchedLimit && std::find(doc->touched.begin(), doc->touched.end(), e) == doc->touched.end())
             doc->touched.push_back(e);
     });
 
@@ -4378,6 +4566,7 @@ void weva_document_set_viewport(weva_document_t doc, int width, int height) {
     doc->config.viewport_height = height;
     doc->ctx.viewport_width_px = width;
     doc->ctx.viewport_height_px = height;
+    ++doc->hit_generation;
     // Conditional rules are compiled against viewport inputs. Recompile on
     // that input change before the normal style diff propagates invalidation.
     auto media = doc->styles.engine.media_context();
@@ -4519,7 +4708,9 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
                                    double input_seconds, bool publish_paint);
 
 weva_status weva_document_update_geometry(weva_document_t doc) {
+    if (doc) { doc->hit_cache_off = true; ++doc->hit_generation; }
     const weva_status status = update_document(doc, 0, 0, false);
+    if (doc) { ++doc->hit_generation; doc->hit_cache_off = false; }
     if (doc && status == WEVA_OK) doc->retired_nodes.clear();
     return status;
 }
@@ -4528,7 +4719,9 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     return weva_document_update_with_input_time(doc,dt_seconds,dt_seconds);
 }
 weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_seconds, double input_seconds) {
+    if (doc) { doc->hit_cache_off = true; ++doc->hit_generation; }
     const weva_status status = update_document(doc, dt_seconds, input_seconds, true);
+    if (doc) { ++doc->hit_generation; doc->hit_cache_off = false; }
     if (doc && status == WEVA_OK) doc->retired_nodes.clear();
     return status;
 }
@@ -4545,6 +4738,7 @@ static void snap_apply(weva_document* doc, const Element* e, double x, double y)
     if (const BoxId i = box_of(doc, e); i != kNoBox) {
         doc->tree[i].scroll_x = x;
         doc->tree[i].scroll_y = y;
+        ++doc->hit_generation;
     }
     doc->queue_event(WEVA_EVENT_SCROLL, e, x, y, 0);
     doc->pending = worst(doc->pending, Invalidation::Paint);
@@ -4682,7 +4876,7 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
             while (root->parent()) root = root->parent();
             if (root != doc->doc.get()) return;
             doc->dom_touched = true;
-            if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), element.get()) == doc->touched.end())
+            if (doc->touched.size() < kTouchedLimit && std::find(doc->touched.begin(), doc->touched.end(), element.get()) == doc->touched.end())
                 doc->touched.push_back(element.get());
         };
         for (const auto& e : doc->default_buttons) if (std::find(next.begin(), next.end(), e) == next.end()) touch(e);
@@ -4814,11 +5008,16 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
     // the cascade already knows it: it works the same fact out to decide
     // whether its match cache is sound.
     const bool scoped = doc->pending <= Invalidation::Paint && !doc->touched.empty() &&
-                        doc->touched.size() < 64 &&
+                        doc->touched.size() < kTouchedLimit &&
                         (!doc->styles.engine.has_has_selectors() || !doc->has_inputs_dirty) &&
                         !doc->styles.engine.has_validity_selectors();
+    if (stage_log && !scoped)
+        std::fprintf(stderr, "  unscoped cascade: pending %d touched %zu has %d inputs_dirty %d validity %d only_time %d\n",
+                     static_cast<int>(doc->pending), doc->touched.size(),
+                     doc->styles.engine.has_has_selectors() ? 1 : 0, doc->has_inputs_dirty ? 1 : 0,
+                     doc->styles.engine.has_validity_selectors() ? 1 : 0, only_time ? 1 : 0);
     if (scoped) {
-        const bool siblings_matter = doc->styles.engine.has_sibling_selectors() && doc->sibling_inputs_dirty;
+        const bool siblings_matter = doc->styles.engine.has_sibling_selectors() && doc->sibling_scope_dirty;
         // Fold overlapping selector scopes before walking. A parent's style
         // must be applied before its descendants, and a sibling combinator
         // also covers every following sibling's descendants.
@@ -4841,6 +5040,9 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
             roots.erase(std::remove_if(roots.begin(), roots.end(), [&](const Element* root) { return covers(e, root); }), roots.end());
             roots.push_back(e);
         }
+        if (stage_log)
+            std::fprintf(stderr, "  scoped cascade: touched %zu roots %zu siblings_matter %d\n",
+                         doc->touched.size(), roots.size(), siblings_matter ? 1 : 0);
         for (Element* e : roots) {
             // The subtree, and from it whatever the sheets can carry forward.
             const Node* from = e;
@@ -4889,6 +5091,7 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
     doc->local_class_inputs.clear();
     doc->has_inputs_dirty = false;
     doc->sibling_inputs_dirty = false;
+    doc->sibling_scope_dirty = false;
     doc->selector_state_dirty = false;
     lap("cascade");
     if (stage_log) {
@@ -5165,6 +5368,10 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
     const bool reset_paint = (pending >= Invalidation::Layout && !subtree_layout) ||
                             pending_at_entry != Invalidation::None ||
                             (subtree_layout && !doc->scroll.empty());
+    if (stage_log && reset_paint)
+        std::fprintf(stderr, "  paint reset: layout %d entry %d scroll %zu\n",
+                     pending >= Invalidation::Layout && !subtree_layout ? 1 : 0,
+                     static_cast<int>(pending_at_entry), subtree_layout ? doc->scroll.size() : 0);
     if (pending == Invalidation::Paint) {
         for (BoxId id : paint_changes) {
             compute_visual_overflow(&doc->tree, id);
@@ -5445,7 +5652,7 @@ static void note_state_change(weva_document* doc, const std::vector<const Elemen
         for (const Element* e : chain) {
             if (in(other, e)) continue;
             if (!observable(e)) continue;
-            if (doc->touched.size() >= 64) return;
+            if (doc->touched.size() >= kTouchedLimit) return;
             doc->touched.push_back(const_cast<Element*>(e));
             any = true;
         }
@@ -5462,12 +5669,15 @@ static void note_state_change(weva_document* doc, const std::vector<const Elemen
     if (reach == &engine.hover_reach()) {
         doc->has_inputs_dirty |= engine.has_hover_dependency();
         doc->sibling_inputs_dirty |= engine.sibling_hover_dependency();
+        doc->sibling_scope_dirty |= engine.sibling_hover_dependency();
     } else if (reach == &engine.active_reach()) {
         doc->has_inputs_dirty |= engine.has_active_dependency();
         doc->sibling_inputs_dirty |= engine.sibling_active_dependency();
+        doc->sibling_scope_dirty |= engine.sibling_active_dependency();
     } else {
         doc->has_inputs_dirty = true;
         doc->sibling_inputs_dirty = true;
+        doc->sibling_scope_dirty = true;
     }
     ++doc->styles.state.version_;
     doc->dom_touched = true;
@@ -6168,6 +6378,16 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
     }
 
     const uint32_t was_down = previous_buttons & WEVA_BUTTON_PRIMARY;
+    static const bool click_log = std::getenv("WEVA_CLICK_LOG") != nullptr;
+    if (click_log && primary != (was_down ? WEVA_BUTTON_PRIMARY : 0u)) {
+        const auto describe = [](const Element* e) {
+            if (!e) return std::string("<none>");
+            return std::string(e->tag_name()) + "." + std::string(e->get_attribute("class"));
+        };
+        std::fprintf(stderr, "  click log: %s at (%g,%g) hit %s press %s%s",
+                     primary ? "press" : "release", x, y, describe(hit).c_str(),
+                     describe(doc->press_target).c_str(), "\n");
+    }
     if (primary != 0 && !was_down) {
         clear_text_drag(doc);
         doc->press_target = disabled_hit ? nullptr : hit;
@@ -6246,11 +6466,23 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
         clear_text_drag(doc);
         doc->queue_event(WEVA_EVENT_POINTER_UP, hit, x, y, buttons, modifiers);
         finish_list_drag(doc);
-        // A click is a press and a release on the SAME element. Releasing
-        // somewhere else is a drag that ended, and is not a click -- which is
-        // the behaviour every button in every toolkit has.
+        // A click goes to the nearest element containing both where the
+        // press and where the release landed (UI Events §3.5, what browsers
+        // do): pressing one word of a button and releasing on another is a
+        // click on the button. Requiring the same innermost element dropped
+        // every click on a card still settling from its entrance -- the text
+        // under a still pointer moved between press and release. Releasing
+        // outside the pressed control clicks only what contains them both.
         popover_pointer_release(doc, hit);
-        if (hit && hit == doc->press_target) activate_element(doc, hit, x, y, buttons, modifiers, true);
+        const Element* target = nullptr;
+        if (hit && doc->press_target) {
+            for (const Node* a = hit; a && !target; a = a->parent()) {
+                if (a->node_type() != NodeType::Element) continue;
+                for (const Node* b = doc->press_target; b; b = b->parent())
+                    if (b == a) { target = static_cast<const Element*>(a); break; }
+            }
+        }
+        if (target && !disabled_ancestor(target)) activate_element(doc, target, x, y, buttons, modifiers, true);
         doc->press_target = nullptr;
     }
 
@@ -8117,7 +8349,7 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
         ++st.version_;
         doc->dom_touched = true;
         for (const Element* e : {previous, target}) {
-            if (e && doc->touched.size() < 64) doc->touched.push_back(const_cast<Element*>(e));
+            if (e && doc->touched.size() < kTouchedLimit) doc->touched.push_back(const_cast<Element*>(e));
             if (e && e->tag_name() == "select" && select_is_listbox(*e)) invalidate_list_row(doc, e);
         }
     }
@@ -8774,7 +9006,7 @@ weva_status weva_element_set_attribute(weva_document_t doc, weva_element_t eleme
     if (image_source_changed && doc->styles.engine.has_sibling_selectors() &&
         e->parent() && e->parent()->is_element() && doc->styles.engine.sibling_subject_in_subtree(
             static_cast<const Element&>(*e->parent()))) scope = static_cast<Element*>(e->parent());
-    if (doc->touched.size() < 64) doc->touched.push_back(scope);
+    if (doc->touched.size() < kTouchedLimit) doc->touched.push_back(scope);
     return WEVA_OK;
 }
 
@@ -8788,7 +9020,14 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
         if (child->node_type() == NodeType::Text && !static_cast<const TextNode&>(*child).data().empty())
             had_text = true;
     const bool selector_inputs_equal = text_keeps_selector_inputs(*e, had_text, text && *text);
-    if (!replace_text(*e, text ? text : "", &doc->retired_nodes)) {
+    // For the DOM observer's sibling/:has flags only: without :empty in the
+    // sheets, text appearing or vanishing cannot change a sibling's match.
+    // The text owner itself still takes the full path below.
+    doc->text_write_keeps_selectors = text_keeps_selector_inputs(*e, had_text, text && *text,
+                                                                 doc->styles.engine.uses_empty());
+    const bool replaced = replace_text(*e, text ? text : "", &doc->retired_nodes);
+    doc->text_write_keeps_selectors = false;
+    if (!replaced) {
         // Setting textarea default text replaces its selection even when the
         // text is equal. Keep ordinary HUD text no-ops allocation-free.
         if (e->tag_name() == "textarea") form_children_changed(*e);
@@ -8809,7 +9048,7 @@ weva_status weva_element_set_text(weva_document_t doc, weva_element_t element,
     if (doc->styles.engine.has_sibling_selectors() && e->parent() && e->parent()->is_element() &&
         doc->styles.engine.sibling_subject_in_subtree(static_cast<const Element&>(*e->parent())))
         scope = static_cast<Element*>(e->parent());
-    if (doc->touched.size() < 64 && std::find(doc->touched.begin(), doc->touched.end(), scope) == doc->touched.end())
+    if (doc->touched.size() < kTouchedLimit && std::find(doc->touched.begin(), doc->touched.end(), scope) == doc->touched.end())
         doc->touched.push_back(scope);
     return WEVA_OK;
 }
@@ -9287,7 +9526,7 @@ weva_status weva_element_set_style(weva_document_t doc, weva_element_t element,
     // and the selector match cache is keyed on element shape so the change
     // lands on a different entry without being invalidated here.
     doc->dom_touched = true;
-    if (doc->touched.size() < 64) doc->touched.push_back(e);
+    if (doc->touched.size() < kTouchedLimit) doc->touched.push_back(e);
     return WEVA_OK;
 }
 

@@ -321,6 +321,7 @@ void CascadeEngine::clear() {
     layer_prefix_.clear();
     shape_cache_.clear();
     cache_unsafe_sibling_composition_ = false;
+    sibling_context_class_keyed_ = true;
     cache_unsafe_has_ = false;
     cache_unsafe_scope_ = false;
     has_subject_reach_ = StateReach{};
@@ -332,6 +333,8 @@ void CascadeEngine::clear() {
     style_attribute_selectors_ = false;
     class_change_unbounded_ = false;
     ancestor_classes_.clear();
+    sibling_classes_.clear();
+    uses_empty_ = false;
     selector_inputs_ = {};
     hover_reach_ = StateReach{};
     active_reach_ = StateReach{};
@@ -624,7 +627,158 @@ void collect_ancestor_classes(const CompoundSequence& seq, bool nested,
     }
 }
 
+// Classes a class change must not touch for it to stay off siblings: every
+// class in a compound left of a sibling combinator, and every class nested in
+// a pseudo-class on such a compound (or anywhere under one).
+void collect_sibling_classes(const CompoundSequence& seq, bool nested,
+                             std::set<std::string, std::less<>>* classes) {
+    size_t last_sibling = 0;
+    bool any_sibling = false;
+    for (size_t i = 0; i < seq.combinators.size(); ++i) {
+        if (seq.combinators[i] == Combinator::AdjacentSibling ||
+            seq.combinators[i] == Combinator::GeneralSibling) {
+            last_sibling = i;
+            any_sibling = true;
+        }
+    }
+    for (size_t i = 0; i < seq.compounds.size(); ++i) {
+        const bool left_of_sibling = nested || (any_sibling && i <= last_sibling);
+        for (const auto& part : seq.compounds[i].parts) {
+            if (part->tag() == SimpleSelector::Tag::Class && left_of_sibling)
+                classes->insert(static_cast<const ClassSelector&>(*part).class_name);
+            if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
+            const auto& pseudo = static_cast<const PseudoClassSelector&>(*part);
+            for (const auto& inner : pseudo.inner_list) collect_sibling_classes(*inner, left_of_sibling, classes);
+            for (const auto& inner : pseudo.nth_of_filter) collect_sibling_classes(*inner, true, classes);
+        }
+    }
+}
+
+bool positional_kind(PseudoClassKind kind) {
+    switch (kind) {
+        case PseudoClassKind::NthChild: case PseudoClassKind::NthLastChild:
+        case PseudoClassKind::FirstChild: case PseudoClassKind::LastChild:
+        case PseudoClassKind::OnlyChild: case PseudoClassKind::Empty:
+            return true;
+        default:
+            return false;
+    }
+}
+
+bool of_type_kind(PseudoClassKind kind) {
+    switch (kind) {
+        case PseudoClassKind::FirstOfType: case PseudoClassKind::LastOfType:
+        case PseudoClassKind::OnlyOfType: case PseudoClassKind::NthOfType:
+        case PseudoClassKind::NthLastOfType:
+            return true;
+        default:
+            return false;
+    }
+}
+
+// No sibling combinator, of-type or positional pseudo anywhere inside.
+bool sibling_free(const CompoundSequence& seq) {
+    for (Combinator cb : seq.combinators)
+        if (cb == Combinator::AdjacentSibling || cb == Combinator::GeneralSibling) return false;
+    for (const auto& compound : seq.compounds) for (const auto& part : compound.parts) {
+        if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
+        const auto& pseudo = static_cast<const PseudoClassSelector&>(*part);
+        if (positional_kind(pseudo.kind) || of_type_kind(pseudo.kind)) return false;
+        for (const auto& inner : pseudo.inner_list) if (!sibling_free(*inner)) return false;
+        for (const auto& inner : pseudo.nth_of_filter) if (!sibling_free(*inner)) return false;
+    }
+    return true;
+}
+
+// See `sibling_context_class_keyed_`.
+bool sibling_class_keyed(const CompoundSequence& seq) {
+    for (size_t i = 0; i < seq.combinators.size(); ++i) {
+        if (seq.combinators[i] != Combinator::AdjacentSibling &&
+            seq.combinators[i] != Combinator::GeneralSibling) continue;
+        bool has_class = false;
+        for (const auto& part : seq.compounds[i].parts)
+            if (part->tag() == SimpleSelector::Tag::Class) has_class = true;
+        if (!has_class) return false;
+    }
+    for (size_t i = 0; i < seq.compounds.size(); ++i) for (const auto& part : seq.compounds[i].parts) {
+        if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
+        const auto& pseudo = static_cast<const PseudoClassSelector&>(*part);
+        if (of_type_kind(pseudo.kind)) return false;
+        if (positional_kind(pseudo.kind) && i + 1 < seq.compounds.size()) return false;
+        // `:nth-last-child(1 of [src=x])` counts siblings by what they carry,
+        // FOLLOWING ones included: no preceding-sibling class test sees that.
+        if (!pseudo.nth_of_filter.empty()) return false;
+        for (const auto& inner : pseudo.inner_list) if (!sibling_free(*inner)) return false;
+        for (const auto& inner : pseudo.nth_of_filter) if (!sibling_free(*inner)) return false;
+    }
+    return true;
+}
+
+bool sequence_uses_empty(const CompoundSequence& seq) {
+    for (const auto& compound : seq.compounds) {
+        for (const auto& part : compound.parts) {
+            if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
+            const auto& pseudo = static_cast<const PseudoClassSelector&>(*part);
+            if (pseudo.kind == PseudoClassKind::Empty) return true;
+            for (const auto& inner : pseudo.inner_list) if (sequence_uses_empty(*inner)) return true;
+            for (const auto& inner : pseudo.nth_of_filter) if (sequence_uses_empty(*inner)) return true;
+        }
+    }
+    return false;
+}
+
 } // namespace
+
+bool CascadeEngine::class_change_reaches_siblings(std::string_view before, std::string_view after) const {
+    if (class_change_unbounded_ || cache_unsafe_has_ || cache_unsafe_scope_) return true;
+    const auto space = [](char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f'; };
+    const auto contains = [&](std::string_view list, std::string_view token) {
+        size_t at = 0;
+        while (at < list.size()) {
+            while (at < list.size() && space(list[at])) ++at;
+            const size_t start = at;
+            while (at < list.size() && !space(list[at])) ++at;
+            if (list.substr(start, at - start) == token) return true;
+        }
+        return false;
+    };
+    const auto reaches = [&](std::string_view from, std::string_view to) {
+        size_t at = 0;
+        while (at < from.size()) {
+            while (at < from.size() && space(from[at])) ++at;
+            const size_t start = at;
+            while (at < from.size() && !space(from[at])) ++at;
+            const auto token = from.substr(start, at - start);
+            if (!token.empty() && sibling_classes_.count(token) && !contains(to, token)) return true;
+        }
+        return false;
+    };
+    return reaches(before, after) || reaches(after, before);
+}
+
+bool CascadeEngine::preceding_sibling_may_match(const Element& e) const {
+    const Node* parent = e.parent();
+    if (!parent) return false;
+    const auto space = [](char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\f'; };
+    for (const auto& child : parent->children()) {
+        if (child.get() == &e) return false;
+        if (!child->is_element()) continue;
+        const std::string_view list = static_cast<const Element&>(*child).get_attribute("class");
+        size_t at = 0;
+        while (at < list.size()) {
+            while (at < list.size() && space(list[at])) ++at;
+            const size_t start = at;
+            while (at < list.size() && !space(list[at])) ++at;
+            const auto token = list.substr(start, at - start);
+            if (!token.empty() && sibling_classes_.count(token)) return true;
+        }
+    }
+    return false;
+}
+
+bool CascadeEngine::attribute_change_observable(std::string_view name) const {
+    return match_attribute_observable(name);
+}
 
 bool CascadeEngine::class_change_is_local(std::string_view before, std::string_view after) const {
     if (class_change_unbounded_ || cache_unsafe_has_ || cache_unsafe_scope_) return false;
@@ -669,7 +823,13 @@ uint64_t CascadeEngine::try_compute_shape_key(const Element& e,
     // otherwise serve one element's match set to a genuinely different element.
 
     // Sibling composition and :has() are unrepresentable in a per-element key.
-    if (cache_unsafe_sibling_composition_ && state_observable(sibling_subject_reach_, e)) return 0;
+    // Sibling composition is unrepresentable in the key, but when every
+    // sibling selector needs a class on the preceding sibling, an element
+    // with no such sibling matches none of them and keys like any other.
+    // One `.layer.solo ~ div` rule otherwise took every div in a game HUD
+    // out of the cache.
+    if (cache_unsafe_sibling_composition_ && state_observable(sibling_subject_reach_, e) &&
+        (!sibling_context_class_keyed_ || preceding_sibling_may_match(e))) return 0;
     if (cache_unsafe_scope_) return 0;
     // A :has-dependent rule can affect only its rightmost subject. Elements
     // excluded by every such subject's mandatory keys still use the ordinary
@@ -990,6 +1150,8 @@ void CascadeEngine::compile_declarations(const Rule& rule,
                                           int layer_ordinal) {
     for (auto& cs : selectors) {
         collect_ancestor_classes(cs.sequence, false, &ancestor_classes_, &class_change_unbounded_);
+        collect_sibling_classes(cs.sequence, false, &sibling_classes_);
+        uses_empty_ = uses_empty_ || sequence_uses_empty(cs.sequence);
         // Classify BEFORE moving: the shape cache's soundness depends
         // on spotting sibling-composition and :has() selectors anywhere
         // in the sheet.
@@ -1001,6 +1163,7 @@ void CascadeEngine::compile_declarations(const Rule& rule,
         if (selector_index && !cs.sequence.compounds.empty())
             collect_keys(cs.sequence.compounds.back(), &index_subject_reach_);
         cache_unsafe_sibling_composition_ = cache_unsafe_sibling_composition_ || selector_sibling;
+        if (selector_sibling && !sibling_class_keyed(cs.sequence)) sibling_context_class_keyed_ = false;
         if (selector_sibling && !cs.sequence.compounds.empty())
             collect_keys(cs.sequence.compounds.back(), &sibling_subject_reach_);
         mutation_dependencies(cs.sequence, false, &has_hover_dependency_,
@@ -1111,6 +1274,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                                       &has, &positional, &hover_reach_, &active_reach_, false);
                     cache_unsafe_sibling_composition_ = cache_unsafe_sibling_composition_ || sibling;
                     if (sibling) sibling_subject_reach_.everything = true;
+                    if (sibling) sibling_context_class_keyed_ = false;
                     mutation_dependencies(selector.sequence, false, &has_hover_dependency_,
                                           &has_active_dependency_, &style_attribute_selectors_, &selector_inputs_);
                     if (sibling)

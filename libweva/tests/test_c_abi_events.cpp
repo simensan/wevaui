@@ -113,6 +113,39 @@ void test_abi_events() {
     CHECK(!has(events, WEVA_EVENT_CLICK, b));
     CHECK(!has(events, WEVA_EVENT_CLICK, a));
 
+    // ---- pressing one part of a control and releasing on another clicks it
+    //
+    // The click goes to the nearest element containing both ends (UI Events
+    // section 3.5). A card still settling from an entrance animation moved
+    // its text under a still pointer between press and release, and requiring
+    // the same innermost element dropped the click on the card.
+    {
+        Doc card("html, body { margin: 0 } .card { display: block; width: 200px; height: 100px }"
+                 " .card span { display: block; height: 50px }",
+                 "<div class=card id=card><span id=top>top</span><span id=bottom>bottom</span></div>"
+                 "<div id=away style='height: 60px'>away</div>");
+        const weva_element_t c = weva_document_query(card.d, "#card");
+        const weva_element_t top = weva_document_query(card.d, "#top");
+        const weva_element_t bottom = weva_document_query(card.d, "#bottom");
+        const weva_element_t away = weva_document_query(card.d, "#away");
+        weva_document_set_pointer(card.d, 50, 20, 0);
+        card.drain();
+        weva_document_set_pointer(card.d, 50, 20, 1);    // press on #top
+        weva_document_set_pointer(card.d, 50, 70, 1);    // onto #bottom, held
+        weva_document_set_pointer(card.d, 50, 70, 0);    // release on #bottom
+        events = card.drain();
+        CHECK(has(events, WEVA_EVENT_CLICK, c));
+        CHECK(!has(events, WEVA_EVENT_CLICK, top));
+        CHECK(!has(events, WEVA_EVENT_CLICK, bottom));
+        // Released outside the card: the card is not clicked.
+        weva_document_set_pointer(card.d, 50, 20, 1);
+        weva_document_set_pointer(card.d, 50, 130, 1);
+        weva_document_set_pointer(card.d, 50, 130, 0);
+        events = card.drain();
+        CHECK(!has(events, WEVA_EVENT_CLICK, c));
+        CHECK(!has(events, WEVA_EVENT_CLICK, away));
+    }
+
     // ---- the queue drains, and does not hand out the same event twice
     weva_document_set_pointer(doc.d, 50, 30, 1);
     weva_document_set_pointer(doc.d, 50, 30, 0);

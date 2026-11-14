@@ -16,6 +16,7 @@
 #include <string>
 #include <unordered_set>
 #include <vector>
+#include <unordered_map>
 
 // Ports the resolution core of Runtime/Css/Cascade/CascadeEngine.cs: match
 // collection, the CSS Cascade 5 §6.4.1 ordering, and inheritance.
@@ -208,6 +209,16 @@ public:
     bool sibling_active_dependency() const { return sibling_active_dependency_; }
     bool has_style_attribute_selectors() const { return style_attribute_selectors_; }
     bool class_change_is_local(std::string_view before, std::string_view after) const;
+    // Whether a class change can alter what a sibling combinator (or :has)
+    // matches on some OTHER element: true when a changed class is used left
+    // of `+`/`~`, inside a pseudo-class there, or the sheets are unbounded.
+    bool class_change_reaches_siblings(std::string_view before, std::string_view after) const;
+    // Whether any selector reads emptiness (:empty). Without one, text going
+    // from nothing to something is invisible to selector matching.
+    bool uses_empty() const { return uses_empty_; }
+    // Whether changing this (non-class, non-style) attribute can change any
+    // selector's match: `match_attribute_observable`, made public.
+    bool attribute_change_observable(std::string_view name) const;
     bool has_validity_selectors() const { return shape_key_folds_validity_; }
     bool has_range_selectors() const { return shape_key_folds_range_; }
     bool has_default_selectors() const { return shape_key_folds_default_; }
@@ -376,6 +387,15 @@ private:
     bool style_attribute_selectors_ = false;
     bool class_change_unbounded_ = false;
     std::set<std::string, std::less<>> ancestor_classes_;
+    std::set<std::string, std::less<>> sibling_classes_;
+    bool uses_empty_ = false;
+    // True while every sibling-combinator selector is keyed by a class on the
+    // compound just left of each `+`/`~`, with nothing positional, of-type or
+    // sibling-combined inside its pseudo-classes. Then only an element with a
+    // preceding sibling carrying one of `sibling_classes_` can be matched by
+    // any of them, and every other element may use the shape cache.
+    bool sibling_context_class_keyed_ = true;
+    bool preceding_sibling_may_match(const Element& e) const;
     SelectorMatchInputs selector_inputs_;
     StateReach hover_reach_;                         // what :hover can match
     StateReach active_reach_;                        // what :active can match

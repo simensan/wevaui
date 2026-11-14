@@ -1459,8 +1459,43 @@ void test_abi_incremental_corpus() {
             CHECK(weva_document_update(live, dt) == WEVA_OK);
             CHECK(weva_document_update(full, dt) == WEVA_OK);
             const Frame a = capture(live), b = capture(full);
-            if (a != b) std::printf("  corpus %s step %zu (%s): %s\n", entry.path().stem().string().c_str(),
-                                    step, style, a.diff(b).c_str());
+            if (a != b) {
+                // Which element the step edited, so a failure names it.
+                char tag[64] = {}, cls[256] = {}, id[128] = {};
+                weva_element_tag_name(live, target, tag, sizeof tag);
+                weva_element_attribute(live, target, "class", cls, sizeof cls);
+                weva_element_attribute(live, target, "id", id, sizeof id);
+                if (std::getenv("WEVA_CORPUS_BOXES")) {
+                    std::vector<weva_box> la(8192), fa(8192);
+                    const size_t ln = weva_document_boxes(live, la.data(), la.size());
+                    const size_t fn = weva_document_boxes(full, fa.data(), fa.size());
+                    std::printf("    boxes live %zu full %zu\n", ln, fn);
+                    int shown = 0;
+                    for (size_t k = 0; k < ln && k < fn && shown < 6; ++k) {
+                        const weva_box& x = la[k];
+                        const weva_box& y = fa[k];
+                        if (x.parent != y.parent || x.kind != y.kind || x.element != y.element || x.x != y.x ||
+                            x.y != y.y || x.width != y.width || x.height != y.height) {
+                            char t1[64] = {}, c1[128] = {};
+                            if (x.element) { weva_element_tag_name(live, x.element, t1, sizeof t1);
+                                             weva_element_attribute(live, x.element, "class", c1, sizeof c1); }
+                            std::printf("    box %zu <%s.%s> live p%u k%u (%g,%g %gx%g) full p%u k%u (%g,%g %gx%g)\n", k, t1, c1,
+                                        x.parent, x.kind, x.x, x.y, x.width, x.height, y.parent, y.kind, y.x, y.y, y.width, y.height);
+                            ++shown;
+                        }
+                    }
+                }
+                if (std::getenv("WEVA_CORPUS_DRAWS")) {
+                    for (size_t d = 0; d < a.draws.size() && d < b.draws.size(); ++d)
+                        if (a.draws[d].kind != b.draws[d].kind || a.draws[d].vertices != b.draws[d].vertices)
+                            std::printf("    draw %zu: live kind %d (%zu verts, %dx%d tex) vs full kind %d (%zu verts, %dx%d tex)\n", d,
+                                        a.draws[d].kind, a.draws[d].vertices.size(), a.draws[d].tex_w, a.draws[d].tex_h,
+                                        b.draws[d].kind, b.draws[d].vertices.size(), b.draws[d].tex_w, b.draws[d].tex_h);
+                }
+                std::printf("  corpus %s step %zu (%s) on <%s class='%s' id='%s'>: %s\n",
+                            entry.path().stem().string().c_str(), step, style, tag, cls, id,
+                            a.diff(b).c_str());
+            }
             CHECK(a == b);
             for (size_t i = 0; i < count; ++i) {
                 double av[4] = {}, bv[4] = {};
@@ -1589,6 +1624,232 @@ void test_abi_incremental_form_state() {
         CHECK(a == b);
     }
     weva_document_destroy(live); weva_document_destroy(full);
+}
+
+// A game HUD's per-frame shapes, live against a document laid out from
+// scratch every step: world-anchored rows moved by translate() and hidden by
+// visibility, a timer whose digits change width in a column flex bar that also
+// holds a fixed toast, a timer in a fixed corner panel with an authored width,
+// and a class toggled under a class-keyed sibling rule. Each of these takes a
+// cheaper path than a full layout or repaint now (paint-level transforms and
+// visibility, viewport-fixed locality, out-of-flow intrinsic boundaries,
+// column-stretch independence, class-keyed sibling caching); the frames must
+// not be able to tell.
+void test_abi_incremental_hud_shapes() {
+    const char* html =
+        "<div class=root>"
+        "<div class=top><span class=timer id=timer>01:11</span>"
+        "<div class=toast id=toast>Found</div></div>"
+        "<div class=panel id=panel><div class=list><div class=item><div class=head>"
+        "<span class=title>Defeat the boss</span><span class=clock id=clock>02:29</span>"
+        "</div></div></div></div>"
+        "<div class=layer id=layer>layer</div>"
+        "<div class=rows>"
+        "<div class=anchor id=r0 style='visibility: hidden; transform: translate(0px, 0px)'><span class=num id=n0></span></div>"
+        "<div class=anchor id=r1 style='visibility: hidden; transform: translate(0px, 0px)'><span class=num id=n1></span></div>"
+        "<div class=anchor id=r2 style='visibility: hidden; transform: translate(0px, 0px)'><span class=num id=n2></span></div>"
+        "</div>"
+        "<div class=bottom><button class=slot id=slot>E</button></div>"
+        "</div>";
+    const char* css =
+        "html,body{margin:0}"
+        ".root{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:space-between}"
+        ".top{display:flex;justify-content:center;padding:12px 0}"
+        ".timer{padding:10px 24px;font-size:20px;background:#223}"
+        ".toast{position:fixed;top:48px;left:50%;transform:translateX(-50%);background:#334}"
+        ".panel{position:fixed;top:88px;left:24px;width:280px;background:#111}"
+        ".list{display:flex;flex-direction:column;gap:12px;padding:18px}"
+        ".head{display:flex;justify-content:space-between;align-items:center;gap:8px}"
+        ".clock{white-space:nowrap;color:gold}"
+        ".layer{display:none}.layer.solo ~ div{display:none}"
+        ".rows{position:absolute;inset:0;overflow:hidden}"
+        ".anchor{position:absolute;width:1px;height:1px;transform-origin:0 0}"
+        ".num{display:block;position:relative;margin-left:-150px;margin-top:-40px;width:300px;height:80px;"
+        "line-height:80px;text-align:center}"
+        ".slot{width:56px;height:56px}.slot.cooling{background:#555}";
+    const auto cfg = config(1280, 720);
+    weva_document_t live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+    for (weva_document_t doc : {live, full}) {
+        CHECK(weva_document_add_css(doc, css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    }
+    const char* timers[] = {"01:11", "01:12", "01:20", "01:41", "10:00", "11:11"};
+    const char* clocks[] = {"02:29", "02:28", "02:20", "01:59", "0:01", "12:34"};
+    for (int step = 0; step < 48; ++step) {
+        for (weva_document_t doc : {live, full}) {
+            const auto q = [&](const char* s) { return weva_document_query(doc, s); };
+            weva_element_set_text(doc, q("#timer"), timers[step % 6]);
+            weva_element_set_text(doc, q("#clock"), clocks[(step / 2) % 6]);
+            for (int r = 0; r < 3; ++r) {
+                char id[8], nid[8], style[96], num[8];
+                std::snprintf(id, sizeof id, "#r%d", r);
+                std::snprintf(nid, sizeof nid, "#n%d", r);
+                const bool shown = (step + r) % 4 != 0;
+                if (shown) std::snprintf(style, sizeof style, "transform: translate(%dpx, %dpx) scale(1.%d, 1.%d1);",
+                                         40 + step * 7 + r * 90, 300 - step * 3, step % 4, step % 4);
+                else std::snprintf(style, sizeof style, "visibility: hidden; transform: translate(0px, 0px);");
+                weva_element_set_attribute(doc, q(id), "style", style);
+                std::snprintf(num, sizeof num, "%d", (step * 37 + r * 11) % 1000);
+                if (shown) weva_element_set_text(doc, q(nid), num);
+            }
+            if (step % 5 == 0)
+                weva_element_set_attribute(doc, q("#slot"), "class", step % 10 ? "slot cooling" : "slot");
+            if (step == 30) weva_element_set_attribute(doc, q("#layer"), "class", "layer solo");
+            if (step == 36) weva_element_set_attribute(doc, q("#layer"), "class", "layer");
+        }
+        // The full document lays out from nothing every step.
+        weva_document_set_viewport(full, 1281, 720);
+        weva_document_set_viewport(full, 1280, 720);
+        CHECK(weva_document_update(live, 0) == WEVA_OK);
+        CHECK(weva_document_update(full, 0) == WEVA_OK);
+        const Frame a = capture(live), b = capture(full);
+        if (a != b) std::printf("  hud shapes step %d: %s\n", step, a.diff(b).c_str());
+        CHECK(a == b);
+        for (const char* sel : {"#timer", "#clock", "#toast", "#panel", "#n0", "#n1", "#n2", "#slot"}) {
+            double av[4] = {}, bv[4] = {};
+            weva_element_bounds(live, weva_document_query(live, sel), &av[0], &av[1], &av[2], &av[3]);
+            weva_element_bounds(full, weva_document_query(full, sel), &bv[0], &bv[1], &bv[2], &bv[3]);
+            for (int k = 0; k < 4; ++k) {
+                if (av[k] != bv[k]) std::printf("  hud shapes step %d %s axis %d: %g vs %g\n", step, sel, k, av[k], bv[k]);
+                CHECK(av[k] == bv[k]);
+            }
+        }
+        // A hit test over a moved row lands where the full document's does.
+        CHECK(weva_document_element_at(live, 640, 70) != WEVA_ELEMENT_NONE ||
+              weva_document_element_at(full, 640, 70) == WEVA_ELEMENT_NONE);
+    }
+    weva_document_destroy(live); weva_document_destroy(full);
+}
+
+// Paint-level geometry, live against a document laid out from scratch every
+// step: keyframes on the individual transform properties (from none, through
+// values, holding with fill), an absolute child whose containing block is the
+// transformed card only while a transform property is set, a transition on
+// `translate`, and damage numbers -- in-flow spans in one-pixel absolute
+// anchors -- whose baselines move as text appears and fonts change, which no
+// layout reads.
+void test_abi_incremental_animated_transforms() {
+    const char* html =
+        "<div class=root>"
+        "<div class=cards><div class=card id=c0><span class=badge id=b0>new</span><p>First card</p></div>"
+        "<div class=card id=c1><p>Second</p></div></div>"
+        "<div class=slide id=slide>slide</div>"
+        "<div class=layer>"
+        "<div class=anchor id=a0><span class=num id=n0></span></div>"
+        "<div class=anchor id=a1><span class=num id=n1></span></div>"
+        "</div>"
+        "<div class=after id=after>after</div>"
+        "</div>";
+    const char* css =
+        "html,body{margin:0}"
+        ".root{position:relative;padding:20px}"
+        ".cards{display:flex;gap:20px}"
+        ".card{position:relative;flex:1;min-height:120px;background:#234}"
+        ".card.open{animation:enter 0.6s linear both}"
+        "@keyframes enter{0%{scale:0.7;translate:0px 30px;rotate:-3deg;opacity:0}"
+        "50%{scale:1.05;translate:0px -4px;rotate:1deg;opacity:1}100%{scale:1;translate:0px 0px;rotate:0deg;opacity:1}}"
+        ".card.gone{animation:none;scale:none;translate:none;rotate:none}"
+        ".badge{position:absolute;right:4px;top:4px;background:gold}"
+        ".slide{transition:translate 0.4s linear;translate:0px 0px;width:100px;background:#433}"
+        ".slide.moved{translate:200px 10px}"
+        ".layer{position:absolute;inset:0;overflow:hidden}"
+        ".anchor{position:absolute;width:1px;height:1px;transform-origin:0 0}"
+        ".num{display:block;position:relative;margin-left:-60px;margin-top:-20px;width:120px;height:40px;"
+        "line-height:40px;text-align:center;white-space:nowrap}"
+        ".after{height:30px;background:#333}";
+    const auto cfg = config(800, 600);
+    weva_document_t live = weva_document_create(&cfg), full = weva_document_create(&cfg);
+    for (weva_document_t doc : {live, full}) {
+        CHECK(weva_document_add_css(doc, css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    }
+    const char* sizes[] = {"14px", "22px", "14px", "30px", "18px"};
+    for (int step = 0; step < 40; ++step) {
+        for (weva_document_t doc : {live, full}) {
+            const auto q = [&](const char* s) { return weva_document_query(doc, s); };
+            if (step == 1) weva_element_set_attribute(doc, q("#c0"), "class", "card open");
+            if (step == 3) weva_element_set_attribute(doc, q("#c1"), "class", "card open");
+            if (step == 5) weva_element_set_attribute(doc, q("#slide"), "class", "slide moved");
+            if (step == 20) weva_element_set_attribute(doc, q("#slide"), "class", "slide");
+            if (step == 28) weva_element_set_attribute(doc, q("#c0"), "class", "card gone");
+            for (int r = 0; r < 2; ++r) {
+                char aid[8], nid[8], style[96], num[8], nstyle[48];
+                std::snprintf(aid, sizeof aid, "#a%d", r);
+                std::snprintf(nid, sizeof nid, "#n%d", r);
+                std::snprintf(style, sizeof style, "transform: translate(%dpx, %dpx) scale(1.%d);",
+                              100 + step * 9 + r * 200, 400 - step * 4, step % 5);
+                weva_element_set_attribute(doc, q(aid), "style", style);
+                if ((step + r) % 3 == 0) {
+                    std::snprintf(num, sizeof num, "%d", (step * 53 + r * 7) % 2000);
+                    weva_element_set_text(doc, q(nid), num);
+                    std::snprintf(nstyle, sizeof nstyle, "font-size: %s;", sizes[(step + r) % 5]);
+                    weva_element_set_attribute(doc, q(nid), "style", nstyle);
+                }
+                if (step % 11 == 7 + r) weva_element_set_text(doc, q(nid), "");
+            }
+        }
+        weva_document_set_viewport(full, 801, 600);
+        weva_document_set_viewport(full, 800, 600);
+        CHECK(weva_document_update(live, 1.0 / 30) == WEVA_OK);
+        CHECK(weva_document_update(full, 1.0 / 30) == WEVA_OK);
+        const Frame a = capture(live), b = capture(full);
+        if (a != b) std::printf("  animated transforms step %d: %s\n", step, a.diff(b).c_str());
+        CHECK(a == b);
+        for (const char* sel : {"#c0", "#c1", "#b0", "#slide", "#n0", "#n1", "#after"}) {
+            double av[4] = {}, bv[4] = {};
+            weva_element_bounds(live, weva_document_query(live, sel), &av[0], &av[1], &av[2], &av[3]);
+            weva_element_bounds(full, weva_document_query(full, sel), &bv[0], &bv[1], &bv[2], &bv[3]);
+            for (int k = 0; k < 4; ++k) {
+                if (av[k] != bv[k]) std::printf("  animated transforms step %d %s axis %d: %g vs %g\n", step, sel, k, av[k], bv[k]);
+                CHECK(av[k] == bv[k]);
+            }
+        }
+        for (int y = 30; y < 200; y += 40)
+            CHECK((weva_document_element_at(live, 120, y) == WEVA_ELEMENT_NONE) ==
+                  (weva_document_element_at(full, 120, y) == WEVA_ELEMENT_NONE));
+    }
+    weva_document_destroy(live); weva_document_destroy(full);
+}
+
+// Text under an animated scale rasterizes at quantized sizes while it moves;
+// once the animation settles it must be drawn exactly as the same text under
+// the same scale with no animation at all. Positions only: the two documents'
+// atlases were filled in different orders, so texture coordinates differ.
+void test_abi_animated_scale_text_settles() {
+    const char* html = "<div class=t id=t>Settle 0123456789</div><div class=u>Below</div>";
+    const char* moving =
+        "html,body{margin:0}.t{margin:40px;font-size:20px;animation:pop 0.3s linear both}"
+        "@keyframes pop{0%{scale:0.5}60%{scale:1.7}100%{scale:1.5}}"
+        ".u{font-size:14px;transition:scale 0.2s linear;scale:1}.u.big{scale:1.25}";
+    const char* still = "html,body{margin:0}.t{margin:40px;font-size:20px;scale:1.5}.u{font-size:14px;scale:1.25}";
+    const auto cfg = config(400, 300);
+    weva_document_t a = weva_document_create(&cfg), b = weva_document_create(&cfg);
+    CHECK(weva_document_add_css(a, moving, std::strlen(moving)) == WEVA_OK);
+    CHECK(weva_document_add_css(b, still, std::strlen(still)) == WEVA_OK);
+    for (weva_document_t d : {a, b}) {
+        CHECK(weva_document_load_html(d, html, std::strlen(html)) == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+    }
+    weva_element_set_attribute(a, weva_document_query(a, ".u"), "class", "u big");
+    weva_element_set_attribute(b, weva_document_query(b, ".u"), "class", "u big");
+    for (int step = 0; step < 24; ++step) CHECK(weva_document_update(a, 1.0 / 30) == WEVA_OK);
+    CHECK(weva_document_update(b, 1.0 / 30) == WEVA_OK);
+    const auto positions = [](const Frame& f) {
+        std::vector<float> out;
+        for (const auto& d : f.draws)
+            for (size_t v = 0; v + 1 < d.vertices.size(); v += 8) { out.push_back(d.vertices[v]); out.push_back(d.vertices[v + 1]); }
+        return out;
+    };
+    const auto pa = positions(capture(a)), pb = positions(capture(b));
+    CHECK(pa.size() == pb.size());
+    CHECK(pa == pb);
+    if (pa != pb) {
+        for (size_t i = 0; i < std::min(pa.size(), pb.size()); ++i)
+            if (pa[i] != pb[i]) { std::printf("  settle: position %zu %g vs %g\n", i, pa[i], pb[i]); break; }
+    }
+    weva_document_destroy(a); weva_document_destroy(b);
 }
 
 void test_abi_incremental_select_color_scopes() {

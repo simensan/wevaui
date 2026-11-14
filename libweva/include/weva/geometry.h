@@ -48,6 +48,11 @@ struct Rect {
 //   y' = B*x + D*y + Ty
 struct Transform2D {
     float a = 1, b = 0, c = 0, d = 1, tx = 0, ty = 0;
+    // Part of this transform is being animated or transitioned right now.
+    // Text under it rasterizes at a quantized scale rather than a new exact
+    // size every frame; settling clears it, and the change of this flag is
+    // itself a change of transform, so retained paint is redrawn exactly.
+    bool animated = false;
 
     constexpr Transform2D() = default;
     constexpr Transform2D(float a_, float b_, float c_, float d_, float tx_, float ty_)
@@ -67,7 +72,8 @@ struct Transform2D {
     }
 
     friend constexpr bool operator==(const Transform2D& l, const Transform2D& r) {
-        return l.a == r.a && l.b == r.b && l.c == r.c && l.d == r.d && l.tx == r.tx && l.ty == r.ty;
+        return l.a == r.a && l.b == r.b && l.c == r.c && l.d == r.d && l.tx == r.tx && l.ty == r.ty &&
+               l.animated == r.animated;
     }
     friend constexpr bool operator!=(const Transform2D& l, const Transform2D& r) { return !(l == r); }
 };
