@@ -4348,10 +4348,18 @@ weva_status weva_document_load_html(weva_document_t doc, const char* html, size_
     // scoped sheets, the document's own `<style>` blocks author sheets.
     std::vector<ComponentStylesheet> component_css;
     expand_components(doc->doc.get(), &component_css);
+    const bool had_document_sheets = !doc->component_sheets.empty() || !doc->inline_sheets.empty();
     doc->component_sheets.clear();
     take_component_sheets(doc, &component_css);
     collect_inline_sheets(doc);
-    rebuild_engine_sheets(doc);
+    if (had_document_sheets || !doc->component_sheets.empty() || !doc->inline_sheets.empty()) {
+        rebuild_engine_sheets(doc);
+    } else {
+        // Host/UA sheets and media inputs did not change. Keep their compiled
+        // rules instead of compiling the same sheet twice on a cold load
+        // (set_css, then load_html). Only DOM-dependent match state is stale.
+        doc->styles.engine.invalidate_cache();
+    }
 
     doc->elements.clear();
     doc->dialog_close_order.clear();

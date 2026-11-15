@@ -103,6 +103,20 @@ typing, scrolling, binding dispatch and actual HUD text updates are not covered.
 
 Runner checks: `python -m unittest discover -s Tools/tests -p test_chrome_performance.py`.
 
+## Recorded native document calls
+
+Build `weva_replay` to replay a host's tab-separated calls through the C ABI:
+`weva_replay recording.tsv --frames=1`. Its source documents the recording
+format and path remapping. Freeze the HTML/CSS referenced by a recording when
+comparing binaries, and alternate their order across repeated runs.
+
+The per-update row measures binding refresh, writes, input and document update.
+The separate `loads` row includes source-file reads, CSS installation and HTML
+loading; it is not included in the per-update total. Document creation,
+host-owned font loading, GPU submission and presentation remain outside these
+measurements. The replay uses the core's stub font backend, so it diagnoses
+core work rather than reproducing a host's complete rendered frame cost.
+
 ## Rendered Godot frames
 
 The survival sample has a separate real-render benchmark:

@@ -336,6 +336,7 @@ void test_abi_stylesheet_replacement();
 void test_abi_field_selection_memory();
 void test_abi_selection_default_lifecycle();
 void test_abi_load_and_update();
+void test_abi_markup_reuses_host_sheets();
 void test_abi_incremental_matches_fresh();
 void test_abi_incremental_subtree_sequences();
 void test_abi_incremental_retained_grid_paint();
@@ -829,6 +830,7 @@ int main() {
     test_abi_field_selection_memory();
     test_abi_selection_default_lifecycle();
     test_abi_load_and_update();
+    test_abi_markup_reuses_host_sheets();
     test_abi_incremental_matches_fresh();
     test_abi_incremental_subtree_sequences();
     test_abi_incremental_retained_grid_paint();

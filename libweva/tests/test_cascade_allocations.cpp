@@ -3,6 +3,7 @@
 #include "weva/cascade.h"
 #include "weva/dom.h"
 #include "weva/html.h"
+#include "weva_c.h"
 #include <array>
 #include <cstdio>
 #include <cstdlib>
@@ -83,5 +84,34 @@ int main() {
         valid &= style.parsed("width") && style.parsed("width")->raw == "120px";
     }
     std::printf("cold sparse styles: 1000 styles, %zu bytes, values %s\n", cold_bytes, valid?"match":"DIFFER");
-    return valid && cold_bytes < 4 * 1024 * 1024 ? 0 : 1;
+    valid &= cold_bytes < 4 * 1024 * 1024;
+
+    // Replacing markup with no document styles must not pay again for the
+    // already-installed host sheet. Compare identical DOM replacements with
+    // and without a large unrelated sheet, excluding initial CSS installation.
+    weva_config config{};
+    config.viewport_width = 320;
+    config.viewport_height = 200;
+    auto plain = weva_document_create(&config);
+    auto styled = weva_document_create(&config);
+    std::string unrelated;
+    for (int i = 0; i < 400; ++i)
+        unrelated += ".unrelated-selector-" + std::to_string(i) + "{width:17px;color:red}";
+    valid &= weva_document_set_css(styled, unrelated.data(), unrelated.size()) == WEVA_OK;
+    constexpr std::string_view markup = "<div id=field>Replacement</div>";
+    const auto reload_allocations = [&](weva_document_t document) {
+        allocations = 0;
+        counting = true;
+        const auto status = weva_document_load_html(document, markup.data(), markup.size());
+        counting = false;
+        valid &= status == WEVA_OK;
+        return allocations;
+    };
+    const auto plain_load = reload_allocations(plain);
+    const auto styled_load = reload_allocations(styled);
+    std::printf("markup load: plain %zu allocations, installed 400-rule sheet %zu\n", plain_load, styled_load);
+    valid &= styled_load <= plain_load + 128;
+    weva_document_destroy(plain);
+    weva_document_destroy(styled);
+    return valid ? 0 : 1;
 }

@@ -132,8 +132,8 @@ int binding_count(void* user, const char* path) {
 }
 
 struct Totals {
-    double refresh = 0, update = 0, input = 0, writes = 0;
-    long updates = 0, refreshes = 0, hits = 0, binds = 0, direct = 0;
+    double load = 0, refresh = 0, update = 0, input = 0, writes = 0;
+    long loads = 0, updates = 0, refreshes = 0, hits = 0, binds = 0, direct = 0;
 };
 
 }  // namespace
@@ -179,6 +179,7 @@ int main(int argc, char** argv) {
         const auto f = split_tabs(line);
         const std::string& op = f[0];
         if (op == "load" && f.size() >= 4) {
+            const auto t0 = Clock::now();
             std::string html, css;
             if (!read_file(map_path(f[1]), &html)) {
                 std::fprintf(stderr, "weva_replay: cannot read %s\n", map_path(f[1]).c_str());
@@ -191,6 +192,10 @@ int main(int argc, char** argv) {
             host.direct_values.clear();
             host.direct_elements.clear();
             host.data_changed = true;
+            if (measuring) {
+                total.load += ms_since(t0);
+                ++total.loads;
+            }
         } else if (op == "view" && f.size() >= 3) {
             weva_document_set_viewport(doc, std::atoi(f[1].c_str()), std::atoi(f[2].c_str()));
         } else if (op == "visible" && f.size() >= 2) {
@@ -280,6 +285,8 @@ int main(int argc, char** argv) {
                 "total %.4f ms\n",
                 total.update / n, total.refresh / n, total.input / n, total.writes / n,
                 (total.update + total.refresh + total.input + total.writes) / n);
+    std::printf("  loads: %ld calls, %.4f ms total (source reads, CSS install and HTML load)\n",
+                total.loads, total.load);
     weva_document_destroy(doc);
     return 0;
 }

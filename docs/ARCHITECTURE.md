@@ -75,6 +75,13 @@ records borrow selector text from the compiled rules, just as they borrow the
 declarations; stylesheet changes invalidate those records. Inspector snapshots
 copy their text before returning it through the C ABI.
 
+Full HTML replacement retains compiled host/UA rules when neither the old nor
+new document contributes inline or component stylesheets. It clears the match
+cache and resets DOM/container/interaction state. Adding or removing document
+styles still rebuilds the cascade, as do host stylesheet and media changes.
+This avoids recompiling an unchanged sheet after the usual `set_css` followed
+by `load_html` without caching a previous document's computed styles.
+
 The [inventory update pass](verification/inventory-update-20261031.md) stops
 unchanged-size text reflow at proven fixed inline boundaries and refreshes the
 affected intrinsic exports. Ordinary block ancestors consume first baselines;

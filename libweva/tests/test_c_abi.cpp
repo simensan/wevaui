@@ -104,6 +104,40 @@ void test_abi_load_and_update() {
     weva_document_destroy(d);
 }
 
+void test_abi_markup_reuses_host_sheets() {
+    const auto cfg = default_config();
+    const auto d = weva_document_create(&cfg);
+    CHECK(add_css(d, "#target{width:10px}.wide #target{width:30px}"
+                     "@media(min-width:300px){#target{width:40px}}") == WEVA_OK);
+    const auto width = [&](const char* markup, const char* expected) {
+        CHECK(load(d, markup) == WEVA_OK);
+        CHECK(weva_document_update(d, 0) == WEVA_OK);
+        const auto target = weva_document_query(d, "#target");
+        CHECK(target != WEVA_ELEMENT_NONE);
+        char value[32]{};
+        weva_element_computed_style(d, target, "width", value, sizeof(value));
+        CHECK(std::string(value) == expected);
+    };
+    width("<div class=wide><div id=target></div></div>", "30px");
+    width("<div><div id=target></div></div>", "10px");
+    width("<div id=target style='display:none;width:33px'></div>", "33px");
+    width("<style>#target{width:50px}</style><div id=target></div>", "50px");
+    width("<div id=target></div>", "10px");
+    width("<template id=card><style>#target{width:80px}</style>"
+          "<span id=target></span></template><card></card>", "80px");
+    width("<div id=target></div>", "10px");
+    weva_document_set_viewport(d, 400, 100);
+    width("<div id=target></div>", "40px");
+
+    const char* containers = ".holder{container-type:inline-size}#target{width:10px}"
+                             "@container(min-width:100px){#target{width:90px}}";
+    CHECK(weva_document_set_css(d, containers, std::strlen(containers)) == WEVA_OK);
+    width("<div class=holder style='width:150px'><div id=target></div></div>", "90px");
+    width("<div class=holder style='width:50px'><div id=target></div></div>", "10px");
+    width("<div class=holder style='width:150px'><div id=target></div></div>", "90px");
+    weva_document_destroy(d);
+}
+
 void test_abi_field_selection_memory() {
     auto config = default_config();
     auto d = weva_document_create(&config);
