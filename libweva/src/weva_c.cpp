@@ -1425,9 +1425,10 @@ struct StyleMap : StyleProvider {
                     name == "border-bottom-style" || name == "border-left-style";
                 only_box_edges &= kind == Invalidation::Layout && (padding || border);
             }
-            // Display affects descendant transition/animation eligibility;
-            // container declarations affect descendant query environments.
-            if (registry.is_inherited(id) || name == "display" ||
+            // Display changes descendant eligibility, not computed inherited
+            // values. walk() refreshes that cache without restyling unchanged
+            // descendants. Live animations retain the conservative full walk.
+            if (registry.is_inherited(id) ||
                 name.substr(0, 10) == "container-" || name.substr(0, 10) == "animation-" ||
                 name.substr(0, 11) == "transition-") descendant_inputs_changed = true;
         }
@@ -1633,6 +1634,17 @@ struct StyleMap : StyleProvider {
         }
     }
 
+    void refresh_hidden_subtree(const Element& e, bool parent_hidden) {
+        const auto style = by_element.find(&e);
+        if (style == by_element.end()) return;
+        const bool hidden = parent_hidden || style->second->get("display") == "none";
+        if (hidden) transition_hidden.insert(&e);
+        else transition_hidden.erase(&e);
+        if (e.tag_name() == "template") return;
+        for (const auto& child : e.children())
+            if (child->is_element()) refresh_hidden_subtree(static_cast<const Element&>(*child), hidden);
+    }
+
     void walk(const Element& e, const ComputedStyle* parent, bool inline_style_only = false) {
         ++visited;
         bool propagate_all = true;
@@ -1657,7 +1669,9 @@ struct StyleMap : StyleProvider {
             merge(raw, &scratch, &e);
             propagate_all = !inline_style_only || descendant_inputs_changed || animating();
         }
-        if (raw->get("display") == "none" || transition_ancestor_hidden(e))
+        const bool was_hidden = transition_hidden.count(&e) != 0;
+        const bool hidden = raw->get("display") == "none" || transition_ancestor_hidden(e);
+        if (hidden)
             transition_hidden.insert(&e);
         else transition_hidden.erase(&e);
         const std::string_view animation = raw->get("animation-name");
@@ -1728,7 +1742,10 @@ struct StyleMap : StyleProvider {
                 const auto& child = static_cast<const Element&>(*c);
                 if (!propagate_all) {
                     const auto child_style = by_element.find(&child);
-                    if (child_style != by_element.end() && !child_style->second->inherits_non_inherited()) continue;
+                    if (child_style != by_element.end() && !child_style->second->inherits_non_inherited()) {
+                        if (was_hidden != hidden) refresh_hidden_subtree(child, hidden);
+                        continue;
+                    }
                 }
                 walk(child, raw, !propagate_all);
             }
@@ -5064,10 +5081,18 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
                     if (c->node_type() != NodeType::Element) continue;
                     if (c.get() != from && !doc->styles.engine.sibling_subject_in_subtree(
                             static_cast<const Element&>(*c))) continue;
-                    const bool local_inline_style = !doc->has_inputs_dirty && !doc->sibling_inputs_dirty &&
+                    // A folded root may also contain explicitly changed nodes.
+                    // Its own local class/style cannot make those inputs clean.
+                    const bool descendant_touched = std::any_of(doc->touched.begin(), doc->touched.end(), [&](const Element* input) {
+                        if (input == c.get()) return false;
+                        for (const Node* at = input->parent(); at; at = at->parent())
+                            if (at == c.get()) return true;
+                        return false;
+                    });
+                    const bool local_inline_style = !descendant_touched && !doc->has_inputs_dirty && !doc->sibling_inputs_dirty &&
                                                     !doc->selector_state_dirty &&
                                                     doc->touched.size() == 1;
-                    const bool local_class = c.get() == from && !doc->selector_state_dirty &&
+                    const bool local_class = !descendant_touched && c.get() == from && !doc->selector_state_dirty &&
                         std::any_of(doc->local_class_inputs.begin(), doc->local_class_inputs.end(),
                             [&](const auto& input) { return input.first == c.get() && input.second; });
                     doc->styles.walk(static_cast<const Element&>(*c), parent_style, local_inline_style || local_class);

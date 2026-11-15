@@ -80,3 +80,18 @@ through the scalar multilayer reference. This is an isolated raster comparison,
 not a whole-frame result. Logs are `Cache/hitches-image-channel-bench.log` in
 the Wavebound checkout. The final three compiler suites still pass, with every
 equivalence comparison exact. `WEVA_GRADIENT_LOG` identifies this path.
+
+## Showing unchanged panels
+
+A local display change refreshes the descendants' hidden-state cache without
+recomputing their unchanged styles. Inherited inputs, explicit inheritance of
+non-inherited properties, selector reach and active animations keep their full
+style propagation. Folding overlapping invalidation roots also preserves an
+independently changed descendant; a parent's local class change cannot hide it.
+
+The regression repeatedly hides/shows 250 unchanged rows, checks fewer than
+eight style visits and identical frames against fresh documents, then combines
+parent/child mutations and verifies a grandchild's transition still starts after
+revealing the panel. The existing animation, focus, selector-reach and incremental
+suites also pass. GCC, Clang and MSVC builds have zero compiler warnings and
+pass their complete core suites. No C ABI change.

@@ -293,6 +293,49 @@ void check_with_sheet(const char* label, const char* html, const char* css, cons
 
 }   // namespace
 
+void test_abi_display_change_preserves_descendant_inputs() {
+    std::string html = "<section id=panel><div id=child></div><div class=inner><div id=deep></div></div>";
+    for (int i = 0; i < 250; ++i) html += "<div class=row></div>";
+    html += "</section>";
+    const char* css = "html,body{margin:0}.hidden{display:none}.row,#child,#deep{height:2px;background:#123}"
+                      ".changed{background:#f70!important}.inner{display:block}#deep{transition:background-color .2s}";
+    const auto cfg = config();
+    const auto doc = weva_document_create(&cfg);
+    weva_document_set_css(doc, css, std::strlen(css));
+    weva_document_load_html(doc, html.data(), html.size());
+    CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    for (const char* classes : {"hidden", "", "hidden", ""}) {
+        weva_stats before{}, after{};
+        weva_document_stats(doc, &before);
+        weva_element_set_attribute(doc, weva_document_query(doc, "#panel"), "class", classes);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        weva_document_stats(doc, &after);
+        CHECK(after.cascade_elements - before.cascade_elements < 8);
+        const auto expected = build(html.c_str(), css, [&](weva_document_t control) {
+            weva_element_set_attribute(control, weva_document_query(control, "#panel"), "class", classes);
+        });
+        CHECK(capture(doc) == expected);
+    }
+    // A local parent mutation must not hide a simultaneous descendant change
+    // when their invalidation roots are folded together.
+    weva_element_set_attribute(doc, weva_document_query(doc, "#panel"), "class", "hidden");
+    weva_element_set_attribute(doc, weva_document_query(doc, "#child"), "class", "changed");
+    CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    weva_element_set_attribute(doc, weva_document_query(doc, "#panel"), "class", "");
+    CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    CHECK(capture(doc) == build(html.c_str(), css, [](weva_document_t control) {
+        weva_element_set_attribute(control, weva_document_query(control, "#child"), "class", "changed");
+    }));
+    // Visibility cache updates must reach the grandchild even without restyling
+    // it, or its later color change incorrectly suppresses this transition.
+    weva_element_set_attribute(doc, weva_document_query(doc, "#deep"), "class", "changed");
+    CHECK(weva_document_update(doc, .1) == WEVA_OK);
+    const auto midway = capture(doc);
+    CHECK(weva_document_update(doc, .2) == WEVA_OK);
+    CHECK(midway != capture(doc));
+    weva_document_destroy(doc);
+}
+
 void test_abi_focus_change_scopes_selector_reach() {
     std::string html = "<section id=group class=group><button id=button></button><div class=status></div></section>"
                        "<div class=after></div><aside>";
