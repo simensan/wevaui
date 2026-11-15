@@ -71,3 +71,12 @@ path, including fractional cover/contain/stretch, positioning, repeats, unequal
 axis scales and minification on both sides of the optimization boundary. All
 are byte-identical. Full GCC, Clang and MSVC core suites pass with zero compiler
 warnings. No API, sampling-quality or texture-resolution change.
+
+An explicit four-channel accumulator loop is needed for MSVC to vectorize this
+path; the scalar-variable spelling improved GCC but regressed MSVC. Eight
+alternating MSVC samples of a 1672x941 random-alpha image covering 1920x1080,
+rasterized at 1024x1024, took 4.0–5.2 ms through prepared axes and 11.6–16.7 ms
+through the scalar multilayer reference. This is an isolated raster comparison,
+not a whole-frame result. Logs are `Cache/hitches-image-channel-bench.log` in
+the Wavebound checkout. The final three compiler suites still pass, with every
+equivalence comparison exact. `WEVA_GRADIENT_LOG` identifies this path.

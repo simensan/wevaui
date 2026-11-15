@@ -1170,22 +1170,25 @@ std::vector<ImageAxisSample> image_axis_samples(int count, double step, double o
     return result;
 }
 
-Srgb sample_image_axes(const DecodedImage& image, const ImageAxisSample& xs,
+inline Srgb sample_image_axes(const DecodedImage& image, const ImageAxisSample& xs,
                        const ImageAxisSample& ys) {
-    double r = 0, g = 0, b = 0, a = 0, weight = 0;
+    double sums[4] = {}, weight = 0;
     for (int y = 0; y < ys.count; ++y) {
         const auto* row = image.rgba.data() + static_cast<size_t>(ys.offsets[static_cast<size_t>(y)]) * image.width * 4;
         for (int x = 0; x < xs.count; ++x) {
             const double w = xs.weights[static_cast<size_t>(x)] * ys.weights[static_cast<size_t>(y)];
             const auto* p = row + static_cast<size_t>(xs.offsets[static_cast<size_t>(x)]) * 4;
             const double alpha = p[3] * w;
-            r += p[0] * alpha; g += p[1] * alpha; b += p[2] * alpha;
-            a += alpha; weight += w;
+            // An explicit channel loop lets MSVC vectorize the independent
+            // accumulators too; their per-channel summation order is unchanged.
+            const double channels[4] = {static_cast<double>(p[0]), static_cast<double>(p[1]), static_cast<double>(p[2]), 1};
+            for (int c = 0; c < 4; ++c) sums[c] += channels[c] * alpha;
+            weight += w;
         }
     }
-    if (a <= 0 || weight <= 0) return {};
-    return {static_cast<float>(r / (a * 255)), static_cast<float>(g / (a * 255)),
-            static_cast<float>(b / (a * 255)), static_cast<float>(a / (weight * 255))};
+    if (sums[3] <= 0 || weight <= 0) return {};
+    return {static_cast<float>(sums[0] / (sums[3] * 255)), static_cast<float>(sums[1] / (sums[3] * 255)),
+            static_cast<float>(sums[2] / (sums[3] * 255)), static_cast<float>(sums[3] / (weight * 255))};
 }
 
 struct Tile {
@@ -1626,6 +1629,7 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
     if (gradient_log) {
         std::fprintf(stderr, "  [grad] %dx%d tex, %zu tiles, %d^2 samples, flat_x %d flat_y %d\n",
                      tex_w, tex_h, tiles.size(), samples, flat_x ? 1 : 0, flat_y ? 1 : 0);
+        if (direct_image) std::fprintf(stderr, "  [grad]   prepared image axes\n");
     }
     // Loop invariants shared by all raster workers.
     const float base_r = base.r * base.a, base_g = base.g * base.a, base_b = base.b * base.a;
