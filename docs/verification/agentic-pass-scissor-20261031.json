@@ -25,8 +25,8 @@
           "kind": [
             "lib"
           ],
-          "executable": "E:\\Convoy_Agentic-slots\\engine-9\\target\\debug\\deps\\agentic_weva-44f2e69aa66ae1b6.exe",
-          "cwd": "E:\\Convoy_Agentic-slots\\engine-9\\crates\\agentic_weva",
+          "executable": "<workspace>\\engine-9\\target\\debug\\deps\\agentic_weva-44f2e69aa66ae1b6.exe",
+          "cwd": "<workspace>\\engine-9\\crates\\agentic_weva",
           "lane": "gpu",
           "exit_code": 101,
           "timed_out": false,
@@ -38,11 +38,11 @@
             "memory": 2,
             "gpu": 1,
             "pid": 28244,
-            "owner": "E:\\Convoy_Agentic-slots\\engine-9",
+            "owner": "<workspace>\\engine-9",
             "queue_seconds": 0.0022
           },
           "rayon_threads": null,
-          "log": "E:\\Convoy_Agentic-slots\\engine-9\\builds\\verify\\20261031-053806\\0000-agentic_weva-agentic_weva.log"
+          "log": "<workspace>\\engine-9\\builds\\verify\\20261031-053806\\0000-agentic_weva-agentic_weva.log"
         }
       ],
       "total_seconds": 28.153
@@ -65,8 +65,8 @@
           "kind": [
             "lib"
           ],
-          "executable": "E:\\Convoy_Agentic-slots\\engine-9\\target\\debug\\deps\\agentic_weva-44f2e69aa66ae1b6.exe",
-          "cwd": "E:\\Convoy_Agentic-slots\\engine-9\\crates\\agentic_weva",
+          "executable": "<workspace>\\engine-9\\target\\debug\\deps\\agentic_weva-44f2e69aa66ae1b6.exe",
+          "cwd": "<workspace>\\engine-9\\crates\\agentic_weva",
           "lane": "gpu",
           "exit_code": 101,
           "timed_out": false,
@@ -78,11 +78,11 @@
             "memory": 2,
             "gpu": 1,
             "pid": 46900,
-            "owner": "E:\\Convoy_Agentic-slots\\engine-9",
+            "owner": "<workspace>\\engine-9",
             "queue_seconds": 0.0019
           },
           "rayon_threads": null,
-          "log": "E:\\Convoy_Agentic-slots\\engine-9\\builds\\verify\\20261031-053922\\0000-agentic_weva-agentic_weva.log"
+          "log": "<workspace>\\engine-9\\builds\\verify\\20261031-053922\\0000-agentic_weva-agentic_weva.log"
         }
       ],
       "total_seconds": 7.097

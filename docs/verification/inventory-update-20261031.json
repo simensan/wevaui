@@ -852,17 +852,17 @@
           "other_processes": [
             {
               "pid": 34796,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 44872,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 53116,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             }
           ]
@@ -873,17 +873,17 @@
           "other_processes": [
             {
               "pid": 28316,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 54116,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 53912,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             }
           ]
@@ -894,17 +894,17 @@
           "other_processes": [
             {
               "pid": 53912,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 9752,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 51348,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             }
           ]
@@ -915,22 +915,22 @@
           "other_processes": [
             {
               "pid": 51348,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 19428,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 50892,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 53160,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             }
           ]
@@ -941,17 +941,17 @@
           "other_processes": [
             {
               "pid": 52820,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 52840,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 48688,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             }
           ]
@@ -962,12 +962,12 @@
           "other_processes": [
             {
               "pid": 48688,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             },
             {
               "pid": 51616,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             }
           ]
@@ -978,7 +978,7 @@
           "other_processes": [
             {
               "pid": 51616,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             }
           ]
@@ -989,7 +989,7 @@
           "other_processes": [
             {
               "pid": 51616,
-              "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
               "name": "dev_runtime.exe"
             }
           ]

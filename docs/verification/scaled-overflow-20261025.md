@@ -1,6 +1,6 @@
 # Scaled overflow painting — 2026-10-25
 
-Convoy's developer windows use reference-pixel layouts scaled to the game
+The host's developer windows use reference-pixel layouts scaled to the game
 viewport. The coarse paint cull compared cached layout-space overflow bounds
 against device-space clips, dropping visible controls near a scaled window's
 bottom and right edges. Transformed subtrees now retain their geometry for the
@@ -24,6 +24,6 @@ Validation in the `weva-developer-ui` worktree:
   picker, graphs and viewer windows at 1280×800.
 
 PNG evidence is retained at
-`E:/Convoy_Agentic/builds/test-evidence/weva-developer-ui/`, including
+`<workspace>/builds/test-evidence/weva-developer-ui/`, including
 `scaled-overflow.chrome.png`. Unity/Godot host suites, sanitizer suites and the
 other Chrome corpora were not rerun for this paint-only change.

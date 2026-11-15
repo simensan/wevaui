@@ -1363,7 +1363,7 @@
     }
   },
   "final_agentic_executable": {
-    "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+    "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
     "sha256": "9de40bcba44fe726515e2bfe21d8f146cea42b71dd9e3365a03b2b110bb6dec6",
     "sections_identical_to_v24": {
       "baseline": {

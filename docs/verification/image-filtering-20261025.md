@@ -20,7 +20,7 @@ Validation:
   and transparent interiors. The existing allocation tests pass.
 - Chrome hand layout oracle: 64/64 pass at 800×600, 1.5px ceiling, no gaps.
 - Inspected the same 400×280 icon/border fixture rendered by headless Chrome
-  and Agentic Vulkan, plus the live Convoy developer panel at 1280×800.
+  and Agentic Vulkan, plus the live host developer panel at 1280×800.
   The former jagged icon silhouettes and one-pixel rounded outlines are smooth.
 - Agentic's `agentic_weva` finished-change gate and doctests pass with this
   core. Runtime compilation passes. No Unity/Godot integration, macOS or
@@ -32,7 +32,7 @@ Logs: `filtering-build-gcc-final.log`, `filtering-build-clang.log`,
 signature mistake and an incorrect oracle executable path are retained in
 the earlier logs; the final runs pass.
 
-Chrome/Agentic captures and gate report live in Convoy's
+Chrome/Agentic captures and gate report live in the host's
 `builds/test-evidence/weva-developer-ui/`: `filtered-icons-fixture.png`,
 `filtered-icons-chrome.png`, `smooth-search.png`, and
 `filtering-engine-gate/report.json`.

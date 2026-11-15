@@ -20,7 +20,7 @@
             "mode": "baseline",
             "other_processes": [
               {
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe",
                 "pid": 47124
               }
@@ -31,7 +31,7 @@
             "mode": "candidate",
             "other_processes": [
               {
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe",
                 "pid": 47124
               }
@@ -42,7 +42,7 @@
             "mode": "chrome",
             "other_processes": [
               {
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe",
                 "pid": 47124
               }
@@ -53,7 +53,7 @@
             "mode": "chrome",
             "other_processes": [
               {
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe",
                 "pid": 47124
               }
@@ -64,7 +64,7 @@
             "mode": "candidate",
             "other_processes": [
               {
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe",
                 "pid": 47124
               }
@@ -75,7 +75,7 @@
             "mode": "baseline",
             "other_processes": [
               {
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe",
                 "pid": 47124
               }
@@ -86,7 +86,7 @@
             "mode": "baseline",
             "other_processes": [
               {
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe",
                 "pid": 47124
               }
@@ -97,7 +97,7 @@
             "mode": "candidate",
             "other_processes": [
               {
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe",
                 "pid": 47124
               }
@@ -108,7 +108,7 @@
             "mode": "chrome",
             "other_processes": [
               {
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe",
                 "pid": 47124
               }
@@ -606,7 +606,7 @@
             "other_processes": [
               {
                 "pid": 43040,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe"
               },
               {
@@ -622,7 +622,7 @@
             "other_processes": [
               {
                 "pid": 43040,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe"
               },
               {
@@ -638,7 +638,7 @@
             "other_processes": [
               {
                 "pid": 43040,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe"
               }
             ]
@@ -649,7 +649,7 @@
             "other_processes": [
               {
                 "pid": 43040,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe"
               }
             ]
@@ -660,7 +660,7 @@
             "other_processes": [
               {
                 "pid": 43040,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe"
               }
             ]
@@ -671,7 +671,7 @@
             "other_processes": [
               {
                 "pid": 43040,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe"
               }
             ]
@@ -682,7 +682,7 @@
             "other_processes": [
               {
                 "pid": 43040,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe"
               }
             ]
@@ -693,7 +693,7 @@
             "other_processes": [
               {
                 "pid": 43040,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe"
               }
             ]
@@ -704,7 +704,7 @@
             "other_processes": [
               {
                 "pid": 43040,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
                 "name": "dev_runtime.exe"
               }
             ]
@@ -1522,7 +1522,7 @@
     "libweva/src/block_layout.cpp": "f64e728ce9ca8d08a7db1b60e1c400ae8222df471306bef949adb44d2445069a"
   },
   "final_agentic_executable": {
-    "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+    "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
     "sha256": "41e96c2648b48d1867e5f84466e7e3930417a6bea0b8eb1645ecd19c2cf22d2b"
   },
   "gates": {

@@ -1090,12 +1090,12 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 4000,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
               },
               {
                 "name": "dev_runtime.exe",
                 "pid": 53904,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
               }
             ]
           },
@@ -1106,12 +1106,12 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 53904,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
               },
               {
                 "name": "dev_runtime.exe",
                 "pid": 40856,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
               }
             ]
           },
@@ -1132,7 +1132,7 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 50716,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
               }
             ]
           },
@@ -1143,7 +1143,7 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 50716,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
               }
             ]
           },
@@ -1154,7 +1154,7 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 50716,
-                "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
               }
             ]
           },
@@ -1749,7 +1749,7 @@
     "libweva/tests/test_c_abi_incremental.cpp": "fdf7050dbfa9fd3cfa4444ac2da294d0d02a0f5a2d85a4e0e9d2c49d270c8159"
   },
   "final_agentic_executable": {
-    "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+    "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
     "sha256": "de0582e16dcf1ee414596bd252bb786b054d3875a53b7493efaf0865b388855e"
   },
   "unity_editor": {

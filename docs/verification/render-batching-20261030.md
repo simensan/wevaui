@@ -31,7 +31,7 @@ Raw logs, screenshots and samples: `.utmp/render-audit-20261030/`.
 Compact measurements: [JSON](render-batching-20261030.json).
 
 At the user's request, the continuing deep rendering audit switches to Agentic.
-Its configured checkout is `E:/Convoy_Agentic-slots/engine-main`, with
+Its configured checkout is `<workspace>/engine-main`, with
 `agentic_weva` and a wgpu renderer. Its pinned native SDK is older than this
 Weva checkout, so a current-core comparison must explicitly build using
 `WEVA_SOURCE_DIR`, record the revision, and avoid attributing Godot host gains

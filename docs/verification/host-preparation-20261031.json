@@ -5,7 +5,7 @@
       "sha256": "b1bd169955a63b4b3de00cffd6895043af1e8091cafe5396e50e096732494461"
     },
     "after": {
-      "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+      "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
       "sha256": "67444e827e61418a1f693de08831265a086f609b9b5044e9f6af0e09df3e71d2"
     }
   },

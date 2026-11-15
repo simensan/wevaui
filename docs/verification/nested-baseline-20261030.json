@@ -12,7 +12,7 @@
           "sha256": "f10220697b2c883af4c7cbe0195ecdd12f50ef4f87e2d9203de1457738dedb2a"
         },
         "after": {
-          "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+          "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
           "sha256": "37d1d82f83ca1acc45f3347945dd6be5b89416516707da1f999935b6577c8325"
         }
       },
@@ -353,7 +353,7 @@
           "sha256": "f10220697b2c883af4c7cbe0195ecdd12f50ef4f87e2d9203de1457738dedb2a"
         },
         "after": {
-          "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+          "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
           "sha256": "37d1d82f83ca1acc45f3347945dd6be5b89416516707da1f999935b6577c8325"
         }
       },
@@ -694,7 +694,7 @@
           "sha256": "064ffedc8b36caf88b6f73c58b274b2bc1f04bfe5d5c27fa2d4159b489858d34"
         },
         "after": {
-          "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+          "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
           "sha256": "37d1d82f83ca1acc45f3347945dd6be5b89416516707da1f999935b6577c8325"
         }
       },

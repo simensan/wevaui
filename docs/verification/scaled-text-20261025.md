@@ -26,11 +26,11 @@ Validation on Windows/WSL:
   against 16/32px scaled to .75. Before/after and Chrome screenshots were
   inspected. The scaled labels now preserve native-size bitmap clarity.
 - Agentic's `agentic_weva` gate passes 76 tests (2 intentional ignores) and
-  doctests. The rebuilt Convoy runtime was inspected at 1280×800.
+  doctests. The rebuilt host runtime was inspected at 1280×800.
 
 Logs: `text-build-gcc-final.log`, `text-test-gcc-final.log`,
 `text-build-clang.log`, `text-test-clang.log`, `text-oracle-800.log`.
-Render evidence is in the Convoy workspace's
+Render evidence is in the host workspace's
 `builds/test-evidence/weva-developer-ui/fonts-{before,after,chrome}.png`.
 The initial oracle invocation used the wrong viewport; its failure log is
 retained separately. This is a core/Agentic check, not a new full Unity/Godot,

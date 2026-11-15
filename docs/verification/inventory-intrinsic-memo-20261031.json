@@ -17,17 +17,17 @@
         "other_processes": [
           {
             "pid": 8876,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 38848,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 46980,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -38,7 +38,7 @@
         "other_processes": [
           {
             "pid": 46980,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -49,27 +49,27 @@
         "other_processes": [
           {
             "pid": 51428,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 46720,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 51648,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 7480,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 6888,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -80,17 +80,17 @@
         "other_processes": [
           {
             "pid": 6888,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 48908,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 6188,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -101,7 +101,7 @@
         "other_processes": [
           {
             "pid": 6188,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -112,7 +112,7 @@
         "other_processes": [
           {
             "pid": 6188,
-            "exe": "E:\\Convoy_Agentic-slots\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -693,7 +693,7 @@
           ".reloc": "72b6110d4afba84fade45342106a28e200e2b64231673a35e98fe28f1756eed0"
         }
       },
-      "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe": {
+      "<workspace>\\engine-9\\target\\fast\\weva_cost.exe": {
         "sha256": "dd05edcfa315484f8d89677fe23df73071f537287d7e1748343158d380d20d5f",
         "sections": {
           ".text": "26758d9eebe1095f76ae486ec720c4633c44d4a2b49abb3408b511073ded82f4",

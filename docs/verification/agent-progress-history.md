@@ -15,7 +15,7 @@ Windows/GCC pass 597,253 checks, Clang 597,247; Unity Native 258 pass plus two
 inconclusive and Godot host 247 checks pass. Native SDKs now include stb.txt.
 Agentic integration and late failure reporting are separate pending work.
 
-The [Wavebound UI core corrections](../../docs/verification/wavebound-ui-20261101.md)
+The [host UI core corrections](../../docs/verification/host-ui-20261101.md)
 fix pointer inheritance and solid backgrounds covering replaced images. GCC
 18/18, sanitizers 20/20, Unity Native 258 pass plus two inconclusive, and Godot
 input/host checks pass. The receipt records failed baselines, actual renders and
@@ -563,7 +563,7 @@ Windows/GCC pass 597,253 checks, Clang 597,247; Unity Native 258 pass plus two
 inconclusive and Godot host 247 checks pass. Native SDKs now include stb.txt.
 Agentic integration and late failure reporting are separate pending work.
 
-The [Wavebound UI core corrections](../../docs/verification/wavebound-ui-20261101.md)
+The [host UI core corrections](../../docs/verification/host-ui-20261101.md)
 fix pointer inheritance and solid backgrounds covering replaced images. GCC
 18/18, sanitizers 20/20, Unity Native 258 pass plus two inconclusive, and Godot
 input/host checks pass. The receipt records failed baselines, actual renders and
@@ -738,7 +738,7 @@ repeat. The geometry allocation suite now passes 176 checks.
 
 The [scaled-overflow fix](../../docs/verification/scaled-overflow-20261025.md)
 preserves visible content under transformed clips; its focused validation
-covers both compiler suites, the Chrome hand corpus and Convoy rendering.
+covers both compiler suites, the Chrome hand corpus and host rendering.
 
 
 

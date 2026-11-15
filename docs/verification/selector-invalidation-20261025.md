@@ -30,7 +30,7 @@ Validation:
 Evidence: `deep-selector-build-gcc.log`, `deep-selector-build-clang-final.log`,
 `deep-selector-test-{gcc,clang}.log`, `deep-selector-oracle.log`, and the detailed
 CTest logs in each existing build directory. Chrome receipts and oracle outputs
-are retained in Convoy's `builds/test-evidence/weva-developer-ui/deep-perf/`.
+are retained in the host's `builds/test-evidence/weva-developer-ui/deep-perf/`.
 
 This establishes bounded style work and rendering correctness for the selected
 cases. It does not establish game FPS. Live performance qualification is pending
@@ -55,7 +55,7 @@ against 377.5 and 379.5 FPS with the pointer away. Hovered UI CPU averages
 The earlier hovered baseline was 103–115 FPS and 7.2–7.9 ms UI CPU.
 
 Raw profiles and the inspected tooltip capture are retained under
-`E:/Convoy_Agentic/builds/test-evidence/weva-developer-ui/interaction-fixes-20261025/`.
+`<workspace>/builds/test-evidence/weva-developer-ui/interaction-fixes-20261025/`.
 These results qualify this tooltip fix; graph refresh and panel mounting are
 separate remaining workloads.
 
@@ -80,7 +80,7 @@ long codes and short input tails. Extra bits use a bounded reservoir; alignment
 returns prefetched whole bytes before stored blocks. Back-references copy only
 already-produced bytes in non-overlapping chunks, and RGBA rows copy directly.
 
-The 46 Convoy resource icons decode in 183–200 ms, versus 295–298 ms before,
+The 46 host resource icons decode in 183–200 ms, versus 295–298 ms before,
 across three paired optimized GCC runs; dimensions and every pixel hash match.
 An independent Python-zlib corpus covers 1,080 valid, output-limited and truncated
 streams, including fixed/dynamic coding and stored blocks between compressed

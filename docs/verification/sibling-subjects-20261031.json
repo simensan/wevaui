@@ -5,7 +5,7 @@
       "sha256": "d4883ab885afd7299171bedc611f954d274b432f67882c1d203260f2e8ab7ff9"
     },
     "after": {
-      "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+      "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
       "sha256": "92fb19792d281b366850e7ff0bb7f088c28771be0e3c15f34cfffcc5a1a727d9"
     }
   },
@@ -454,6 +454,6 @@
     "sibling-windows-build.log": "94ed08d4a471ba26922ba73026ab3ce17bbe2c67aee93172738357ba135e98c6",
     "sibling-windows-test.log": "e3bea4369ebd1f004cb65e2f4e4808c261437d61509197a66ea0b433bc94c458"
   },
-  "agentic_renderer_report": "E:/Convoy_Agentic-slots/engine-9/builds/verify/20261031-002553/report.json",
+  "agentic_renderer_report": "<workspace>/engine-9/builds/verify/20261031-002553/report.json",
   "agentic_renderer_passes": 13
 }

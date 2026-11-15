@@ -1383,7 +1383,7 @@
     "libweva/tests/test_positioning.cpp": "cf5ceb25a8620bfbc750020c2c2db64069dad7b4f231e64054e5991b5bbcd80d"
   },
   "final_agentic_executable": {
-    "path": "E:\\Convoy_Agentic-slots\\engine-9\\target\\fast\\weva_cost.exe",
+    "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
     "sha256": "8d146f386f7481ab5efa5b760924b169eb26fb9bd9100ade19b0d36aff00c787"
   },
   "unity_editor": {
