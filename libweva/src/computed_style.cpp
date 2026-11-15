@@ -49,8 +49,6 @@ void ComputedStyle::ensure_capacity(int id) {
     const auto full = static_cast<std::size_t>(CssPropertyRegistry::instance().count());
     if (full > need) need = full;
     value_slots_.resize(need, 0);
-    parsed_.resize(need);
-    parsed_ready_.resize((need + 31) / 32, 0);
     occupied_.resize(need, 0);
     important_.resize(need, false);
     occupied_bits_.resize((need + 63) / 64, 0);
@@ -163,8 +161,10 @@ void ComputedStyle::set(int id, std::string_view value) {
     if (!same_value) {
         ensure_value(i).assign(value.data(), value.size());
         // The memo describes the old string.
-        parsed_[i].reset();
-        set_parsed_state(i, 0);
+        if (i < parsed_.size()) {
+            parsed_[i].reset();
+            set_parsed_state(i, 0);
+        }
     }
     version_ = next_version();
 }
@@ -255,9 +255,11 @@ const CssValue* ComputedStyle::parsed(int id) const {
     }
     const auto i = static_cast<std::size_t>(id);
     if (i >= parsed_.size()) {
-        // ensure_capacity is non-const; the memo is the only mutable state, so
-        // it is grown directly.
-        const std::size_t need = i + 1;
+        // Syntax is needed only when a consumer reads it. Cascading hidden
+        // elements must not allocate a parsed-value table they never use.
+        // Grow once to the registry size, avoiding repeated growth as layout
+        // reads properties in a different order.
+        const std::size_t need = std::max(i + 1, static_cast<size_t>(reg.count()));
         parsed_.resize(need);
         parsed_ready_.resize((need + 31) / 32, 0);
     }
@@ -284,8 +286,10 @@ void ComputedStyle::unset(int id) {
     occupied_[i] = 0;
     occupied_bits_[i >> 6] &= ~(1ULL << (i & 63));
     ensure_value(i).clear();
-    parsed_[i].reset();
-    set_parsed_state(i, 0);
+    if (i < parsed_.size()) {
+        parsed_[i].reset();
+        set_parsed_state(i, 0);
+    }
     important_[i] = false;
     if (font_size_inherited_ && id == CssPropertyRegistry::instance().id_of("font-size"))
         font_size_inherited_ = false;

@@ -14,6 +14,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <vector>
 #include <unordered_map>
@@ -75,7 +76,9 @@ struct MatchedDeclaration {
     bool is_inline = false;
     int in_rule_index = 0;   // declaration order within one rule
     int layer_ordinal = kUnlayeredOrdinal;
-    std::string selector_text;
+    // Borrowed from the compiled selector, like declaration above. Match lists
+    // are invalidated whenever the compiled stylesheet collection changes.
+    std::string_view selector_text;
     const std::string* source_url = nullptr;
     int scope_distance = kUnscopedDistance;
     // Registry IDs are stable. Unknown/custom names remain name-based so a

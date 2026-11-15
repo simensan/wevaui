@@ -67,6 +67,14 @@ still resolve on every cascade. Scratch styles retain per-property strings and
 parsed owned syntax across clear, while ownership and default/inherited reads
 remain separate. These caches trade bounded retained storage for less repeat work.
 
+Parsed-style tables are allocated on the first syntax read, independently of
+raw declaration storage. Hidden elements still receive their full computed
+styles without reserving parse caches that layout and paint never read. Writes,
+removals and scratch-style reuse invalidate existing syntax normally. Match
+records borrow selector text from the compiled rules, just as they borrow the
+declarations; stylesheet changes invalidate those records. Inspector snapshots
+copy their text before returning it through the C ABI.
+
 The [inventory update pass](verification/inventory-update-20261031.md) stops
 unchanged-size text reflow at proven fixed inline boundaries and refreshes the
 affected intrinsic exports. Ordinary block ancestors consume first baselines;

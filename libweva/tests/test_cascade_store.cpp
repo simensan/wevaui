@@ -101,6 +101,21 @@ void test_computed_style() {
     const int color = reg.id_of("color");
     const int width = reg.id_of("width");
 
+    // Raw writes and removals before any syntax read must not depend on a
+    // preallocated parse cache. Later reads still observe ownership changes.
+    {
+        ComputedStyle lazy;
+        lazy.set(width, "12px");
+        lazy.unset(width);
+        lazy.set(color, "blue");
+        CHECK(lazy.parsed(width)->raw == "auto");
+        CHECK(lazy.parsed(color)->raw == "blue");
+        lazy.set(width, "19px");
+        CHECK(lazy.parsed(width)->raw == "19px");
+        lazy.unset(color);
+        CHECK(lazy.parsed(color)->raw == reg.initial_value(color));
+    }
+
     // Reusing scratch storage must distinguish old owned syntax from initial
     // and inherited values, including reads between clear and re-assignment.
     {

@@ -8,14 +8,16 @@
 #include <cstdlib>
 #include <new>
 #include <string>
+#include <vector>
 
 namespace {
 bool counting = false;
 size_t allocations = 0;
+size_t allocated_bytes = 0;
 }
 
 void* operator new(size_t size) {
-    if (counting) ++allocations;
+    if (counting) { ++allocations; allocated_bytes += size; }
     void* p = std::malloc(size ? size : 1);
     if (!p) std::abort();
     return p;
@@ -59,5 +61,27 @@ int main() {
     valid &= output.get("background-color") == "blue";
     valid &= output.get("width") == "120px";
     std::printf("cached cascade: 1000 computations, %zu allocations, values %s\n",allocations,valid?"match":"DIFFER");
-    return valid && allocations == 0 ? 0 : 1;
+    valid &= allocations == 0;
+
+    // Cold styles for a hidden panel need raw values, but no parsed syntax
+    // until layout/paint asks for it. Keep 1000 sparse styles below 4 MiB of
+    // allocation traffic instead of reserving a parse-cache entry for every
+    // registered property on every style.
+    allocations = 0;
+    allocated_bytes = 0;
+    counting = true;
+    std::vector<weva::ComputedStyle> hidden(1000);
+    for (auto& style : hidden) {
+        style.set("display", "none");
+        style.set("color", "red");
+        style.set("width", "120px");
+    }
+    counting = false;
+    const auto cold_bytes = allocated_bytes;
+    for (auto& style : hidden) {
+        valid &= style.get("color") == "red";
+        valid &= style.parsed("width") && style.parsed("width")->raw == "120px";
+    }
+    std::printf("cold sparse styles: 1000 styles, %zu bytes, values %s\n", cold_bytes, valid?"match":"DIFFER");
+    return valid && cold_bytes < 4 * 1024 * 1024 ? 0 : 1;
 }

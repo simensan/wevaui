@@ -135,7 +135,9 @@ int main() {
         backend.draws.clear();
         const size_t n = measure([&] { paint_tree(tree, root, ctx, &backend); });
         check(n <= 2, "solid quad uses only its original two geometry buffers");
-        check(!backend.draws.empty(), "opacity does not change draw availability");
+        const bool transparent = std::string_view(opacity) == "0";
+        check(backend.draws.empty() == transparent, "zero-opacity paint is culled; visible paint is submitted");
+        if (transparent) check(n == 0, "culled solid paint allocates no geometry");
         output.add(backend.geometry());
         output.add(backend.events.value);
         const uint64_t saved = backend.geometry();
