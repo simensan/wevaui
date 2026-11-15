@@ -3,11 +3,11 @@
   "binary_sha256": "1ae26a53a9cb89202549b14f5ae6f3fdd159b438ce88a50c3ee794d831ad9d90",
   "invocation": {
     "command": [
-      "<repo>\\.utmp\\safe-engine71\\table175-budget\\export\\FrontierCamp.exe",
+      "FrontierCamp.exe",
       "--audio-driver",
       "Dummy",
       "--log-file",
-      "<repo>\\.utmp\\safe-engine71\\hover177-stage\\engine.log",
+      "engine.log",
       "--rendering-method",
       "mobile",
       "--fixed-fps",
@@ -19,7 +19,7 @@
     ],
     "environment": {
       "WEVA_STAGE_LOG": "1",
-      "WEVA_FRONTIER_PERF_OUT": "<repo>\\.utmp\\safe-engine71\\hover177-stage",
+      "WEVA_FRONTIER_PERF_OUT": "hover177-stage",
       "WEVA_FRONTIER_FRAMES": "1200",
       "WEVA_FRONTIER_WARMUPS": "120",
       "WEVA_FRONTIER_CASES": "hover",

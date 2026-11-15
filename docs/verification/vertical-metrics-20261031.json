@@ -51,22 +51,22 @@
             "other_processes": [
               {
                 "name": "cargo.exe",
-                "exe": "<home>\\.cargo\\bin\\cargo.exe",
+                "exe": "cargo.exe",
                 "pid": 23056
               },
               {
                 "name": "cargo.exe",
-                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "cargo.exe",
                 "pid": 40252
               },
               {
                 "name": "rustc.exe",
-                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "rustc.exe",
                 "pid": 41380
               },
               {
                 "name": "rustc.exe",
-                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "rustc.exe",
                 "pid": 23344
               }
             ]
@@ -82,7 +82,7 @@
             "other_processes": [
               {
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 48840
               }
             ]
@@ -578,7 +578,7 @@
             "mode": "baseline",
             "other_processes": [
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 48840,
                 "name": "dev_runtime.exe"
               }
@@ -589,7 +589,7 @@
             "mode": "candidate",
             "other_processes": [
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 48840,
                 "name": "dev_runtime.exe"
               }
@@ -600,7 +600,7 @@
             "mode": "chrome",
             "other_processes": [
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 48840,
                 "name": "dev_runtime.exe"
               }
@@ -611,7 +611,7 @@
             "mode": "chrome",
             "other_processes": [
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 48840,
                 "name": "dev_runtime.exe"
               }
@@ -622,12 +622,12 @@
             "mode": "candidate",
             "other_processes": [
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 48840,
                 "name": "dev_runtime.exe"
               },
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 42208,
                 "name": "dev_runtime.exe"
               }
@@ -638,22 +638,22 @@
             "mode": "baseline",
             "other_processes": [
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 42208,
                 "name": "dev_runtime.exe"
               },
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 23032,
                 "name": "dev_runtime.exe"
               },
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 48956,
                 "name": "dev_runtime.exe"
               },
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 20400,
                 "name": "dev_runtime.exe"
               }
@@ -664,22 +664,22 @@
             "mode": "baseline",
             "other_processes": [
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 20400,
                 "name": "dev_runtime.exe"
               },
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 38844,
                 "name": "dev_runtime.exe"
               },
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 16672,
                 "name": "dev_runtime.exe"
               },
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 53148,
                 "name": "dev_runtime.exe"
               }
@@ -690,12 +690,12 @@
             "mode": "candidate",
             "other_processes": [
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 53148,
                 "name": "dev_runtime.exe"
               },
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 18484,
                 "name": "dev_runtime.exe"
               }
@@ -706,7 +706,7 @@
             "mode": "chrome",
             "other_processes": [
               {
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+                "exe": "dev_runtime.exe",
                 "pid": 18484,
                 "name": "dev_runtime.exe"
               }
@@ -1253,8 +1253,8 @@
     "libweva/src/inline_layout.cpp": "94538dc071656b41ab71752c6e7cd0b9eb16bb19bafa87609c24e25fdab16415",
     "libweva/tests/test_inline_layout.cpp": "2f8ed563679582044a8caabca9e1f22432326923872c076c4caf7fd8ae2dbcbd"
   },
-  "final_agentic_executable": {
-    "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+  "final_host_executable": {
+    "path": "weva_cost.exe",
     "sha256": "c9c89e5c935ca8e636292fef9293b9a52899e394dba70371dabadd22c26eaf37"
   },
   "unity_editor": {

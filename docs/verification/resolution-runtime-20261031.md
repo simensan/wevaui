@@ -1,8 +1,8 @@
-# Agentic runtime at 1080p and 1440p — October 31, 2026
+# Host-engine runtime at 1080p and 1440p — October 31, 2026
 
-The accepted Agentic submission and retained-uniform changes also reduce
+The accepted host-engine submission and retained-uniform changes also reduce
 observed worker UI-phase CPU cost at larger render targets. This comparison
-covers the combined changes from Agentic `4c5cf4ecd` to `26fc09a7e`, not an
+covers the combined changes from host-engine `4c5cf4ecd` to `26fc09a7e`, not an
 isolated uniform optimization. The shared Weva core remains `d863b7d3`.
 
 The audit generator and runner now accept `--viewport WIDTH HEIGHT`. The
@@ -63,9 +63,9 @@ Raw evidence: `.utmp/render-audit-20261030/resolution-1080-paired/` and
 `resolution-1440-paired/`.
 
 No engine behavior changed in this validation chunk. The previously accepted
-shared-core fixes remain available to Godot and Unity. Agentic's wgpu
+shared-core fixes remain available to Godot and Unity. The host engine's wgpu
 submission/uniform changes have no equivalent buffer ownership in those
 hosts and are not copied into them. Their existing gate results stand;
 this is not a new full release gate or a host-to-host performance comparison.
-The Agentic changes remain on the local audit branch; no upstream merge,
+The host-engine changes remain on the local audit branch; no upstream merge,
 push or configured-SDK switch is claimed.

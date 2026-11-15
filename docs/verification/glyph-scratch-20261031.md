@@ -31,7 +31,7 @@ unnecessary allocation behavior.
 
 ## Provisional runtime comparison
 
-Six alternating Agentic baseline/candidate/Chrome pairs use real fonts, the
+Six alternating host-engine baseline/candidate/Chrome pairs use real fonts, the
 existing HUD and twenty-field inventory fixtures, 20 warmups and 200 measured
 updates at requested 60 Hz. Own builds did not overlap timings. Other workspace
 activity continued as requested, so all timings are **provisional**. Each
@@ -83,7 +83,7 @@ The repeated qualified full gate passes, including all 23 live-reload checks:
 - All 16 Unity player captures and the Godot reference render match the
   accepted baseline pixel for pixel. Representative captures were inspected.
 
-The final Agentic executable's code/data sections match the measured candidate;
+The final host-engine executable's code/data sections match the measured candidate;
 the final runtime/test sources match the measurement manifests. Validation
 results and installed host metadata are recorded in the receipt.
 The internal preparation helper changes no ABI or author-facing API. The

@@ -1,10 +1,10 @@
 # Hidden UI work and direct profiling — October 30, 2026
 
-Agentic's direct renderer updated and uploaded hidden HTML documents while its
+The host engine's direct renderer updated and uploaded hidden HTML documents while its
 threaded snapshot path deferred that work. Binding changes therefore continued
 to pay layout/paint/upload costs for an invisible inventory in direct mode.
 
-Agentic `88e0e7f4b` makes `Overlay::update` defer work while hidden, retaining
+Host-engine `88e0e7f4b` makes `Overlay::update` defer work while hidden, retaining
 dirty state and pending bindings. Showing it applies the latest values. The
 direct game host also skips an empty encoder/submission for hidden overlays.
 This follows the existing snapshot behavior; it does not add CSS rules or
@@ -35,7 +35,7 @@ execution time. Independent percentile columns must not be summed.
 
 The before SDK is `36c2fc75a`, which includes the profiling correction below;
 the after SDK is `88e0e7f4b`. Both link the unchanged Weva core last changed at
-`faf04f31`. Both are coherent official SDK publications. The managed Agentic
+`faf04f31`. Both are coherent official SDK publications. The managed host-engine
 `engine-main` remains unchanged and these source commits remain on the leased
 audit branch.
 
@@ -49,7 +49,7 @@ and a previously painted hidden document does not republish until shown again.
 
 ## Profiling correction
 
-Agentic `36c2fc75a` includes direct HTML update, upload, encode/submit and IME
+Host-engine `36c2fc75a` includes direct HTML update, upload, encode/submit and IME
 synchronization in the accumulated `ui` CPU section. Previously it omitted
 that work. A real cold opening now reports 26.321 ms UI within 32.082 ms main
 CPU, rather than approximately 0.001 ms UI. This is corrected attribution,
@@ -69,7 +69,7 @@ runtime evidence.
   suite passes. Optimized CLI/headless/runtime SDK build and publication pass.
 - The fixture generator adds key 7 for hidden inventory binding updates.
   Existing visible modes and the cold-open mode remain available.
-- No core/ABI/Unity/Godot code changed. This fixes Agentic's direct-versus-
+- No core/ABI/Unity/Godot code changed. This fixes the host engine's direct-versus-
   snapshot lifecycle inconsistency. Unity's component lifecycle and Godot's
   explicit/manual update behavior have different contracts; this result does
   not claim hidden-work parity for them. Audit automatic hidden updates in
@@ -84,7 +84,7 @@ Raw evidence is in `.utmp/render-audit-20261030/`: `hidden-paired/`,
 `direct-ui-attribution/`, `cold-paint-profile.log`, SDK logs and
 `hidden-overlay-tests-fixed.log`. All twelve paired profile/frame artifact
 hashes were independently verified. The
-[JSON receipt](agentic-hidden-ui-20261030.json) preserves per-run statistics,
+[JSON receipt](host-engine-hidden-ui-20261030.json) preserves per-run statistics,
 globals, binary identities and artifact paths. The retained `run-hidden.py`
 records exact launch/profile/input commands. All owned sessions were stopped.
 

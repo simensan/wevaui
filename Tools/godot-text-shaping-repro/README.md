@@ -86,7 +86,7 @@ entries on first growth, moves the emoji free outside the script loop and
 cleans it up on the ICU error path. Apply to the source commit above:
 
 ```sh
-git apply /path/to/unityui/Tools/godot-text-shaping-repro/godot-script-iterator.patch
+git apply /path/to/wevaui/Tools/godot-text-shaping-repro/godot-script-iterator.patch
 scons -j10 platform=linuxbsd target=template_debug optimize=speed \
   debug_symbols=no use_lto=no vulkan=no opengl3=yes wayland=no \
   disable_3d=yes disable_path_overrides=no module_mono_enabled=no accesskit=no
@@ -119,8 +119,8 @@ Use a separate source/build directory so the stock installation stays available
 for a negative control. From that source directory:
 
 ```sh
-git apply /path/to/unityui/Tools/godot-text-shaping-repro/godot-script-iterator.patch
-git apply /path/to/unityui/Tools/godot-text-shaping-repro/godot-editor-help-shutdown.patch
+git apply /path/to/wevaui/Tools/godot-text-shaping-repro/godot-script-iterator.patch
+git apply /path/to/wevaui/Tools/godot-text-shaping-repro/godot-editor-help-shutdown.patch
 for target in editor template_debug template_release; do
     scons -j8 platform=linuxbsd target="$target" arch=x86_64 optimize=speed \
         debug_symbols=no use_lto=no module_mono_enabled=no

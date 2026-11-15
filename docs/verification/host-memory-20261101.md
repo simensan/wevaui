@@ -1,12 +1,12 @@
-# Godot and Agentic memory audit — 2026-11-01
+# Godot and host-engine memory audit — 2026-11-01
 
-Godot's tested document, reload and theme lifetimes remain bounded. Agentic's
+Godot's tested document, reload and theme lifetimes remain bounded. The host engine's
 rendered-process memory still grows in the preserved SDK, including a 60-update/s
 control. No allocation owner has been proved for that growth; no runtime patch
 or leak-free claim follows from these counters.
 
 This pass adds reusable Godot lifecycle regressions and fixes a gap in the
-Agentic audit workflow: it can now hold an idle inventory, warm before measuring,
+Host-engine audit workflow: it can now hold an idle inventory, warm before measuring,
 and sample process memory without allocating a runtime snapshot every five
 seconds. Samples explicitly mark whether their globals were queried or are the
 last observed values. Endpoint-only mode verifies mode and reload progress at
@@ -40,7 +40,7 @@ All four final renders were saved; representative renders were visually inspecte
 No Godot retention defect was confirmed in these short stress cases. This does
 not cover arbitrary URL churn, every font/content set, or a long hardware soak.
 
-## Agentic: matched rendered controls
+## Host-engine: matched rendered controls
 
 All six five-minute processes use **the exact SDK from the previous 30-minute
 finding**, `db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248`,
@@ -88,7 +88,7 @@ not be extrapolated as a linear leak rate.
 ## Script allocation control
 
 The same SDK's headless script runner executes the original driver for 120,000
-frames each in idle and reload modes, with `AGENTIC_ALLOC_TRACE=1` and six samples.
+frames each in idle and reload modes, with `HOST_ALLOC_TRACE=1` and six samples.
 Both retain a **1 MiB guest heap**, zero tracked live guest allocations at every
 sample, and the same host-container census (22 entries: 16 lookup plus six
 published globals). Total allocation/free counters both end at 1,920,000.
@@ -100,11 +100,11 @@ were not interpreted as proof of zero allocations.
 
 ## Remaining finding and next investigation
 
-The old Agentic process-growth finding remains open. The measurements cannot yet
+The old host-engine process-growth finding remains open. The measurements cannot yet
 distinguish native shared-core retention, Rust renderer/font/paint ownership,
 allocator high-water state, GPU upload retirement, driver storage, or runtime
 observation caches. Missing low-interference live/capacity accounting was recorded
-through Agentic's local API-feedback workflow as
+through the host engine's local API-feedback workflow as
 `weva-runtime-memory-ownership-census`, scoped to this measured SDK.
 The next useful step is allocation attribution across those owners in the
 rendered runtime, including a cooldown/retirement measurement. Private-memory
@@ -113,8 +113,8 @@ growth alone is insufficient evidence for a safe runtime code change.
 ## Reproduction and validation
 
 Generate a normal-cadence fixture with
-`Tools/performance/create_agentic_audit_project.py <fixtures> <new-project> --max-fps 60`.
-Run `Tools/performance/run_agentic_runtime_audit.py --project <project> --output
+`Tools/performance/create_host_audit_project.py <fixtures> <new-project> --max-fps 60`.
+Run `Tools/performance/run_host_runtime_audit.py --project <project> --output
 <new-output> --engine same=<SDK> --rounds 1 --skip-profiles --reload-seconds 300
 --lifecycle-warmup 30 --lifecycle-mode idle --lifecycle-observation endpoints`;
 repeat with `--lifecycle-mode reload`. Omit `--lifecycle-observation endpoints`
@@ -130,7 +130,7 @@ Tooling passes **79 tests on Linux**, and **70 pass / nine platform skips on
 Windows**. Seven new tests pin lifecycle progress/control and endpoint validation.
 Both snapshot and endpoint idle/reload smoke invocations pass, with successful
 session cleanup. An initial CLI validation test omitted required `--output`;
-its argument setup was corrected. No shared-core, Unity, Godot native or Agentic
+its argument setup was corrected. No shared-core, Unity, Godot native or host-engine
 runtime source changed. Previous runtime qualification applies to those unchanged
 sources; this audit is not a new complete cross-host release gate.
 

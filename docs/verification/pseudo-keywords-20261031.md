@@ -39,7 +39,7 @@ was deferred in this pass and is fixed by the subsequent
 Baseline is `f861e360` (v22); candidate is v23. Three alternating
 baseline/candidate/Chrome rounds use the same real-font fixtures, twenty-field
 inventory mutations, 20 warmups and 200 measured updates at requested 60 Hz.
-The other Agentic game remained running as requested; no own builds overlapped
+The other host-engine game remained running as requested; no own builds overlapped
 timing. Initial/final sampled geometry matches across the six native runs.
 
 Median of run means, milliseconds per inventory update:
@@ -83,6 +83,6 @@ export, rendering and scene checks pass, including 19,833 font checks. The
 binding/font/image player render and Godot render were inspected. No new
 IL2CPP or hardware qualification is claimed.
 
-The final Agentic executable matches the measured v23 candidate's SHA-256.
+The final host-engine executable matches the measured v23 candidate's SHA-256.
 The [tracked receipt](pseudo-keywords-20261031.json) records timings, counters,
 visual fixtures, source/evidence hashes, native build metadata and gate results.

@@ -46,7 +46,7 @@ and changed mesh uploads, then measure an isolated candidate against this baseli
 Environment: Unity 6000.4.1f1, RTX 5080, the existing survival fixture assets.
 Cold creation is excluded. Workloads run in fixed idle/HUD/inventory order in
 each process, with separate document/renderer lifetimes and warmup per workload.
-Do not transfer these results to Godot or Agentic; their upload paths differ.
+Do not transfer these results to Godot or host-engine; their upload paths differ.
 
 ## Reproduce and evidence
 

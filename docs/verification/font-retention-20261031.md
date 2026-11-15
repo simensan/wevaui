@@ -41,4 +41,4 @@ Accepted distinct fonts still retain canonical buffers for the Unity domain's
 lifetime because FontEngine can retain native tables by buffer identity. This
 fix prevents rejected-buffer retention and duplicate faces for recurring content;
 it does not impose a budget on every distinct successfully loaded font. The old
-Agentic 13.7 MiB process-private growth remains unattributed.
+Host-engine 13.7 MiB process-private growth remains unattributed.

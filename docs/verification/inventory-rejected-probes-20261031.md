@@ -6,7 +6,7 @@ all four were reverted. This pass makes **no new optimization claim**.
 
 Each candidate used three alternating baseline/candidate/Chrome rounds,
 the same real-font inventory and twenty-field mutations, 20 warmups and 200
-measured updates at requested 60 Hz. The unrelated Agentic game remained
+measured updates at requested 60 Hz. The unrelated host-engine game remained
 running as requested. No own builds overlapped these timing runs. All numbers
 are provisional; positive changes below mean slower. These are medians of
 within-round percentage changes, not ratios of independent run medians.
@@ -39,7 +39,7 @@ its failed log is preserved. Neither that test nor candidate code remains.
 The reverted v15/v16 candidates were not release-qualified.
 
 All source changes were restored to the previously qualified commit. The
-Agentic benchmark was then rebuilt from that source; every executable section
+Host-engine benchmark was then rebuilt from that source; every executable section
 is byte-identical to the accepted v12 binary. Unity and Godot remain on the
 previously qualified shared-core build. No full release gate was repeated for
 this documentation-only result; the accepted core's gate evidence is in the

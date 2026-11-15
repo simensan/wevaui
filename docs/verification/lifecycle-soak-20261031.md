@@ -1,4 +1,4 @@
-# Agentic reload soak — 2026-10-31
+# Host-engine reload soak — 2026-10-31
 
 A 30-minute survival-UI reload run completed **111,587 reloads**, five UI
 modes, selection/use/close actions, and selection after the reload loop.
@@ -23,14 +23,14 @@ shared allocations must not be added to process memory as independent usage.
 
 The immutable SDK is
 `db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248`,
-the pre-merge Agentic audit build with the accepted shared-core optimization.
+the pre-merge host-engine audit build with the accepted shared-core optimization.
 It is not the later merged SDK. The Windows/RTX 5080 fixture contains the
 survival UI and 240 cubes at 1280×720. It requests a page load every ten ticks.
 The script counter records requested loads; successful interaction afterward
 also verifies the resulting document remains usable.
 
 ```
-python Tools/performance/run_agentic_runtime_audit.py --project <audit-project> --output <new-directory> --engine current=<sdk> --rounds 1 --reload-seconds 1800 --gpu-memory --skip-profiles
+python Tools/performance/run_host_runtime_audit.py --project <audit-project> --output <new-directory> --engine current=<sdk> --rounds 1 --reload-seconds 1800 --gpu-memory --skip-profiles
 ```
 
 The runner records CPU/GPU samples, checks reload progress, and stops its

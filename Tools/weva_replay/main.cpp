@@ -1,7 +1,7 @@
 // weva_replay: play a recorded host session back through the C ABI.
 //
-// A host (the Agentic engine's `AGENTIC_WEVA_RECORD`) writes one line per call
-// it makes into a document: loads, binding writes, list lengths, direct
+// A host that records its session writes one line per call it makes into a
+// document: loads, binding writes, list lengths, direct
 // element writes, pointer moves, hit tests and updates. This plays the same
 // calls, in the same order, against the same markup -- natively, where a
 // profiler can see inside the core -- and reports where the time went.
@@ -22,7 +22,7 @@
 // land in a binding map the document reads through its binding source, and
 // bindings are refreshed before an update that follows a changed value.
 //
-// Windows paths in the recording (`\\?\E:\x\y`) are mapped to `/mnt/e/x/y` on
+// Windows paths in the recording (`\\?\C:\x\y`) are mapped to `/mnt/c/x/y` on
 // POSIX, or used as they are on Windows. `--root` replaces everything before
 // `assets` in a path, for a recording made on another machine.
 

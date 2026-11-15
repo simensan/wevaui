@@ -36,7 +36,7 @@ sharing groups are outside the demonstrated coverage.
 - Unity plugin rebuilt/deployed; Native EditMode 243 pass, 2 environment-gated
   inconclusive, zero failures. Godot rebuilt; timing/form/validity/IME/binding/
   dialog scenes pass 31/522/104/28/186/1199 checks.
-- Agentic rebuilt; 12 focused renderer tests pass. The new fixture was rendered
+- Host-engine rebuilt; 12 focused renderer tests pass. The new fixture was rendered
   and inspected with a white background added for visibility. This visual
   inspection uses the standalone font backend, while the numeric Chrome
   comparison uses the oracle's matched synthetic font metrics.
@@ -67,7 +67,7 @@ That fresh combined comparison measures inventory complete CPU at
 
 Raw logs, renders and paired results remain under
 `.utmp/render-audit-20261030/baseline-*`. Prior failing evidence is preserved.
-The broader audit still needs Agentic SDK/runtime validation, equivalent
+The broader audit still needs host-engine SDK/runtime validation, equivalent
 Chrome rendering comparisons, cold-opening, lifecycle and busy-world checks.
 `engine-main` is managed by the SDK refresh tool and follows `origin/master`;
 it has not been silently switched to the audit branch.

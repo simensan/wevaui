@@ -1,8 +1,8 @@
 {
-  "agentic": "4c5cf4ecd",
+  "host": "4c5cf4ecd",
   "weva": "a7253f9f",
   "bundle": {
-    "path": "<repo>\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
+    "path": "733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
     "key": "733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
     "components": [
       "cli",
@@ -999,12 +999,12 @@
       "capture_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\71e1ea58aaef992ea256b75755b5a402f73eb49d6e5f5816e14aec6610ee6ffb\\captures\\52568-18e37499435595f4-76\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\71e1ea58aaef992ea256b75755b5a402f73eb49d6e5f5816e14aec6610ee6ffb\\captures\\52568-18e37499435595f4-76\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "1d0fdf1536fd6d4b9063e548758a36e964b52941dcdf93299c23a1cc42b33cf7"
         }
       ],
@@ -1012,15 +1012,15 @@
         "schema_version": 1,
         "id": "71e1ea58aaef992ea256b75755b5a402f73eb49d6e5f5816e14aec6610ee6ffb",
         "name": "accounting-0",
-        "project": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\agentic-runtime-project-v2",
-        "engine": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
-        "executable": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8\\target\\fast\\dev_runtime.exe",
+        "project": "\\\\?\\host-runtime-project-v2",
+        "engine": "\\\\?\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
+        "executable": "\\\\?\\dev_runtime.exe",
         "executable_sha256": "e812b7f92eb215467ddbe64bf6c9eafdf302090b8204f0b0741c4f5f66f882aa",
         "pid": 52568,
         "process_birth": 134378788732550368,
         "endpoint": "127.0.0.1:61937",
         "started_ms": 1793405273622,
-        "run_dir": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\71e1ea58aaef992ea256b75755b5a402f73eb49d6e5f5816e14aec6610ee6ffb",
+        "run_dir": "\\\\?\\71e1ea58aaef992ea256b75755b5a402f73eb49d6e5f5816e14aec6610ee6ffb",
         "capabilities": [
           "status",
           "stop",
@@ -1098,12 +1098,12 @@
       "capture_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\54a2713e20ef01328a4a3a3d23dc3aab8b60ed6eddac455c7682440b1009a508\\captures\\23688-18e3749ac93302a0-76\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\54a2713e20ef01328a4a3a3d23dc3aab8b60ed6eddac455c7682440b1009a508\\captures\\23688-18e3749ac93302a0-76\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "ea184749356d0d6d8f67ff34c84e0f6ff8c1824c14c04d9d7b65bdc98956a461"
         }
       ],
@@ -1111,15 +1111,15 @@
         "schema_version": 1,
         "id": "54a2713e20ef01328a4a3a3d23dc3aab8b60ed6eddac455c7682440b1009a508",
         "name": "accounting-1",
-        "project": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\agentic-runtime-project-v2",
-        "engine": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
-        "executable": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8\\target\\fast\\dev_runtime.exe",
+        "project": "\\\\?\\host-runtime-project-v2",
+        "engine": "\\\\?\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
+        "executable": "\\\\?\\dev_runtime.exe",
         "executable_sha256": "e812b7f92eb215467ddbe64bf6c9eafdf302090b8204f0b0741c4f5f66f882aa",
         "pid": 23688,
         "process_birth": 134378788799805706,
         "endpoint": "127.0.0.1:61638",
         "started_ms": 1793405280345,
-        "run_dir": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\54a2713e20ef01328a4a3a3d23dc3aab8b60ed6eddac455c7682440b1009a508",
+        "run_dir": "\\\\?\\54a2713e20ef01328a4a3a3d23dc3aab8b60ed6eddac455c7682440b1009a508",
         "capabilities": [
           "status",
           "stop",
@@ -1197,12 +1197,12 @@
       "capture_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\68d75ac0a24ebd443b3b52596792492c85beb153217df5a70a5b2c48009a4a8e\\captures\\54628-18e3749c522f8a64-76\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\68d75ac0a24ebd443b3b52596792492c85beb153217df5a70a5b2c48009a4a8e\\captures\\54628-18e3749c522f8a64-76\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "6de812b73e5d5aa978ed230434a4bf0e5fbeb1e59aa9971dca2f9e060cdb3ab4"
         }
       ],
@@ -1210,15 +1210,15 @@
         "schema_version": 1,
         "id": "68d75ac0a24ebd443b3b52596792492c85beb153217df5a70a5b2c48009a4a8e",
         "name": "accounting-2",
-        "project": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\agentic-runtime-project-v2",
-        "engine": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
-        "executable": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\published-sdk\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8\\target\\fast\\dev_runtime.exe",
+        "project": "\\\\?\\host-runtime-project-v2",
+        "engine": "\\\\?\\733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8",
+        "executable": "\\\\?\\dev_runtime.exe",
         "executable_sha256": "e812b7f92eb215467ddbe64bf6c9eafdf302090b8204f0b0741c4f5f66f882aa",
         "pid": 54628,
         "process_birth": 134378788865765715,
         "endpoint": "127.0.0.1:60403",
         "started_ms": 1793405286938,
-        "run_dir": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-accounting\\registry\\runs\\68d75ac0a24ebd443b3b52596792492c85beb153217df5a70a5b2c48009a4a8e",
+        "run_dir": "\\\\?\\68d75ac0a24ebd443b3b52596792492c85beb153217df5a70a5b2c48009a4a8e",
         "capabilities": [
           "status",
           "stop",

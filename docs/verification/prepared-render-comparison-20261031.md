@@ -17,7 +17,7 @@ This is a measurement correction, not a production optimization claim.
 | Weva core paint elapsed | 0.059 | 0.257 |
 | Chrome paint recording CPU | 0.084 | 0.182 |
 | Chrome raster worker CPU | 0.019 | 0.073 |
-| Agentic controller/update/prepare/submit CPU | 0.415 | 1.494 |
+| Host-engine controller/update/prepare/submit CPU | 0.415 | 1.494 |
 
 Values are medians of three per-run means; Weva style/layout sums the three
 stage medians. Partial layout is charged to boxes. Chrome CPU slices exclude
@@ -31,12 +31,12 @@ presentation latency remain unmeasured by this Chrome trace.
 Both use the prepared survival HTML/CSS, PNG icons, Exported font, 1280x720,
 black background, and identical query/setAttribute/removeAttribute/textContent
 mutations. There are 20 warmups, 200 mutations and 200 retained frames per run.
-Target cadence is 60 Hz; actual Agentic cadence is recorded in the JSON.
-Chrome is pinned 152.0.7977.82; Agentic uses Vulkan on RTX 5080, driver 617.42.
+Target cadence is 60 Hz; actual host-engine cadence is recorded in the JSON.
+Chrome is pinned 152.0.7977.82; host-engine uses Vulkan on RTX 5080, driver 617.42.
 Runs are sequential, not concurrent. This is one machine and two workloads.
 
 The browser adapter resolves the fixture's unbound `{{ Depth }}` to empty,
-matching Agentic binding refresh; unsupported binding expressions fail.
+matching host-engine binding refresh; unsupported binding expressions fail.
 Absolute fixture asset paths become local HTTP paths. No game-world image,
 extra focus state or alternate SVG assets are injected.
 
@@ -47,7 +47,7 @@ Production rendering is unchanged. Both initial and final mutation-target
 bounds agree within 0.754px across all rounds. Chrome HUD/inventory captures
 were inspected; this is not a full pixel-equivalence assertion.
 
-Unchanged Agentic frames cost 0.189/0.201ms CPU (HUD/inventory), because the
+Unchanged host-engine frames cost 0.189/0.201ms CPU (HUD/inventory), because the
 game host still submits the UI. Chrome recorded no retained style/layout or
 raster work, with 0.010/0.009ms paint-recording slices. Different redraw
 policies prevent an equivalent idle total comparison.
@@ -57,8 +57,8 @@ policies prevent an equivalent idle total comparison.
 [Machine-readable results](prepared-render-comparison-20261031.json) retain
 every round, input hashes, cadence and geometry differences. Local evidence:
 `.utmp/render-audit-20261030/chrome-prepared-v2/`,
-`prepared-agentic-v2-{0,1,2}.log`, `matched-render-clear-build.log`.
-Earlier `chrome-prepared/` and `prepared-agentic-{0,1,2}.log` are preserved
+`prepared-host-v2-{0,1,2}.log`, `matched-render-clear-build.log`.
+Earlier `chrome-prepared/` and `prepared-host-{0,1,2}.log` are preserved
 but excluded because they precede binding/background/clear corrections.
 
 The diagnostic builds successfully; three trace-summary tests pass and the
@@ -68,12 +68,12 @@ are not represented as fresh full-gate runs.
 
 Run the browser side with `node Tools/performance/render_prepared_chrome.cjs
 FIXTURES NEW_OUTPUT 3`, then `python Tools/performance/summarize_render_trace.py
-NEW_OUTPUT`. Run Agentic `weva_cost` with the same five prepared files and
+NEW_OUTPUT`. Run host-engine `weva_cost` with the same five prepared files and
 `WEVA_BENCH_INTERVAL_MS=16.6666666667`.
 
 The next shared optimization target is inventory cascade/box reconstruction.
 Any correction belongs in libweva and must be checked through both hosts;
-these measurements do not justify an Agentic-only CSS workaround.
+these measurements do not justify a host-engine-only CSS workaround.
 
 The [mutation-result experiment](attribute-result-20261031.md) was rejected
 after paired measurements. Its follow-up probe identifies unrelated sibling

@@ -1,8 +1,8 @@
 {
-  "agentic": "490cb3997",
+  "host": "490cb3997",
   "core": "d863b7d3",
   "sdk": {
-    "path": "<repo>\\.utmp\\render-audit-20261030\\published-sdk\\1f9fef58d0f72f8f8c82a975a2605a124840bc2fd7ddf3c1f3e8e565d9c1cc14",
+    "path": "1f9fef58d0f72f8f8c82a975a2605a124840bc2fd7ddf3c1f3e8e565d9c1cc14",
     "key": "1f9fef58d0f72f8f8c82a975a2605a124840bc2fd7ddf3c1f3e8e565d9c1cc14",
     "components": [
       "cli",

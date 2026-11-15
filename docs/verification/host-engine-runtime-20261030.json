@@ -1,7 +1,7 @@
 {
   "weva_commit": "faf04f31",
-  "agentic_commit": "be88b3cb2",
-  "evidence_root": "<repo>\\.utmp\\render-audit-20261030",
+  "host_commit": "be88b3cb2",
+  "evidence_root": "render-audit-20261030",
   "runs": [
     {
       "mode": 0,
@@ -15,12 +15,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f301ffa8a9c-37\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "c1e1f9bbe64f8042c8a69b4e000372164126e1c888b77675b2cf7fea344a5b34"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f301ffa8a9c-37\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "2b1483027d389f035861cce0d9f41a5e78dc366f6e3aaec684495dc8bd6c44c6"
         }
       ]
@@ -37,12 +37,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31bc587218-136\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "577fc94cfc42d3b6a59af83ed05b7d177dc3138295d33e046884bd6d8d94233e"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31bc587218-136\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "94f5607dd32bc23f64ff332138960e1f99dddb522c369e5f8bdbea76461e3a25"
         }
       ]
@@ -59,12 +59,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31dc05a338-147\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "14c1b30428dec7f223235b20c33934c7b53751c5616c5904398abba727094c54"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31dc05a338-147\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "57b97c1709e7f0c704938ad5aa1d0fc524e3f937148b9a6b92a84790ee62984e"
         }
       ]
@@ -81,12 +81,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f30da8fc0c0-81\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "348e9e907a621c9e2986fdccfde18b6553b4c3d363abde5eb2059ebc69975a4b"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f30da8fc0c0-81\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "d092255118e5cabb26559eb92e5678ac559334bd0ddb4434d3f12fbf0b94550b"
         }
       ]
@@ -103,12 +103,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f30fc30fc08-92\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "74bfc7497be527513a1712c1e7489ad13f0fadfc6f5212ea3fdddfde5965e8de"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f30fc30fc08-92\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "1c7f3eee5253b4e1c2a70e2f14a4313ef9edde3bb9d9c5dde328dbda19ab1cd0"
         }
       ]
@@ -125,12 +125,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f3296aaf468-191\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "1c6ad0d600d5a8481c5bbecf71368b2f882e024fd2ca73b71522dfcb2962f792"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f3296aaf468-191\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "daf8e07a49be4795b4a1e40f236d4694c6b0d815d68021b1843336b37b36f407"
         }
       ]
@@ -147,12 +147,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f303fc9bd98-48\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "14630f91c387fd73464fd90f65b507157ffebf3645a67ed600997a2a6471797e"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f303fc9bd98-48\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "41fffaf01746a6d92b924fa572e35bd44d34e2e1ccf4ed5dc749c9608fec8cac"
         }
       ]
@@ -169,12 +169,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f3190211bb4-125\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "2e8f90a025493888c91de12d63d23d77a383892fc5a9504c52031019ff17ffca"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f3190211bb4-125\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "bb195dbd73aa78967ec0d4cc0f040fbec7e307ccfbedfa8c1900b9ad589543de"
         }
       ]
@@ -191,12 +191,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31fb42244c-158\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "d2cef908ea44929b2556576064c9bebd0c37addb6d4a2cb6e913a86f827b451a"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f31fb42244c-158\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "7e1b43c66d19d4b31fb69bfa6837264a7dfb73ae92ed68677b8baf3e42d03add"
         }
       ]
@@ -213,12 +213,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f309141ea10-70\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "939e7ea69315162a85a3dba576f69be35a0e06f9cbb3e2ad3b8fe8089b0e4280"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f309141ea10-70\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "b57a67d6a7e3eaef484da12c80368cf0441f33355479be1a0d6f51a5267c1c2c"
         }
       ]
@@ -235,12 +235,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f312110094c-103\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "88463839f94dae2fb171201b3aaaab8cc39f77505cd48fff57dbd3c8904b1472"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f312110094c-103\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "52cc5346095100dcb5b644fc76e949f41f722ce178df905c5c5b10bf49957c9f"
         }
       ]
@@ -257,12 +257,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f324abb91fc-180\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "eb8a9b518e429a4bc7bbc7d4e8e4e910bb7b4ec32123506f12a745f16ce83354"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f324abb91fc-180\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "87afe39a4a01ae49676f296f98d53aff592f6593f587447dc8af9d622eb7ed7f"
         }
       ]
@@ -279,12 +279,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f306b3d4954-59\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "0c52bb119fdbb7ab4d96aa395f1d5d8919054d78afc3b16516b5bb60371d6156"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f306b3d4954-59\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "490a9fc34df1d9aa361c816e9615304a26f51f2ea18d532837a639907b1c2296"
         }
       ]
@@ -301,12 +301,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f316d47ac34-114\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "78e96430c232e63f9f563a2f879e12edf3035d3dc05a57a5a0521dbbf2643aee"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f316d47ac34-114\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "8c710b1495de4b054e3084be68092dc482e9cd2f442e1f7eaf532e7246fd503d"
         }
       ]
@@ -323,12 +323,12 @@
       "artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f322869d974-169\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "db05d154d4aa80395c8c01795b4aeb536ba96592c13cc8386de83fb995a44636"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\runtime-registry\\runs\\d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08\\profiles\\44872-18e36f322869d974-169\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "bea8d58ddb3e020a42e1504bff69d00fab12aa2a97f5a7f45fd8bd21bef38114"
         }
       ]
@@ -336,8 +336,8 @@
   ],
   "runtime_metadata": {
     "session_id": "d6edde69e32d9143e360541702b70c6479bc516f59a0371adc6c0e61097fbb08",
-    "project": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\agentic-runtime-project-v2",
-    "engine": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\published-sdk\\69d1a835fcaa3dc7ec4f5627ecce8d69a3e513058329f6e592ac24b1faa52ae2",
+    "project": "\\\\?\\host-runtime-project-v2",
+    "engine": "\\\\?\\69d1a835fcaa3dc7ec4f5627ecce8d69a3e513058329f6e592ac24b1faa52ae2",
     "executable_sha256": "3ea52566cb2b3ae54688bdf6b30dadf480f7856844804666cf8312293651ee67",
     "adapter": "NVIDIA GeForce RTX 5080",
     "driver": "Vulkan (NVIDIA 617.42)",
@@ -347,7 +347,7 @@
     "launch_args": [],
     "settings": {
       "title": "Weva runtime audit",
-      "app_id": "com.agentic.game",
+      "app_id": "com.host.game",
       "retain_save_backup": true,
       "version": "1.0.0",
       "build_number": 1,

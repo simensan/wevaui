@@ -29,7 +29,7 @@ game integration.
   [sanitizers](SANITIZERS.md) and [release checks](RELEASE.md).
 - [Latest integration audit](verification/parser-memory-20261101.md),
   [technical-debt audit](verification/tech-debt-20261101.md),
-  [current Agentic memory controls](verification/agentic-memory-20261101.md) and
+  [current host-engine memory controls](verification/host-engine-memory-20261101.md) and
   [performance measurements](RUNTIME_PERFORMANCE.md). Results apply to their
   recorded builds and machines; they are not platform-wide guarantees.
 

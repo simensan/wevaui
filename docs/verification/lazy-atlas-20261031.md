@@ -31,7 +31,7 @@ memory. Before creation both processes contain 47,177 tracked bytes.
 Creation saves exactly 1 MiB; the panel saves 2 MiB plus 96 bytes of texture
 bookkeeping. This benefits unused documents and text-free overlays. It does not
 reduce a normal text-bearing HUD's atlas, establish a GPU-memory number, or
-attribute the earlier Agentic process-memory growth. First text paint now pays
+attribute the earlier host-engine process-memory growth. First text paint now pays
 the deferred allocation. No startup/frame-time speedup is claimed.
 
 The regression pins zero pixel capacity and no texture before the first glyph,

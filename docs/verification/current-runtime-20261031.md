@@ -1,6 +1,6 @@
-# Current Agentic SDK runtime — October 31, 2026
+# Current host-engine SDK runtime — October 31, 2026
 
-The accepted shared-core changes now have actual Agentic runtime validation,
+The accepted shared-core changes now have actual host-engine runtime validation,
 using a newly published local SDK. Inventory median frame interval improves
 10.7% and mean combined UI CPU improves 14.9% (medians of three run
 statistics). Tail results are mixed: the median of inventory run p95 frame
@@ -9,7 +9,7 @@ performance win or Chrome parity evidence.
 
 ## Method and provenance
 
-`Tools/performance/run_agentic_runtime_audit.py` drives explicit immutable SDKs,
+`Tools/performance/run_host_runtime_audit.py` drives explicit immutable SDKs,
 without changing the configured engine. The fixture is the prepared survival
 UI in a 240-cube world (243 entities throughout), 1280×720, threaded renderer,
 VSync disabled, off-desktop/unfocused, on the existing Windows RTX 5080 machine.
@@ -18,9 +18,9 @@ Each of five modes has 120 warmup and 600 measured frames: 30 profiles and
 18,000 measured frames. CPU-only sampling preserves normal renderer scheduling;
 no GPU execution timestamps are collected. No builds overlap these profiles.
 
-Before uses Agentic `88e0e7f4b` and Weva `faf04f31`, SDK
+Before uses host-engine `88e0e7f4b` and Weva `faf04f31`, SDK
 `f0da9c269542cfcb828793e7644d09d57a222103159fd90f6cf022a3c812bdcd`.
-After uses Agentic `5c5d8ca98` and Weva `d863b7d3`, SDK
+After uses host-engine `5c5d8ca98` and Weva `d863b7d3`, SDK
 `7b76a22b973cf346f9a8b407e46b1b30c9eb0e5a347fcb28b423bf1ffbbc065d`.
 The new SDK was built with explicit `WEVA_SOURCE_DIR` using
 `tools/sdk_build.py --components cli headless runtime --publish <local-output>`.
@@ -85,5 +85,5 @@ raw responses, captures and stop receipts), and `current-runtime-comparison/`
 This chunk adds a reusable runner and evidence only. Shared changes already
 reach Godot and Unity through the core, with their affected host checks recorded
 in [the no-op receipt](scoped-noop-20261031.md). No ABI change or new full gate
-is claimed here. Agentic remains on its local audit branch; managed upstream
+is claimed here. Host-engine remains on its local audit branch; managed upstream
 and the user's configured SDK are unchanged. Nothing was pushed.

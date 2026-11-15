@@ -40,8 +40,8 @@
     "scope": "Intercepted C++ new/new[] calls in repeated simple cached three-property cascade; excludes setup and final result assertions. Not a whole-UI allocation claim.",
     "test_file": "godot-port/libweva/tests/test_cascade_allocations.cpp",
     "test_sha256": "15b3a9536957fef7ea423e4cdeec814e1ccabc8012e8ceb1272007efb30dc5e2",
-    "before_log": "Test project <repo>/.utmp/style-read-build\n    Start 11: weva_cascade_allocations\n1/1 Test #11: weva_cascade_allocations .........***Failed    0.15 sec\ncached cascade: 1000 computations, 4000 allocations, values match\n\n\n0% tests passed, 1 tests failed out of 1\n\nTotal Test time (real) =   0.31 sec\n\nThe following tests FAILED:\n\t 11 - weva_cascade_allocations (Failed)\nErrors while running CTest\n",
-    "intermediate_log": "Test project <repo>/.utmp/style-read-build\n    Start 11: weva_cascade_allocations\n1/1 Test #11: weva_cascade_allocations .........***Failed    0.15 sec\ncached cascade: 1000 computations, 3000 allocations, values match\n\n\n0% tests passed, 1 tests failed out of 1\n\nTotal Test time (real) =   0.29 sec\n\nThe following tests FAILED:\n\t 11 - weva_cascade_allocations (Failed)\nErrors while running CTest\n"
+    "before_log": "Test project n",
+    "intermediate_log": "Test project n"
   },
   "harness_correction": {
     "issue": "Initial custom allocator missed nothrow new; ASAN correctly reported new/free mismatch during library temporary-buffer allocation.",
@@ -232,11 +232,11 @@
       "addon_sha256": "7ee8657e006adf4c9cfa0c2b6807cf34e2f3c55c7a8af0bb46d551471da38cdb",
       "templates": {
         "debug": {
-          "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+          "path": "godot.windows.template_debug.x86_64.exe",
           "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
         },
         "release": {
-          "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+          "path": "godot.windows.template_release.x86_64.exe",
           "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
         }
       },
@@ -3819,10 +3819,10 @@
     "library_sha256": "cbe18f8df1745217d48b55f9fb0fc52adfd719fed39957f14442e4f3fca9483d",
     "version": "0.1.0-preview.130",
     "targets": {
-      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "weva",
+      "sample": "weva"
     },
-    "backup": "<repo>\\.utmp\\safe-engine71\\installed130-backup",
+    "backup": "installed130-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",

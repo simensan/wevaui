@@ -11,11 +11,11 @@ workloads in their receipts; their percentages must not be compounded.
 | Change | Owner and evidence | Practical result and limit |
 | --- | --- | --- |
 | Batch attribute writes before an update | [Godot adapter](render-batching-20261030.md) | Stops painting intermediate selection states. Initial diagnostic improved inventory update median by 35.8%; it was one sequential before/after pair. |
-| Exclude unrelated sibling-selector subjects | [Shared core](sibling-subjects-20261031.md) | Inventory cascade decreased 25.9% and core update 6.9% in that Agentic diagnostic; total inventory CPU did not improve. Both supported hosts receive the same core. |
+| Exclude unrelated sibling-selector subjects | [Shared core](sibling-subjects-20261031.md) | Inventory cascade decreased 25.9% and core update 6.9% in that host-engine diagnostic; total inventory CPU did not improve. Both supported hosts receive the same core. |
 | Retain hidden documents and prepare during loading | [Unity API and Godot workflow](unity-hidden-preparation-20261031.md) | Hidden automatic work is deferred while explicit preparation applies current data. Showing reuses the document. Component disable still releases it. |
 | Prepare renderer materials during loading | [Unity adapter](unity-material-preparation-20261031.md) | First command recording decreased from 3.092 to 1.310 ms in paired editor runs. Work moves into loading; GPU shader execution is not warmed. |
 | Upload native vertex layout directly | [Unity adapter](unity-direct-vertices-20261031.md) | 32-byte vertices and bulk copy replace managed per-vertex construction. Full inventory mesh-sync median decreased 11.9%; total-frame tails were mixed. Godot uses a different packed-array API. |
-| Defer invisible direct rendering and unused cold resources | [Agentic hidden work](agentic-hidden-ui-20261030.md), [cold setup](agentic-cold-render-20261030.md) | Measured gains on the leased Agentic audit branch, not an upstream integration or a supported-host release claim. |
+| Defer invisible direct rendering and unused cold resources | [Host-engine hidden work](host-engine-hidden-ui-20261030.md), [cold setup](host-engine-cold-render-20261030.md) | Measured gains on the leased host-engine audit branch, not an upstream integration or a supported-host release claim. |
 
 ## Audit coverage and open evidence gaps
 
@@ -26,7 +26,7 @@ synthetic font; it does not predict host text cost. [Mutation isolation](invento
 shows that title changes can rebuild 57 draws despite unchanged visible bounds.
 The subsequent [flex-row allocation proof](flex-row-allocation-20261031.md)
 now accepts the smaller details subtree for this case, rebuilding 44 draws
-instead of 57, with paired Unity and Agentic CPU improvements. This integration
+instead of 57, with paired Unity and host-engine CPU improvements. This integration
 receipt predates that change; its newer gate evidence is in the follow-up.
 
 [Texture replacement tests](texture-lifetime-20261031.md) cover resize/reload,

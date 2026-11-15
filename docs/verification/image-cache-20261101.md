@@ -7,7 +7,7 @@ exceeds that target. This closes the decoded-cache budget item from the
 [technical debt audit](tech-debt-20261101.md#remaining-debt-in-priority-order).
 It follows the separate [async queue and unload fixes](image-queue-20261101.md).
 
-The same engine change reaches Unity and Godot; a locally rebuilt Agentic SDK
+The same engine change reaches Unity and Godot; a locally rebuilt host-engine SDK
 also contains it. No host-specific cache policy or C ABI change was added.
 Base revision: `f987e1ea`; exact source, binary and evidence hashes are in the
 [JSON receipt](image-cache-20261101.json). Local raw evidence is preserved under
@@ -88,7 +88,7 @@ pointer and draw serial until repaint.
   source remains red. The before/after captures were inspected. This uses the
   qualified patched Godot 4.7.2, Vulkan Forward Mobile **llvmpipe**, dummy audio
   and private Xvfb, not a hardware GPU qualification.
-- A coherent local optimized Agentic CLI/headless/runtime SDK builds against
+- A coherent local optimized host-engine CLI/headless/runtime SDK builds against
   these exact core inputs. Its survival UI smoke passes five modes, selection,
   clicks, use, close, reloads, memory snapshots, cooldown and post-reload
   interaction. The endpoint records 133 requested loads over 20.07 seconds.
@@ -130,6 +130,6 @@ exception**, not hard process limits. Dirty updates above the target may repeat
 the reference sweep. Individual encoded inputs, decode peaks, admitted worker
 payloads, raster caches and host/GPU allocations remain outside this cache
 policy. A single large source can exceed the target while in use. No new FPS,
-long-soak, IL2CPP/release-stripping or macOS claim is made. The older Agentic
+long-soak, IL2CPP/release-stripping or macOS claim is made. The older host-engine
 process growth still has no assigned allocation owner; the prior
-[matched lifecycle controls](agentic-memory-20261101.md) retain their own scope.
+[matched lifecycle controls](host-engine-memory-20261101.md) retain their own scope.

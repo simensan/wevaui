@@ -10,11 +10,11 @@
     "script_sha256": "d9e00afacf24c80b393539301429baa90329925e97eb0a32c031316bc7ecfca0",
     "libraries": {
       "baseline": {
-        "path": "<repo>\\.utmp\\runtime-opt-20261011\\weva_godot-before.dll",
+        "path": "weva_godot-before.dll",
         "sha256": "eb21a4da64b3146ea3a9edf41d47a6ced46376d387abb737b1e72e4f9490eabf"
       },
       "candidate": {
-        "path": "<repo>\\hosts\\godot\\project\\addons\\weva\\bin\\weva_godot.dll",
+        "path": "weva_godot.dll",
         "sha256": "aadd89bfc2881abb4f5b8ae4ef627e5e0bd49e96e0873e4b9e81a28e207b4924"
       }
     },

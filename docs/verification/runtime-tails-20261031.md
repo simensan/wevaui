@@ -6,7 +6,7 @@ scene-render and render-wait intervals together. This is an association, not
 proof of system interference or any specific engine cause. The regression
 remains in the published results; no samples are removed.
 
-`Tools/performance/analyze_agentic_runtime_tails.py` reads and hash-verifies the
+`Tools/performance/analyze_host_runtime_tails.py` reads and hash-verifies the
 30 original frame artifacts from the [runtime comparison](current-runtime-20261031.md).
 It reports means for every frame, the middle 5% and slowest 5% ranked by wall
 interval, plus chronological 100-frame blocks. For these 600-frame profiles,

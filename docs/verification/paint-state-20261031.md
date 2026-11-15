@@ -71,7 +71,7 @@ The intermediate test compile error from passing a property name to `unset(int)`
 is preserved alongside the corrected passing build.
 
 Restoring a saved source file also restored its timestamp, so the first final
-Agentic build reused the diagnostic executable. The section comparison caught
+Host-engine build reused the diagnostic executable. The section comparison caught
 that before delivery. After refreshing the source timestamp and rebuilding,
 every PE section matches the measured non-instrumented candidate and differs
 from the diagnostic build; whole-file hashes differ in PE headers. Both Linux

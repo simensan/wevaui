@@ -16,7 +16,7 @@
         "mode": "baseline",
         "other_processes": [
           {
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe",
             "pid": 17296
           }
@@ -27,7 +27,7 @@
         "mode": "candidate",
         "other_processes": [
           {
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe",
             "pid": 17296
           }
@@ -38,7 +38,7 @@
         "mode": "chrome",
         "other_processes": [
           {
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe",
             "pid": 17296
           }
@@ -49,7 +49,7 @@
         "mode": "chrome",
         "other_processes": [
           {
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe",
             "pid": 17296
           }
@@ -60,7 +60,7 @@
         "mode": "candidate",
         "other_processes": [
           {
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe",
             "pid": 17296
           }
@@ -71,7 +71,7 @@
         "mode": "baseline",
         "other_processes": [
           {
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe",
             "pid": 17296
           }
@@ -82,7 +82,7 @@
         "mode": "baseline",
         "other_processes": [
           {
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe",
             "pid": 17296
           }
@@ -93,7 +93,7 @@
         "mode": "candidate",
         "other_processes": [
           {
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe",
             "pid": 17296
           }
@@ -104,7 +104,7 @@
         "mode": "chrome",
         "other_processes": [
           {
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe",
             "pid": 17296
           }
@@ -588,8 +588,8 @@
     "libweva/tests/test_bidi_allocations.cpp": "18fc2a44fcd14caa17b6448da3134d5d799ee7308612674f705befb3952cf629",
     "libweva/tests/CMakeLists.txt": "d95dc8f79ed12803594a0d202b1f25edb3c181e600cb6cda9a98114220633048"
   },
-  "final_agentic_executable": {
-    "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+  "final_host_executable": {
+    "path": "weva_cost.exe",
     "sha256": "88f4b74f58d568f676da10a935fae2d9d8fe8e0ed6c7b5661d1f595e5262e9ac"
   },
   "installed_native_builds": {

@@ -42,10 +42,10 @@ gate. Build log contains no compiler warnings. Core/Unity sources are unchanged,
 so their prior gates were not rerun. No frame-time percentage is claimed:
 the counter regression proves the hidden automatic updates are eliminated.
 
-## Unity and Agentic scope
+## Unity and host-engine scope
 
-Agentic already defers hidden updates in both direct and threaded paths after
-the [previous fix](agentic-hidden-ui-20261030.md). Godot now avoids equivalent
+Host-engine already defers hidden updates in both direct and threaded paths after
+the [previous fix](host-engine-hidden-ui-20261030.md). Godot now avoids equivalent
 automatic work while preserving its explicit prewarming API.
 
 Unity's `OnDisable` unregisters rendering and releases its native document;
@@ -62,5 +62,5 @@ records log hashes, DLL identity and capture paths. Raw evidence is under
 the explicit visual scenario. All owned test processes finished or were
 terminated by their subprocess timeout.
 
-Cold glyph preparation, a convenient Agentic hidden-prewarm workflow, matched
+Cold glyph preparation, a convenient host-engine hidden-prewarm workflow, matched
 Chrome rendering and long-duration lifecycle coverage remain open.

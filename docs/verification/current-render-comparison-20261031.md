@@ -17,7 +17,7 @@ now records the newer core separately; use it for the current scoped comparison.
 | Weva core paint elapsed | 0.067 | 0.303 |
 | Chrome prepaint/paint/layer recording CPU | 0.116 | 0.216 |
 | Chrome raster-worker CPU | 0.026 | 0.096 |
-| Agentic controller/update/capture/prepare/encode/submit CPU | 0.502 | 1.221 |
+| Host-engine controller/update/capture/prepare/encode/submit CPU | 0.502 | 1.221 |
 
 Values are medians of three per-run means. Weva style/layout is summed within
 each run before aggregation; incremental layout is charged to the box stage.
@@ -28,7 +28,7 @@ work and presentation latency are not covered by the selected Chrome slices.
 
 ## Workload and verification
 
-Weva `43f59689`, Agentic diagnostic branch `f0a91651a`, Chrome
+Weva `43f59689`, host-engine diagnostic branch `f0a91651a`, Chrome
 152.0.7977.82, Windows RTX 5080. The optimized diagnostic was rebuilt in its
 existing leased worktree using explicit `WEVA_SOURCE_DIR` pointing at this
 checkout. No engine source, SDK selection, host adapter or ABI changed.
@@ -85,7 +85,7 @@ measurement does not justify changing CSS or removing effects to favor Weva.
 binary/revision/fixture hashes, every stage result, cadence and geometry checks.
 Local raw evidence is `.utmp/render-audit-20261030/current-chrome-comparison/`;
 `run_current_comparison.py`, `summarize_current_comparison.py`, and
-`current-chrome-agentic-build.log` are beside it. No earlier run is overwritten.
+`current-chrome-host-build.log` are beside it. No earlier run is overwritten.
 
 The browser uses `Tools/performance/render_prepared_chrome.cjs` followed by
 `Tools/performance/summarize_render_trace.py`. Native uses the rebuilt

@@ -4,7 +4,7 @@ The subsequent [script integration and runtime comparison](script-preparation-20
 connects this primitive to native scripts and verifies hidden preparation followed
 by opening. The remaining-work statements below describe this earlier chunk.
 
-Agentic's embedding `Overlay` now exposes `prepare_snapshot()`. It applies
+The host engine's embedding `Overlay` now exposes `prepare_snapshot()`. It applies
 pending bindings and runs the existing document update at zero elapsed time,
 then captures immutable CPU paint data. Unlike ordinary `snapshot` it is an
 explicit request to prepare even when hidden. It does not toggle visibility,
@@ -23,7 +23,7 @@ this is not a promise that every future opening will be free.
 
 ## Verification and scope
 
-All 44 Overlay tests pass in Agentic
+All 44 Overlay tests pass in host-engine
 `builds/verify/20261031-014631/report.json`. The new regression prepares bound
 geometry and text while hidden, verifies glyph textures exist and no local
 renderer or pointer ownership is introduced, and confirms repeated preparation

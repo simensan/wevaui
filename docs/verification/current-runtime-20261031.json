@@ -1,12 +1,12 @@
 {
   "before": {
     "weva": "faf04f31",
-    "agentic": "88e0e7f4b",
+    "host": "88e0e7f4b",
     "sdk": "f0da9c269542cfcb828793e7644d09d57a222103159fd90f6cf022a3c812bdcd"
   },
   "after": {
     "weva": "d863b7d3",
-    "agentic": "5c5d8ca98",
+    "host": "5c5d8ca98",
     "sdk": "7b76a22b973cf346f9a8b407e46b1b30c9eb0e5a347fcb28b423bf1ffbbc065d"
   },
   "measured_frames": 18000,

@@ -14,10 +14,10 @@ Validation:
 - Chrome hand layout oracle: 64/64 pass at 800×600, 1.5px ceiling, no gaps.
 - Chrome 153.0.8010.54 reference confirms the authored dark option background
   and light text; the listbox render was inspected.
-- Host/Agentic Vulkan at 1280×800: opened Foliage Lab's category dropdown,
+- Host/host-engine Vulkan at 1280×800: opened Foliage Lab's category dropdown,
   inspected both readable options and selected Bushes. The controls and
   3D preview changed together. Captured the corrected popup and bush preview.
-- Agentic's final `agentic_weva` gate and doctests pass with this core and
+- The host engine's final `host_weva` gate and doctests pass with this core and
   its new synthetic font variants. No Unity/Godot host or macOS claim.
 
 Logs: `dropdown-build-{gcc,clang}-final.log`,

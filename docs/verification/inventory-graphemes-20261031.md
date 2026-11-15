@@ -9,7 +9,7 @@ There is no new cache, ABI change or host-specific implementation.
 
 This reduces work in letter-spacing measurement and other grapheme consumers.
 It does **not establish an inventory frame-time improvement or Chrome parity**.
-The user-requested unrelated Agentic runtime remained running throughout;
+The user-requested unrelated host-engine runtime remained running throughout;
 all timings remain provisional.
 
 ## Investigation

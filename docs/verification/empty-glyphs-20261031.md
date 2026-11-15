@@ -32,7 +32,7 @@ No per-frame allocation, ABI change or host-specific implementation is added.
 
 ## Provisional workload comparison
 
-Six alternating Agentic baseline/candidate/Chrome pairs use the existing real-font
+Six alternating host-engine baseline/candidate/Chrome pairs use the existing real-font
 HUD and twenty-field inventory fixtures, 20 warmups and 200 measured updates
 at requested 60 Hz. No own builds overlapped timings. Other workspace activity
 continued as requested, so every timing here is **provisional**. Initial/final
@@ -88,7 +88,7 @@ The qualified full release gate passes:
 - All 16 Unity render captures and the Godot reference render are pixel-identical
   to the accepted baseline. Representative Unity and Godot captures were inspected.
 
-The final Agentic executable's code/data sections match the measured candidate,
+The final host-engine executable's code/data sections match the measured candidate,
 and the measured source hashes match the final runtime/tests. The temporary
 traversal/paint instrumentation is removed. Sources, failed experimental test
 evidence and logs remain under `.utmp/paint-traversal-20261031/`.

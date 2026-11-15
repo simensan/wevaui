@@ -2,11 +2,11 @@
   "experiment": "Rejected registered paint-property ID caching; production source restored",
   "binaries": {
     "before": {
-      "path": "<repo>\\.utmp\\render-audit-20261030\\before-paint-ids.exe",
+      "path": "before-paint-ids.exe",
       "sha256": "2c55ca701675f662b303952eec8822d0b894aeeb6e0640a4f9c8b21605d0ac10"
     },
     "after": {
-      "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+      "path": "weva_cost.exe",
       "sha256": "59134b07f1b4998750fc24203a5df87b7ba5999cf83ec5b7eb7ffb285a26076e"
     }
   },

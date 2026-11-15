@@ -16,7 +16,7 @@ Three confirmed findings are fixed in the shared core:
    registry. Destroying the final lease retires the threads before code unload.
 
 These are core-owned fixes. Unity and Godot use the same implementation; an
-explicitly rebuilt local Agentic SDK also contains it. No C ABI layout, function
+explicitly rebuilt local host-engine SDK also contains it. No C ABI layout, function
 or minor version changes. Default synchronous image loading is unchanged.
 
 Base revision: `e1ddbd27` (the full revision is in the
@@ -68,8 +68,8 @@ constant-time destruction claim is made. Other stores keep their pool lease.
 Four outstanding jobs is a **count bound**, not a byte budget for an individual
 encoded file, all live documents, published images or failed URL entries. The
 [image-cache budget debt](tech-debt-20261101.md#remaining-debt-in-priority-order)
-remains. These fixes do not attribute the historical Agentic process growth;
-the [matched memory controls](agentic-memory-20261101.md) have separate workload
+remains. These fixes do not attribute the historical host-engine process growth;
+the [matched memory controls](host-engine-memory-20261101.md) have separate workload
 and build identities.
 
 ## Final verification
@@ -87,7 +87,7 @@ and build identities.
   An inspected scoped forms capture has mean channel difference 0.02/255,
   maximum 1/255 and zero structural mismatches against the software backend.
   All 16 Unity player images match the prior verified images after RGBA decoding.
-- A local optimized Agentic CLI/headless/runtime SDK builds with explicit current
+- A local optimized host-engine CLI/headless/runtime SDK builds with explicit current
   Weva sources and passes the survival UI lifecycle smoke: modes, selection,
   use, close, reloads, ownership snapshots, cooldown and post-soak interaction.
   The owned session stops successfully. No global SDK selection or remote pin

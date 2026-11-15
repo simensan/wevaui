@@ -220,12 +220,12 @@
       }
     }
   ],
-  "agentic": {
+  "host": {
     "source_commit": "a8bab554e77ad5177ea03ceccb92083d2ce2e728",
     "sdk_key": "c3ee6fc181578758c0689f2d0aa6272e099f547e8fbe1fcac4d104af1f81aade",
     "runtime_sha256": "ff3f6c717eed4beb4cf0871348c3e725d270972ceede3c2aa3dbbcb6d5bad405",
     "coherent": true,
-    "source_override": "WEVA_SOURCE_DIR=<repo>",
+    "source_override": "WEVA_SOURCE_DIR=workspace",
     "core_input_paths": [
       "CMakeLists.txt",
       "libweva/CMakeLists.txt",
@@ -270,7 +270,7 @@
     "No individual encoded file or decode peak byte cap",
     "Raster caches, active worker payloads, host/GPU storage, allocator spare pages and direct malloc are outside paired measurement",
     "No overall RSS, leak-free or frame-time claim",
-    "Historical Agentic growth remains unattributed; no new long soak",
+    "Historical host-engine growth remains unattributed; no new long soak",
     "No IL2CPP/release stripping, macOS or hardware GPU qualification"
   ],
   "source_files": [

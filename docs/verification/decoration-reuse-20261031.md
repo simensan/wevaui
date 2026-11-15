@@ -60,7 +60,7 @@ version is reused across frames. Prototype-only retention expectations were
 removed with the cache.
 
 The restored runtime matches HEAD. All 17 GCC and 19 Clang sanitizer suites
-pass with no compiler warnings. The rebuilt Agentic executable has byte-identical
+pass with no compiler warnings. The rebuilt host-engine executable has byte-identical
 PE sections to the accepted baseline. Both installed host binaries are unchanged;
 the preceding paint-state full gate remains their qualification. Browser and
 host gates were not rerun for this test-only change.

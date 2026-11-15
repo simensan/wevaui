@@ -1,6 +1,6 @@
 {
   "weva_revision": "1c2e0a13c4ed91c12fca4fc8c4e26c1432db072a",
-  "agentic_revision": "6ab7386e36d2f18fdf8c83150b2e9ea1f6e130de",
+  "host_revision": "6ab7386e36d2f18fdf8c83150b2e9ea1f6e130de",
   "binary_sha256": "e767bfe4d6f4d3783156c8904877669ecad53c84702edb78ffb24bcd8e7279d9",
   "fixture_hashes": {
     "ammo.svg.png": "d4520a84fd2b3fb782fff62a8db6309dcc73a01341283e86a878c9db48a2b4c9",

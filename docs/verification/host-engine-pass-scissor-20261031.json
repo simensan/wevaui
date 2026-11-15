@@ -1,6 +1,6 @@
 {
-  "agentic_before": "f0a91651ab7c52945b3e672451a73c2322c27496",
-  "agentic_after": "3c84a1819599f53cf49ddbf19dd788f40334ed25",
+  "host_before": "f0a91651ab7c52945b3e672451a73c2322c27496",
+  "host_after": "3c84a1819599f53cf49ddbf19dd788f40334ed25",
   "weva_revision": "d9065e6d",
   "scope": "Windows GPU readback correctness; no performance claim; audit branch only",
   "passed": 84,
@@ -20,13 +20,13 @@
       "target_count": 1,
       "failed_targets": [
         {
-          "package": "agentic_weva",
-          "name": "agentic_weva",
+          "package": "host_weva",
+          "name": "host_weva",
           "kind": [
             "lib"
           ],
-          "executable": "<workspace>\\engine-9\\target\\debug\\deps\\agentic_weva-44f2e69aa66ae1b6.exe",
-          "cwd": "<workspace>\\engine-9\\crates\\agentic_weva",
+          "executable": "host_weva-44f2e69aa66ae1b6.exe",
+          "cwd": "host_weva",
           "lane": "gpu",
           "exit_code": 101,
           "timed_out": false,
@@ -38,11 +38,11 @@
             "memory": 2,
             "gpu": 1,
             "pid": 28244,
-            "owner": "<workspace>\\engine-9",
+            "owner": "engine-9",
             "queue_seconds": 0.0022
           },
           "rayon_threads": null,
-          "log": "<workspace>\\engine-9\\builds\\verify\\20261031-053806\\0000-agentic_weva-agentic_weva.log"
+          "log": "0000-host_weva-host_weva.log"
         }
       ],
       "total_seconds": 28.153
@@ -60,13 +60,13 @@
       "target_count": 1,
       "failed_targets": [
         {
-          "package": "agentic_weva",
-          "name": "agentic_weva",
+          "package": "host_weva",
+          "name": "host_weva",
           "kind": [
             "lib"
           ],
-          "executable": "<workspace>\\engine-9\\target\\debug\\deps\\agentic_weva-44f2e69aa66ae1b6.exe",
-          "cwd": "<workspace>\\engine-9\\crates\\agentic_weva",
+          "executable": "host_weva-44f2e69aa66ae1b6.exe",
+          "cwd": "host_weva",
           "lane": "gpu",
           "exit_code": 101,
           "timed_out": false,
@@ -78,11 +78,11 @@
             "memory": 2,
             "gpu": 1,
             "pid": 46900,
-            "owner": "<workspace>\\engine-9",
+            "owner": "engine-9",
             "queue_seconds": 0.0019
           },
           "rayon_threads": null,
-          "log": "<workspace>\\engine-9\\builds\\verify\\20261031-053922\\0000-agentic_weva-agentic_weva.log"
+          "log": "0000-host_weva-host_weva.log"
         }
       ],
       "total_seconds": 7.097
@@ -102,17 +102,17 @@
     }
   },
   "hashes": {
-    "after-0000-agentic_weva-agentic_weva.log": "741ec54fc9bb2ae2c5c1532bdf599abddf622ec9aeae68a895c50e8a3565ef64",
+    "after-0000-host_weva-host_weva.log": "741ec54fc9bb2ae2c5c1532bdf599abddf622ec9aeae68a895c50e8a3565ef64",
     "after-report.json": "54dbe6553042aec60f4d91cc89141552d9675f3db40eee333fa5d8eaa52c33cc",
     "after.log": "3ff8f7d6e4d315f9f07172f31f9ce3cbfa893a15677304d75107ae16e8304fe5",
-    "before-0000-agentic_weva-agentic_weva.log": "d1bc3a3aebb0d4e15a268198565c5b08f547924de20f2a480ef0727d4e960c59",
+    "before-0000-host_weva-host_weva.log": "d1bc3a3aebb0d4e15a268198565c5b08f547924de20f2a480ef0727d4e960c59",
     "before-canvas.log": "e5ca923ba1640a9477359e5f18b70bb3e4b3e79d8adbc80b64b325359848d915",
     "before-report.json": "6a54b1d5653ea9d21a1e6cc7454af91af1b19f2e41a1d63ffca6c3a0969d5bae",
     "before.log": "2e494c22919f6ab540ca969ef0200382ba8562f5d3d3649b04c993b2dc954e68",
     "canvas.css": "817681bc3d27ad44ffafd06d9200744316ad40705198367999fa16a43baed71e",
     "canvas.html": "93636fa047400919d3a6fa2c57a114596546d97c9681645ed857fb014fb8fb18",
     "canvas.png": "72079b938a35a4ae474979fcc525729d841962676b18cae412b3b50df87cf8d0",
-    "initial-fixture-0000-agentic_weva-agentic_weva.log": "a38e458d5bcdc35d432c2e844d0566159ca11a2bbdd1cd34fb3013b9e7f3325c",
+    "initial-fixture-0000-host_weva-host_weva.log": "a38e458d5bcdc35d432c2e844d0566159ca11a2bbdd1cd34fb3013b9e7f3325c",
     "initial-fixture-report.json": "797c790852f507bd4b920e11501db3cb4fe2d114ba5eb7d789bb46a96fd232a0",
     "render-build.log": "c61c98c652618ebe1f8b1a7f5defbe1f05b6c616f04b1175508b1bc0e52c8022"
   }

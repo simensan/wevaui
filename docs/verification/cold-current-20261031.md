@@ -1,6 +1,6 @@
 # Current cold opening and retained reuse — October 31, 2026
 
-The current Agentic audit SDK still hitches on first inventory opening.
+The current host-engine audit SDK still hitches on first inventory opening.
 Five fresh processes measured 77.231, 19.976, 21.169, 19.998 and 24.412 ms
 of opening-frame main CPU. The median is 21.169 ms; the first sample is
 retained, not discarded as warmup. This exceeds a 60 Hz frame budget.
@@ -37,7 +37,7 @@ offscreen prewarm API or edit-time font bake remains unimplemented.
 
 ## Scope and evidence
 
-Agentic `26fc09a7e`, shared core `d863b7d3`, SDK
+Host-engine `26fc09a7e`, shared core `d863b7d3`, SDK
 `b0764fc224eab5f2c3e8fa1c247e7c8a99989582e19cdba98de2621f81f3c636`.
 Windows/RTX 5080, 1280×720, no VSync, off-desktop synthetic 240-cube scene.
 Each opening retains 6,000 CPU-only frames with its actual injected input
@@ -47,7 +47,7 @@ stops. Inventory captures match within both batches; the final retained
 capture was inspected and renders the expected panel, icons and text.
 No concurrent build/test workload was run.
 
-`run_agentic_cold_audit.py` now supports `--reopens N`, retains named CPU
+`run_host_cold_audit.py` now supports `--reopens N`, retains named CPU
 sections and runtime hashes, and checks frame/entity counts and capture
 hashes. The real three-process/two-reopen run exercises this path; Python
 compilation and whitespace checks also pass.
@@ -58,7 +58,7 @@ Raw evidence: `.utmp/render-audit-20261030/cold-current-20261031/` and
 
 No engine code, ABI, font behavior or Godot/Unity integration changed in
 this measurement chunk. Their host-owned font costs cannot be inferred
-from Agentic. Next useful work is explicit load/setup attribution and
+from host-engine. Next useful work is explicit load/setup attribution and
 reducing or scheduling first-use glyph/layout preparation. Long lifecycle
 testing, lower-end hardware, matched Chrome rendering and branch integration
 remain open. This does not establish release readiness.

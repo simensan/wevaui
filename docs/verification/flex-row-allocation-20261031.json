@@ -2334,7 +2334,7 @@
     }
   },
   "installed_candidate_sha256": "895186f9a41378e1aed48c9e2b51c4e7a53fc0e4c352b5ca931b78982b603913",
-  "agentic": {
+  "host": {
     "rows": [
       {
         "mode": "baseline",
@@ -5130,18 +5130,18 @@
         "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
         "-batchmode",
         "-projectPath",
-        "<repo>",
+        "workspace",
         "-runTests",
         "-testPlatform",
         "StandaloneWindows64",
         "-testFilter",
         "Weva.Tests.Rendering.NativeRenderPassTests",
         "-buildPlayerPath",
-        "<repo>\\.utmp\\render-audit-20261030\\flex-proof-gate\\unity-player\\player",
+        "player",
         "-testResults",
-        "<repo>\\.utmp\\render-audit-20261030\\flex-proof-gate\\unity-player\\results.xml",
+        "results.xml",
         "-logFile",
-        "<repo>\\.utmp\\render-audit-20261030\\flex-proof-gate\\unity-player\\build.log"
+        "build.log"
       ],
       "exit_code": 0,
       "passed": true,
@@ -5170,7 +5170,7 @@
     ".utmp\\render-audit-20261030\\flex-proof-gate\\full-gate-verified.log": "db48a74ce461619ad80a975384e5c52c922fab4d109f64b6d684a327ea78e762",
     ".utmp\\render-audit-20261030\\flex-proof-gate\\unity-full.xml": "c473ecf07c7926543db26ed003b016fdf9cba428c4562a1beb7e9be0d359b87f",
     ".utmp\\render-audit-20261030\\flex-proof-gate\\unity-player\\results.xml": "6997a2bc85fd37dab76becf51942db992f688cd2cdcbcdafbc72f9d44a00316c",
-    ".utmp\\render-audit-20261030\\flex-proof-agentic\\receipt.json": "28ffa0b0ef7c3aad7e12639cd4c176e87282e674264deac17f7b5dc2de032832",
+    ".utmp\\render-audit-20261030\\flex-proof-host\\receipt.json": "28ffa0b0ef7c3aad7e12639cd4c176e87282e674264deac17f7b5dc2de032832",
     "libweva\\include\\weva\\box.h": "1a6f2f0b3a3dc79708d1bf79f8f0f7b8c2e7eb819196bb0119c51eed174cda05",
     "libweva\\src\\flex.cpp": "e44e7c945cd4f1122b8b324756724d4a507e1cb17fe05a24b050f3ef2c337ea7",
     "libweva\\src\\incremental_layout.cpp": "ae7f14bcee7cbdcae531a1620ec14bbe095b0522ffed3f44ac9499a8cdf8705f"

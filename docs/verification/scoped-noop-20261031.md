@@ -44,7 +44,7 @@ composition commits for equal `type` and absent `readonly`/`disabled` writes.
 
 Windows passes 16 CTest suites; GCC passes 15. Main checks are 493,402 with
 zero failures. All 340 tracked Chrome captures pass the 1.5px ceiling without
-known-gap exemptions. Agentic's 13 focused renderer tests pass. Godot's rebuilt
+known-gap exemptions. The host engine's 13 focused renderer tests pass. Godot's rebuilt
 extension passes timing/form-state/validity-selector/IME/binding/dialog scenes
 with 39/522/658/28/186/1199 checks.
 
@@ -53,8 +53,8 @@ Clang ASan/UBSan passes all 17 suites, including positive controls, with
 Native EditMode: 243 passed, two existing environment-gated inconclusive,
 zero failures. Captured core/host builds contain no compiler warnings.
 
-The core change reaches Agentic, Godot and Unity without C ABI or host API
-changes. Published older Agentic SDKs remain older builds; no global engine
+The core change reaches host-engine, Godot and Unity without C ABI or host API
+changes. Published older host-engine SDKs remain older builds; no global engine
 selection or managed upstream checkout was changed. This is affected-suite
 verification, not a new complete local gate or a Chrome GPU-parity claim.
 

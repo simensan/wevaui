@@ -12,7 +12,7 @@ There is no C ABI change or separate Unity/Godot implementation.
 Baseline is `4522bd5b` (v20); candidate is v22. Three alternating
 baseline/candidate/Chrome rounds use the same real-font inventory, twenty-field
 mutations, 20 warmups and 200 measured updates at requested 60 Hz. The other
-Agentic game remained running as requested. No own builds overlapped timing.
+Host-engine game remained running as requested. No own builds overlapped timing.
 These measurements remain **provisional**.
 
 Median of run means, milliseconds per inventory update:
@@ -82,6 +82,6 @@ scene gates, including 19,833 font checks. Its final render is pixel-identical
 to the accepted build. The Godot render and Unity binding/font/image render
 were inspected. This pass makes no new IL2CPP or hardware-qualification claim.
 
-The final Agentic executable matches the measured candidate's SHA-256.
+The final host-engine executable matches the measured candidate's SHA-256.
 The [tracked receipt](inventory-property-ids-20261031.json) contains measurements,
 source and evidence hashes, native build metadata and verification results.

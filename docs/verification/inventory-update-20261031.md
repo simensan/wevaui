@@ -19,7 +19,7 @@ class tokens previously cancelled under XOR, allowing `panel chosen chosen` to
 reuse the matches for `panel`. The key now treats duplicate tokens as a set.
 
 These changes live in `libweva`, with no ABI or authoring API change. Unity,
-Godot and explicit-source Agentic builds receive the same behavior. No sample
+Godot and explicit-source host-engine builds receive the same behavior. No sample
 markup, selection values, font assets or benchmark workload was simplified.
 
 ## Provisional measurements
@@ -65,7 +65,7 @@ Chrome in that batch measured 0.164 ms style/layout and 0.212 ms paint. HUD
 style/layout also increased. These results remain provisional with the other
 workspace running; they provide no evidence for retaining the added complexity.
 The patch, binaries and complete measurements remain in `rejected-v8.patch`
-and `comparison-v8/` under the evidence directory. The final source and Agentic
+and `comparison-v8/` under the evidence directory. The final source and host-engine
 benchmark build use the accepted v7 implementation.
 
 ## Verification

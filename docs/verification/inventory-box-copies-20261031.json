@@ -1,7 +1,7 @@
 {
   "baseline_commit": "afb28437",
   "provisional": true,
-  "reason": "Another Agentic workspace remains active at the user request. No own builds overlap timing runs.",
+  "reason": "Another host-engine workspace remains active at the user request. No own builds overlap timing runs.",
   "source_hashes": {
     "libweva/src/box.cpp": "b29d571b561feb5961ba82fdd316e2fd06c2ad00398fabcdc08184507f3e5028",
     "libweva/src/incremental_layout.cpp": "4ece9d993fa74593b6aabb7b620ecf8418a3f9d0edc68fb478013794dcac87f8"
@@ -24,7 +24,7 @@
           "mode": "baseline",
           "other_processes": [
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 53420,
               "name": "dev_runtime.exe"
             }
@@ -35,17 +35,17 @@
           "mode": "candidate",
           "other_processes": [
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 53420,
               "name": "dev_runtime.exe"
             },
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 54660,
               "name": "dev_runtime.exe"
             },
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 8876,
               "name": "dev_runtime.exe"
             }
@@ -56,7 +56,7 @@
           "mode": "chrome",
           "other_processes": [
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 8876,
               "name": "dev_runtime.exe"
             }
@@ -67,17 +67,17 @@
           "mode": "chrome",
           "other_processes": [
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 8876,
               "name": "dev_runtime.exe"
             },
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 49392,
               "name": "dev_runtime.exe"
             },
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 22748,
               "name": "dev_runtime.exe"
             }
@@ -88,7 +88,7 @@
           "mode": "candidate",
           "other_processes": [
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 22748,
               "name": "dev_runtime.exe"
             }
@@ -99,7 +99,7 @@
           "mode": "baseline",
           "other_processes": [
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 22748,
               "name": "dev_runtime.exe"
             }
@@ -110,12 +110,12 @@
           "mode": "baseline",
           "other_processes": [
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 22748,
               "name": "dev_runtime.exe"
             },
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 28208,
               "name": "dev_runtime.exe"
             }
@@ -126,12 +126,12 @@
           "mode": "candidate",
           "other_processes": [
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 28208,
               "name": "dev_runtime.exe"
             },
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 35500,
               "name": "dev_runtime.exe"
             }
@@ -142,12 +142,12 @@
           "mode": "chrome",
           "other_processes": [
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 35500,
               "name": "dev_runtime.exe"
             },
             {
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 9072,
               "name": "dev_runtime.exe"
             }
@@ -1205,7 +1205,7 @@
             {
               "name": "dev_runtime.exe",
               "pid": 20976,
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+              "exe": "dev_runtime.exe"
             }
           ]
         },
@@ -1721,7 +1721,7 @@
           "other_processes": [
             {
               "name": "dev_runtime.exe",
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 23688
             }
           ]
@@ -1737,7 +1737,7 @@
           "other_processes": [
             {
               "name": "dev_runtime.exe",
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 48728
             }
           ]
@@ -1748,7 +1748,7 @@
           "other_processes": [
             {
               "name": "dev_runtime.exe",
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 48728
             }
           ]
@@ -1759,7 +1759,7 @@
           "other_processes": [
             {
               "name": "dev_runtime.exe",
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 48728
             }
           ]
@@ -1770,7 +1770,7 @@
           "other_processes": [
             {
               "name": "dev_runtime.exe",
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 48728
             }
           ]
@@ -1781,7 +1781,7 @@
           "other_processes": [
             {
               "name": "dev_runtime.exe",
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 48728
             }
           ]
@@ -1792,7 +1792,7 @@
           "other_processes": [
             {
               "name": "dev_runtime.exe",
-              "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+              "exe": "dev_runtime.exe",
               "pid": 48728
             }
           ]
@@ -2289,20 +2289,20 @@
         "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
         "-batchmode",
         "-projectPath",
-        "<repo>",
+        "workspace",
         "-runTests",
         "-testPlatform",
         "StandaloneWindows64",
         "-testFilter",
         "Weva.Tests.Rendering.NativeRenderPassTests",
         "-buildPlayerPath",
-        "<repo>\\.utmp\\inventory-next-20261031\\unity-player\\player",
+        "player",
         "-testResults",
-        "<repo>\\.utmp\\inventory-next-20261031\\unity-player\\results.xml",
+        "results.xml",
         "-logFile",
-        "<repo>\\.utmp\\inventory-next-20261031\\unity-player\\build.log",
+        "build.log",
         "-testSettingsFile",
-        "<repo>\\.utmp\\inventory-next-20261031\\unity-player\\test-settings.json"
+        "test-settings.json"
       ],
       "requested_backend": "mono",
       "release": false,

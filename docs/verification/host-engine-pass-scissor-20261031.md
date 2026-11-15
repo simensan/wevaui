@@ -1,6 +1,6 @@
-# Agentic render-pass scissor ownership — 2026-10-31
+# Host-engine render-pass scissor ownership — 2026-10-31
 
-Agentic's public `DocumentRenderer::render` could inherit a scissor set by a
+The host engine's public `DocumentRenderer::render` could inherit a scissor set by a
 previous user of the same render pass. The first batch with no document scissor
 did not reset it, so an ordinary canvas background could be mostly missing.
 The regression renders a red body background after a 1×1 incoming scissor:
@@ -21,8 +21,8 @@ batch and reproduced the actual black-versus-red pixel failure before the fix.
 The regression uses real GPU readback and requires full byte equality between
 clean-pass and inherited-scissor output after the fix.
 
-Agentic commit `3c84a1819599f53cf49ddbf19dd788f40334ed25` on the existing leased
-`codex/weva-render-audit` branch passes the selected full `agentic_weva` library
+Host-engine commit `3c84a1819599f53cf49ddbf19dd788f40334ed25` on the existing leased
+`codex/weva-render-audit` branch passes the selected full `host_weva` library
 suite: **84 passed, zero failed, two existing ignored tests**. The ignored cases
 require an installed Arabic-capable font and an isolated optimized 8 ms timing
 budget; neither is represented as passing here. The suite includes clipping,
@@ -30,7 +30,7 @@ alpha/texture ordering, blending, backdrop effects, viewport updates and queued
 document ownership. The focused regression failed before and passes after.
 
 Verification uses `WEVA_SOURCE_DIR` pointing at this checkout and
-`python tools/verify_engine.py -p agentic_weva --target agentic_weva/agentic_weva
+`python tools/verify_engine.py -p host_weva --target host_weva/host_weva
 --rendering`; the initial failure uses the named-test filter. A fast optimized
 `render_page` build also succeeds. Its 64×32 canvas PNG was inspected; the
 inherited-scissor case itself is checked by the GPU regression, not that tool.
@@ -39,14 +39,14 @@ This is Windows coverage, not a macOS qualification.
 ## Host synchronization and delivery scope
 
 Unity's native renderer and Godot's canvas renderer consume geometry already
-clipped by the core. Neither implements Agentic's per-batch scissor-state loop,
+clipped by the core. Neither implements the host engine's per-batch scissor-state loop,
 so this adapter-specific fix is not copied into those hosts. This inspection
 does not claim to test every external render-state integration in Unity or Godot.
 Their existing shared-core verification remains applicable; no core source or
 host binary changed in the main repository.
 
-The Agentic change is committed on the leased audit branch, not pushed,
+The host-engine change is committed on the leased audit branch, not pushed,
 published as an SDK, or merged into the user's configured runtime. The
-[JSON receipt](agentic-pass-scissor-20261031.json) records commits, verification
+[JSON receipt](host-engine-pass-scissor-20261031.json) records commits, verification
 reports and evidence hashes. Preserved local files are under
-`.utmp/render-audit-20261030/agentic-pass-scissor/`.
+`.utmp/render-audit-20261030/host-pass-scissor/`.

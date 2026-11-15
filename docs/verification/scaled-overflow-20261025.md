@@ -20,10 +20,10 @@ Validation in the `weva-developer-ui` worktree:
 - CTest: 14/14 suites pass with each compiler (`layout-test-*-final.log`).
 - Chrome hand corpus: 63/63 agree, zero gaps or crashes, at the 1.5 px gate
   (`layout-oracle-final.log`).
-- Rebuilt Agentic development runtime: inspected the scaled search, colour
+- Rebuilt host-engine development runtime: inspected the scaled search, colour
   picker, graphs and viewer windows at 1280×800.
 
 PNG evidence is retained at
-`<workspace>/builds/test-evidence/weva-developer-ui/`, including
+`weva-developer-ui`, including
 `scaled-overflow.chrome.png`. Unity/Godot host suites, sanitizer suites and the
 other Chrome corpora were not rerun for this paint-only change.

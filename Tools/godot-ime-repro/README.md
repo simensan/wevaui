@@ -58,7 +58,7 @@ keys through the existing Unicode decoder while retaining suppression of
 ordinary keys during preedit. Apply it to that exact Godot source checkout:
 
 ```sh
-git apply /path/to/unityui/Tools/godot-ime-repro/godot-x11-ime-commit.patch
+git apply /path/to/wevaui/Tools/godot-ime-repro/godot-x11-ime-commit.patch
 scons -j12 platform=linuxbsd target=template_debug optimize=speed \
   debug_symbols=no use_lto=no vulkan=no opengl3=yes wayland=no \
   disable_3d=yes disable_path_overrides=no module_mono_enabled=no
@@ -113,7 +113,7 @@ headers and the normal Autotools tools installed:
   --disable-engine --disable-tests
 make -C src -j12 libibus-1.0.la
 # Retain src/.libs/libibus-1.0.so.5 as a baseline before applying the patch.
-patch -p1 < /path/to/unityui/Tools/godot-ime-repro/ibus-1.5.29-preedit.patch
+patch -p1 < /path/to/wevaui/Tools/godot-ime-repro/ibus-1.5.29-preedit.patch
 make -C src -j12 libibus-1.0.la
 ```
 

@@ -16,7 +16,7 @@ const {launch} = require('../oracle/chrome_test_browser.cjs');
         .map(n => [n, fs.readFileSync(path.join(root, n))]));
     const rewrite = text => text.replaceAll(root.replaceAll('\\', '/') + '/', '/assets/');
     const cases = ['hud', 'inventory'];
-    // Agentic refresh_bindings resolves the fixture's unbound Depth to empty.
+    // The host engine's refresh_bindings resolves the fixture's unbound Depth to empty.
     const markup = Object.fromEntries(cases.map(name => {
         const html = rewrite(files.get(name+'.html').toString()).replaceAll('{{ Depth }}', '');
         if (html.includes('{{')) throw new Error('Unsupported fixture binding in '+name);

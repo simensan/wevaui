@@ -9,7 +9,7 @@ elapsed intervals; do not add them to the glyph-preparation total.
 
 The diagnostic records only cache misses and buffers at most 4096 samples per
 font library. It reports omissions and prints at teardown, outside paint timing.
-The timing/storage is compiled out without Agentic's `diagnostics` feature.
+The timing/storage is compiled out without the host engine's `diagnostics` feature.
 Enable `WEVA_FONT_LOG=1` alongside the existing `WEVA_PAINT_LOG=1` for a
 diagnostic `render_page` or `weva_cost` run. Instrumentation still has a cost;
 this receipt makes no production speedup claim from these timings.
@@ -28,7 +28,7 @@ Text hinting/coverage and the host-owned font contract remain unchanged.
 
 ## Retained opening in the actual runtime
 
-Three fresh threaded runtime processes, Agentic `88e0e7f4b`, unchanged Weva core
+Three fresh threaded runtime processes, host-engine `88e0e7f4b`, unchanged Weva core
 last changed at `faf04f31`, official optimized SDK. Each starts the synthetic
 240-cube scene without UI, opens inventory once, hides the same overlay, then
 opens it again. Each phase retains 6,000 CPU-only frames; the exact injected
@@ -62,7 +62,7 @@ edit-time font bake or hidden prewarm API has not been implemented.
   tests pass with one existing ignored test. No runtime/core behavior changed.
 - Unity and Godot retain their host-owned font backends; this diagnostic does
   not imply comparable raster timings or introduce a shared ABI change.
-- Agentic's managed default checkout remains unchanged; the runtime SDK and
+- The host engine's managed default checkout remains unchanged; the runtime SDK and
   leased audit branch are explicit in the evidence.
 - [Machine-readable receipt](glyph-preparation-20261030.json) retains each run,
   runtime binary identities, artifact paths and font log hashes. Raw evidence:

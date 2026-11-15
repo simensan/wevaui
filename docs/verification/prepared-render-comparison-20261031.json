@@ -1,6 +1,6 @@
 {
-  "evidence_root": "<repo>\\.utmp\\render-audit-20261030",
-  "agentic_base": "7f090ef61",
+  "evidence_root": "render-audit-20261030",
+  "host_base": "7f090ef61",
   "weva_core": "faf04f31",
   "viewport": [
     1280,
@@ -448,5 +448,5 @@
     "Native complete CPU cannot be compared to selected Chrome slices",
     "Earlier pre-clear/pre-binding-normalization runs excluded"
   ],
-  "agentic_commit": "abb9c072e"
+  "host_commit": "abb9c072e"
 }

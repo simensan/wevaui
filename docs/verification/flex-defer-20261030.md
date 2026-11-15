@@ -14,14 +14,14 @@ allocation. Final child layout is forced even if allocated and provisional
 widths happen to match. Unmeasured natural exports stay marked unknown;
 incremental layout must not treat fabricated measurements as proof.
 
-This is shared C++ behavior, with no ABI or host API change. Agentic, Godot,
+This is shared C++ behavior, with no ABI or host API change. Host-engine, Godot,
 and Unity were rebuilt against it; the Unity plugin was redeployed locally.
 
 ## Performance
 
 Eight alternating process pairs per viewport, 20 warmup and 200 measured
 mutations each. Same authored survival fixtures, real font/icons and complete
-selection updates as the [GPU audit](agentic-gpu-20261030.md). Tests/builds
+selection updates as the [GPU audit](host-engine-gpu-20261030.md). Tests/builds
 finished before timing. Milliseconds below are medians of process means,
 not per-frame p95. Complete CPU includes controller setters, update, paint
 snapshot, upload preparation, encoding and queue submission. It excludes
@@ -58,12 +58,12 @@ logs are retained under `.utmp/render-audit-20261030/flex-defer-*`.
   zero failures, after rebuilding/deploying the final plugin.
 - Godot rebuilt: timing/form/validity/IME/binding/dialog suites pass
   31/522/104/28/186/1199 checks, respectively.
-- Agentic final build: 12 focused renderer tests pass. Before/after inventory
+- Host-engine final build: 12 focused renderer tests pass. Before/after inventory
   renders with identical `Depth=6` binding have no RGB pixel differences;
   the final render was inspected.
 
 These are affected-suite checks, not a new full local gate. No cold-start,
-busy-world or Chrome GPU-parity improvement is claimed. Agentic's accepted
+busy-world or Chrome GPU-parity improvement is claimed. The host engine's accepted
 renderer branch still needs integration into the configured runtime.
 
 ## Separate unresolved finding: nested baselines

@@ -2807,8 +2807,8 @@
     "baseline": "94e94924f7abbaf5e5bde268a0d2210e23e0c1ce0cc9752d7670daeb5adefc91",
     "candidate": "e767bfe4d6f4d3783156c8904877669ecad53c84702edb78ffb24bcd8e7279d9"
   },
-  "agentic_baseline": "3c84a1819599f53cf49ddbf19dd788f40334ed25",
-  "agentic_candidate": "6ab7386e36d2f18fdf8c83150b2e9ea1f6e130de",
+  "host_baseline": "3c84a1819599f53cf49ddbf19dd788f40334ed25",
+  "host_candidate": "6ab7386e36d2f18fdf8c83150b2e9ea1f6e130de",
   "weva_revision": "6a30cf9a",
   "passed": 84,
   "ignored": 2,
@@ -2821,7 +2821,7 @@
   },
   "evidence_hashes": {
     "report.json": "3fa83e954f5b5d5faab94b59a8f119ee440abbbf527302b2da2a3a7fdc39116d",
-    "0000-agentic_weva-agentic_weva.log": "cd38d58a659b7506faf75685b5c14888e18f47725768c88ac863d0b22748f5f0",
+    "0000-host_weva-host_weva.log": "cd38d58a659b7506faf75685b5c14888e18f47725768c88ac863d0b22748f5f0",
     "baseline-build.log": "c9ff2e9ea0a94943bae8e63102f67223ac9d59f42fb77db278532c0b7f17790a",
     "candidate-build.log": "77d6c14ef7143137dbae36e3fd2aa6baa3d8bcb12e26576a9e16b1ace5e05a97",
     "renders.json": "4b639a9494a5995b54d6b2f98bd2d48aac6e76ffff6d16f7b21979b3fb596767",

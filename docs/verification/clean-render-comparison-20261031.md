@@ -37,13 +37,13 @@ is separately 0.193–0.217 ms and includes draw submission.
   This is approximately matched cadence, not exact synchronized frame pacing.
 - All twelve initial/final geometry comparisons pass the 1.5 px ceiling;
   maximum sampled target difference is **0.7537 px**.
-- Windows RTX 5080, pinned Chrome 152, Agentic merge `c2288c71c`, current shared
+- Windows RTX 5080, pinned Chrome 152, host-engine merge `c2288c71c`, current shared
   core containing `a0943b78`. Native executable hash, source revisions, raw
   stage results, fixture hashes and cadence checks are in the JSON receipt.
 - No concurrent audit workloads or builds. This is a normal desktop, not an
   isolated laboratory machine; system CPU usage at the start was 12.1%.
-- The native result comes from Agentic's explicit-source SDK tooling. It is
-  not a fresh Unity/Godot paired speedup, nor a qualification of Agentic's
+- The native result comes from the host engine's explicit-source SDK tooling. It is
+  not a fresh Unity/Godot paired speedup, nor a qualification of the host engine's
   older default prebuilt native pin.
 
 The `boxes` diagnostic includes incremental layout work; summing cascade,

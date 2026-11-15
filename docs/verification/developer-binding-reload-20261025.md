@@ -13,6 +13,6 @@ the edited field's identity, value and focus. No ABI signature changed.
 Validation on 2026-10-25: GCC and Clang builds completed without warnings;
 both complete CTest runs passed 14/14 suites. Logs are retained in the task
 worktree as `build-gcc.log`, `test-gcc.log`, `build-clang.log` and
-`test-clang.log`. Agentic's desktop integration also exercises bound reloads.
+`test-clang.log`. The host engine's desktop integration also exercises bound reloads.
 Unity/Godot host suites and the full browser-oracle gate were not rerun for
 this core binding change.

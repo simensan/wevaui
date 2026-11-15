@@ -3,13 +3,13 @@
   "sdk_key": "db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248",
   "sdk_source_commit": "6ab7386e36d2f18fdf8c83150b2e9ea1f6e130de",
   "source_hashes": {
-    "Tools/performance/run_agentic_runtime_audit.py": "167a4d7dcdbbced9c70945bccc3d727d1d362ff475264585c3e045463e6062f8",
-    "Tools/performance/create_agentic_audit_project.py": "6e45547e0fcfd4790f693bf10f5c78c447e0660bf26b232475622e31736e2784",
-    "Tools/tests/test_agentic_lifecycle.py": "eda6632bb584a4ccce3d958d8137b4d0ad54bcb780096e6fc6ec94b65be48dde",
+    "Tools/performance/run_host_runtime_audit.py": "167a4d7dcdbbced9c70945bccc3d727d1d362ff475264585c3e045463e6062f8",
+    "Tools/performance/create_host_audit_project.py": "6e45547e0fcfd4790f693bf10f5c78c447e0660bf26b232475622e31736e2784",
+    "Tools/tests/test_host_lifecycle.py": "eda6632bb584a4ccce3d958d8137b4d0ad54bcb780096e6fc6ec94b65be48dde",
     "hosts/godot/project/memory_lifetime_tests.gd": "a1810e779af863d0d387dfd8182328330e368e01c7348076a0f2688514aa526b"
   },
-  "agentic": {
-    "agentic-idle": {
+  "host": {
+    "host-idle": {
       "seconds": 304.69661070001894,
       "samples": 61,
       "sampled_runtime_snapshots": 61,
@@ -24,7 +24,7 @@
       "session": "29f3af66f726b37b837c7382b7959ce82938edd950f512b9298eb5c92631eaa4",
       "runtime_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b"
     },
-    "agentic-reload": {
+    "host-reload": {
       "seconds": 304.6809415999742,
       "samples": 61,
       "sampled_runtime_snapshots": 61,
@@ -39,7 +39,7 @@
       "session": "763303a70405565e1d869ae1fae384cabc636d2364ce8e6a75b1d16f7523091f",
       "runtime_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b"
     },
-    "agentic-process-only": {
+    "host-process-only": {
       "seconds": 300.3600245999987,
       "samples": 61,
       "sampled_runtime_snapshots": 1,
@@ -54,7 +54,7 @@
       "session": "786f91d9b0303f416724d58e6e39cdb672b95b52a7f0a3d33daed75b72c259e6",
       "runtime_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b"
     },
-    "agentic-process-only-reload": {
+    "host-process-only-reload": {
       "seconds": 300.2055180000025,
       "samples": 61,
       "sampled_runtime_snapshots": 1,
@@ -69,7 +69,7 @@
       "session": "6e2c319f40810206d2bc805e744841aef4f3e76dd620c56439067dd114c47984",
       "runtime_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b"
     },
-    "capped-agentic-idle": {
+    "capped-host-idle": {
       "seconds": 303.9003464000125,
       "samples": 61,
       "sampled_runtime_snapshots": 1,
@@ -85,7 +85,7 @@
       "runtime_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b",
       "observed_tick_rate": 59.99664105680417
     },
-    "capped-agentic-reload": {
+    "capped-host-reload": {
       "seconds": 303.9075464999769,
       "samples": 61,
       "sampled_runtime_snapshots": 1,
@@ -523,14 +523,14 @@
     ]
   },
   "evidence_hashes": {
-    ".utmp\\host-memory-20261031\\agentic-idle.log": "84fe8fd1a59ee01318b4da5dc21820b940e7c24d1d67afb756d942715c48f5c0",
-    ".utmp\\host-memory-20261031\\agentic-process-only-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
-    ".utmp\\host-memory-20261031\\agentic-process-only.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
-    ".utmp\\host-memory-20261031\\agentic-reload.log": "84fe8fd1a59ee01318b4da5dc21820b940e7c24d1d67afb756d942715c48f5c0",
-    ".utmp\\host-memory-20261031\\capped-agentic-idle.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
-    ".utmp\\host-memory-20261031\\capped-agentic-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
-    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-idle.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
-    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
+    ".utmp\\host-memory-20261031\\host-idle.log": "84fe8fd1a59ee01318b4da5dc21820b940e7c24d1d67afb756d942715c48f5c0",
+    ".utmp\\host-memory-20261031\\host-process-only-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
+    ".utmp\\host-memory-20261031\\host-process-only.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
+    ".utmp\\host-memory-20261031\\host-reload.log": "84fe8fd1a59ee01318b4da5dc21820b940e7c24d1d67afb756d942715c48f5c0",
+    ".utmp\\host-memory-20261031\\capped-host-idle.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
+    ".utmp\\host-memory-20261031\\capped-host-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-host-idle.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-host-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
     ".utmp\\host-memory-20261031\\first-godot-cycle.log": "88639debca502bd0b630ee50ad9c782195ddb7250db728775afe74e2f8c306aa",
     ".utmp\\host-memory-20261031\\first-godot-idle.log": "eb5b0d62c0105e135a2958f5c3aad863e9827adb0f419315e31565b68cce86fb",
     ".utmp\\host-memory-20261031\\first-godot-reload.log": "0685a36584896fd044d154c069d68df5801e9762623fe6bf8a5b3e21278c2bd3",
@@ -550,8 +550,8 @@
     ".utmp\\host-memory-20261031\\script-idle.log": "aa2a7d4444834ec49a25fc43baf6230a4556f313a050d446d81146f49417d172",
     ".utmp\\host-memory-20261031\\script-reload-untraced.log": "a012019d6b090c76e64e5ea02ec50b9a62bcb061caafe893646141e5a37c433e",
     ".utmp\\host-memory-20261031\\script-reload.log": "a2b73df90a609702a9c16f2f6f2c1330c7b8ffa0ccfd009697905fb3322e1cfd",
-    ".utmp\\host-memory-20261031\\smoke-agentic-idle.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
-    ".utmp\\host-memory-20261031\\smoke-agentic-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
+    ".utmp\\host-memory-20261031\\smoke-host-idle.log": "dae9a16194cbf5841fe0894e65d059b968409546db6453fc7e30e5405b9fc46c",
+    ".utmp\\host-memory-20261031\\smoke-host-reload.log": "c2f56bce4827d243b7490476bdddc1539427451cd5db94663ad7cf92a604e7d0",
     ".utmp\\host-memory-20261031\\tools-linux-final.log": "0de482375d862a4494fd6d888881e325d2b4f34ef68e0d3c9adbf941da323f83",
     ".utmp\\host-memory-20261031\\tools-linux.log": "5b9efd0c6b66b2a118344859a7e6377a41d85f4bc9a9c8423f2d214aefe8cf1e",
     ".utmp\\host-memory-20261031\\tools-windows-final.log": "9c1f08822fe04726367084140367aab424f979a482f7979aca392f28177bc994",
@@ -561,8 +561,8 @@
     ".utmp\\host-memory-20261031\\add-pacing.py": "323b02a11f07a1eeac60041c45cc9405ca75af2cb08fbfa6217e512c43342c3d",
     ".utmp\\host-memory-20261031\\add-theme.py": "1e86a28bde28339de8e37368be6022669f8fb1a0f4904a1bc308c1db3ac6e24c",
     ".utmp\\host-memory-20261031\\analyze.py": "8376a0666bf6d51f3b298bc7e5b0df9e69d4cdc057ab23a36464f9ec06d0f2fd",
-    ".utmp\\host-memory-20261031\\capped-agentic.py": "d99002b6769cc51dccf896f12c1cfbeadce2cb0e3b632e21f9c49c15dc95d2a0",
-    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic.py": "001a448d31c01f3d1b0f1710880d893a946488a12212fc64f79519f4d58e2e7e",
+    ".utmp\\host-memory-20261031\\capped-host.py": "d99002b6769cc51dccf896f12c1cfbeadce2cb0e3b632e21f9c49c15dc95d2a0",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-host.py": "001a448d31c01f3d1b0f1710880d893a946488a12212fc64f79519f4d58e2e7e",
     ".utmp\\host-memory-20261031\\feedback.py": "71edefe36c8b60663f7454dcd72309b8b36f422cd52c20f910f9cf46afafae43",
     ".utmp\\host-memory-20261031\\final-analysis.py": "7ffcbcf1c3e22eca750cb33d66fb9e7c66203e02082b634b2266f873e1354255",
     ".utmp\\host-memory-20261031\\final-godot.py": "c8886941526bbc4279291aa3b6053568e632f75719678c156961b8be365e24b6",
@@ -578,7 +578,7 @@
     ".utmp\\host-memory-20261031\\process-only-control.py": "f13364817a85815bec2dbcaa72a88f39a10f2c756c05ea1889907e54652b8cf8",
     ".utmp\\host-memory-20261031\\process-only-reload-control.py": "d9fe15b508565207f0797597ccb80f53c1572f3ea20676dc2a19bd3f6b399b9c",
     ".utmp\\host-memory-20261031\\report.py": "419e95e64d3f9eee4289432ba5320fdf5ab981d58a56c9b529f1e8e84c16bccb",
-    ".utmp\\host-memory-20261031\\run-agentic.py": "45d29af8bbad835df358121c2229b52544e4a9372ce9fddb6022c69e38e11c9b",
+    ".utmp\\host-memory-20261031\\run-host.py": "45d29af8bbad835df358121c2229b52544e4a9372ce9fddb6022c69e38e11c9b",
     ".utmp\\host-memory-20261031\\run-godot-theme.py": "14389c4425ab46ec6e3c3cc8b67e668cefabc3feccbac99fe64e23b73f01a401",
     ".utmp\\host-memory-20261031\\run-godot.py": "13382db9b7f38bff0f50deef2f8daf483d93ae586d08248e2dd9caf7d15ff9fe",
     ".utmp\\host-memory-20261031\\run-process-only-reload.py": "76c292c73a20707aa46c241e1b5ba86a7e0cb3e76f91b8700e629e36ff2c5601",
@@ -589,7 +589,7 @@
     ".utmp\\host-memory-20261031\\setup-process-only.py": "aa55f2c0fedf001a3feb5b365c31011564e861a861760a5003e645bc673a18ca",
     ".utmp\\host-memory-20261031\\setup-process-reload.py": "a8389aeb0435c6d61b362a84f5f6cd0ea3ad6b243e321c055eb8f7404fff1309",
     ".utmp\\host-memory-20261031\\setup-smoke.py": "06bd80d981b7130b61da01116100dbf79323baa59567daa9a1fe0b57fe4720fa",
-    ".utmp\\host-memory-20261031\\smoke-agentic.py": "3388ea9b63dc0ae7de4daca08ecfcefc192743eeaccfb1fdb63cf1cee0dfff78",
+    ".utmp\\host-memory-20261031\\smoke-host.py": "3388ea9b63dc0ae7de4daca08ecfcefc192743eeaccfb1fdb63cf1cee0dfff78",
     ".utmp\\host-memory-20261031\\strengthen-godot.py": "16f426c9515adbc3e3de655fd9b03fe7a3d2392d8a664745308d664df13d1db9",
     ".utmp\\host-memory-20261031\\test-endpoints.py": "6b52ad246dfdf83978dc6e993825904ae62c302e026e9a0448a592ad3530763d",
     ".utmp\\host-memory-20261031\\test-guards.py": "f18d7b6e1a0e7d1e4485ae4b728455560b56ce6d7403f2a7c2770f9fb133c698",
@@ -621,38 +621,38 @@
     ".utmp\\host-memory-20261031\\previous-godot-idle.png": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d",
     ".utmp\\host-memory-20261031\\previous-godot-reload.png": "de40ba07d6278dc70a248ea8b754d141f28f0e42c57d6f08b9276cbe136f312d",
     ".utmp\\host-memory-20261031\\previous-godot-theme.png": "bd31e645819f44a1253f10faec5c8bf11bdb78410260269cbeb353082107db74",
-    ".utmp\\host-memory-20261031\\agentic-idle\\same-0-reload-memory.json": "d494d53f8f6d1b455b55e73f56549e0f4ee05c75150a7ea47f42c5ef0d990807",
-    ".utmp\\host-memory-20261031\\agentic-idle\\lifecycle.json": "eb8cfa51c08ab959b58349d715b9307539edcfbb54bffa054a69eaf61af06db4",
-    ".utmp\\host-memory-20261031\\agentic-idle\\same-0-stop.json": "a7ff362c738ad72a0ebcadca8f642ca21a889e1ae03d44aa21efad8da3b7c20d",
-    ".utmp\\host-memory-20261031\\agentic-idle\\same-0-launch.json": "6cd5d7d3835b85c023321f8d7689c0e871d5d8edb67b6fd939f4a867ecd00c85",
-    ".utmp\\host-memory-20261031\\agentic-reload\\same-0-reload-memory.json": "e6762e993b0bd5329d3c3c4b046f809334755114302959e416a857df1f5a235f",
-    ".utmp\\host-memory-20261031\\agentic-reload\\lifecycle.json": "caaa3e7cd30d790fb34c5764c213b0a4947e4ec248c1b6b0044cb7b135cd2c23",
-    ".utmp\\host-memory-20261031\\agentic-reload\\same-0-stop.json": "25aa10c0bd383886600316d2a37c8fa1262d894732eaeb264f3f6e8adc1b5010",
-    ".utmp\\host-memory-20261031\\agentic-reload\\same-0-launch.json": "27b79d47d708afcbfe3accc3a83555832bca63686d293c877bc8f05ff000c25e",
-    ".utmp\\host-memory-20261031\\agentic-process-only\\same-0-reload-memory.json": "f4c1585fa0c6b275146d890b169d588d24b798b73eb2406f5325b061c571360b",
-    ".utmp\\host-memory-20261031\\agentic-process-only\\lifecycle.json": "8f01394acdf58528c7ad23755479339386965271312acf947a388a728e3164bd",
-    ".utmp\\host-memory-20261031\\agentic-process-only\\same-0-stop.json": "2b4433b0d3f721b2ef7ede97815cb26ae1d88d876f70a567c9d8a215554ad336",
-    ".utmp\\host-memory-20261031\\agentic-process-only\\same-0-launch.json": "c32ecbf3886b06911ce3fb2eac4e1b34df2845b78c9e08eb33bd0fd4b4e96a6f",
-    ".utmp\\host-memory-20261031\\agentic-process-only-reload\\same-0-reload-memory.json": "66d9e31a81634246c1da6767ce4dfd528e8d9ce5c385af12db091810cd21f895",
-    ".utmp\\host-memory-20261031\\agentic-process-only-reload\\lifecycle.json": "f48930643dd0b3a886494830409875fb9b264e96dfd63cb0eb40240f2016dc93",
-    ".utmp\\host-memory-20261031\\agentic-process-only-reload\\same-0-stop.json": "1fda2de48c6e9bfd0273fd8f8e77e197eb0607e1626d1fd03c6af4433a0ecde5",
-    ".utmp\\host-memory-20261031\\agentic-process-only-reload\\same-0-launch.json": "bebc9ea38824bbc8c612351130e113bbb631a6092b3012c00b826aa4262bd3d4",
-    ".utmp\\host-memory-20261031\\capped-agentic-idle\\same-0-reload-memory.json": "a950343250d6d75f390c3e4a991e45bb33cbd0c9f4623dcc2271159d7b2051db",
-    ".utmp\\host-memory-20261031\\capped-agentic-idle\\lifecycle.json": "9abdda9ece31ec676e41fcdcd4836463bad6bafa1c66038f58d6374351d4c63c",
-    ".utmp\\host-memory-20261031\\capped-agentic-idle\\same-0-stop.json": "1d688a97e37d00d8fe9bafd5185bd339edb36cafe8228b5510c17075f2a4f4b0",
-    ".utmp\\host-memory-20261031\\capped-agentic-idle\\same-0-launch.json": "fb625ca08baf32565a045b9450dbfce0299804ae7d20354275502746b60f9377",
-    ".utmp\\host-memory-20261031\\capped-agentic-reload\\same-0-reload-memory.json": "0fad5016a01e25ab04db5e89c6f545eb9131044d241b04dc9c0edbea087ce9fb",
-    ".utmp\\host-memory-20261031\\capped-agentic-reload\\lifecycle.json": "830ffeb03e76144e526265ff712676dca5fb8f0971440e12429bfa1ee36ac006",
-    ".utmp\\host-memory-20261031\\capped-agentic-reload\\same-0-stop.json": "12c6daf95b3639bc571d9424dea3262facd9a2373aee86a2d8a44eff493aa7df",
-    ".utmp\\host-memory-20261031\\capped-agentic-reload\\same-0-launch.json": "15b8a17fe0a6f209deb4014a3741019fbddb3703475247f5d63ce7be80c7ae65",
-    ".utmp\\host-memory-20261031\\smoke-agentic-idle\\lifecycle.json": "0ef0ead7d059984783b61905ebec5362fb43ebddce7469768b0be56f25f75176",
-    ".utmp\\host-memory-20261031\\smoke-agentic-idle\\same-0-stop.json": "7ffe86d5bc8c1aca4ce3039b469a3e1f77ccfd2fd5246ef929bc13f9ce4f56f6",
-    ".utmp\\host-memory-20261031\\smoke-agentic-reload\\lifecycle.json": "a22beb09215d6643bacfe64548c8ddb598cf66f34155284e6808dd7ea3406bb6",
-    ".utmp\\host-memory-20261031\\smoke-agentic-reload\\same-0-stop.json": "5201255f4b289fee5517245b5de60bcec301dc3de395a58c9fed83c230e04114",
-    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-idle\\lifecycle.json": "9d957902ee686f14c12719d771733a64d1087af398069e606164de0cf81c7a57",
-    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-idle\\same-0-stop.json": "f7e1fafbcf65533e6b5fa9205336f7f213307768580154ea66e68faabfb89810",
-    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-reload\\lifecycle.json": "c6ed86a231c1949b2b001b5603722c8c05bfbeb21b819e0e0d269b0c22380cf8",
-    ".utmp\\host-memory-20261031\\endpoint-smoke-agentic-reload\\same-0-stop.json": "7098a8d3518dec7572a9c827e7440e323062e7dc005c72ef43a34cca99feab27"
+    ".utmp\\host-memory-20261031\\host-idle\\same-0-reload-memory.json": "d494d53f8f6d1b455b55e73f56549e0f4ee05c75150a7ea47f42c5ef0d990807",
+    ".utmp\\host-memory-20261031\\host-idle\\lifecycle.json": "eb8cfa51c08ab959b58349d715b9307539edcfbb54bffa054a69eaf61af06db4",
+    ".utmp\\host-memory-20261031\\host-idle\\same-0-stop.json": "a7ff362c738ad72a0ebcadca8f642ca21a889e1ae03d44aa21efad8da3b7c20d",
+    ".utmp\\host-memory-20261031\\host-idle\\same-0-launch.json": "6cd5d7d3835b85c023321f8d7689c0e871d5d8edb67b6fd939f4a867ecd00c85",
+    ".utmp\\host-memory-20261031\\host-reload\\same-0-reload-memory.json": "e6762e993b0bd5329d3c3c4b046f809334755114302959e416a857df1f5a235f",
+    ".utmp\\host-memory-20261031\\host-reload\\lifecycle.json": "caaa3e7cd30d790fb34c5764c213b0a4947e4ec248c1b6b0044cb7b135cd2c23",
+    ".utmp\\host-memory-20261031\\host-reload\\same-0-stop.json": "25aa10c0bd383886600316d2a37c8fa1262d894732eaeb264f3f6e8adc1b5010",
+    ".utmp\\host-memory-20261031\\host-reload\\same-0-launch.json": "27b79d47d708afcbfe3accc3a83555832bca63686d293c877bc8f05ff000c25e",
+    ".utmp\\host-memory-20261031\\host-process-only\\same-0-reload-memory.json": "f4c1585fa0c6b275146d890b169d588d24b798b73eb2406f5325b061c571360b",
+    ".utmp\\host-memory-20261031\\host-process-only\\lifecycle.json": "8f01394acdf58528c7ad23755479339386965271312acf947a388a728e3164bd",
+    ".utmp\\host-memory-20261031\\host-process-only\\same-0-stop.json": "2b4433b0d3f721b2ef7ede97815cb26ae1d88d876f70a567c9d8a215554ad336",
+    ".utmp\\host-memory-20261031\\host-process-only\\same-0-launch.json": "c32ecbf3886b06911ce3fb2eac4e1b34df2845b78c9e08eb33bd0fd4b4e96a6f",
+    ".utmp\\host-memory-20261031\\host-process-only-reload\\same-0-reload-memory.json": "66d9e31a81634246c1da6767ce4dfd528e8d9ce5c385af12db091810cd21f895",
+    ".utmp\\host-memory-20261031\\host-process-only-reload\\lifecycle.json": "f48930643dd0b3a886494830409875fb9b264e96dfd63cb0eb40240f2016dc93",
+    ".utmp\\host-memory-20261031\\host-process-only-reload\\same-0-stop.json": "1fda2de48c6e9bfd0273fd8f8e77e197eb0607e1626d1fd03c6af4433a0ecde5",
+    ".utmp\\host-memory-20261031\\host-process-only-reload\\same-0-launch.json": "bebc9ea38824bbc8c612351130e113bbb631a6092b3012c00b826aa4262bd3d4",
+    ".utmp\\host-memory-20261031\\capped-host-idle\\same-0-reload-memory.json": "a950343250d6d75f390c3e4a991e45bb33cbd0c9f4623dcc2271159d7b2051db",
+    ".utmp\\host-memory-20261031\\capped-host-idle\\lifecycle.json": "9abdda9ece31ec676e41fcdcd4836463bad6bafa1c66038f58d6374351d4c63c",
+    ".utmp\\host-memory-20261031\\capped-host-idle\\same-0-stop.json": "1d688a97e37d00d8fe9bafd5185bd339edb36cafe8228b5510c17075f2a4f4b0",
+    ".utmp\\host-memory-20261031\\capped-host-idle\\same-0-launch.json": "fb625ca08baf32565a045b9450dbfce0299804ae7d20354275502746b60f9377",
+    ".utmp\\host-memory-20261031\\capped-host-reload\\same-0-reload-memory.json": "0fad5016a01e25ab04db5e89c6f545eb9131044d241b04dc9c0edbea087ce9fb",
+    ".utmp\\host-memory-20261031\\capped-host-reload\\lifecycle.json": "830ffeb03e76144e526265ff712676dca5fb8f0971440e12429bfa1ee36ac006",
+    ".utmp\\host-memory-20261031\\capped-host-reload\\same-0-stop.json": "12c6daf95b3639bc571d9424dea3262facd9a2373aee86a2d8a44eff493aa7df",
+    ".utmp\\host-memory-20261031\\capped-host-reload\\same-0-launch.json": "15b8a17fe0a6f209deb4014a3741019fbddb3703475247f5d63ce7be80c7ae65",
+    ".utmp\\host-memory-20261031\\smoke-host-idle\\lifecycle.json": "0ef0ead7d059984783b61905ebec5362fb43ebddce7469768b0be56f25f75176",
+    ".utmp\\host-memory-20261031\\smoke-host-idle\\same-0-stop.json": "7ffe86d5bc8c1aca4ce3039b469a3e1f77ccfd2fd5246ef929bc13f9ce4f56f6",
+    ".utmp\\host-memory-20261031\\smoke-host-reload\\lifecycle.json": "a22beb09215d6643bacfe64548c8ddb598cf66f34155284e6808dd7ea3406bb6",
+    ".utmp\\host-memory-20261031\\smoke-host-reload\\same-0-stop.json": "5201255f4b289fee5517245b5de60bcec301dc3de395a58c9fed83c230e04114",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-host-idle\\lifecycle.json": "9d957902ee686f14c12719d771733a64d1087af398069e606164de0cf81c7a57",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-host-idle\\same-0-stop.json": "f7e1fafbcf65533e6b5fa9205336f7f213307768580154ea66e68faabfb89810",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-host-reload\\lifecycle.json": "c6ed86a231c1949b2b001b5603722c8c05bfbeb21b819e0e0d269b0c22380cf8",
+    ".utmp\\host-memory-20261031\\endpoint-smoke-host-reload\\same-0-stop.json": "7098a8d3518dec7572a9c827e7440e323062e7dc005c72ef43a34cca99feab27"
   },
   "native_artifact_hashes": {
     "hosts\\godot\\project\\addons\\weva\\bin\\libweva_godot.so": "3064fcb68447165f03d0df8aa1c066def1a3cef970bd010c889f665b55e0732e",
@@ -665,5 +665,5 @@
     "windows_skipped": 9
   },
   "runtime_changes": false,
-  "remaining": "Agentic rendered native/driver ownership attribution unresolved"
+  "remaining": "host-engine rendered native/driver ownership attribution unresolved"
 }

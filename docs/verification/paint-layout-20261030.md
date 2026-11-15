@@ -2,7 +2,7 @@
 
 The shared core no longer invalidates layout-input versions for paint-only
 style changes during an incremental layout update. Paint keeps its separate
-invalidation path and reads the current styles. This applies to Agentic,
+invalidation path and reads the current styles. This applies to host-engine,
 Godot and Unity without changing the C ABI or host implementations.
 
 Previously a highlight change within a grid made its cached geometry
@@ -64,10 +64,10 @@ was removed from production.
   zero failures.
 - Godot extension rebuilt; timing/form/validity/IME/binding/dialog scenes:
   31/522/104/28/186/1199 checks respectively, zero failures.
-- Agentic rebuilt against the current core; 12 focused renderer tests pass.
+- Host-engine rebuilt against the current core; 12 focused renderer tests pass.
   Current survival inventory PNG rendered and inspected. The older PNG used
   different bound detail content, so pixel identity with it is not claimed.
 
 This is affected-suite verification, not a new full-local-gate receipt.
 No Chrome GPU parity, busy-world performance or cold-start gain is claimed.
-Agentic's renderer branch remains unintegrated into engine-main.
+The host engine's renderer branch remains unintegrated into engine-main.

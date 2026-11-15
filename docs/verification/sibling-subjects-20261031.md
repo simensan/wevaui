@@ -17,7 +17,7 @@ The prepared survival fixtures retain their footer `kbd + kbd` rule. A stage
 probe reduces HUD restyles from 7 to 2 elements on all 220 updates. Inventory
 falls from 62 to 41–43 on 219 updates (the first update is 54 to 39).
 
-Four alternating before/after process pairs use the corrected Agentic
+Four alternating before/after process pairs use the corrected host-engine
 diagnostic, 1280x720, 20 warmups, 200 mutations and 200 retained frames, paced
 at 60 Hz. Builds and tests did not overlap these timings. Medians of run means:
 
@@ -56,7 +56,7 @@ and host tests cover it. This is not a new busy-world or cold-opening result.
   binding/dialog scenes pass 39/522/658/28/186/1199 checks. An initial invocation
   used a nonexistent `form_tests.tscn`; its failure log is retained, and the
   correctly named `form_state_tests.tscn` passes.
-- Agentic's optimized diagnostic rebuilt against the final core; all 13 focused
+- The host engine's optimized diagnostic rebuilt against the final core; all 13 focused
   renderer tests pass. Its audit
   branch remains separate from the managed upstream checkout; published older
   SDKs do not silently acquire this source change.

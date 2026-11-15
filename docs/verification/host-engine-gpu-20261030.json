@@ -5,7 +5,7 @@
   "backend": "Vulkan",
   "target": "RGBA8Unorm, sample count 1",
   "core_revision": "4e737323",
-  "agentic_base": "ff1c9925b",
+  "host_base": "ff1c9925b",
   "mutations_sha256": "aa0ad5e6a9768b9ece2c00c3a0d5afbb68f167a5461ecc086c029be0f253e8bc",
   "summary": [
     {

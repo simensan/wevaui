@@ -1,4 +1,4 @@
-# Agentic memory ownership follow-up — 2026-11-01
+# Host-engine memory ownership follow-up — 2026-11-01
 
 The current locally built SDK **does not reproduce the historical +78.20 MiB
 five-minute reload growth in this workload**. After 1,801 reloads its private
@@ -10,12 +10,12 @@ causal explanation of the older SDK's growth.
 This pass adds opt-in ownership snapshots and an idle cooldown to the reusable
 runtime audit runner. No engine runtime code changes. The older memory finding
 and its receipts are preserved in the [host memory audit](host-memory-20261101.md).
-The [JSON receipt](agentic-memory-20261101.json) records exact identities, counters,
-artifact hashes and limits; raw evidence is in `.utmp/agentic-memory-20261101/`.
+The [JSON receipt](host-engine-memory-20261101.json) records exact identities, counters,
+artifact hashes and limits; raw evidence is in `.utmp/host-engine-memory-20261101/`.
 
 ## Identified build and controls
 
-The existing leased Agentic audit worktree was clean and fast-forwarded from
+The existing leased host-engine audit worktree was clean and fast-forwarded from
 `c2288c71c` to current local main `a8bab554e77ad5177ea03ceccb92083d2ce2e728`.
 That main already contains the native allocation ledger, heap and shader
 observations used here. They are inherited changes, not implementations from
@@ -98,11 +98,11 @@ isolate C++ or include every driver heap and virtual mapping.
 No core, Unity or Godot runtime source changed, so the earlier qualified
 [integration gate](tech-debt-20261101.md) remains the applicable runtime evidence.
 This pass does not claim a new complete engine gate, hardware GPU soak, long
-session qualification, default Agentic native-pin update or macOS execution.
+session qualification, default host-engine native-pin update or macOS execution.
 
 ## What remains
 
-The historical SDK's growth is still unattributed. Agentic main, the Weva core
+The historical SDK's growth is still unattributed. Host-engine main, the Weva core
 and diagnostic instrumentation all differ from that SDK; this comparison cannot
 credit one fix or establish that its old allocation owner is gone. The new
 ownership API substantially narrows what can be observed, but C++ allocations,
@@ -118,5 +118,5 @@ decoded-image pointers. A longer hardware soak and matched build ablations are
 appropriate if the current SDK later reproduces the older growth.
 
 Reproduce with the command in
-[the performance runner guide](../../Tools/performance/README.md#agentic-cpu-submission-comparisons),
+[the performance runner guide](../../Tools/performance/README.md#host-cpu-submission-comparisons),
 using `--memory-snapshots --lifecycle-cooldown 60` and separate idle/reload outputs.

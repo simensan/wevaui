@@ -23,7 +23,7 @@ the package is this host.
 
 ```
 cmake -S hosts/unity -B build-unity -G Ninja -DCMAKE_BUILD_TYPE=Release \
-    -DWEVA_UNITY_BIN=<repo>/Packages/com.wevaui/Runtime/Native/Plugins/x86_64
+    -DWEVA_UNITY_BIN=x86_64
 cmake --build build-unity
 build-unity/weva_core_load_test Packages/com.wevaui/Runtime/Native/Plugins/x86_64/weva_core.dll   # .exe on Windows; .so on Linux
 ```
@@ -178,7 +178,7 @@ by `WEVA_NATIVE_PARITY` (`;`-separated, each holding `<name>.html` and
 ```
 godot --path hosts/godot/project --rendering-driver opengl3 --scene res://capture.tscn \
     -- --html <dir>/<name>.html --css <dir>/<name>.css --size 1280x720 --out <dir>/godot.ppm --png <dir>/godot.png
-WEVA_NATIVE_PARITY=<dir> Unity.exe -batchmode -projectPath <repo> -runTests -testPlatform EditMode \
+WEVA_NATIVE_PARITY=<dir> Unity.exe -batchmode -projectPath workspace -runTests -testPlatform EditMode \
     -testFilter Weva.Tests.EditorTests.Native.NativeDocumentRenderTests
 python hosts/unity/compare_hosts.py <dir>
 ```
@@ -362,7 +362,7 @@ answers) and the render adapter (offscreen renders read back pixel by pixel,
 which needs a graphics device: no `-nographics`):
 
 ```
-Unity.exe -batchmode -projectPath <repo> -runTests -testPlatform EditMode \
+Unity.exe -batchmode -projectPath workspace -runTests -testPlatform EditMode \
     -testFilter Weva.Tests.EditorTests.Native -testResults out.xml -logFile out.log
 ```
 

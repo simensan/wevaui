@@ -74,14 +74,14 @@ An earlier partial batch was stopped when the own-edge-change guard needed
 correction. It is preserved under `flex-proof-host-pairs/` and excluded. Only
 `flex-proof-host-pairs-v2/` measures the final candidate.
 
-## Agentic cross-host timing
+## Host-engine cross-host timing
 
-Four alternating pairs of fresh Agentic diagnostic processes use the same
+Four alternating pairs of fresh host-engine diagnostic processes use the same
 prepared fixtures, real font backend and twenty-field inventory selection
 updates. Each case warms for 20 updates, then measures 200 changing and 200
 retained updates at a requested 60 Hz. No build or test overlaps these runs.
 Initial and final target bounds are exactly identical across all eight
-processes. This is the leased Agentic audit branch, not a published SDK.
+processes. This is the leased host-engine audit branch, not a published SDK.
 
 | Changing workload, ms/update | Baseline | Candidate | Median paired change |
 | --- | ---: | ---: | ---: |
@@ -122,6 +122,6 @@ The [JSON receipt](flex-row-allocation-20261031.json) preserves every Unity run,
 paired aggregates and binary hashes. Local evidence is under
 `.utmp/render-audit-20261030/`: `flex-proof-*` build/test logs,
 `core-selection-profile/flex-proof-title-v2.log`, `flex-proof-host-pairs-v2/`,
-`flex-proof-agentic/` and `flex-proof-gate/`. Initial failed tests and interrupted
+`flex-proof-host/` and `flex-proof-gate/`. Initial failed tests and interrupted
 timings remain alongside the accepted evidence. The source baseline is
 `bcb337f1`; archived source snapshots and plugins identify the compared builds.

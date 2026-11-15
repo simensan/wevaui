@@ -1,5 +1,5 @@
 {
-  "name": "unityui",
+  "name": "wevaui",
   "version": "1.0.0",
   "description": "Development tooling for the shared Weva HTML/CSS engine and Unity/Godot hosts.",
   "scripts": {

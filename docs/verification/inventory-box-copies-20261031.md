@@ -10,13 +10,13 @@ shared core removes unnecessary `Box` copies without changing layout rules:
 - Read the original box by const reference while proving incremental layout.
   The live tree remains unchanged until all probes succeed and splicing begins.
 
-Unity, Godot and explicit-source Agentic builds receive the same changes. There
+Unity, Godot and explicit-source host-engine builds receive the same changes. There
 is no C ABI or authoring API change. The inventory fixture and mutations remain
 unchanged. This is a modest optimization, not Chrome parity.
 
 ## Provisional measurements
 
-The other Agentic workspace remains active at the user's request. These runs
+The other host-engine workspace remains active at the user's request. These runs
 are **provisional**. Each batch uses three alternating native/Chrome rounds,
 real Open Sans, twenty-field inventory selections, 20 warmups, 200 measured
 changes and requested 60 Hz cadence. Our own builds do not overlap timings.

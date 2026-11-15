@@ -1,11 +1,11 @@
 # Threaded runtime UI accounting — October 31, 2026
 
-The rendering audit found and fixed an Agentic profiling defect: completed
+The rendering audit found and fixed a host-engine profiling defect: completed
 render-worker UI work was added to the main-thread `ui` section. This contradicted
 the CLI documentation, mislabeled combined work as main-thread cost, and inflated
 the CSV main-thread section sum. Wall frame intervals were unaffected.
 
-Agentic `527241509` adds document/snapshot timers; `4c5cf4ecd` moves worker UI
+Host-engine `527241509` adds document/snapshot timers; `4c5cf4ecd` moves worker UI
 work to `ui_worker_cpu` and excludes it from main-thread trace accounting.
 Nested `ui_document` and `ui_capture` remain inside `ui` and are also excluded
 from the sum. The raw `worker_ms.ui` interval is retained; it can include waits,
@@ -56,7 +56,7 @@ parity, GPU timing or full release gate is claimed.
   hash as the previously inspected image, preserving pixel output exactly.
 
 SDK `733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8`
-uses Agentic `4c5cf4ecd` and clean Weva `a7253f9f` (core unchanged since
+uses host-engine `4c5cf4ecd` and clean Weva `a7253f9f` (core unchanged since
 `d863b7d3`). [Compact results and provenance](runtime-accounting-20261031.json).
 Raw evidence: `.utmp/render-audit-20261030/runtime-accounting/` and
 `runtime-accounting-sdk.log`. The intermediate instrumented run is retained
@@ -64,8 +64,8 @@ under `runtime-phases/`; it still has old combined accounting and is excluded
 from this table. Initial planner-selection and clean-checkout build rejections
 are retained; subsequent checks/builds pass.
 
-Agentic focused check receipts: `builds/verify/20261031-005930` (snapshot),
+Host-engine focused check receipts: `builds/verify/20261031-005930` (snapshot),
 `20261031-010109` (nested trace phases), `20261031-010703` (worker exclusion).
 No shared core or Godot/Unity runtime behavior changed, so no host rebuild is
 required for this accounting fix. Their accepted core improvements remain in
-sync. Agentic stays on its audit branch; no upstream merge or push occurred.
+sync. Host-engine stays on its audit branch; no upstream merge or push occurred.

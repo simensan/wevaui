@@ -20,7 +20,7 @@ changing the selection values or content.
 
 The executable links the current GCC Release core after rebuilding its target.
 It uses the **fixed diagnostic font backend**, not Unity FontEngine, Godot
-TextServer or Agentic's font backend. It is suitable for finding shared
+TextServer or the host engine's font backend. It is suitable for finding shared
 algorithmic work, not predicting host text cost or comparing host frame times.
 The source generator, generated C++, executable, symbol table and inputs are
 retained under `.utmp/render-audit-20261030/`, principally in

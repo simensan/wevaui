@@ -1,20 +1,20 @@
 {
   "binaries": {
     "before": {
-      "path": "<repo>\\.utmp\\render-audit-20261030\\before-bounded-textures.exe",
+      "path": "before-bounded-textures.exe",
       "sha256": "77230f73ca76264657e1d910e5fc8976ad67325583984c92639a7ff28bccc966"
     },
     "after": {
-      "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+      "path": "weva_cost.exe",
       "sha256": "2c55ca701675f662b303952eec8822d0b894aeeb6e0640a4f9c8b21605d0ac10"
     }
   },
   "arguments": [
-    "<repo>\\.utmp\\render-audit-20261030\\survival-fixtures/hud.html",
-    "<repo>\\.utmp\\render-audit-20261030\\survival-fixtures/hud.css",
-    "<repo>\\.utmp\\render-audit-20261030\\survival-fixtures/inventory.html",
-    "<repo>\\.utmp\\render-audit-20261030\\survival-fixtures/inventory.css",
-    "<repo>\\.utmp\\render-audit-20261030\\survival-fixtures/mutations.json"
+    "hud.html",
+    "hud.css",
+    "inventory.html",
+    "inventory.css",
+    "mutations.json"
   ],
   "rows": [
     {
@@ -502,11 +502,11 @@
   ],
   "maximum_mutation_target_geometry_delta_px": 0,
   "requested_interval_ms": 16.666666666666668,
-  "agentic_diagnostic_commit": "5c5d8ca98",
+  "host_diagnostic_commit": "5c5d8ca98",
   "baseline_core_commit": "4c8bb0af",
   "verification_logs": {
-    "scoped-noop-agentic-build.log": "0c92e90040ddfd4615a7eed8c83613abc67a8d5020b4667dff34f45c67d90619",
-    "scoped-noop-agentic-render-tests.log": "c61d99d39a86149dd05e8850aa287a537e4fcfcaa61937be761e64856d758f03",
+    "scoped-noop-host-build.log": "0c92e90040ddfd4615a7eed8c83613abc67a8d5020b4667dff34f45c67d90619",
+    "scoped-noop-host-render-tests.log": "c61d99d39a86149dd05e8850aa287a537e4fcfcaa61937be761e64856d758f03",
     "scoped-noop-chrome-hand.log": "be21ff6c14608f1a846cd0fd6561191fa964754981498fb5cfd0bc1c23e08dc8",
     "scoped-noop-chrome-harvest.log": "fa18f8c89321e9c0cee1ced9a8d728586ce1befd55d8b2631e5880e70c0d4447",
     "scoped-noop-chrome-samples.log": "5ffefb20e13532cf89e3066de0d2503c2c4b57c04a2a38dd81b93c06d423b45e",
@@ -528,5 +528,5 @@
     "scoped-noop-windows-build.log": "6fc1fee9fc594e39736313cb1699b8fac22bddb79c93b0eeab6da6328bd1b6de",
     "scoped-noop-windows-test.log": "a02e0f6f39ce0563973d88c06648a26130a8a81139ef73b24da0caca6aeca508"
   },
-  "agentic_renderer_report": "<workspace>/engine-9/builds/verify/20261031-004451/report.json"
+  "host_renderer_report": "report.json"
 }

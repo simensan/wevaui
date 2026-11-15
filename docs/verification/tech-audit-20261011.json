@@ -2,7 +2,7 @@
   "baseline_revision": "52bb1f68",
   "date": "2026-10-11",
   "abi": "0.44",
-  "artifacts": "<repo>\\.utmp\\audit-20261011",
+  "artifacts": "audit-20261011",
   "tests": {
     "bindings_before": {
       "total": "9",

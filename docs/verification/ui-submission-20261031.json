@@ -1,9 +1,9 @@
 {
-  "before_agentic": "4c5cf4ecd",
-  "after_agentic": "851ffbd71",
+  "before_host": "4c5cf4ecd",
+  "after_host": "851ffbd71",
   "weva": "eb8559d6",
   "bundle": {
-    "path": "<repo>\\.utmp\\render-audit-20261030\\published-sdk\\ffb6261eaf36e64770157d0f910ee6136f285c08be1248d2c7d9454d08b101e8",
+    "path": "ffb6261eaf36e64770157d0f910ee6136f285c08be1248d2c7d9454d08b101e8",
     "key": "ffb6261eaf36e64770157d0f910ee6136f285c08be1248d2c7d9454d08b101e8",
     "components": [
       "cli",

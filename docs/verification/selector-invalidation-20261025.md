@@ -47,7 +47,7 @@ samples for unchanged cascade counters and draw serial, then verifies movement,
 the retained tooltip handle, dismissal and pass-through hit testing.
 
 Both GCC and Clang pass all 14 CTest suites; the final builds have no warnings.
-At 1920x1080, the release Agentic document profile with a stationary F1 tooltip
+At 1920x1080, the release host-engine document profile with a stationary F1 tooltip
 falls from 2.516 ms to 0.0675 ms, with zero restyled elements after settling.
 The live Resources panel's two hovered runs measure 364.7 and 381.7 FPS,
 against 377.5 and 379.5 FPS with the pointer away. Hovered UI CPU averages
@@ -55,7 +55,7 @@ against 377.5 and 379.5 FPS with the pointer away. Hovered UI CPU averages
 The earlier hovered baseline was 103–115 FPS and 7.2–7.9 ms UI CPU.
 
 Raw profiles and the inspected tooltip capture are retained under
-`<workspace>/builds/test-evidence/weva-developer-ui/interaction-fixes-20261025/`.
+`interaction-fixes-20261025`.
 These results qualify this tooltip fix; graph refresh and panel mounting are
 separate remaining workloads.
 

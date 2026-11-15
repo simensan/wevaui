@@ -98,7 +98,7 @@
       "plugin_load_decode_unload_pass": true,
       "rgba_pixel_matches_prior": 16
     },
-    "agentic_capture": {
+    "host_capture": {
       "inspected": true,
       "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e",
       "matches_prior": true
@@ -190,11 +190,11 @@
       }
     }
   ],
-  "agentic": {
+  "host": {
     "source_commit": "a8bab554e77ad5177ea03ceccb92083d2ce2e728",
     "sdk_key": "b6a2aee14348903ada66aafcd8bac048ca95ebe0ea757c0ca8b9fc4c18f876e8",
     "runtime_sha256": "c92f7c00898580e3839a4386b5f51f2f5b60cea19b7fac99695b891ef494c85a",
-    "source_override": "WEVA_SOURCE_DIR=<repo>",
+    "source_override": "WEVA_SOURCE_DIR=workspace",
     "core_input_paths": [
       "CMakeLists.txt",
       "libweva/CMakeLists.txt",
@@ -231,7 +231,7 @@
     "Parse-local symbols may allocate again on later parses; no parse-speed or FPS claim",
     "C++ counter excludes direct malloc, allocator spare pages, process RSS/private commit, host/GPU storage",
     "No new long hardware soak, IL2CPP/release stripping or macOS qualification",
-    "Historical Agentic memory attribution remains unresolved"
+    "Historical host-engine memory attribution remains unresolved"
   ],
   "source_files": [
     {

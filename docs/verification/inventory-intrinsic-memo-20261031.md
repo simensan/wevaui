@@ -12,7 +12,7 @@ The tradeoff is a larger fixed memo object for very small documents; scopes
 that promote keep that inline prefix alongside the dense table until teardown.
 
 This follows the [box-copy cleanup](inventory-box-copies-20261031.md), baseline
-commit `f03515ee`. Unity, Godot and explicit-source Agentic builds use the same
+commit `f03515ee`. Unity, Godot and explicit-source host-engine builds use the same
 core. No C ABI or authoring API changes, sample simplifications or host-specific
 layout paths were added.
 
@@ -20,7 +20,7 @@ layout paths were added.
 
 Three rounds alternate baseline/candidate/Chrome order with the same inventory,
 real Open Sans, twenty-field selection mutations, 20 warmups and 200 measured
-updates at requested 60 Hz. The other Agentic workspace remains active at the
+updates at requested 60 Hz. The other host-engine workspace remains active at the
 user's request; process observations are retained. No own builds overlap timing.
 These results remain **provisional**. Sampled initial/final target geometry is
 identical across native baseline and candidate runs.
@@ -74,8 +74,8 @@ inspected. Godot font safety passes 19,833 checks; Unicode, debug/release/embedd
 exports, backend renders and live scenes pass. The final Godot render was
 inspected. This pass does not add IL2CPP or hardware qualification.
 
-The final Agentic benchmark was rebuilt after adding the explicit `<array>`
+The final host-engine benchmark was rebuilt after adding the explicit `<array>`
 include and tests. Its `.text`, `.rdata`, `.data`, `.pdata`, `.tls` and `.reloc`
 sections are byte-identical to the measured candidate; PE header metadata
 differs. Both binary hashes and section comparisons are retained in
-`agentic-rebuild-hashes.json` under the build/test evidence directory.
+`host-rebuild-hashes.json` under the build/test evidence directory.

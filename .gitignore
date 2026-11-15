@@ -89,7 +89,7 @@ Assets/UI/Fonts/Source/SegoeUI.ttf
 Assets/UI/Fonts/Source/SegoeUI.ttf.meta
 
 # Internal working docs / scratch tooling — never published. Removed from the
-# repo 2026-07-05 (archived in ../unityui-internal-docs); patterns kept so a
+# repo 2026-07-05 (archived in a private docs repository); patterns kept so a
 # regenerated copy can't slip back into the public repo. CSS_FEATURE_AUDIT.md
 # stays tracked — CONFORMANCE.md and PLAN.md cite it as the authoritative
 # capability matrix.

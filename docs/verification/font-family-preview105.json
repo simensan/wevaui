@@ -8,10 +8,10 @@
     "library_sha256": "06f13e83af4ab87331b95ce27d067db6441471055dfa706fb9b46758f8b78db5",
     "version": "0.1.0-preview.105",
     "targets": {
-      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "weva",
+      "sample": "weva"
     },
-    "backup": "<repo>\\.utmp\\safe-engine71\\installed105-backup"
+    "backup": "installed105-backup"
   },
   "installed_smokes": [
     {

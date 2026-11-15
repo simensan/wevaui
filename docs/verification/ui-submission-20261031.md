@@ -1,6 +1,6 @@
-# Agentic UI submission optimization — October 31, 2026
+# Host-engine UI submission optimization — October 31, 2026
 
-Agentic now appends HTML overlay passes to the pending presentation encoder,
+Host-engine now appends HTML overlay passes to the pending presentation encoder,
 removing a separate queue submission when both are present. Rendering order
 stays presentation then HTML, including backdrop reads. The GPU UI marker is
 encoded after presentation. An already-consumed presentation encoder still
@@ -51,13 +51,13 @@ samples, zero dropped passes and one pending/missing sample. Every matched UI
 sample is finite and nonnegative; median is 0.012928 ms. This verifies the
 encoded marker path and is not a paired GPU speedup result.
 
-The focused Agentic `render_thread::tests` suite and its production compile
+The focused host-engine `render_thread::tests` suite and its production compile
 check pass (`builds/verify/20261031-012812`); the optimized SDK build passes.
 This is affected-path validation, not a full engine/release gate.
 
-Before: Agentic `4c5cf4ecd`, SDK
+Before: Host-engine `4c5cf4ecd`, SDK
 `733f49a0c786cdc9ef5884aa140a5e93bf140e0d11ffa99d92112a62cd06dfc8`.
-After: Agentic `851ffbd71` (including empty-job change `a399c1039`), SDK
+After: Host-engine `851ffbd71` (including empty-job change `a399c1039`), SDK
 `ffb6261eaf36e64770157d0f910ee6136f285c08be1248d2c7d9454d08b101e8`.
 Both use the accepted Weva core; after build source is `eb8559d6`, with core
 unchanged since `d863b7d3`. [Every run and hashes](ui-submission-20261031.json).
@@ -65,6 +65,6 @@ unchanged since `d863b7d3`. [Every run and hashes](ui-submission-20261031.json).
 Raw evidence is `.utmp/render-audit-20261030/ui-submit-paired/`,
 `ui-submit-gpu/`, `ui-submit-sdk.log`; the isolated first comparison is retained
 at `empty-ui-paired/`. No core ABI or Godot/Unity code changed: this optimization
-belongs to Agentic's wgpu encoder ownership. Accepted shared-core behavior
-remains in sync. Agentic stays on the leased audit branch; nothing was pushed
+belongs to the host engine's wgpu encoder ownership. Accepted shared-core behavior
+remains in sync. Host-engine stays on the leased audit branch; nothing was pushed
 or merged into managed upstream and the configured user SDK is unchanged.

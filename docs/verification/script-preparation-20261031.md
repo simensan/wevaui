@@ -1,6 +1,6 @@
 # Scripted hidden preparation — October 31, 2026
 
-Native Agentic scripts can now call `engine.html_prepare()` after loading a
+Native host-engine scripts can now call `engine.html_prepare()` after loading a
 screen, setting its data and hiding it. The runtime and editor apply the
 request once after that tick's load, bindings and visibility requests, using
 the existing `Overlay::prepare_snapshot`. Preparation does not show the UI,
@@ -59,7 +59,7 @@ same synthetic 240-cube scene. No builds/tests ran concurrently with profiles.
 
 - 432 script API tests pass, with 2 existing ignored tests. Coverage includes
   preparation visibility independence, one-shot draining and request merging.
-  Receipt: Agentic `builds/verify/20261031-015445`.
+  Receipt: Host-engine `builds/verify/20261031-015445`.
 - Five capture-trace tests verify preparation is counted once in the main
   sum (`20261031-015453`). Nine render-thread tests and the runtime production
   compile pass (`20261031-014950`). The prior 44 Overlay tests cover the
@@ -94,7 +94,7 @@ Raw evidence: `.utmp/render-audit-20261030/hidden-prepare-paired-v2/`,
 `hidden-prepare-actions/` and `hidden-prepare-sdk-exported.log`.
 
 Shared core remains `d863b7d3`; no ABI, CSS or font output changed. Godot already
-has explicit manual document updating; this Agentic scripting request is not a
+has explicit manual document updating; this host-engine scripting request is not a
 new Godot/Unity API or performance result. Unity's public preparation workflow
 and other-host timing still need separate validation. No full release gate,
 live editor render, browser execution, upstream merge, push or configured-SDK

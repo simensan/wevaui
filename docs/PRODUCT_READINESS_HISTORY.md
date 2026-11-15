@@ -2406,8 +2406,8 @@ The following status preceded the technical-debt consolidation. Its performance
 percentages and test counts apply only to the linked historical builds.
 
 
-The [Godot/Agentic memory audit](verification/host-memory-20261101.md) passes
-268 rendered Godot lifecycle checks. The preserved Agentic SDK still shows
+The [Godot/host-engine memory audit](verification/host-memory-20261101.md) passes
+268 rendered Godot lifecycle checks. The preserved host-engine SDK still shows
 process-private growth at 60 updates/s (+15.4 MiB idle, +78.2 MiB reloading over
 five minutes). Allocation ownership remains unresolved; these historical-SDK
 measurements neither qualify the current SDK nor establish a fixed leak.
@@ -2420,19 +2420,19 @@ finalization uses the same cleanup path as explicit disposal.
 The [Unity font-retention fix](verification/font-retention-20261031.md) addresses
 both findings from the memory-leak audit: rejected bytes are cached only after
 validation, and repeated accepted font versions reuse their face records.
-The previous Agentic process-memory growth remains unattributed.
+The previous host-engine process-memory growth remains unattributed.
 
 The [lazy glyph atlas](verification/lazy-atlas-20261031.md) saves 1 MiB of
 core CPU storage per newly created document and 2 MiB in the measured text-free
 panel after font setup. Text-bearing UI uses the same storage as before; this
-is not a general text-UI reduction or a fix for the earlier Agentic soak growth.
+is not a general text-UI reduction or a fix for the earlier host-engine soak growth.
 
 The [handle-memory fix](verification/handle-memory-20261031.md) removes
 document-lifetime growth from retired element handles. In a core-only test
 with 32 live children and 5,000 subtree replacements, tracked live C++ storage
 is 2,488,382 bytes versus 4,581,294 before (45.7% lower). This is a synthetic
 retention result, not a host-process or GPU memory reduction. The earlier
-Agentic soak growth remains unattributed.
+Host-engine soak growth remains unattributed.
 
 The [matched property-ID pass](verification/inventory-property-ids-20261031.md)
 measures a provisional 4.3% paired reduction in inventory style/layout CPU
@@ -2483,13 +2483,13 @@ The [IL2CPP qualification follow-up](verification/il2cpp-qualification-20261031.
 
 The [completed rendering audit](verification/render-audit-final-20261031.md) consolidates verified improvements, current binary/test evidence and the remaining Chrome, cold-start and hardware qualification gaps. It does not change development-preview release status.
 
-The local Agentic audit branch adds explicit hidden CPU preparation through
+The local host-engine audit branch adds explicit hidden CPU preparation through
 `html_prepare()`. Paired runtime checks show lower interactive opening cost
 by moving layout/glyph/paint work into loading; GPU first-use work remains.
-This is now integrated into local Agentic main; see the [integration receipt](verification/agentic-integration-20261031.md). See the
+This is now integrated into local host-engine main; see the [integration receipt](verification/host-engine-integration-20261031.md). See the
 [October 31 preparation receipt](verification/script-preparation-20261031.md).
-The [Agentic scissor follow-up](verification/agentic-scissor-dedup-20261031.md)
-preserves captures and is integrated into local Agentic main. Its historical
+The [host-engine scissor follow-up](verification/host-engine-scissor-dedup-20261031.md)
+preserves captures and is integrated into local host-engine main. Its historical
 4–5% command-encoding result needs clean remeasurement after the leftover-player
 discovery; no remote publication is claimed.
 The [resolution audit](verification/resolution-audit-20261031.md) measures
@@ -2530,7 +2530,7 @@ The [matched Chrome rerun](verification/optimized-render-comparison-20261031.md)
 still measures an inventory style/layout gap (0.336 versus 0.242 ms). Its
 separated CPU stages do not establish complete rendering or GPU parity.
 
-Scoped October 25 core/Agentic checks cover filtered downscaled icons and
+Scoped October 25 core/host-engine checks cover filtered downscaled icons and
 antialiased thin rounded borders; see the
 [rendering receipt](verification/image-filtering-20261025.md).
 The [October 30 receipt](verification/chrome-target-20261030.md) records the preceding
@@ -2551,18 +2551,18 @@ captured block/grid/flex cases, including reordered children. See the
 [baseline receipt](verification/nested-baseline-20261030.md) for the scoped
 Chrome and host checks; this is not complete CSS baseline conformance.
 
-The [Agentic runtime audit](verification/agentic-runtime-20261030.md) validates
-the current core in an immutable Agentic SDK with a scripted survival UI over
+The [host-engine runtime audit](verification/host-engine-runtime-20261030.md) validates
+the current core in an immutable host-engine SDK with a scripted survival UI over
 a synthetic 3D scene: clicks/bindings, 9,000 profiled frames and 339 short-cycle
 reloads. This is scoped runtime evidence, not a new supported-host release or
 a matched Chrome rendering comparison.
 
-The [cold renderer follow-up](verification/agentic-cold-render-20261030.md)
-reduces Agentic's median threaded opening frame by 6.6% in that synthetic
+The [cold renderer follow-up](verification/host-engine-cold-render-20261030.md)
+reduces the host engine's median threaded opening frame by 6.6% in that synthetic
 scene, but retains a 69 ms outlier. Cold opening is not yet hitch-free.
 
-The [hidden UI follow-up](verification/agentic-hidden-ui-20261030.md) removes
-unnecessary Agentic direct rendering work while hidden data continues changing.
+The [hidden UI follow-up](verification/host-engine-hidden-ui-20261030.md) removes
+unnecessary host-engine direct rendering work while hidden data continues changing.
 This improves that specific workload; it does not change release status.
 
 Godot also [defers automatic hidden updates](verification/godot-hidden-ui-20261030.md).

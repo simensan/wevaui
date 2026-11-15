@@ -8,7 +8,7 @@ and [verification receipts](verification/README.md).
 
 The core now decodes JPEG as well as PNG, including JPEG bytes with a PNG file
 name. Pointer inheritance and replaced-image backgrounds have Chrome-backed
-regressions. Adoption into a separate Agentic SDK is a distinct qualification
+regressions. Adoption into a separate host-engine SDK is a distinct qualification
 step; a passing core/Unity/Godot receipt does not prove that SDK contains it.
 
 ## Choose your host
@@ -64,8 +64,8 @@ and browser-level visual/text fidelity remain incomplete.
   targets 64 MiB and 1,024 entries; current box references remain pinned even
   when their working set exceeds that target. Markup replacement also releases
   obsolete parser names at parse completion.
-  A locally built Agentic SDK did not reproduce the older SDK's five-minute
-  reload growth in [matched controls with cooldown](verification/agentic-memory-20261101.md).
+  A locally built host-engine SDK did not reproduce the older SDK's five-minute
+  reload growth in [matched controls with cooldown](verification/host-engine-memory-20261101.md).
   Its historical allocation owner remains unresolved. Individual decode peaks,
   complete C++/driver attribution and long hardware soaks remain incomplete.
 

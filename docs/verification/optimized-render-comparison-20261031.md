@@ -12,7 +12,7 @@ This does not establish an overall rendering speed ratio or universal parity.
 | Weva core paint elapsed | 0.093 | 0.345 |
 | Chrome prepaint/paint/layer recording CPU | 0.165 | 0.286 |
 | Chrome raster-worker CPU | 0.035 | 0.114 |
-| Agentic controller/update/capture/prepare/encode/submit CPU | 0.643 | 1.367 |
+| Host-engine controller/update/capture/prepare/encode/submit CPU | 0.643 | 1.367 |
 
 Values are medians of three per-process means. Style/layout sums its stages
 within each run before aggregation; incremental layout is charged to boxes.
@@ -22,7 +22,7 @@ sum rows or infer GPU execution, compositor work or presentation latency.
 
 ## Reproduction and verification
 
-Weva checkout `a22e5b63` contains production core change `a0943b78`; Agentic's
+Weva checkout `a22e5b63` contains production core change `a0943b78`; the host engine's
 leased diagnostic branch is `f0a91651a`. The native executable hash exactly
 matches the candidate used in the accepted paired flex-row measurements.
 Chrome is pinned to 152.0.7977.82, on Windows RTX 5080. This measurement changes
@@ -61,7 +61,7 @@ Chrome compositor/GPU work prevents a complete retained-path comparison.
 
 The previous batch has lower absolute times for both engines. It must not be
 used as this candidate's baseline or to calculate a percentage improvement.
-The paired [Unity/Agentic](flex-row-allocation-20261031.md) and
+The paired [Unity/host-engine](flex-row-allocation-20261031.md) and
 [Godot](flex-row-godot-20261031.md) runs provide that evidence separately.
 
 Paint reconstruction now costs more than box/incremental layout in the selected

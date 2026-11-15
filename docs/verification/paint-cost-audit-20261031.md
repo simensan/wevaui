@@ -1,6 +1,6 @@
 # Paint cost audit and rejected property-ID experiment — October 31, 2026
 
-Buffered core traces from three separate Agentic runtime processes locate the
+Buffered core traces from three separate host-engine runtime processes locate the
 inventory document cost in paint and incremental box/layout work. The processes
 use the accepted accounting SDK and survival fixture, with 600 measured frames
 after 120 warmups, CPU-only profiling, and no concurrent builds. Buffered traces
@@ -44,14 +44,14 @@ The inventory complete path is 6.1% slower in this batch. Lower lookup work
 does not establish a complete-path improvement, so the candidate was reverted.
 Initial/final mutation-target geometry agrees across all eight runs. No full
 correctness gate or host qualification was run for this rejected candidate;
-Godot, Unity and published Agentic SDKs never received it. The diagnostic was
+Godot, Unity and published host-engine SDKs never received it. The diagnostic was
 rebuilt successfully against restored production source.
 
 All runs and binary hashes are in the [JSON receipt](paint-cost-audit-20261031.json).
 Raw evidence remains in `.utmp/render-audit-20261030/inventory-core-trace/`,
 `inventory-paint-trace/`, `paint-ids-paired/`, the `paint-ids-*.log` build logs and
 `paint-ids-experiment.patch`. An initial build from the Weva working directory
-selected the wrong Rust toolchain and failed; the retry in the leased Agentic
+selected the wrong Rust toolchain and failed; the retry in the leased host-engine
 worktree succeeded. No toolchain or dependencies were changed.
 
 The next useful target is the unexplained paint traversal/reuse remainder,

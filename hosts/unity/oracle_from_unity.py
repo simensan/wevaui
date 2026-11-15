@@ -8,7 +8,7 @@ face (SyntheticFontBackend in Unity, MonoFontMetrics in weva_dump).
 Animations and transitions are disabled on both sides for a stable snapshot.
 
     python oracle_from_unity.py <corpus> --weva-dump <path or "wsl:~/weva/build-gcc/Tools/weva_dump/weva_dump">
-        [--unity <Unity.exe>] [--project <repo>] [--width 1280 --height 720] [--out .utmp/oracle-unity]
+        [--unity <Unity.exe>] [--project workspace] [--width 1280 --height 720] [--out .utmp/oracle-unity]
 
 The Unity side runs once for the whole corpus: a manifest lists the cases
 and the EditMode test NativeLayoutDumpTests.Manifest_DumpsEveryCaseForTheOracle

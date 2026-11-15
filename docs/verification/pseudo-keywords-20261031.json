@@ -538,8 +538,8 @@
     "libweva/tests/test_keywords.cpp": "dac9d343e8a42a9045a67de80ce8ecf3fd5766a14cd26c91b8327ccac7c313a5",
     "Tools/oracle/check_pseudo_keywords_chrome.cjs": "f2f18486d9bb5c85de20be7cfaf87a60013eb1d2720f818782179d08dcbf9122"
   },
-  "final_agentic_executable": {
-    "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+  "final_host_executable": {
+    "path": "weva_cost.exe",
     "sha256": "5b369e3fbfec7bfd8a82e59dc8f033a20d6a8bfe7a5c8b6dd889bf154d376c26"
   },
   "installed_native_builds": {

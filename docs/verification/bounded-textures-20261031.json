@@ -1,20 +1,20 @@
 {
   "binaries": {
     "before": {
-      "path": "<repo>\\.utmp\\render-audit-20261030\\before-bounded-textures.exe",
+      "path": "before-bounded-textures.exe",
       "sha256": "77230f73ca76264657e1d910e5fc8976ad67325583984c92639a7ff28bccc966"
     },
     "after": {
-      "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+      "path": "weva_cost.exe",
       "sha256": "465533c9e705b9ef1caff15e7c2ebde0cd472fbb1dce89353ed94b17094c873c"
     }
   },
   "arguments": [
-    "<repo>\\.utmp\\render-audit-20261030\\survival-fixtures/hud.html",
-    "<repo>\\.utmp\\render-audit-20261030\\survival-fixtures/hud.css",
-    "<repo>\\.utmp\\render-audit-20261030\\survival-fixtures/inventory.html",
-    "<repo>\\.utmp\\render-audit-20261030\\survival-fixtures/inventory.css",
-    "<repo>\\.utmp\\render-audit-20261030\\survival-fixtures/mutations.json"
+    "hud.html",
+    "hud.css",
+    "inventory.html",
+    "inventory.css",
+    "mutations.json"
   ],
   "rows": [
     {

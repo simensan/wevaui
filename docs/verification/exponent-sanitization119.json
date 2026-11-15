@@ -767,11 +767,11 @@
     "addon_sha256": "0d6577e62527f159e6bdff567ee1fe53f86715ecccd6d7e4f2492b11b829b4a8",
     "templates": {
       "debug": {
-        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_debug.x86_64.exe",
+        "path": "godot.windows.template_debug.x86_64.exe",
         "sha256": "59e8c4764d0e4686223c6055194929f9300b55f338846ec52010f0cd6e73c7de"
       },
       "release": {
-        "path": "<repo>\\.utmp\\safe-engine71\\weva-godot-4.7.2-scriptfix71-windows-x86_64\\templates\\godot.windows.template_release.x86_64.exe",
+        "path": "godot.windows.template_release.x86_64.exe",
         "sha256": "d602bd1a98624f92938ea0d36d7c07e0ff9e703285e6e806245de4597ec98502"
       }
     },
@@ -10268,10 +10268,10 @@
     "library_sha256": "c48388d06ae4ac742b0c6e241a2ec1cb201cc4b25b63be9c259837cae75a04be",
     "version": "0.1.0-preview.119",
     "targets": {
-      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "weva",
+      "sample": "weva"
     },
-    "backup": "<repo>\\.utmp\\safe-engine71\\installed119-backup",
+    "backup": "installed119-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",

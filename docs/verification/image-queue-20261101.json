@@ -97,8 +97,8 @@
       "structural_mismatches": 0,
       "inspected": true,
       "unity_player_prior_pixel_matches": 16,
-      "agentic_selected_capture_inspected": true,
-      "agentic_selected_capture_sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
+      "host_selected_capture_inspected": true,
+      "host_selected_capture_sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
     }
   },
   "native_libraries": [
@@ -187,12 +187,12 @@
       }
     }
   ],
-  "agentic": {
+  "host": {
     "source_commit": "a8bab554e77ad5177ea03ceccb92083d2ce2e728",
     "sdk_key": "4ade5253d1a9c2678ccc1efaf42a313048ac1d4e8c0e4025c28c74bde45e86bb",
     "runtime_sha256": "db2155a361396011bf4f25ad119b7f89bc92d8da76cbacfc9fde7b439bb8e534",
     "coherent": true,
-    "source_override": "WEVA_SOURCE_DIR=<repo>",
+    "source_override": "WEVA_SOURCE_DIR=workspace",
     "core_input_paths": [
       "CMakeLists.txt",
       "libweva/CMakeLists.txt",
@@ -226,7 +226,7 @@
     "No runtime speedup or frame-time claim",
     "Final store destruction may wait for two active decodes",
     "Four jobs is not a byte bound for individual inputs or the published image/failed URL cache",
-    "Historical Agentic process growth remains unattributed; this is not a new long soak",
+    "Historical host-engine process growth remains unattributed; this is not a new long soak",
     "No remote publication, default native pin update or macOS qualification"
   ],
   "source_files": [

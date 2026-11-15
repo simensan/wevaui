@@ -28,7 +28,7 @@ same `e45be54e6504f2cd` geometry hash, including scalar-reference AA cases.
 This verifies that geometry corpus, not universal pixel equivalence.
 
 Saved original source bytes are restored, with no `libweva` diff. The restored
-GCC build and all 15 CTest suites pass. No Unity, Godot or Agentic binary was
+GCC build and all 15 CTest suites pass. No Unity, Godot or host-engine binary was
 built or installed from the candidate. Their accepted rendering improvements
 remain intact. The [JSON receipt](outline-neighbors-20261031.json) preserves
 all timings and artifact hashes; source snapshots, binaries, logs and raw

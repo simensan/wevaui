@@ -4,7 +4,7 @@ Follow-up: the proposed [bounded texture cache](bounded-textures-20261031.md)
 was implemented experimentally, measured and rejected. The temporary retention
 probe below is not an outstanding production change or an accepted cache policy.
 
-The inventory host cost is not primarily queue submission. The Agentic
+The inventory host cost is not primarily queue submission. The host-engine
 diagnostic now separates snapshot capture, resource/batch preparation,
 encoding (including finish), and queue submission. These are CPU intervals;
 GPU execution and presentation remain outside them.
@@ -21,7 +21,7 @@ For example, frames 31–33 use IDs 66, 67 and 68, while the glyph atlas and
 other images keep their IDs. TextureCache::end_pass releases unused entries;
 returning to a previous selection therefore creates another host texture.
 The shared pixel cache saves rerasterization but not GPU allocation/upload.
-Agentic's renderer correctly uploads every new ID. This lifecycle also reaches
+The host engine's renderer correctly uploads every new ID. This lifecycle also reaches
 Godot and Unity through the shared core; their costs were not measured here.
 
 ## Fixed-workload retention probe

@@ -1,6 +1,6 @@
 # Cold screen-load attribution — October 31, 2026
 
-Agentic `490cb3997` adds `ui_screen_load`: elapsed main-thread time for a
+Host-engine `490cb3997` adds `ui_screen_load`: elapsed main-thread time for a
 script-requested screen creation and `load_files`, including font loading and
 failed attempts. Previously this work was outside named UI sections. The timer
 runs only when a load is requested. It excludes binding application and the
@@ -52,7 +52,7 @@ next direction, while preserving hidden-overlay deferral and font output.
 - Same RTX 5080/Windows machine, synthetic 240-cube scene, no VSync,
   off-desktop window; no concurrent builds/tests during runtime profiles.
 - Shared core remains `d863b7d3`. No core/ABI/font behavior or Godot/Unity
-  code changes. This Agentic profiler correction does not measure their load
+  code changes. This host-engine profiler correction does not measure their load
   paths. No full release gate, upstream merge or configured-SDK switch.
 
 [Runtime hashes, SDK identity and every opening](screen-load-profile-20261031.json).

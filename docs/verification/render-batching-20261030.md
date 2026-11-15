@@ -11,7 +11,7 @@ A diagnostic on Windows RTX 5080, Godot 4.7 Mobile/Vulkan, 1280x720 reduced
 inventory-selection controller/update median from 1.817 ms to 1.166 ms (35.8%).
 This is preliminary: one sequential run per version, 120 warmups and 180
 measured frames, uncapped, timestamps off, core-stat collection and draw logging
-on. It is not a paired multi-round throughput claim or an Agentic result.
+on. It is not a paired multi-round throughput claim or a host-engine result.
 HUD updates measured 0.110 versus 0.116 ms in those runs.
 
 The optional `WEVA_RENDER_BENCH_CORE_STATS=1` records last-update core stages.
@@ -30,11 +30,11 @@ the final selection render was inspected. No new whole-engine gate is claimed.
 Raw logs, screenshots and samples: `.utmp/render-audit-20261030/`.
 Compact measurements: [JSON](render-batching-20261030.json).
 
-At the user's request, the continuing deep rendering audit switches to Agentic.
-Its configured checkout is `<workspace>/engine-main`, with
-`agentic_weva` and a wgpu renderer. Its pinned native SDK is older than this
+At the user's request, the continuing deep rendering audit switches to host-engine.
+Its configured checkout is `engine-main`, with
+`host_weva` and a wgpu renderer. Its pinned native SDK is older than this
 Weva checkout, so a current-core comparison must explicitly build using
 `WEVA_SOURCE_DIR`, record the revision, and avoid attributing Godot host gains
-to Agentic. Agentic paint snapshots copy all draw geometry on changed frames;
+to host-engine. Host-engine paint snapshots copy all draw geometry on changed frames;
 renderer preparation repacks/uploads geometry. These are audit candidates,
 not yet measured bottlenecks. Hardware GPU timing still needs instrumentation.

@@ -14,11 +14,11 @@
     "core_build_inputs_sha256": "a299e5186ffa404113617837d70403644118daa2c27ee2c185e90d3e5f987dd8",
     "native_inputs_dirty": false
   },
-  "agentic": {
+  "host": {
     "source_commit": "a8bab554e77ad5177ea03ceccb92083d2ce2e728",
     "sdk_key": "36a5c06a91b3dfb8f401e26f5ac09f447107fce62ed943c530c151de90470c2c",
     "sdk_manifest": {
-      "path": ".utmp\\agentic-memory-20261101\\sdk\\36a5c06a91b3dfb8f401e26f5ac09f447107fce62ed943c530c151de90470c2c\\sdk.json",
+      "path": ".utmp\\host-engine-memory-20261101\\sdk\\36a5c06a91b3dfb8f401e26f5ac09f447107fce62ed943c530c151de90470c2c\\sdk.json",
       "sha256": "b0fcdf0e172e36573e4cf6aaa1a18a8e4de7f014829d3c0e53d549d217a3a816",
       "bytes": 12899
     },
@@ -29,7 +29,7 @@
     "profile": "fast",
     "build_context": {
       "environment": {
-        "WEVA_SOURCE_DIR": "<repo>"
+        "WEVA_SOURCE_DIR": "workspace"
       },
       "config_sha256": [
         "1f1588efdf674fbda217407cafc7ad049d8ba84b4ca8dccf4e9787fd360ee019",
@@ -140,7 +140,7 @@
       "snapshots": {
         "warm": {
           "artifact": {
-            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e87ad86627a8-73.json",
+            "path": "\\\\?\\50464-18e3e87ad86627a8-73.json",
             "sha256": "4eb740423413380a4f304108e4f1190f5448392d553e2e16b7b5d654110ee419",
             "bytes": 39226
           },
@@ -149,7 +149,7 @@
             "pid": 50464,
             "process_birth": 134380062535340159,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\capped-project",
             "tick": 1981,
             "unix_ms": 1793532690937
           },
@@ -221,7 +221,7 @@
         },
         "active_end": {
           "artifact": {
-            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e8c0c36d1aa0-84.json",
+            "path": "\\\\?\\50464-18e3e8c0c36d1aa0-84.json",
             "sha256": "b1a733937808f59dc4f18f5a7ff4a9a8861716810914106d5c1d1c5e540e3f08",
             "bytes": 39248
           },
@@ -230,7 +230,7 @@
             "pid": 50464,
             "process_birth": 134380062535340159,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\capped-project",
             "tick": 19998,
             "unix_ms": 1793532991233
           },
@@ -302,7 +302,7 @@
         },
         "cooldown_end": {
           "artifact": {
-            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e8ced168fe68-98.json",
+            "path": "\\\\?\\50464-18e3e8ced168fe68-98.json",
             "sha256": "906e561c01a31c89e53a96094be0c0841b42c1df2aa4e553e68b09c9a8c1e3aa",
             "bytes": 39238
           },
@@ -311,7 +311,7 @@
             "pid": 50464,
             "process_birth": 134380062535340159,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\capped-project",
             "tick": 23619,
             "unix_ms": 1793533051597
           },
@@ -384,7 +384,7 @@
       },
       "selected_capture": {
         "kind": "image",
-        "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\captures\\50464-18e3e873c0ffa348-56\\frame.png",
+        "path": "\\\\?\\frame.png",
         "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
       }
     },
@@ -465,7 +465,7 @@
       "snapshots": {
         "warm": {
           "artifact": {
-            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e87ad5b7a20c-73.json",
+            "path": "\\\\?\\22176-18e3e87ad5b7a20c-73.json",
             "sha256": "7ab7cccf8e95bef51527d96e5e2520c020bec86d7a462534e9080b1be93bea50",
             "bytes": 39215
           },
@@ -474,7 +474,7 @@
             "pid": 22176,
             "process_birth": 134380062535409941,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\capped-project",
             "tick": 1983,
             "unix_ms": 1793532690892
           },
@@ -546,7 +546,7 @@
         },
         "active_end": {
           "artifact": {
-            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e8c0c314c364-84.json",
+            "path": "\\\\?\\22176-18e3e8c0c314c364-84.json",
             "sha256": "562420548463835e3f85c28258e28d859089e4ce365757b38536fdc6b45edebd",
             "bytes": 39238
           },
@@ -555,7 +555,7 @@
             "pid": 22176,
             "process_birth": 134380062535409941,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\capped-project",
             "tick": 20000,
             "unix_ms": 1793532991227
           },
@@ -627,7 +627,7 @@
         },
         "cooldown_end": {
           "artifact": {
-            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e8ced14e6440-98.json",
+            "path": "\\\\?\\22176-18e3e8ced14e6440-98.json",
             "sha256": "d09d4ec25c5780ebeb2c95d7e4a63e238f07daeafe814c2dfc4b9d547238441c",
             "bytes": 39240
           },
@@ -636,7 +636,7 @@
             "pid": 22176,
             "process_birth": 134380062535409941,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\capped-project",
             "tick": 23621,
             "unix_ms": 1793533051595
           },
@@ -709,7 +709,7 @@
       },
       "selected_capture": {
         "kind": "image",
-        "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\captures\\22176-18e3e873bd6c7d8c-56\\frame.png",
+        "path": "\\\\?\\frame.png",
         "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
       }
     }
@@ -740,7 +740,7 @@
   },
   "limits": [
     "One five-minute interval plus one-minute cooldown per mode, no long hardware soak",
-    "Historical Agentic and core versions differ; no causal improvement attribution",
+    "Historical host-engine and core versions differ; no causal improvement attribution",
     "Diagnostic allocator overhead; not production performance data",
     "C++ allocations, most driver/resource heaps and direct virtual mappings remain outside Rust ledger",
     "Default heap overlaps Rust and foreign allocations; no additive reconciliation with process commit",
@@ -780,12 +780,12 @@
   },
   "source_files": [
     {
-      "path": "Tools\\performance\\run_agentic_runtime_audit.py",
+      "path": "Tools\\performance\\run_host_runtime_audit.py",
       "sha256": "2bdd7032360234db1037b0db413b71a8f71f0ca0b7b607534356413bf2e2bad3",
       "bytes": 17939
     },
     {
-      "path": "Tools\\tests\\test_agentic_lifecycle.py",
+      "path": "Tools\\tests\\test_host_lifecycle.py",
       "sha256": "5464a0a5828e0c915f002ae6f246e680910cea068e42a0aae9434f1611a4acca",
       "bytes": 4080
     },
@@ -797,107 +797,107 @@
   ],
   "evidence": [
     {
-      "path": ".utmp\\agentic-memory-20261101\\sdk-build.log",
+      "path": ".utmp\\host-engine-memory-20261101\\sdk-build.log",
       "sha256": "b6e9e3213af619f7b2e10cbac9a10a8a9fba99675aa9c210e015abf05aa005ad",
       "bytes": 24965
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\doctor.log",
+      "path": ".utmp\\host-engine-memory-20261101\\doctor.log",
       "sha256": "894ab3f0d5247fe39f9d2567b156b158e66777c72385e092a9796c1f6a73d138",
       "bytes": 17388
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\version.log",
+      "path": ".utmp\\host-engine-memory-20261101\\version.log",
       "sha256": "f552945a9d1a0bf35c9bc35f163eaf81f864f1fb9282ad5d09a1f2ea804681f7",
       "bytes": 767
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\lifecycle-tests.log",
+      "path": ".utmp\\host-engine-memory-20261101\\lifecycle-tests.log",
       "sha256": "044d37055ae3333bc752e0095c93b7bab2e3a698ac375a9379eda3a6dd3b3ccf",
       "bytes": 1434
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\tooling-windows.log",
+      "path": ".utmp\\host-engine-memory-20261101\\tooling-windows.log",
       "sha256": "6ec44ca59ac178a0f1eec4d873c115501c5e20273c144df3b8049dec3a8af44c",
       "bytes": 16664
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\tooling-linux.log",
+      "path": ".utmp\\host-engine-memory-20261101\\tooling-linux.log",
       "sha256": "a1c48c1881fc97e62fcff74146ef3b81bf5382cc3e5568a5d9dba21883f714f5",
       "bytes": 15769
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\smoke.log",
+      "path": ".utmp\\host-engine-memory-20261101\\smoke.log",
       "sha256": "a2729d047f351903f474ddbe0f360802331f8c5cacff453decd32f8e4e3b03b2",
       "bytes": 86
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\smoke\\lifecycle.json",
+      "path": ".utmp\\host-engine-memory-20261101\\smoke\\lifecycle.json",
       "sha256": "d1430de99849b33ac2b0d1d95ba170d22f8145a717534524bc4c6838fdf9915a",
       "bytes": 5436
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\core-identity.json",
+      "path": ".utmp\\host-engine-memory-20261101\\core-identity.json",
       "sha256": "04a2789dad65f9620f0d02fd7de8f065d9a44cf0c16fc51cff701878dc061981",
       "bytes": 349
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\idle\\lifecycle.json",
+      "path": ".utmp\\host-engine-memory-20261101\\idle\\lifecycle.json",
       "sha256": "476d5d8c9de94021c3665507da52252f36ee3504bceba1af2c0bc19cd27e737e",
       "bytes": 5428
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\idle\\current-0-reload-memory.json",
+      "path": ".utmp\\host-engine-memory-20261101\\idle\\current-0-reload-memory.json",
       "sha256": "f775cda19effb9c7e75378a5138158712a05fbfc1b7033b0ef20bae184ca879e",
       "bytes": 40906
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\idle\\current-0-cooldown-memory.json",
+      "path": ".utmp\\host-engine-memory-20261101\\idle\\current-0-cooldown-memory.json",
       "sha256": "6798e173bb23f56e1f96fe745c321b6891c5f0fb7c3aad4cb2f0d2e52567be1c",
       "bytes": 5798
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\idle\\current-0-stop.json",
+      "path": ".utmp\\host-engine-memory-20261101\\idle\\current-0-stop.json",
       "sha256": "eff987c02b3ea0034a6ac7e68486e307b7e904884d6c5a363da7d2f74624a24a",
       "bytes": 284
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\idle\\memory-diff-active_end.json",
+      "path": ".utmp\\host-engine-memory-20261101\\idle\\memory-diff-active_end.json",
       "sha256": "ceb59c731f2171c8cef84ada7192dab89521527c168d556d251891dd7ac7d267",
       "bytes": 4656
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\idle\\memory-diff-cooldown_end.json",
+      "path": ".utmp\\host-engine-memory-20261101\\idle\\memory-diff-cooldown_end.json",
       "sha256": "f82ab2d0c4adb4f1309b4fd476ca0c11c085e05d3f8fcb81a5c839345258ad21",
       "bytes": 4669
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\reload\\lifecycle.json",
+      "path": ".utmp\\host-engine-memory-20261101\\reload\\lifecycle.json",
       "sha256": "4c129838edb08659cf7d806ec15f342168505f6d28fd656398a3d13a972ceaaa",
       "bytes": 5445
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\reload\\current-0-reload-memory.json",
+      "path": ".utmp\\host-engine-memory-20261101\\reload\\current-0-reload-memory.json",
       "sha256": "f4fd09d04dccc6ab3b228950870af51b9c609355d637b8f41fd37903fbc0a4c3",
       "bytes": 40958
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\reload\\current-0-cooldown-memory.json",
+      "path": ".utmp\\host-engine-memory-20261101\\reload\\current-0-cooldown-memory.json",
       "sha256": "9ded23b7b45ccad9df619e9b4108fbc2141e18b64dd9df32ff1238afee379dd2",
       "bytes": 5787
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\reload\\current-0-stop.json",
+      "path": ".utmp\\host-engine-memory-20261101\\reload\\current-0-stop.json",
       "sha256": "3c8581d4964f43b9ba870be7d9ae02127c67bb6662dc289533e3d6501ad649a8",
       "bytes": 284
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\reload\\memory-diff-active_end.json",
+      "path": ".utmp\\host-engine-memory-20261101\\reload\\memory-diff-active_end.json",
       "sha256": "4aabbf4e7d2d427a02f019938a7133e9b0f4e4360648eb6843e8969fff40282a",
       "bytes": 4662
     },
     {
-      "path": ".utmp\\agentic-memory-20261101\\reload\\memory-diff-cooldown_end.json",
+      "path": ".utmp\\host-engine-memory-20261101\\reload\\memory-diff-cooldown_end.json",
       "sha256": "d9d64fed03dae5c82fbe97e6228183792c5ac8fd19495fa22b286c3c54282c20",
       "bytes": 4668
     }

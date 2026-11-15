@@ -6,7 +6,7 @@ and suppresses ABI restyle scheduling only when that version is unchanged.
 Explicit composition/dialog handling remains before the early return.
 
 Four alternating before/after process pairs used the corrected black-cleared
-Agentic diagnostic and prepared fixtures at 1280x720, pacing at 60 Hz.
+Host-engine diagnostic and prepared fixtures at 1280x720, pacing at 60 Hz.
 Each process warmed 20 updates and measured 200 moving/200 retained frames.
 Builds did not overlap measurements. Medians of run means, ms:
 
@@ -19,7 +19,7 @@ Inventory core update also did not improve: 0.9175 to 0.9320ms. This does not
 justify shipping the patch for the identified inventory bottleneck. GPU
 execution is excluded. No speedup is claimed from the HUD difference alone.
 
-The experiment compiled in the optimized Agentic diagnostic. Draft regressions
+The experiment compiled in the optimized host-engine diagnostic. Draft regressions
 were prepared for repeated writes, empty/missing attributes, pending mutations
 and IME commits, but were not built/run after the performance rejection.
 They and the implementation were reverted together; the experiment diff is

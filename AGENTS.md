@@ -105,7 +105,7 @@ ASan/UBSan 23 suites / 809,524 checks; 341 Chrome layouts within 1.5 px;
 69 Chrome behavior scripts pass plus one known IME exception. Tooling: 90 pass
 on Linux, 81 pass plus nine skips on Windows. Unity: 259 EditMode passes plus
 two inconclusive, Mono player 7/7. See the audit for scope and build identities.
-The [Agentic memory follow-up](docs/verification/agentic-memory-20261101.md)
+The [host-engine memory follow-up](docs/verification/host-engine-memory-20261101.md)
 records five-minute lifecycle controls for its identified SDK.
 
 The qualified full gate uses the patched Linux Godot editor and templates, pinned

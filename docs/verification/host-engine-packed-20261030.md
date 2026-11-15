@@ -1,8 +1,8 @@
-# Agentic packed paint audit — October 30, 2026
+# Host-engine packed paint audit — October 30, 2026
 
-The audit moves to Agentic at the user's request. It uses the current Weva
-source through WEVA_SOURCE_DIR, not Agentic's older pinned native SDK.
-Agentic base: 2c5229a6109d078619b89d0ba5fbfd3b4d50ad36.
+The audit moves to host-engine at the user's request. It uses the current Weva
+source through WEVA_SOURCE_DIR, not the host engine's older pinned native SDK.
+Host-engine base: 2c5229a6109d078619b89d0ba5fbfd3b4d50ad36.
 Weva base: a1de6aa4. Engine commit ff1c9925b is on codex/weva-render-audit in engine-9;
 it is not yet integrated into the configured engine-main runtime.
 
@@ -19,13 +19,13 @@ to two arrays per changed frame, and removes one full geometry copy.
 
 Unity and Godot were audited: their mesh/packed-array builders already consume
 borrowed core geometry directly and reuse versioned batches; this duplicate
-snapshot copy is specific to Agentic. Unity attribute writes already batch;
+snapshot copy is specific to host-engine. Unity attribute writes already batch;
 the earlier Godot attribute batching fix remains in a1de6aa4. No shared core
 or ABI change is needed for this chunk.
 
 ## Measurements
 
-Windows, Agentic fast optimized profile, current core built Release. Eight
+Windows, host-engine fast optimized profile, current core built Release. Eight
 alternating process pairs; each diagnostic warms 20 frames then measures 200.
 The table gives median of printed per-process means (0.001 ms resolution).
 Host includes snapshot capture, prepare/upload, encoding and queue submission;
@@ -51,7 +51,7 @@ The survival HTML/CSS/state originated in the real sample. It renders the
 actual text and icons at 1280x720. The exported Godot font was WOFF2 despite
 its .ttf filename; the same font was decompressed to SFNT. Pinned Chrome 152
 rasterized source SVGs at their authored dimensions into PNGs, outside timing.
-Agentic's standalone loader rejects those compressed formats; feedback gap
+The host engine's standalone loader rejects those compressed formats; feedback gap
 weva-standalone-compressed-assets records that limitation. Earlier incomplete
 asset runs are retained and excluded. The final diagnostic rejects missing
 assets; final inventory capture has 299 draws and 25 textures.
@@ -71,8 +71,8 @@ Their patches, timings and failed-build logs remain in the evidence directory.
 The full-disk build failure was resolved with the repository cache tool pruning
 only this task's rebuildable incremental state.
 
-Reproduce alternating comparisons with Tools/performance/compare_agentic_cost.py.
-Agentic weva_cost now optionally accepts HUD.html HUD.css inventory.html
+Reproduce alternating comparisons with Tools/performance/compare_host_cost.py.
+Host-engine weva_cost now optionally accepts HUD.html HUD.css inventory.html
 inventory.css, using absolute asset/font paths and a Depth number binding.
 The default small HUD now uses a number-only Depth value in both paired builds;
 do not compare its figures directly with the previous unit-suffixed workload.
@@ -81,9 +81,9 @@ The companion JSON records binary and fixture hashes and all paired results.
 
 ## Still required for the full audit
 
-- Matched Agentic/Chrome survival mutations, including inventory selection,
+- Matched host-engine/Chrome survival mutations, including inventory selection,
   font/layout validation and equivalent rendering boundaries.
 - Hardware GPU timing and CPU preparation/submission separation.
 - Busy-scene, resolution, memory/lifecycle and cold-opening verification.
-- Broader Agentic runtime validation and integration of the accepted branch.
+- Broader host-engine runtime validation and integration of the accepted branch.
 - Continue checking shared-core findings and applicable Unity/Godot equivalents.

@@ -430,7 +430,7 @@
   "remaining": [
     {
       "priority": "P1",
-      "debt": "Agentic memory allocation ownership and current SDK adoption",
+      "debt": "host-engine memory allocation ownership and current SDK adoption",
       "evidence": "docs/verification/host-memory-20261101.md",
       "historical_sdk_reload_private_growth_mib": 78.2,
       "current_core_leak_proven": false

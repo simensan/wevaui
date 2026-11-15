@@ -1,6 +1,6 @@
 # Rejected ordinary-draw bounds experiment — 2026-10-31
 
-Agentic computes vertex bounds for each new draw batch, although only backdrop
+Host-engine computes vertex bounds for each new draw batch, although only backdrop
 filters consume them. An experiment skipped that scan for ordinary draws.
 **It was removed: a freshly rebuilt baseline did not establish a runtime gain.**
 There is no source change or new performance improvement in this receipt.
@@ -35,9 +35,9 @@ Godot already limits its equivalent vertex-bounds scan to backdrop filters.
 Unity sets mesh culling bounds without an equivalent ordinary-draw scan.
 Neither host needs a corresponding change.
 
-Source `render.rs` was restored byte-for-byte to Agentic `6ab7386e3` and the
+Source `render.rs` was restored byte-for-byte to host-engine `6ab7386e3` and the
 optimized `weva_cost` and `render_page` binaries rebuilt successfully with
-`cargo build --profile fast -p agentic_weva --features diagnostics --bin
+`cargo build --profile fast -p host_weva --features diagnostics --bin
 weva_cost --bin render_page`. The installed SDK was never changed. Because the
 candidate was rejected before correctness qualification, its planned rendering
 suite was not run; prior tests apply to the restored unchanged source.

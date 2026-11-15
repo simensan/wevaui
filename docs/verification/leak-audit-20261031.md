@@ -75,7 +75,7 @@ clears per-backend maps; the shared variant cache has eight entries and releases
 at extension termination. These are ownership-review findings, not a fresh
 long-running Godot leak measurement.
 
-The inspected Agentic engine-9 host drops its native document and replaces its
+The inspected host-engine engine-9 host drops its native document and replaces its
 GPU texture map with the published live set. This was source review only;
 that checkout is separate from the audited core commit and is not the immutable
 SDK used by the old soak. No changes were made to it.
@@ -83,7 +83,7 @@ SDK used by the old soak. No changes were made to it.
 LeakSanitizer detects unreachable native allocations, not reachable unbounded
 caches. The lifecycle counter covers C++ `new`, not every host/direct-`malloc`
 allocation or GPU resource. This audit does **not** attribute or close the
-previous **13.7 MiB Agentic process-private growth**. A matched no-reload control
+previous **13.7 MiB host-engine process-private growth**. A matched no-reload control
 and allocation traces on the same SDK remain required. Fixed-content core
 plateaus cannot substitute for those host measurements.
 

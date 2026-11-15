@@ -2,11 +2,11 @@
   "experiment": "Rejected allocation-free family-name comparison; production sources restored",
   "binaries": {
     "before": {
-      "path": "<repo>\\.utmp\\render-audit-20261030\\before-paint-ids.exe",
+      "path": "before-paint-ids.exe",
       "sha256": "2c55ca701675f662b303952eec8822d0b894aeeb6e0640a4f9c8b21605d0ac10"
     },
     "after": {
-      "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+      "path": "weva_cost.exe",
       "sha256": "b3e429314fd70c4782104a98b8ca62d18a8d9b36763c5b17d7196e37e2f3d401"
     }
   },

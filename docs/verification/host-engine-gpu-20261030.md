@@ -1,12 +1,12 @@
-# Agentic GPU and selection audit — October 30, 2026
+# Host-engine GPU and selection audit — October 30, 2026
 
-Agentic commit be88b3cb2 adds opt-in hardware GPU timing, adapter identity, viewport controls and data-driven authored mutations to the existing Agentic `weva_cost` diagnostic. No production renderer/core behavior changes in this chunk.
+Host-engine commit be88b3cb2 adds opt-in hardware GPU timing, adapter identity, viewport controls and data-driven authored mutations to the existing host-engine `weva_cost` diagnostic. No production renderer/core behavior changes in this chunk.
 
-The current Weva source is linked using `WEVA_SOURCE_DIR`. Agentic starts from packed-snapshot commit ff1c9925b on codex/weva-render-audit. The branch remains unintegrated into the configured engine-main runtime.
+The current Weva source is linked using `WEVA_SOURCE_DIR`. Host-engine starts from packed-snapshot commit ff1c9925b on codex/weva-render-audit. The branch remains unintegrated into the configured engine-main runtime.
 
 ## Actual scope
 
-The same prepared survival UI fixtures used by the packed-snapshot audit are rendered with real text and PNG icons derived from the authored SVGs. The font is the decompressed original Open Sans SemiBold. Native world/background layers and tab focus are absent. Source fixture hashes are in agentic-packed-20261030.json; the mutation hash is in the companion receipt.
+The same prepared survival UI fixtures used by the packed-snapshot audit are rendered with real text and PNG icons derived from the authored SVGs. The font is the decompressed original Open Sans SemiBold. Native world/background layers and tab focus are absent. Source fixture hashes are in host-engine-packed-20261030.json; the mutation hash is in the companion receipt.
 
 HUD mutations update stamina text and meter width. Inventory mutations cycle all twelve selections: slot classes, item name/category/description/weight/count, action label, icon and disabled state. These are repeated scripted mutations, not OS input-to-photon measurements. The controller uses direct attribute writes, including unchanged classes; Chrome classList.toggle(force) and Godot class toggling can avoid those unchanged writes. That semantic no-op cost is an explicit next core audit target.
 
@@ -35,10 +35,10 @@ Selection preparation remains the dominant measured cost. These numbers do not e
 
 The optimized diagnostic build and all nine resolution/mutation runs pass. Empty state arrays and missing mutation targets are rejected; a final GPU+mutation smoke run passes. Asset checks run before measurement and after mutations. This is diagnostic validation, not a new engine gate or runtime integration test.
 
-Set WEVA_GPU_TIMING=1 to enable the separate timestamp pass. WEVA_BENCH_WIDTH and WEVA_BENCH_HEIGHT default to 1280 and 720. Pass HUD.html HUD.css inventory.html inventory.css and optionally mutations.json. The mutation file is an array of two cases, each an array of nonempty cyclic states. Each state contains objects with selector and value; optional attribute selects an attribute mutation, with null value removing it. Without attribute, value must be text. See crates/agentic_weva/tools/scripted_mutations.rs and gpu_cost.rs.
+Set WEVA_GPU_TIMING=1 to enable the separate timestamp pass. WEVA_BENCH_WIDTH and WEVA_BENCH_HEIGHT default to 1280 and 720. Pass HUD.html HUD.css inventory.html inventory.css and optionally mutations.json. The mutation file is an array of two cases, each an array of nonempty cyclic states. Each state contains objects with selector and value; optional attribute selects an attribute mutation, with null value removing it. Without attribute, value must be text. See crates/host_weva/tools/scripted_mutations.rs and gpu_cost.rs.
 
-Raw evidence: .utmp/render-audit-20261030/selection-<width>-<round>.log, gpu-final-smoke.log, negative-input logs and build logs. All GPU samples and per-run CPU means are in agentic-gpu-20261030.json. The older printed frame subtotal excludes setters and should not be used as end-to-end CPU time; use complete CPU path.
+Raw evidence: .utmp/render-audit-20261030/selection-<width>-<round>.log, gpu-final-smoke.log, negative-input logs and build logs. All GPU samples and per-run CPU means are in host-engine-gpu-20261030.json. The older printed frame subtotal excludes setters and should not be used as end-to-end CPU time; use complete CPU path.
 
 ## Next work
 
-Inspect shared-core redundant attribute invalidation and selection reflow/paint work, then verify applicable changes through Agentic, Godot and Unity. Matched Chrome rendering remains separate work because its trace did not provide hardware GPU execution. Busy-scene/lifecycle/cold-opening checks and branch integration remain open; the overall audit is not complete.
+Inspect shared-core redundant attribute invalidation and selection reflow/paint work, then verify applicable changes through host-engine, Godot and Unity. Matched Chrome rendering remains separate work because its trace did not provide hardware GPU execution. Busy-scene/lifecycle/cold-opening checks and branch integration remain open; the overall audit is not complete.

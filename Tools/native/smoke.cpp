@@ -1,4 +1,4 @@
-// A consumer of the public C API; no Unity, Godot or Agentic dependency.
+// A consumer of the public C API; no Unity, Godot or host-engine dependency.
 #include "weva_c.h"
 #include <cstdio>
 #include <cstring>

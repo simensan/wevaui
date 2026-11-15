@@ -19,7 +19,7 @@ prefix, a tradeoff for eliminating mapping work on ordinary LTR paragraphs.
 
 Three rounds alternate baseline/candidate/Chrome order with real Open Sans,
 the same inventory and twenty-field selection mutations, 20 warmups and 200
-measured updates at requested 60 Hz. The other Agentic workspace stayed active
+measured updates at requested 60 Hz. The other host-engine workspace stayed active
 as requested; timings remain **provisional**. No own builds overlapped timing.
 Baseline is commit `a4b6e31e` (candidate v18), including the ASCII grapheme change.
 
@@ -71,4 +71,4 @@ RGB-identical to the preceding grapheme build, and the packaged font/binding
 capture was inspected. Godot font safety passes 19,833 checks; Unicode, native
 exports, backend renders and live scenes pass. Its final render is also
 RGB-identical to that build and was inspected. This adds no IL2CPP or hardware
-qualification. The final Agentic executable hash matches the measured candidate.
+qualification. The final host-engine executable hash matches the measured candidate.

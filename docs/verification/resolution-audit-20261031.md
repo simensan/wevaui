@@ -19,7 +19,7 @@ is not a resolution speedup claim; no monotonic model is fitted to these data.
 
 ## Workload and measurement boundaries
 
-Nine fresh optimized Agentic processes rotate resolution order across three
+Nine fresh optimized host-engine processes rotate resolution order across three
 rounds. Each uses identical prepared survival markup, CSS, real fonts, PNGs and
 twenty-field inventory selection mutations. CPU frames target 60 Hz, with
 20 warmups and 200 changing plus 200 retained updates per case. Across HUD and
@@ -34,7 +34,7 @@ resource preparation, query resolution, presentation and the game world.
 Every sample is nonnegative, no case is all-zero, and each run reports a 1 ns
 timestamp period. There is no sample subtraction or outlier removal.
 
-The runtime reports NVIDIA GeForce RTX 5080, Vulkan, driver 617.42. Agentic is
+The runtime reports NVIDIA GeForce RTX 5080, Vulkan, driver 617.42. Host-engine is
 `6ab7386e36d2f18fdf8c83150b2e9ea1f6e130de`, Weva checkout `1c2e0a13`; the
 diagnostic hash matches the accepted scissor-command candidate. No source,
 host API, SDK selection or configured runtime changes in this audit.
@@ -59,7 +59,7 @@ GPU completion and do not represent a cold player or shader-cache qualification.
 Their raw stage breakdowns are retained, but no cold-start improvement is claimed.
 
 This pass changes no runtime code; Unity and Godot retain the same shared core.
-It is Agentic-only measurement and must not be attributed to their renderers.
+It is host-engine-only measurement and must not be attributed to their renderers.
 The remaining busy-world, lower-end, scaled-UI, long-duration memory and
 matched Chrome GPU/presentation gaps are not closed by these results.
 

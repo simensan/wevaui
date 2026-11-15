@@ -69,7 +69,7 @@ appending to a mesh with existing vertices/indices. Existing allocation budgets
 and the geometry hash `e45be54e6504f2cd` are unchanged. The scalar reference is
 test-only; it is not a fallback path in the engine.
 
-The restored runtime is verified against HEAD, and its rebuilt Agentic executable
+The restored runtime is verified against HEAD, and its rebuilt host-engine executable
 has byte-identical PE sections to the accepted baseline. All 17 GCC suites and
 19 Clang sanitizer suites pass with zero compiler warnings. Both compilers
 report 320 geometry checks and the unchanged geometry hash.

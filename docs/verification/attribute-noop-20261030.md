@@ -1,7 +1,7 @@
 # Rejected attribute no-op experiment — October 30, 2026
 
-No production engine change is retained. Agentic, Godot and Unity were rebuilt
-after restoring the previous shared core. Agentic remains on its unintegrated
+No production engine change is retained. Host-engine, Godot and Unity were rebuilt
+after restoring the previous shared core. Host-engine remains on its unintegrated
 audit branch, as documented in the preceding rendering receipts.
 
 The experiment checked attribute presence and equality at the C ABI before
@@ -14,7 +14,7 @@ pending real mutations, draw-list equivalence and IME composition commits.
 
 Two independent batches of eight alternating before/after process pairs used
 the authored survival fixtures and full inventory-selection mutations from
-the [GPU audit](agentic-gpu-20261030.md). Each process warmed 20 updates and
+the [GPU audit](host-engine-gpu-20261030.md). Each process warmed 20 updates and
 measured 200. Values are medians of process means, in milliseconds. Complete
 CPU includes controller setters, update and host draw submission, not GPU
 completion or presentation.
@@ -43,7 +43,7 @@ Keep explicit composition and dialog behavior intact.
 - Unity Native EditMode: 243 passed, 2 inconclusive, 0 failures.
 - Godot timing/form/validity/IME/binding/dialog scenes: respectively
   31/522/104/28/186/1199 checks, zero failures.
-- Agentic focused renderer tests: 12 passed.
+- Host-engine focused renderer tests: 12 passed.
 
 These are experiment checks, not new production gate counts. The temporary
 regressions were reverted with their implementation. Full local gate and

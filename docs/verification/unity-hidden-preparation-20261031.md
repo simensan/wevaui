@@ -24,7 +24,7 @@ ui.Visible = true;
 
 This moves work into loading. It does not eliminate preparation cost, warm
 every future glyph or avoid first GPU upload and viewport-dependent work.
-There is no Unity timing speedup claim in this receipt; Agentic's earlier
+There is no Unity timing speedup claim in this receipt; the host engine's earlier
 measurements must not be transferred to Unity's different font backend.
 
 ## Root cause found during verification

@@ -43,7 +43,7 @@ change remains within the 64 KiB allowance for other retained document storage.
 
 The ownership fix is in the shared core: a scoped parser overload owns the
 table, and the ABI document no longer contains a lifetime-wide symbol table.
-This applies equally to Unity, Godot and the explicitly rebuilt local Agentic
+This applies equally to Unity, Godot and the explicitly rebuilt local host-engine
 SDK. It adds neither an arbitrary identifier limit nor eviction of live names.
 
 ## Verification
@@ -62,7 +62,7 @@ SDK. It adds neither an arbitrary identifier limit nor eviction of live names.
   expected for this result. Mono development player: **7/7**. Native plugin
   load/decode/unload passes. All 16 player images match the earlier verified
   RGBA pixels. Installed library metadata matches the final native source.
-- A coherent local Agentic CLI/headless/runtime SDK passes the survival UI
+- A coherent local host-engine CLI/headless/runtime SDK passes the survival UI
   smoke: five modes, selection, clicks, use, close, reload lifecycle, ownership
   snapshots, cooldown and interaction afterward. The owned session stops and
   the engine-9 lease is released. The smoke uses fixed tag/attribute names;
@@ -88,5 +88,5 @@ Current input size still determines parsing peaks; caller-owned C++ symbol
 tables retain the caller's chosen lifetime. Temporary tables may allocate again
 on later parses, so this is a retention fix with no parsing-speed or FPS claim.
 The prior image-cache live-working-set exception still applies. Long hardware
-soaks, historical Agentic memory attribution, IL2CPP/release stripping and
+soaks, historical host-engine memory attribution, IL2CPP/release stripping and
 unqualified platforms remain open; see [readiness](../PRODUCT_READINESS.md).

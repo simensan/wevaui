@@ -43,7 +43,7 @@ Two batches contain six alternating baseline/candidate/Chrome pairs in total,
 using real fonts, identical fixtures and twenty-field inventory mutations,
 20 warmups and 200 measured updates at requested 60 Hz. Both native binaries
 include the currentColor fix, so this comparison isolates the width-reuse
-experiment. The unrelated Agentic game stayed active as requested; no own
+experiment. The unrelated host-engine game stayed active as requested; no own
 builds overlapped timing. All numbers remain **provisional**.
 
 Median of run means, milliseconds per inventory update:
@@ -91,7 +91,7 @@ A separate C ABI test performs five consecutive parent-color mutations, includin
 alpha, and checks all emitted colored vertices for an ordinary background and
 a pseudo background. All five updates pass; source and output are preserved.
 
-The final Agentic executable was rebuilt from the retained source; every PE
+The final host-engine executable was rebuilt from the retained source; every PE
 section is byte-identical to v24 (the full-file hashes differ). The receipt
 verifies the discarded layout files match HEAD and records final binary hashes.
 The [tracked receipt](currentcolor-and-layout-probes-20261031.json) includes both

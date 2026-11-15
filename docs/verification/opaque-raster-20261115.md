@@ -19,12 +19,12 @@ This also removes an unused hit-test string lookup overload and simplifies the
 click diagnostic's redundant enum/integer conditional. No ABI change.
 
 Seven alternating before/after pairs, each in a fresh Windows process, measured
-the Agentic CPU document profiler with the host game's upgrade picker/controller
+the host-engine CPU document profiler with the host game's upgrade picker/controller
 fixture at 1920x1080. No samples were discarded. Median cold load decreased from
 18.750 to 16.845 ms; first paint from 11.755 to 10.364 ms. This excludes GPU work
 and does not establish a hitch-free game frame. Compilation and tests had
 finished before measurement. Raw inputs, binary hashes and all samples are
-retained at `<workspace>/Cache/hitches-gradient-comparison.json`.
+retained at `hitches-gradient-comparison.json`.
 
 The full Unity/Godot host suites and macOS were not exercised for this change.
 

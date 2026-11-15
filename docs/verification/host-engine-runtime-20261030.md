@@ -1,19 +1,19 @@
-# Agentic rendered runtime audit — October 30, 2026
+# Host-engine rendered runtime audit — October 30, 2026
 
-The accepted Agentic renderer changes and current Weva core now run together
+The accepted host-engine renderer changes and current Weva core now run together
 in a published, immutable SDK and a live scripted survival UI project.
 This adds real runtime binding, input, scene and reload coverage to the earlier
 standalone rendering measurements. It introduces no new engine optimization.
 
 ## Build and scope
 
-- Weva `faf04f31`; Agentic `be88b3cb2`, leased `engine-9` checkout.
+- Weva `faf04f31`; host-engine `be88b3cb2`, leased `engine-9` checkout.
 - `WEVA_SOURCE_DIR` points to this Weva checkout. The official SDK builder
   built and published `cli headless runtime`, including the Weva feature.
 - Runtime SHA-256:
   `3ea52566cb2b3ae54688bdf6b30dadf480f7856844804666cf8312293651ee67`.
 - The managed `engine-main` checkout was not changed. This is validation of
-  the published SDK, not integration into Agentic's default upstream branch.
+  the published SDK, not integration into the host engine's default upstream branch.
 - Windows, RTX 5080, Vulkan driver 617.42, optimized `fast` runtime,
   1280×720, threaded rendering, no VSync. The window was off desktop and
   unfocused; captures confirm actual rendered content.
@@ -64,24 +64,24 @@ The generator now writes explicit transforms. The valid project is `v2`.
 
 ## Reproduction and evidence
 
-`Tools/performance/create_agentic_audit_project.py` creates an owned project from
+`Tools/performance/create_host_audit_project.py` creates an owned project from
 the prepared survival HTML/CSS, PNG and TTF fixtures used by the
-[packed-paint audit](agentic-packed-20261030.md). It refuses to overwrite an
+[packed-paint audit](host-engine-packed-20261030.md). It refuses to overwrite an
 existing directory. `--direct` generates a non-threaded variant; that variant
 was not measured here. Keys 1–5 select the five modes; key 6 reloads every ten
 ticks until another mode is selected. CLI injected keys are named `Num1`–`Num6`.
 
-Use the published SDK's `agentic-tool dev` with explicit `--runtime`, `--engine`
+Use the published SDK's `host-tool dev` with explicit `--runtime`, `--engine`
 and `--project`; do not use an unrelated executable on PATH. Per-mode profiling:
 
 ```text
-agentic-tool profile --session <id> --sampling cpu_only --frames 600 --warmup 120 --label <round-and-mode> --timeout 90 --json
+host-tool profile --session <id> --sampling cpu_only --frames 600 --warmup 120 --label <round-and-mode> --timeout 90 --json
 ```
 
 Raw launch/build/publication, input, snapshots, captures, profiles, lifecycle
 observations and driver scripts are retained under
 `.utmp/render-audit-20261030/`. The
-[machine-readable receipt](agentic-runtime-20261030.json) preserves individual
+[machine-readable receipt](host-engine-runtime-20261030.json) preserves individual
 run statistics, hardware/configuration identity and hashed artifact paths.
 
 ## Shared-host status and remaining work
@@ -92,7 +92,7 @@ rebuilt and checked in both Unity and Godot; exact suite counts are in the
 [baseline receipt](nested-baseline-20261030.md). This runtime-only tooling chunk
 does not change either host binary or the ABI.
 
-Agentic's packed Rust/wgpu snapshot improvement remains host-specific. Any
+The host engine's packed Rust/wgpu snapshot improvement remains host-specific. Any
 equivalent Unity/Godot change requires evidence that their renderer has the
 same cost; copying the implementation is not appropriate.
 

@@ -1,6 +1,6 @@
-# Agentic cold renderer audit — October 30, 2026
+# Host-engine cold renderer audit — October 30, 2026
 
-Agentic `f90b04b9b` removes unused GPU setup from ordinary UI opening:
+Host-engine `f90b04b9b` removes unused GPU setup from ordinary UI opening:
 
 - Backdrop-filter pipelines and uniforms are created on the first applicable
   draw, then reused. A page with no backdrop filters never allocates them.
@@ -8,14 +8,14 @@ Agentic `f90b04b9b` removes unused GPU setup from ordinary UI opening:
   unused renderer on the document thread. The render thread owns the renderer
   that actually draws. Direct updates still construct and use a local renderer.
 
-These are Agentic-owned changes. Unity `NativeDocumentRenderer.DrawBackdrop`
+These are host-engine-owned changes. Unity `NativeDocumentRenderer.DrawBackdrop`
 and Godot `WevaDocument::backdrop_material` already allocate their backdrop
 material/shader on demand. No shared core, ABI, Unity or Godot code changed;
 the [latest shared-host gates](nested-baseline-20261030.md) remain applicable.
 
 ## Measurement method
 
-The before SDK is Agentic `be88b3cb2`, after SDK `f90b04b9b`; both link the same
+The before SDK is host-engine `be88b3cb2`, after SDK `f90b04b9b`; both link the same
 Weva core `faf04f31`. Both are official immutable published SDK bundles built
 with the optimized fast profile. The configured `engine-main` was not changed.
 
@@ -27,7 +27,7 @@ tick and following frame are inside the retained profile, checks artifact hashes
 and captures the world before and the UI afterward. Every run uses a fresh
 process. Before/after order alternates between rounds.
 
-Hardware/settings match the [runtime audit](agentic-runtime-20261030.md):
+Hardware/settings match the [runtime audit](host-engine-runtime-20261030.md):
 Windows, RTX 5080, Vulkan 617.42, 1280x720, no VSync, off-desktop unfocused
 window. This is first UI use within a running scene, not process startup,
 disk-cache-cold launch, low-end hardware, or input-to-photon latency.
@@ -68,7 +68,7 @@ alone would therefore leave most of the measured opening cost intact.
 
 ## Validation and remaining work
 
-- Agentic renderer suite: 13 pass, including first usable backdrop allocation,
+- Host-engine renderer suite: 13 pass, including first usable backdrop allocation,
   reuse after page changes and unsupported target behavior. Existing GPU pixel
   checks cover blur, recoloring, sRGB, text, texture order and worker ownership.
 - Overlay suite: 42 pass, including snapshot-only operation without a local
@@ -81,12 +81,12 @@ alone would therefore leave most of the measured opening cost intact.
   verified inside its profile and all 32 report/frame artifact hashes match.
 - Core and other hosts were unchanged; this is not a rerun of the full gate.
 
-`Tools/performance/run_agentic_cold_audit.py` accepts explicit labeled SDK
+`Tools/performance/run_host_cold_audit.py` accepts explicit labeled SDK
 bundles, uses its own session registry, preserves raw responses and artifacts,
 and stops only its owned sessions. Generate a project first with
-`create_agentic_audit_project.py --defer-ui`; add `--direct` for the direct path.
+`create_host_audit_project.py --defer-ui`; add `--direct` for the direct path.
 
-The [JSON receipt](agentic-cold-render-20261030.json) records per-run observations,
+The [JSON receipt](host-engine-cold-render-20261030.json) records per-run observations,
 binary identities and artifact paths. Raw evidence remains under
 `.utmp/render-audit-20261030/`, including exploratory `cold-*`, paired
 `cold-paired/`, standalone `lazy-backdrop-*`, build/test logs and captures.

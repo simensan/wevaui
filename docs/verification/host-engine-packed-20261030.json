@@ -2,19 +2,19 @@
   "packed-authored": {
     "binaries": {
       "before": {
-        "path": "<repo>\\.utmp\\render-audit-20261030\\agentic-authored-before.exe",
+        "path": "host-authored-before.exe",
         "sha256": "c0e5bfff1b732271f7c2d4b6bc3544c49d61e3c8fcfac44b170039101ba85b5e"
       },
       "after": {
-        "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+        "path": "weva_cost.exe",
         "sha256": "958798023bbfc1ffae5b384f82ce0ca17eccda3349b533ab35b9e3067ccb0ae7"
       }
     },
     "arguments": [
-      "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.html",
-      "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.css",
-      "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
-      "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.css"
+      "hud.html",
+      "hud.css",
+      "inventory.html",
+      "inventory.css"
     ],
     "rows": [
       {
@@ -278,11 +278,11 @@
   "packed-default": {
     "binaries": {
       "before": {
-        "path": "<repo>\\.utmp\\render-audit-20261030\\agentic-authored-before.exe",
+        "path": "host-authored-before.exe",
         "sha256": "c0e5bfff1b732271f7c2d4b6bc3544c49d61e3c8fcfac44b170039101ba85b5e"
       },
       "after": {
-        "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+        "path": "weva_cost.exe",
         "sha256": "958798023bbfc1ffae5b384f82ce0ca17eccda3349b533ab35b9e3067ccb0ae7"
       }
     },
@@ -570,5 +570,5 @@
     "wood.svg.png": "cbb723754580f23cfdd5a47f1640058bee21c510d89f95e7cdb9d42aef95bd7d"
   },
   "weva_revision": "a1de6aa4",
-  "agentic_base": "2c5229a6109d078619b89d0ba5fbfd3b4d50ad36"
+  "host_base": "2c5229a6109d078619b89d0ba5fbfd3b4d50ad36"
 }

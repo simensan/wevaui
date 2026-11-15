@@ -58,6 +58,6 @@ correctness gate was run for rejected code; no host received it.
 Raw logs and patches remain under `.utmp/render-audit-20261030/`:
 `paint-split*`, `paint-own*`, `paint-overflow*`, `paint-text*`,
 `paint-phase-probe.patch`, `font-family-paired/`, `font-family-experiment.patch`,
-and `paint-phases-restored-build.log`. Godot, Unity and published Agentic SDKs
+and `paint-phases-restored-build.log`. Godot, Unity and published host-engine SDKs
 remain on accepted shared-core behavior. This chunk records audit evidence,
 not a new full gate or production speedup.

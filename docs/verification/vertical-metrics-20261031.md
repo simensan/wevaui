@@ -73,4 +73,4 @@ with the same two environment-gated inconclusive; the Mono development player
 passes 7/7. All 16 Unity captures and the Godot render match the accepted
 currentColor baseline pixel-for-pixel. The binding/font/image capture and
 Godot render were inspected. No new IL2CPP or hardware qualification is claimed.
-The final Agentic executable hash matches the measured candidate.
+The final host-engine executable hash matches the measured candidate.

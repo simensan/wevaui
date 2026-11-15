@@ -18,7 +18,7 @@ ASan/UBSan 23 suites / 809,524 checks; 341 Chrome layouts within 1.5 px;
 69 Chrome behavior scripts pass plus one known IME exception. Tooling: 90 pass
 on Linux, 81 pass plus nine skips on Windows. Unity: 259 EditMode passes plus
 two inconclusive, Mono player 7/7. See the audit for scope and build identities.
-The [Agentic memory follow-up](docs/verification/agentic-memory-20261101.md)
+The [host-engine memory follow-up](docs/verification/host-engine-memory-20261101.md)
 records five-minute lifecycle controls for its identified SDK.
 
 ## 1. What it is
@@ -149,7 +149,7 @@ check.sh                          the gate
 - `Tools/oracle/chrome_sweep.py --chrome-metrics --max-worst 1.5 --known-gaps`:
   tracked Chrome layout captures. `Tools/oracle/run_chrome_checks.py`: live
   behavior checks with the pinned Windows reference.
-- Unity Native EditMode: `Unity -batchmode -projectPath <repo> -runTests
+- Unity Native EditMode: `Unity -batchmode -projectPath workspace -runTests
   -testPlatform EditMode -testFilter Weva.Tests.EditorTests.Native
   -testResults <path>`; omit `-quit` and `-nographics`. Full EditMode also
   checks compilation and broader package behavior.

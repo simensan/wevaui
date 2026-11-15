@@ -1,7 +1,7 @@
 {
   "manifest": {
     "weva_revision": "a22e5b63dd19d0f413be5976922a5b87bff9d4f2",
-    "agentic_revision": "f0a91651ab7c52945b3e672451a73c2322c27496",
+    "host_revision": "f0a91651ab7c52945b3e672451a73c2322c27496",
     "binary_sha256": "d62b8c909448fe3a9c0dba7bd32dabf617613ec0f18716a79df08a4c15adcdeb",
     "completed": [
       {
@@ -599,6 +599,6 @@
       }
     }
   },
-  "evidence_root": "<repo>\\.utmp\\render-audit-20261030\\optimized-chrome-comparison",
+  "evidence_root": "optimized-chrome-comparison",
   "scope": "CPU stage comparison, not GPU execution or presented-frame latency"
 }

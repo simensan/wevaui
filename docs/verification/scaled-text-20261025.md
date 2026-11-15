@@ -22,10 +22,10 @@ Validation on Windows/WSL:
   transforms, form labels, individual scale/translate properties and removal.
 - Chrome hand corpus: 64/64 agree at the 1.5px ceiling, without exceptions.
   Case 64 uses Chrome 153.0.8010.54 at 800×600 with mono metrics.
-- Agentic Vulkan renders compare Open Sans SemiBold and Rye at native 12/24px
+- Host-engine Vulkan renders compare Open Sans SemiBold and Rye at native 12/24px
   against 16/32px scaled to .75. Before/after and Chrome screenshots were
   inspected. The scaled labels now preserve native-size bitmap clarity.
-- Agentic's `agentic_weva` gate passes 76 tests (2 intentional ignores) and
+- The host engine's `host_weva` gate passes 76 tests (2 intentional ignores) and
   doctests. The rebuilt host runtime was inspected at 1280×800.
 
 Logs: `text-build-gcc-final.log`, `text-test-gcc-final.log`,
@@ -33,5 +33,5 @@ Logs: `text-build-gcc-final.log`, `text-test-gcc-final.log`,
 Render evidence is in the host workspace's
 `builds/test-evidence/weva-developer-ui/fonts-{before,after,chrome}.png`.
 The initial oracle invocation used the wrong viewport; its failure log is
-retained separately. This is a core/Agentic check, not a new full Unity/Godot,
+retained separately. This is a core/host-engine check, not a new full Unity/Godot,
 sanitizer, or macOS gate.

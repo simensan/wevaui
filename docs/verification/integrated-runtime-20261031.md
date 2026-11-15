@@ -1,6 +1,6 @@
-# Integrated Agentic runtime verification — 2026-10-31
+# Integrated host-engine runtime verification — 2026-10-31
 
-The current shared core and Agentic renderer work together in the scripted
+The current shared core and host-engine renderer work together in the scripted
 survival UI and synthetic 240-cube scene. Selection, use, close and reopen
 passed; the captured inventory was visually inspected. This is a current-build
 measurement, **not a paired speedup or a release qualification**.
@@ -32,14 +32,14 @@ are not equivalent to the isolated resolution audit's draw-only timestamps.
 ## Reproduction and scope
 
 - Shared checkout: `acbb7089`; latest core behavior is the accepted flex-row
-  allocation change. Agentic: `6ab7386e36d2f18fdf8c83150b2e9ea1f6e130de`.
+  allocation change. Host-engine: `6ab7386e36d2f18fdf8c83150b2e9ea1f6e130de`.
 - Locally published immutable SDK:
   `db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248`.
   Built through `tools/sdk_build.py --components cli headless runtime` with
   `WEVA_SOURCE_DIR` pointing to this checkout. No global SDK was retargeted.
 - Windows, RTX 5080, Vulkan NVIDIA 617.42, 1280×720, AutoNoVsync,
   offdesktop window; configured foreground/background FPS limits are zero.
-- Existing `agentic-runtime-project-v2` fixture and controller are unchanged.
+- Existing `host-runtime-project-v2` fixture and controller are unchanged.
 - Raw evidence: `.utmp/render-audit-20261030/integrated-runtime/`;
   runner: `.utmp/render-audit-20261030/run-integrated-runtime.py`;
   SDK build receipt: `current-runtime-sdk.log` in the same parent directory.
@@ -52,6 +52,6 @@ are not equivalent to the isolated resolution audit's draw-only timestamps.
 
 No engine code changes in this chunk. Shared optimizations already reach
 Unity and Godot through libweva; their paired verification remains in the
-flex-row receipts. Agentic scissor commands have no equivalent per-batch loop
+flex-row receipts. Host-engine scissor commands have no equivalent per-batch loop
 to port to those hosts. Lower-end hardware, a GPU-busy production game,
 long lifecycle soak and macOS remain outside this result.

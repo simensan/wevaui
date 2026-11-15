@@ -17,17 +17,17 @@
         "other_processes": [
           {
             "pid": 8876,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 38848,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 46980,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -38,7 +38,7 @@
         "other_processes": [
           {
             "pid": 46980,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -49,27 +49,27 @@
         "other_processes": [
           {
             "pid": 51428,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 46720,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 51648,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 7480,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 6888,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -80,17 +80,17 @@
         "other_processes": [
           {
             "pid": 6888,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 48908,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           },
           {
             "pid": 6188,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -101,7 +101,7 @@
         "other_processes": [
           {
             "pid": 6188,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -112,7 +112,7 @@
         "other_processes": [
           {
             "pid": 6188,
-            "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe",
+            "exe": "dev_runtime.exe",
             "name": "dev_runtime.exe"
           }
         ]
@@ -628,20 +628,20 @@
         "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
         "-batchmode",
         "-projectPath",
-        "<repo>",
+        "workspace",
         "-runTests",
         "-testPlatform",
         "StandaloneWindows64",
         "-testFilter",
         "Weva.Tests.Rendering.NativeRenderPassTests",
         "-buildPlayerPath",
-        "<repo>\\.utmp\\inventory-memo-20261031\\unity-player\\player",
+        "player",
         "-testResults",
-        "<repo>\\.utmp\\inventory-memo-20261031\\unity-player\\results.xml",
+        "results.xml",
         "-logFile",
-        "<repo>\\.utmp\\inventory-memo-20261031\\unity-player\\build.log",
+        "build.log",
         "-testSettingsFile",
-        "<repo>\\.utmp\\inventory-memo-20261031\\unity-player\\test-settings.json"
+        "test-settings.json"
       ],
       "requested_backend": "mono",
       "release": false,
@@ -650,11 +650,11 @@
       "stopped_players": [
         {
           "pid": 16632,
-          "executable": "<repo>\\.utmp\\inventory-memo-20261031\\unity-player\\player\\PlayerWithTests\\UnityCrashHandler64.exe"
+          "executable": "UnityCrashHandler64.exe"
         },
         {
           "pid": 44716,
-          "executable": "<repo>\\.utmp\\inventory-memo-20261031\\unity-player\\player\\PlayerWithTests\\PlayerWithTests.exe"
+          "executable": "PlayerWithTests.exe"
         }
       ],
       "passed": true,
@@ -681,7 +681,7 @@
       "baseline": ".utmp\\inventory-next-20261031\\unity-player\\renders",
       "candidate": ".utmp\\inventory-memo-20261031\\unity-player\\renders"
     },
-    "agentic_sections": {
+    "host_sections": {
       ".utmp\\inventory-chrome-20261031\\candidate-v12.exe": {
         "sha256": "c59e7f5b1c2e7e8c4b281f58c23c8530332da6dba11c4be1835e6c32c5f8b4ce",
         "sections": {
@@ -693,7 +693,7 @@
           ".reloc": "72b6110d4afba84fade45342106a28e200e2b64231673a35e98fe28f1756eed0"
         }
       },
-      "<workspace>\\engine-9\\target\\fast\\weva_cost.exe": {
+      "weva_cost.exe": {
         "sha256": "dd05edcfa315484f8d89677fe23df73071f537287d7e1748343158d380d20d5f",
         "sections": {
           ".text": "26758d9eebe1095f76ae486ec720c4633c44d4a2b49abb3408b511073ded82f4",
@@ -713,7 +713,7 @@
       ".utmp\\inventory-memo-20261031\\render-comparison.json": "6b377118d64e043f2564c65eb6d6be21ef6b9663b8a6eeb4967233ebce6d7892",
       ".utmp\\inventory-memo-20261031\\unity-build.log": "6fd305a88f9382afd83846be1a5525379ebf2270ee9ec48978e2ec698d5524eb",
       ".utmp\\inventory-memo-20261031\\godot-build.log": "cae6d5d28c783e2a746a3d413e26e8440525fadd3e3383bb0617dd75572a5b4b",
-      ".utmp\\inventory-memo-20261031\\agentic-rebuild-hashes.json": "1649f987a7f89877eb61163b02f327ee0f8758fb98fe46fff82cff58df53050b"
+      ".utmp\\inventory-memo-20261031\\host-rebuild-hashes.json": "1649f987a7f89877eb61163b02f327ee0f8758fb98fe46fff82cff58df53050b"
     }
   }
 }

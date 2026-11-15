@@ -60,7 +60,7 @@ Local artifacts are under `.utmp/paint-20261031/` and timing runs under
 `.utmp/inventory-chrome-20261031/comparison-v29/` and `comparison-v30/`.
 The rejected patch remains available for inspection.
 
-The final Agentic executable was rebuilt from the restored accepted source,
+The final host-engine executable was rebuilt from the restored accepted source,
 and the restored GCC build passes all 17 suites. Neither Unity nor Godot host
 source or binaries changed. The preceding combined-metrics full gate remains
 the qualification for the accepted engine; this pass did not rerun it.

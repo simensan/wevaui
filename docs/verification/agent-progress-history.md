@@ -13,13 +13,13 @@ The [JPEG decoder pass](../../docs/verification/jpeg-20261101.md) adds content-s
 baseline/progressive, grayscale and CMYK JPEG decoding to the shared core.
 Windows/GCC pass 597,253 checks, Clang 597,247; Unity Native 258 pass plus two
 inconclusive and Godot host 247 checks pass. Native SDKs now include stb.txt.
-Agentic integration and late failure reporting are separate pending work.
+Host-engine integration and late failure reporting are separate pending work.
 
 The [host UI core corrections](../../docs/verification/host-ui-20261101.md)
 fix pointer inheritance and solid backgrounds covering replaced images. GCC
 18/18, sanitizers 20/20, Unity Native 258 pass plus two inconclusive, and Godot
 input/host checks pass. The receipt records failed baselines, actual renders and
-the corrected stale-plugin validation attempt. Agentic SDK adoption is pending.
+the corrected stale-plugin validation attempt. Host-engine SDK adoption is pending.
 
 The [glyph lookup experiment](../../docs/verification/glyph-map-20261031.md) was
 rejected after six paired native selection runs: the hash-table candidate lost
@@ -85,22 +85,22 @@ URP PlayMode passes 7/7. Godot hidden preparation passes 39 checks on Windows
 and rebuilt qualified Linux. No Unity timing speedup is claimed.
 
 The [scripted hidden preparation pass](../../docs/verification/script-preparation-20261031.md)
-adds native Agentic html_prepare on the local audit branch. Three paired runs
+adds native host-engine html_prepare on the local audit branch. Three paired runs
 reduce opening main CPU from 20.42 to 0.55 ms by moving about 20 ms to loading;
 GPU first-use work remains. API/accounting/editor checks and live clicks pass.
 Shared core and Godot/Unity code are unchanged.
 
 The [1080p/1440p runtime validation](../../docs/verification/resolution-runtime-20261031.md)
-passes 36,000 measured frames and 1,332 reloads. Combined Agentic submission
+passes 36,000 measured frames and 1,332 reloads. Combined host-engine submission
 and uniform changes reduce cycling-inventory worker CPU by 11.6-12.6%; frame
 medians improve 1.8-3.6%, with mixed static HUD tails. Core/other hosts unchanged.
 
-The [Agentic viewport-uniform follow-up](../../docs/verification/viewport-uniform-20261031.md)
+The [host-engine viewport-uniform follow-up](../../docs/verification/viewport-uniform-20261031.md)
 skips redundant changed-frame buffer writes. Fourteen renderer tests, 18,000
 measured runtime frames and 656 reloads pass. Observed worker savings are small
 (about 1.5�1.8%); static-mode timings remain mixed. Shared core is unchanged.
 
-The [Agentic submission follow-up](../../docs/verification/ui-submission-20261031.md)
+The [host-engine submission follow-up](../../docs/verification/ui-submission-20261031.md)
 combines presentation and HTML encoding: inventory worker UI-phase CPU falls
 17.1% and frame median 3.3% in three pairs. 18,000 frames, 713 reloads and nine
 worker tests pass; static-mode frame tails remain mixed. No shared-core change.
@@ -110,7 +110,7 @@ separates worker UI from main-thread cost. Inventory main UI is 0.533 ms mean,
 including 0.511 ms document work; 9,000 frames and 355 reloads pass. Older
 threaded `ui` values combine main/worker work; this fix claims no new speedup.
 
-The [current Agentic SDK runtime check](../../docs/verification/current-runtime-20261031.md)
+The [current host-engine SDK runtime check](../../docs/verification/current-runtime-20261031.md)
 passes 18,000 measured frames, click/actions and 716 reloads in a 240-cube world.
 Inventory frame median improves 10.7%, but p95 is mixed; this is not GPU or
 Chrome parity evidence. Shared Godot/Unity checks remain in the no-op receipt.
@@ -118,7 +118,7 @@ Chrome parity evidence. Shared Godot/Unity checks remain in the no-op receipt.
 The [unchanged-attribute follow-up](../../docs/verification/scoped-noop-20261031.md)
 avoids no-op restyles after sibling pruning: paired complete inventory CPU
 falls 7.3%. Windows/GCC main checks pass 493,402 (493,396 sanitized), all 340
-Chrome captures pass, Unity Native passes 243 with two inconclusive, Agentic
+Chrome captures pass, Unity Native passes 243 with two inconclusive, host-engine
 renderer passes 13, and affected Godot scenes pass. No ABI change or new full gate.
 
 The [sibling-subject optimization](../../docs/verification/sibling-subjects-20261031.md)
@@ -129,22 +129,22 @@ Inventory core CPU improves 6.9%; complete inventory CPU did not improve in
 the recorded batch. This is affected-suite evidence, not a new full gate.
 
 The [matched rendering comparison](../../docs/verification/prepared-render-comparison-20261031.md)
-corrects diagnostic backgrounds/bindings and records three prepared Chrome/Agentic
+corrects diagnostic backgrounds/bindings and records three prepared Chrome/host-engine
 runs. Inventory style/layout remains behind Chrome; no production speedup or
 GPU parity is claimed. Shared-host gate counts are unchanged.
 
-The [October 30 Agentic runtime receipt](../../docs/verification/agentic-runtime-20261030.md)
+The [October 30 host-engine runtime receipt](../../docs/verification/host-engine-runtime-20261030.md)
 adds 9,000 CPU-only rendered frames, input/binding checks and 339 reloads in an
 immutable SDK built with the current core. No engine code changes in this chunk;
 shared-host gate counts remain those in the nested-baseline receipt.
 
-The [Agentic cold renderer receipt](../../docs/verification/agentic-cold-render-20261030.md)
-adds lazy backdrop/local-renderer setup in Agentic, 13 renderer and 42 overlay
+The [host-engine cold renderer receipt](../../docs/verification/host-engine-cold-render-20261030.md)
+adds lazy backdrop/local-renderer setup in host-engine, 13 renderer and 42 overlay
 tests, and paired cold opening in both runtime routes. The core and Unity/Godot
 are unchanged; cold-opening tails remain unresolved.
 
-The [hidden UI follow-up](../../docs/verification/agentic-hidden-ui-20261030.md) fixes
-Agentic direct UI attribution and defers hidden document work. Its 43 overlay
+The [hidden UI follow-up](../../docs/verification/host-engine-hidden-ui-20261030.md) fixes
+Host-engine direct UI attribution and defers hidden document work. Its 43 overlay
 tests and 6,000 paired runtime frames pass. The shared core and other hosts are
 unchanged; their automatic hidden-update policies need a separate audit.
 
@@ -279,12 +279,12 @@ See the receipt for raw failed-candidate evidence and final binary hashes.
 The [scaled-overflow follow-up](../../docs/verification/scaled-overflow-20261025.md)
 passes 14 CTest suites on GCC and Clang and 63 Chrome hand-corpus cases.
 The [scaled-text follow-up](../../docs/verification/scaled-text-20261025.md) passes
-both core suites, 64 Chrome hand cases and the Agentic font/render gate.
+both core suites, 64 Chrome hand cases and the host-engine font/render gate.
 The [option-background follow-up](../../docs/verification/option-backgrounds-20261025.md)
 repeats those gates and checks a live dark dropdown.
 The [image and thin-border follow-up](../../docs/verification/image-filtering-20261025.md)
 passes both core suites and 64 Chrome hand cases, with inspected Chrome and
-Agentic renders of downscaled icons and rounded borders.
+Host-engine renders of downscaled icons and rounded borders.
 The [selector invalidation follow-up](../../docs/verification/selector-invalidation-20261025.md)
 passes both core suites and 64 Chrome hand cases; its unrelated-hover regression
 restyles one of 610 elements with output equivalent to a full cascade.
@@ -296,17 +296,17 @@ restyles one of 610 elements with output equivalent to a full cascade.
 The [attribute batching audit](../../docs/verification/render-batching-20261030.md)
 removes intermediate Godot paints, adds ten timing checks (31 total), and
 records preliminary before/after evidence. The continuing rendering audit
-uses Agentic at the user’s request; Godot results do not qualify that host.
+uses host-engine at the user’s request; Godot results do not qualify that host.
 
-The [Agentic packed-paint audit](../../docs/verification/agentic-packed-20261030.md)
-removes duplicate snapshot/upload copies in Agentic (ff1c9925b, not integrated
+The [host-engine packed-paint audit](../../docs/verification/host-engine-packed-20261030.md)
+removes duplicate snapshot/upload copies in host-engine (ff1c9925b, not integrated
 into engine-main yet). Two paint and twelve renderer tests pass. It records
 scoped CPU gains and rejected experiments; core/Unity/Godot gate counts are
 unchanged. GPU/Chrome parity and the wider rendering audit remain open.
 
-The [Agentic GPU/selection audit](../../docs/verification/agentic-gpu-20261030.md)
+The [host-engine GPU/selection audit](../../docs/verification/host-engine-gpu-20261030.md)
 adds real Vulkan timestamps, complete setter/update/submission timing and
-720p/1080p/4K scripted workloads. Agentic commit be88b3cb2 is not integrated
+720p/1080p/4K scripted workloads. Host-engine commit be88b3cb2 is not integrated
 yet. Retained GPU costs are small on the RTX 5080; selection preparation is
 the main remaining CPU target. It does not establish Chrome GPU parity.
 
@@ -382,25 +382,25 @@ is rejected after six fixed-font pairs split three wins/three losses. Geometry
 checks stayed identical, but no useful runtime gain was established. Original
 source is restored and all 15 GCC suites pass; hosts are unchanged.
 
-The [Agentic pass-scissor follow-up](../../docs/verification/agentic-pass-scissor-20261031.md)
+The [host-engine pass-scissor follow-up](../../docs/verification/host-engine-pass-scissor-20261031.md)
 fixes inherited clipping hiding canvas backgrounds. The leased audit branch
 passes 84 library tests with two existing ignored; the GPU regression fails
 before and passes after. This is adapter correctness, not a speedup or an
 upstream SDK release. Unity/Godot use different clipping paths and are unchanged.
 
-The [Agentic scissor command follow-up](../../docs/verification/agentic-scissor-dedup-20261031.md)
+The [host-engine scissor command follow-up](../../docs/verification/host-engine-scissor-dedup-20261031.md)
 reduces repeated clip commands while preserving first-draw state ownership.
 Encoding CPU improves 5.04% HUD / 4.26% inventory in four paired runs; 84 tests
 pass with two existing ignored and captures match. It is on the unpublished
-Agentic audit branch; no shared-core or Unity/Godot change is needed.
+Host-engine audit branch; no shared-core or Unity/Godot change is needed.
 
 The [resolution audit](../../docs/verification/resolution-audit-20261031.md) measures
-nine Agentic processes at 720p/1080p/4K: 7,200 CPU updates and 3,240 separate
+nine host-engine processes at 720p/1080p/4K: 7,200 CPU updates and 3,240 separate
 retained GPU intervals. RTX 5080 inventory GPU median reaches 0.034 ms at 4K.
 This is native-pixel viewport evidence, not high-DPI UI, a busy game world,
 or lower-end qualification. Runtime source and both supported hosts are unchanged.
 
-The [integrated runtime verification](../../docs/verification/integrated-runtime-20261031.md) checks the current core and Agentic renderer in 9,000 CPU-profiled game frames; selection/use/menu actions pass. It is not a paired speedup claim.
+The [integrated runtime verification](../../docs/verification/integrated-runtime-20261031.md) checks the current core and host-engine renderer in 9,000 CPU-profiled game frames; selection/use/menu actions pass. It is not a paired speedup claim.
 
 The [ordinary-draw bounds experiment](../../docs/verification/backdrop-bounds-20261031.md) was rejected after a fresh-baseline repeat failed to establish a runtime gain; accepted renderer source and binaries were restored.
 
@@ -408,7 +408,7 @@ The [final rendering audit](../../docs/verification/render-audit-final-20261031.
 
 The [IL2CPP qualification](../../docs/verification/il2cpp-qualification-20261031.md) fixes callback P/Invoke marshalling and verifies Windows development/high-stripping non-development players. It also records orphan audit players and the need to remeasure prior performance results without that background load.
 
-The [Agentic integration](../../docs/verification/agentic-integration-20261031.md) merges the audit into local Agentic main, passes eleven integration targets and three editor queue tests, and validates an immutable merged SDK with runtime actions and reloads. No push or default native SDK pin change.
+The [host-engine integration](../../docs/verification/host-engine-integration-20261031.md) merges the audit into local host-engine main, passes eleven integration targets and three editor queue tests, and validates an immutable merged SDK with runtime actions and reloads. No push or default native SDK pin change.
 
 The [October 31 lifecycle soak](../../docs/verification/lifecycle-soak-20261031.md) completes 111,587 reloads over 30 minutes with post-reload interaction passing. Dedicated GPU allocation settles; private CPU memory rises 13.7 MiB and remains an open qualification issue. Both Unity runners now stop owned players to prevent background rendering from contaminating measurements.
 
@@ -465,7 +465,7 @@ retains no runtime change. The no-shadow color experiment was reverted after
 six provisional pairs failed to isolate a useful gain; unrelated Rust builds
 contaminated the first batch. Corrected paint attribution, both batches and
 the rejected patch are preserved. The restored engine passes all 17 GCC
-suites and the rebuilt Agentic PE sections match the accepted baseline.
+suites and the rebuilt host-engine PE sections match the accepted baseline.
 
 The [paint state follow-up](../../docs/verification/paint-state-20261031.md)
 combines absolute/fixed containing-block queries in the positioning owner.
@@ -480,14 +480,14 @@ The [border geometry investigation](../../docs/verification/border-investigation
 retains 144 new scalar geometry checks (320 total) and no runtime change.
 Three candidates were reverted; the six-pair bulk-index comparison does not
 isolate a useful gain. All 17 GCC and 19 Clang sanitizer suites pass, with
-unchanged geometry hashes and allocation budgets. The rebuilt Agentic PE
+unchanged geometry hashes and allocation budgets. The rebuilt host-engine PE
 sections match the accepted paint-state baseline; host binaries are unchanged.
 
 The [decoration reuse investigation](../../docs/verification/decoration-reuse-20261031.md)
 retains a 22-state incremental decoration regression and no runtime change.
 Six provisional pairs did not establish a gain from independent mesh retention;
 the cache was removed. All 17 GCC and 19 Clang sanitizer suites pass, and the
-restored Agentic PE sections match the accepted baseline. Host binaries and
+restored host-engine PE sections match the accepted baseline. Host binaries and
 their previous full-gate qualification are unchanged.
 
 The [empty-glyph follow-up](../../docs/verification/empty-glyphs-20261031.md)
@@ -528,7 +528,7 @@ The [memory-leak audit](../../docs/verification/leak-audit-20261031.md) passes a
 20 suites with explicit LeakSanitizer and a positive control, plus 1,000
 post-warm core lifetimes with flat tracked storage. It confirms two open Unity
 font-retention defects (rejected static bytes and changing-content face records).
-This audit changes no runtime code and does not close the Agentic soak finding.
+This audit changes no runtime code and does not close the host-engine soak finding.
 
 User working preference: fix confirmed defects found during audits, verify the
 fixes and commit finished chunks. Do not stop at reporting findings unless the
@@ -546,10 +546,10 @@ finalizing. The original 24-document probe now collects all documents, adapters
 and 6 MiB of model payloads. Full Unity EditMode passes 259 plus two inconclusive,
 player 7/7, and all 16 Unity captures match; core/Godot sources are unchanged.
 
-The [Godot/Agentic memory audit](../../docs/verification/host-memory-20261101.md)
+The [Godot/host-engine memory audit](../../docs/verification/host-memory-20261101.md)
 passes 268 standalone Godot rendered lifecycle checks and adds idle, warmup,
-endpoint-observation and FPS controls to Agentic audit tooling. Tool suites pass
-79 on Linux and 70 plus nine platform skips on Windows. The historical Agentic
+endpoint-observation and FPS controls to host-engine audit tooling. Tool suites pass
+79 on Linux and 70 plus nine platform skips on Windows. The historical host-engine
 SDK still grows at 60 updates/s; native/driver allocation attribution remains
 open. No runtime sources or native binaries changed in this audit.
 
@@ -561,13 +561,13 @@ The [JPEG decoder pass](../../docs/verification/jpeg-20261101.md) adds content-s
 baseline/progressive, grayscale and CMYK JPEG decoding to the shared core.
 Windows/GCC pass 597,253 checks, Clang 597,247; Unity Native 258 pass plus two
 inconclusive and Godot host 247 checks pass. Native SDKs now include stb.txt.
-Agentic integration and late failure reporting are separate pending work.
+Host-engine integration and late failure reporting are separate pending work.
 
 The [host UI core corrections](../../docs/verification/host-ui-20261101.md)
 fix pointer inheritance and solid backgrounds covering replaced images. GCC
 18/18, sanitizers 20/20, Unity Native 258 pass plus two inconclusive, and Godot
 input/host checks pass. The receipt records failed baselines, actual renders and
-the corrected stale-plugin validation attempt. Agentic SDK adoption is pending.
+the corrected stale-plugin validation attempt. Host-engine SDK adoption is pending.
 
 The [glyph lookup experiment](../../docs/verification/glyph-map-20261031.md) was
 rejected after six paired native selection runs: the hash-table candidate lost
@@ -633,22 +633,22 @@ URP PlayMode passes 7/7. Godot hidden preparation passes 39 checks on Windows
 and rebuilt qualified Linux. No Unity timing speedup is claimed.
 
 The [scripted hidden preparation pass](../../docs/verification/script-preparation-20261031.md)
-adds native Agentic html_prepare on the local audit branch. Three paired runs
+adds native host-engine html_prepare on the local audit branch. Three paired runs
 reduce opening main CPU from 20.42 to 0.55 ms by moving about 20 ms to loading;
 GPU first-use work remains. API/accounting/editor checks and live clicks pass.
 Shared core and Godot/Unity code are unchanged.
 
 The [1080p/1440p runtime validation](../../docs/verification/resolution-runtime-20261031.md)
-passes 36,000 measured frames and 1,332 reloads. Combined Agentic submission
+passes 36,000 measured frames and 1,332 reloads. Combined host-engine submission
 and uniform changes reduce cycling-inventory worker CPU by 11.6-12.6%; frame
 medians improve 1.8-3.6%, with mixed static HUD tails. Core/other hosts unchanged.
 
-The [Agentic viewport-uniform follow-up](../../docs/verification/viewport-uniform-20261031.md)
+The [host-engine viewport-uniform follow-up](../../docs/verification/viewport-uniform-20261031.md)
 skips redundant changed-frame buffer writes. Fourteen renderer tests, 18,000
 measured runtime frames and 656 reloads pass. Observed worker savings are small
 (about 1.5�1.8%); static-mode timings remain mixed. Shared core is unchanged.
 
-The [Agentic submission follow-up](../../docs/verification/ui-submission-20261031.md)
+The [host-engine submission follow-up](../../docs/verification/ui-submission-20261031.md)
 combines presentation and HTML encoding: inventory worker UI-phase CPU falls
 17.1% and frame median 3.3% in three pairs. 18,000 frames, 713 reloads and nine
 worker tests pass; static-mode frame tails remain mixed. No shared-core change.
@@ -658,7 +658,7 @@ separates worker UI from main-thread cost. Inventory main UI is 0.533 ms mean,
 including 0.511 ms document work; 9,000 frames and 355 reloads pass. Older
 threaded `ui` values combine main/worker work; this fix claims no new speedup.
 
-The [current Agentic SDK runtime check](../../docs/verification/current-runtime-20261031.md)
+The [current host-engine SDK runtime check](../../docs/verification/current-runtime-20261031.md)
 passes 18,000 measured frames, click/actions and 716 reloads in a 240-cube world.
 Inventory frame median improves 10.7%, but p95 is mixed; this is not GPU or
 Chrome parity evidence. Shared Godot/Unity checks remain in the no-op receipt.
@@ -666,7 +666,7 @@ Chrome parity evidence. Shared Godot/Unity checks remain in the no-op receipt.
 The [unchanged-attribute follow-up](../../docs/verification/scoped-noop-20261031.md)
 avoids no-op restyles after sibling pruning: paired complete inventory CPU
 falls 7.3%. Windows/GCC main checks pass 493,402 (493,396 sanitized), all 340
-Chrome captures pass, Unity Native passes 243 with two inconclusive, Agentic
+Chrome captures pass, Unity Native passes 243 with two inconclusive, host-engine
 renderer passes 13, and affected Godot scenes pass. No ABI change or new full gate.
 
 The [sibling-subject optimization](../../docs/verification/sibling-subjects-20261031.md)
@@ -677,7 +677,7 @@ Inventory core CPU improves 6.9%; complete inventory CPU did not improve in
 the recorded batch. This is affected-suite evidence, not a new full gate.
 
 The [matched rendering comparison](../../docs/verification/prepared-render-comparison-20261031.md)
-corrects diagnostic backgrounds/bindings and records three prepared Chrome/Agentic
+corrects diagnostic backgrounds/bindings and records three prepared Chrome/host-engine
 runs. Inventory style/layout remains behind Chrome; no production speedup or
 GPU parity is claimed. Shared-host gate counts are unchanged.
 
@@ -766,7 +766,7 @@ covers both compiler suites, the Chrome hand corpus and host rendering.
   41-case scope and 46-case nesting oracles included in the final full gate.
   CI pins Windows Chrome 152; numeric-editing and CR fixtures depend on the
   reference OS/browser version. Set `WEVA_CHROME` to choose the executable.
-- **Unity EditMode**: `Unity -batchmode -projectPath <repo> -runTests
+- **Unity EditMode**: `Unity -batchmode -projectPath workspace -runTests
   -testPlatform EditMode -testFilter Weva.Tests.EditorTests.Native
   -testResults <path>` (no `-quit`, no `-nographics`). Also the compile check.
 - **`hosts/unity/goldens_from_unity.py`** — fresh Unity/Chrome PNG pairs of the
@@ -792,7 +792,7 @@ any red is new.
 # Scaled text validation
 
 Uniform scaled text and controls rasterize at their final pixel size; see
-[the scoped core/Agentic receipt](../../docs/verification/scaled-text-20261025.md).
+[the scoped core/host-engine receipt](../../docs/verification/scaled-text-20261025.md).
 Open select rows honor authored option/optgroup background colors; see
 [the dropdown receipt](../../docs/verification/option-backgrounds-20261025.md).
 Ordinary images/backgrounds filter downscaled pixels in premultiplied sRGB;
@@ -805,21 +805,21 @@ template source bodies remain outside the cascade. See
 The [attribute batching audit](../../docs/verification/render-batching-20261030.md)
 removes intermediate Godot paints, adds ten timing checks (31 total), and
 records preliminary before/after evidence. The continuing rendering audit
-uses Agentic at the user’s request; Godot results do not qualify that host.
+uses host-engine at the user’s request; Godot results do not qualify that host.
 
-The [Agentic runtime audit](../../docs/verification/agentic-runtime-20261030.md) adds
+The [host-engine runtime audit](../../docs/verification/host-engine-runtime-20261030.md) adds
 9,000 CPU-only rendered frames, live click/binding checks and 339 short-cycle
 reloads in a published SDK using the current core. It is not a Chrome rendering
 comparison or a production-game performance result.
 
-The [Agentic cold renderer audit](../../docs/verification/agentic-cold-render-20261030.md)
+The [host-engine cold renderer audit](../../docs/verification/host-engine-cold-render-20261030.md)
 removes unused GPU setup, verifies 13 renderer/42 overlay tests, and measures
 both runtime routes. Threaded median opening improves 6.6%; slow cold outliers
 remain. Unity/Godot already allocate backdrop resources on demand.
 
-The [hidden UI follow-up](../../docs/verification/agentic-hidden-ui-20261030.md) adds
+The [hidden UI follow-up](../../docs/verification/host-engine-hidden-ui-20261030.md) adds
 correct direct HTML CPU attribution and eliminates hidden layout/upload work
-in Agentic direct rendering, matching its snapshot path. 43 overlay tests and
+in host-engine direct rendering, matching its snapshot path. 43 overlay tests and
 6,000 paired frames pass; visible-workload and other-host gains are not implied.
 
 The [glyph preparation audit](../../docs/verification/glyph-preparation-20261030.md)
@@ -832,15 +832,15 @@ pauses automatic hidden document work, including hidden ancestors. Explicit
 `update_document(0)` still prewarms while hidden; timing passes 39 checks.
 Unity disable releases its document, so it is a different lifecycle.
 
-The [Agentic packed-paint audit](../../docs/verification/agentic-packed-20261030.md)
-removes duplicate snapshot/upload copies in Agentic (ff1c9925b, not integrated
+The [host-engine packed-paint audit](../../docs/verification/host-engine-packed-20261030.md)
+removes duplicate snapshot/upload copies in host-engine (ff1c9925b, not integrated
 into engine-main yet). Two paint and twelve renderer tests pass. It records
 scoped CPU gains and rejected experiments; core/Unity/Godot gate counts are
 unchanged. GPU/Chrome parity and the wider rendering audit remain open.
 
-The [Agentic GPU/selection audit](../../docs/verification/agentic-gpu-20261030.md)
+The [host-engine GPU/selection audit](../../docs/verification/host-engine-gpu-20261030.md)
 adds real Vulkan timestamps, complete setter/update/submission timing and
-720p/1080p/4K scripted workloads. Agentic commit be88b3cb2 is not integrated
+720p/1080p/4K scripted workloads. Host-engine commit be88b3cb2 is not integrated
 yet. Retained GPU costs are small on the RTX 5080; selection preparation is
 the main remaining CPU target. It does not establish Chrome GPU parity.
 
@@ -916,25 +916,25 @@ is rejected after six fixed-font pairs split three wins/three losses. Geometry
 checks stayed identical, but no useful runtime gain was established. Original
 source is restored and all 15 GCC suites pass; hosts are unchanged.
 
-The [Agentic pass-scissor follow-up](../../docs/verification/agentic-pass-scissor-20261031.md)
+The [host-engine pass-scissor follow-up](../../docs/verification/host-engine-pass-scissor-20261031.md)
 fixes inherited clipping hiding canvas backgrounds. The leased audit branch
 passes 84 library tests with two existing ignored; the GPU regression fails
 before and passes after. This is adapter correctness, not a speedup or an
 upstream SDK release. Unity/Godot use different clipping paths and are unchanged.
 
-The [Agentic scissor command follow-up](../../docs/verification/agentic-scissor-dedup-20261031.md)
+The [host-engine scissor command follow-up](../../docs/verification/host-engine-scissor-dedup-20261031.md)
 reduces repeated clip commands while preserving first-draw state ownership.
 Encoding CPU improves 5.04% HUD / 4.26% inventory in four paired runs; 84 tests
 pass with two existing ignored and captures match. It is on the unpublished
-Agentic audit branch; no shared-core or Unity/Godot change is needed.
+Host-engine audit branch; no shared-core or Unity/Godot change is needed.
 
 The [resolution audit](../../docs/verification/resolution-audit-20261031.md) measures
-nine Agentic processes at 720p/1080p/4K: 7,200 CPU updates and 3,240 separate
+nine host-engine processes at 720p/1080p/4K: 7,200 CPU updates and 3,240 separate
 retained GPU intervals. RTX 5080 inventory GPU median reaches 0.034 ms at 4K.
 This is native-pixel viewport evidence, not high-DPI UI, a busy game world,
 or lower-end qualification. Runtime source and both supported hosts are unchanged.
 
-The [integrated runtime verification](../../docs/verification/integrated-runtime-20261031.md) checks the current core and Agentic renderer in 9,000 CPU-profiled game frames; selection/use/menu actions pass. It is not a paired speedup claim.
+The [integrated runtime verification](../../docs/verification/integrated-runtime-20261031.md) checks the current core and host-engine renderer in 9,000 CPU-profiled game frames; selection/use/menu actions pass. It is not a paired speedup claim.
 
 The [ordinary-draw bounds experiment](../../docs/verification/backdrop-bounds-20261031.md) was rejected after a fresh-baseline repeat failed to establish a runtime gain; accepted renderer source and binaries were restored.
 
@@ -942,7 +942,7 @@ The [final rendering audit](../../docs/verification/render-audit-final-20261031.
 
 The [IL2CPP qualification](../../docs/verification/il2cpp-qualification-20261031.md) fixes callback P/Invoke marshalling and verifies Windows development/high-stripping non-development players. It also records orphan audit players and the need to remeasure prior performance results without that background load.
 
-The [Agentic integration](../../docs/verification/agentic-integration-20261031.md) merges the audit into local Agentic main, passes eleven integration targets and three editor queue tests, and validates an immutable merged SDK with runtime actions and reloads. No push or default native SDK pin change.
+The [host-engine integration](../../docs/verification/host-engine-integration-20261031.md) merges the audit into local host-engine main, passes eleven integration targets and three editor queue tests, and validates an immutable merged SDK with runtime actions and reloads. No push or default native SDK pin change.
 
 The [October 31 lifecycle soak](../../docs/verification/lifecycle-soak-20261031.md) completes 111,587 reloads over 30 minutes with post-reload interaction passing. Dedicated GPU allocation settles; private CPU memory rises 13.7 MiB and remains an open qualification issue. Both Unity runners now stop owned players to prevent background rendering from contaminating measurements.
 
@@ -999,7 +999,7 @@ retains no runtime change. The no-shadow color experiment was reverted after
 six provisional pairs failed to isolate a useful gain; unrelated Rust builds
 contaminated the first batch. Corrected paint attribution, both batches and
 the rejected patch are preserved. The restored engine passes all 17 GCC
-suites and the rebuilt Agentic PE sections match the accepted baseline.
+suites and the rebuilt host-engine PE sections match the accepted baseline.
 
 The [paint state follow-up](../../docs/verification/paint-state-20261031.md)
 combines absolute/fixed containing-block queries in the positioning owner.
@@ -1014,14 +1014,14 @@ The [border geometry investigation](../../docs/verification/border-investigation
 retains 144 new scalar geometry checks (320 total) and no runtime change.
 Three candidates were reverted; the six-pair bulk-index comparison does not
 isolate a useful gain. All 17 GCC and 19 Clang sanitizer suites pass, with
-unchanged geometry hashes and allocation budgets. The rebuilt Agentic PE
+unchanged geometry hashes and allocation budgets. The rebuilt host-engine PE
 sections match the accepted paint-state baseline; host binaries are unchanged.
 
 The [decoration reuse investigation](../../docs/verification/decoration-reuse-20261031.md)
 retains a 22-state incremental decoration regression and no runtime change.
 Six provisional pairs did not establish a gain from independent mesh retention;
 the cache was removed. All 17 GCC and 19 Clang sanitizer suites pass, and the
-restored Agentic PE sections match the accepted baseline. Host binaries and
+restored host-engine PE sections match the accepted baseline. Host binaries and
 their previous full-gate qualification are unchanged.
 
 The [empty-glyph follow-up](../../docs/verification/empty-glyphs-20261031.md)
@@ -1062,7 +1062,7 @@ The [memory-leak audit](../../docs/verification/leak-audit-20261031.md) passes a
 20 suites with explicit LeakSanitizer and a positive control, plus 1,000
 post-warm core lifetimes with flat tracked storage. It confirms two open Unity
 font-retention defects (rejected static bytes and changing-content face records).
-This audit changes no runtime code and does not close the Agentic soak finding.
+This audit changes no runtime code and does not close the host-engine soak finding.
 
 The [Unity font-retention fix](../../docs/verification/font-retention-20261031.md)
 resolves both confirmed audit findings: rejected static payloads fall from
@@ -1076,9 +1076,9 @@ finalizing. The original 24-document probe now collects all documents, adapters
 and 6 MiB of model payloads. Full Unity EditMode passes 259 plus two inconclusive,
 player 7/7, and all 16 Unity captures match; core/Godot sources are unchanged.
 
-The [Godot/Agentic memory audit](../../docs/verification/host-memory-20261101.md)
+The [Godot/host-engine memory audit](../../docs/verification/host-memory-20261101.md)
 passes 268 standalone Godot rendered lifecycle checks and adds idle, warmup,
-endpoint-observation and FPS controls to Agentic audit tooling. Tool suites pass
-79 on Linux and 70 plus nine platform skips on Windows. The historical Agentic
+endpoint-observation and FPS controls to host-engine audit tooling. Tool suites pass
+79 on Linux and 70 plus nine platform skips on Windows. The historical host-engine
 SDK still grows at 60 updates/s; native/driver allocation attribution remains
 open. No runtime sources or native binaries changed in this audit.

@@ -4,20 +4,20 @@
     {
       "binaries": {
         "before": {
-          "path": "<repo>\\.utmp\\render-audit-20261030\\before-flex-defer.exe",
+          "path": "before-flex-defer.exe",
           "sha256": "064ffedc8b36caf88b6f73c58b274b2bc1f04bfe5d5c27fa2d4159b489858d34"
         },
         "after": {
-          "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+          "path": "weva_cost.exe",
           "sha256": "f10220697b2c883af4c7cbe0195ecdd12f50ef4f87e2d9203de1457738dedb2a"
         }
       },
       "arguments": [
-        "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.html",
-        "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.css",
-        "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
-        "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
-        "<repo>/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
+        "hud.html",
+        "hud.css",
+        "inventory.html",
+        "inventory.css",
+        "mutations.json"
       ],
       "rows": [
         {
@@ -359,20 +359,20 @@
     {
       "binaries": {
         "before": {
-          "path": "<repo>\\.utmp\\render-audit-20261030\\before-flex-defer.exe",
+          "path": "before-flex-defer.exe",
           "sha256": "064ffedc8b36caf88b6f73c58b274b2bc1f04bfe5d5c27fa2d4159b489858d34"
         },
         "after": {
-          "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+          "path": "weva_cost.exe",
           "sha256": "f10220697b2c883af4c7cbe0195ecdd12f50ef4f87e2d9203de1457738dedb2a"
         }
       },
       "arguments": [
-        "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.html",
-        "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.css",
-        "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
-        "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
-        "<repo>/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
+        "hud.html",
+        "hud.css",
+        "inventory.html",
+        "inventory.css",
+        "mutations.json"
       ],
       "rows": [
         {

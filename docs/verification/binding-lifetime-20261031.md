@@ -53,7 +53,7 @@ collection test already passed. The failed receipt is preserved.
 This pass changes only Unity wrapper lifetime management; shared C++, ABI,
 native binaries and Godot sources are unchanged. The existing core/sanitizer
 and Godot qualification applies to those unchanged sources. This is not a
-rerun of the full cross-host release gate or attribution of the earlier Agentic
+rerun of the full cross-host release gate or attribution of the earlier host-engine
 process-memory growth.
 
 ## Additional audit scope

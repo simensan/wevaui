@@ -4,7 +4,7 @@ The shared-core change in `a0943b78` reduces inventory-selection controller/upda
 CPU in all four paired Godot runs: **10.49% median paired reduction**. P95 improves
 in three pairs, with a **31.19% median paired reduction**; the third pair worsens
 from 2.079 to 2.592 ms. This extends the separate
-[Unity and Agentic evidence](flex-row-allocation-20261031.md).
+[Unity and host-engine evidence](flex-row-allocation-20261031.md).
 
 ## Method and limits
 

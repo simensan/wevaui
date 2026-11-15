@@ -1,7 +1,7 @@
 {
   "core_last_changed": "faf04f31",
-  "before_agentic": "36c2fc75a",
-  "after_agentic": "88e0e7f4b",
+  "before_host": "36c2fc75a",
+  "after_host": "88e0e7f4b",
   "runs": [
     {
       "variant": "before",
@@ -31,36 +31,36 @@
       "profile_artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\83c0600191da28e7fef7f35c6627af206e60aea71d0183b9a71c706264a745e7\\profiles\\51376-18e370206054a460-14\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "d5c282e5c994add9cfe38e99b0f665005215584a2719f11f05f76fe210173fb3"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\83c0600191da28e7fef7f35c6627af206e60aea71d0183b9a71c706264a745e7\\profiles\\51376-18e370206054a460-14\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "a572f4c2b84e6ed48daa6b50bec7f1b333592fb13adadea4c8bbee238b642df4"
         }
       ],
       "shown_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\83c0600191da28e7fef7f35c6627af206e60aea71d0183b9a71c706264a745e7\\captures\\51376-18e370215553ef70-36\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\83c0600191da28e7fef7f35c6627af206e60aea71d0183b9a71c706264a745e7\\captures\\51376-18e370215553ef70-36\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "66c58583ac8a766d9ff7fa08b56cbe669700f58c624605e854c00335ec37a492"
         }
       ],
       "hidden_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\83c0600191da28e7fef7f35c6627af206e60aea71d0183b9a71c706264a745e7\\captures\\51376-18e37021357b7a88-22\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "f11419847154276acc1c1c9156bb9cf4f774bdbcf996ef14a11c3897c84fd24b"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\83c0600191da28e7fef7f35c6627af206e60aea71d0183b9a71c706264a745e7\\captures\\51376-18e37021357b7a88-22\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "66a02eb7995540431c2c16abec4714de807e53d3588be6374abe897969cc5f02"
         }
       ]
@@ -93,36 +93,36 @@
       "profile_artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\0a77a3fb4d669d7356b1a05116e84672f09a99bb439c1d295f9d671272d95ff5\\profiles\\51760-18e3702266719d9c-14\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "27772cefd11afa3446a167558038bf4ecd1c16fe4917c7125deb53f1100fbf76"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\0a77a3fb4d669d7356b1a05116e84672f09a99bb439c1d295f9d671272d95ff5\\profiles\\51760-18e3702266719d9c-14\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "ae1a1b5458ddc0d765c479970d652d3a0ed51621b14160e1ab21601421bcf2c7"
         }
       ],
       "shown_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\0a77a3fb4d669d7356b1a05116e84672f09a99bb439c1d295f9d671272d95ff5\\captures\\51760-18e37022de916960-36\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\0a77a3fb4d669d7356b1a05116e84672f09a99bb439c1d295f9d671272d95ff5\\captures\\51760-18e37022de916960-36\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "22a178d320f096c999dee08f75897cca4ef2b4fcb9b0552e3f9a4267371ca509"
         }
       ],
       "hidden_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\0a77a3fb4d669d7356b1a05116e84672f09a99bb439c1d295f9d671272d95ff5\\captures\\51760-18e37022c247a274-22\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "f11419847154276acc1c1c9156bb9cf4f774bdbcf996ef14a11c3897c84fd24b"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\0a77a3fb4d669d7356b1a05116e84672f09a99bb439c1d295f9d671272d95ff5\\captures\\51760-18e37022c247a274-22\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "0da7a1d94fe8267c7f91c5507930ba38b0940066540b16cc6a2ce28ea0894a2f"
         }
       ]
@@ -155,36 +155,36 @@
       "profile_artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\53d46277e5a4d0fe737e9e5a7768c4c918b0b847046e892feb4e719a8c4f84f8\\profiles\\43148-18e3702397e2c92c-14\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "814e77033a64aa818dc3f82f733d58bdd90b0c3695263ed302e2c4469195d650"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\53d46277e5a4d0fe737e9e5a7768c4c918b0b847046e892feb4e719a8c4f84f8\\profiles\\43148-18e3702397e2c92c-14\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "dfa5856b283da119cdee95efadd78ea9b48ca21ff31b605ae8ebee7f1ca6c7f7"
         }
       ],
       "shown_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\53d46277e5a4d0fe737e9e5a7768c4c918b0b847046e892feb4e719a8c4f84f8\\captures\\43148-18e37024277ead08-36\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\53d46277e5a4d0fe737e9e5a7768c4c918b0b847046e892feb4e719a8c4f84f8\\captures\\43148-18e37024277ead08-36\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "1ed64ada615eb335a28aecdf580fd2d651d07eec2805c98f20f365dbb88543fb"
         }
       ],
       "hidden_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\53d46277e5a4d0fe737e9e5a7768c4c918b0b847046e892feb4e719a8c4f84f8\\captures\\43148-18e37023eff9d718-22\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "f11419847154276acc1c1c9156bb9cf4f774bdbcf996ef14a11c3897c84fd24b"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\53d46277e5a4d0fe737e9e5a7768c4c918b0b847046e892feb4e719a8c4f84f8\\captures\\43148-18e37023eff9d718-22\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "d988e9739f8ab5283beea4a4791dc06027dd0577caf7414d68a0af2e787dca27"
         }
       ]
@@ -217,36 +217,36 @@
       "profile_artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\211bb3ef8e928c3248b58d889d27e12d9534cb8299cdb8d97e76798b47f1bca3\\profiles\\468-18e37024f669bcd4-14\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "bf353d36333395ccc3d88edeb5b12ede752a00ca3e1b53b10b96a938c5bf80b4"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\211bb3ef8e928c3248b58d889d27e12d9534cb8299cdb8d97e76798b47f1bca3\\profiles\\468-18e37024f669bcd4-14\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "33f74201ca2010e655f06b1796f61bd0dc4bbfba4605b4175d86f5560c681e7e"
         }
       ],
       "shown_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\211bb3ef8e928c3248b58d889d27e12d9534cb8299cdb8d97e76798b47f1bca3\\captures\\468-18e37025d8223188-36\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\211bb3ef8e928c3248b58d889d27e12d9534cb8299cdb8d97e76798b47f1bca3\\captures\\468-18e37025d8223188-36\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "f213e3ebaef479d4671d4ec3670f0fc63ec042c305ed1ba5ed13680dff2367ba"
         }
       ],
       "hidden_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\211bb3ef8e928c3248b58d889d27e12d9534cb8299cdb8d97e76798b47f1bca3\\captures\\468-18e37025ab12f344-22\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "f11419847154276acc1c1c9156bb9cf4f774bdbcf996ef14a11c3897c84fd24b"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\211bb3ef8e928c3248b58d889d27e12d9534cb8299cdb8d97e76798b47f1bca3\\captures\\468-18e37025ab12f344-22\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "58f8230f34502b2b5b65ad3949d9b26fe4a0f9a0d8e5eb6d4ad16e2faed658e2"
         }
       ]
@@ -279,36 +279,36 @@
       "profile_artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\f39fa471731b562b585cada497ef92b8f0fa66a4dce1b0c24edfc4440b1f9800\\profiles\\45192-18e37026b772dd38-14\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "b9ef1f74bcd6e216253c455074e422ac5e45f17d54d4f536438a1e8995ce89f2"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\f39fa471731b562b585cada497ef92b8f0fa66a4dce1b0c24edfc4440b1f9800\\profiles\\45192-18e37026b772dd38-14\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "539035efbf281e5c12998708e73c3f428fb021c6a182275883b1402a3f37fa0d"
         }
       ],
       "shown_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\f39fa471731b562b585cada497ef92b8f0fa66a4dce1b0c24edfc4440b1f9800\\captures\\45192-18e37027b42f5010-36\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\f39fa471731b562b585cada497ef92b8f0fa66a4dce1b0c24edfc4440b1f9800\\captures\\45192-18e37027b42f5010-36\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "43862fd4233410f5db37ffd6692ed92603a47f49ff5b7851511a5e5c6b6bd6c9"
         }
       ],
       "hidden_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\f39fa471731b562b585cada497ef92b8f0fa66a4dce1b0c24edfc4440b1f9800\\captures\\45192-18e370278c40e050-22\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "f11419847154276acc1c1c9156bb9cf4f774bdbcf996ef14a11c3897c84fd24b"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\f39fa471731b562b585cada497ef92b8f0fa66a4dce1b0c24edfc4440b1f9800\\captures\\45192-18e370278c40e050-22\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "01706ae38249bb9fa47d767c6c78f3ab598f60b1213e81c647911d1c16c98330"
         }
       ]
@@ -341,36 +341,36 @@
       "profile_artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\6b4b5365ee944c283399bf2e98de402d1a2fc0812c8846accf83c9ca560ad388\\profiles\\35988-18e370287bfde098-14\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "54eff855a4e061c3be7ead281ec374f648c5e4df0dc9d7f8ee9610b0905a9bdf"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\6b4b5365ee944c283399bf2e98de402d1a2fc0812c8846accf83c9ca560ad388\\profiles\\35988-18e370287bfde098-14\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "b73a0625f77bb8275c11b2c0393bba0e98eaf21dbd296be488ef47d4b416aaed"
         }
       ],
       "shown_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\6b4b5365ee944c283399bf2e98de402d1a2fc0812c8846accf83c9ca560ad388\\captures\\35988-18e3702917f9b378-36\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\6b4b5365ee944c283399bf2e98de402d1a2fc0812c8846accf83c9ca560ad388\\captures\\35988-18e3702917f9b378-36\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "3baec39575ce0850b0894e905b2d568fbb71c1c46d9d052072e44d85c7bb9614"
         }
       ],
       "hidden_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\6b4b5365ee944c283399bf2e98de402d1a2fc0812c8846accf83c9ca560ad388\\captures\\35988-18e37028e3a21138-22\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "f11419847154276acc1c1c9156bb9cf4f774bdbcf996ef14a11c3897c84fd24b"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\hidden-paired\\registry\\runs\\6b4b5365ee944c283399bf2e98de402d1a2fc0812c8846accf83c9ca560ad388\\captures\\35988-18e37028e3a21138-22\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "6be21ad67b90b40557a96ba7684702f2a04519a9e390697e8afa919fc2af6561"
         }
       ]
@@ -407,8 +407,8 @@
       "frames": 6000,
       "metadata": {
         "session_id": "d8217582dfd1542c809c9e872959124c201e5d93be3e5d2bd2558933c05d00d4",
-        "project": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\agentic-cold-direct-project",
-        "engine": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\published-sdk\\63f824596edf921fe2f8b28c1640dc6ac9905a87fd122f4dc37cd2848d1a3b24",
+        "project": "\\\\?\\host-cold-direct-project",
+        "engine": "\\\\?\\63f824596edf921fe2f8b28c1640dc6ac9905a87fd122f4dc37cd2848d1a3b24",
         "executable_sha256": "c9e08bc50e2262ebb1945dad1028d85b10eff614cebc2caf380bb5a38fbb0aa3",
         "adapter": "NVIDIA GeForce RTX 5080",
         "driver": "Vulkan (NVIDIA 617.42)",
@@ -418,7 +418,7 @@
         "launch_args": [],
         "settings": {
           "title": "Weva runtime audit",
-          "app_id": "com.agentic.game",
+          "app_id": "com.host.game",
           "retain_save_backup": true,
           "version": "1.0.0",
           "build_number": 1,
@@ -510,28 +510,28 @@
       "profile_artifacts": [
         {
           "kind": "profile_report",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\direct-ui-attribution\\registry\\runs\\d8217582dfd1542c809c9e872959124c201e5d93be3e5d2bd2558933c05d00d4\\profiles\\21412-18e36ffd0abdec14-7\\report.json",
+          "path": "\\\\?\\report.json",
           "sha256": "67842721bf7a6ccaa0711110c489cfdf6c706f7cd0f895d200ef2b4e79e4c242"
         },
         {
           "kind": "profile_frames",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\direct-ui-attribution\\registry\\runs\\d8217582dfd1542c809c9e872959124c201e5d93be3e5d2bd2558933c05d00d4\\profiles\\21412-18e36ffd0abdec14-7\\frames.jsonl",
+          "path": "\\\\?\\frames.jsonl",
           "sha256": "4cecaee7f4e6d3a02e6554902bf12a30545a06f9a7b25b06ed01311a2742f230"
         }
       ],
       "capture_artifacts": [
         {
           "kind": "image",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\direct-ui-attribution\\registry\\runs\\d8217582dfd1542c809c9e872959124c201e5d93be3e5d2bd2558933c05d00d4\\captures\\21412-18e36ffeeb356b90-14\\frame.png",
+          "path": "\\\\?\\frame.png",
           "sha256": "cfa205c592d41c6a704bb4da1243859c81adc836d561423f276fa2a106639511"
         },
         {
           "kind": "capture_manifest",
-          "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\direct-ui-attribution\\registry\\runs\\d8217582dfd1542c809c9e872959124c201e5d93be3e5d2bd2558933c05d00d4\\captures\\21412-18e36ffeeb356b90-14\\frame.json",
+          "path": "\\\\?\\frame.json",
           "sha256": "f37e12b01821e7e33749c07f2ec8afa769e79b8c66a271976536701455d47a0c"
         }
       ]
     }
   ],
-  "glyph_diagnostic_log": "<repo>\\.utmp\\render-audit-20261030\\cold-paint-profile.log"
+  "glyph_diagnostic_log": "cold-paint-profile.log"
 }

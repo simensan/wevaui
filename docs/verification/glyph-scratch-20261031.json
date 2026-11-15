@@ -22,7 +22,7 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 55004,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -33,12 +33,12 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 55004,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "name": "dev_runtime.exe",
                 "pid": 53288,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -49,12 +49,12 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 53288,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "name": "dev_runtime.exe",
                 "pid": 47744,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -65,12 +65,12 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 47744,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "name": "dev_runtime.exe",
                 "pid": 55020,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -81,12 +81,12 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 55020,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "name": "dev_runtime.exe",
                 "pid": 44012,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -97,7 +97,7 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 44012,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -108,7 +108,7 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 44012,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -119,12 +119,12 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 44012,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "name": "dev_runtime.exe",
                 "pid": 53168,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -135,17 +135,17 @@
               {
                 "name": "dev_runtime.exe",
                 "pid": 53168,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "name": "dev_runtime.exe",
                 "pid": 22488,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "name": "dev_runtime.exe",
                 "pid": 22872,
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           }
@@ -642,12 +642,12 @@
               {
                 "pid": 22872,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 39088,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -658,12 +658,12 @@
               {
                 "pid": 39088,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 31500,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -674,12 +674,12 @@
               {
                 "pid": 31500,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 16428,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -690,17 +690,17 @@
               {
                 "pid": 16428,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 50388,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 52068,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -711,17 +711,17 @@
               {
                 "pid": 54760,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 28180,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 12152,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -732,7 +732,7 @@
               {
                 "pid": 12152,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -743,17 +743,17 @@
               {
                 "pid": 12152,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 54168,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 41856,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -764,7 +764,7 @@
               {
                 "pid": 41856,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           },
@@ -775,27 +775,27 @@
               {
                 "pid": 49624,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 4836,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 25848,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 19104,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               },
               {
                 "pid": 50956,
                 "name": "dev_runtime.exe",
-                "exe": "<workspace>\\engine-6\\target\\fast\\dev_runtime.exe"
+                "exe": "dev_runtime.exe"
               }
             ]
           }
@@ -1327,8 +1327,8 @@
     "libweva/src/paint.cpp": "f268186f730a7b9e2d8d555c71b9b1251087e63c389435b48ba9c2e3a2e5a35b",
     "libweva/tests/test_geometry_allocations.cpp": "090226831f5b61c1785d2fac35ea995784aba41c7e2ee5c6d5d90ae2ffde69b5"
   },
-  "final_agentic_executable": {
-    "path": "<workspace>\\engine-9\\target\\fast\\weva_cost.exe",
+  "final_host_executable": {
+    "path": "weva_cost.exe",
     "sha256": "b2d0edd6b7f5e7537d10f40d6f46f6708d12a0badb8ba1433cfb77ead0753ccd"
   },
   "unity_editor": {

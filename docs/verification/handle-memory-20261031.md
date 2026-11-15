@@ -5,7 +5,7 @@ element in the document. A sparse ordered table now releases empty 256-slot
 pages while preserving monotonically increasing IDs. Full markup loads also
 preserve the serial, preventing stale handles from targeting new elements.
 Box snapshots reuse the existing reverse map instead of allocating a second one.
-This shared-core change applies to Unity, Godot and Agentic without host logic
+This shared-core change applies to Unity, Godot and host-engine without host logic
 or a C ABI change.
 
 ## Memory evidence
@@ -39,7 +39,7 @@ stale mutation rejection and destruction. The old implementation fails three
 assertions (retention and two stale full-load assertions); the candidate passes
 all 8,352. A 64 KiB plateau budget avoids depending on exact allocator sizing.
 
-This does **not** attribute the earlier 13.7 MiB Agentic process-memory growth.
+This does **not** attribute the earlier 13.7 MiB host-engine process-memory growth.
 Identical reload controls were already flat in the old core. Host allocation
 profiling and a matched long-duration control remain necessary for that finding.
 No CPU speedup or whole-process memory reduction is claimed in this pass.

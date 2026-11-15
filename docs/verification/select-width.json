@@ -288,10 +288,10 @@
     "qualification_scope": "Development installation of compact select sizing; core, native headless/rendered, sample and export checks pass. No new sanitizer run for this default stylesheet change.",
     "timing_profiles": "Timing and lifecycle observations are from build 198 and do not requalify this binary. Development install only.",
     "targets": {
-      "host": "<repo>\\godot-port\\hosts\\godot\\project\\addons\\weva",
-      "sample": "<repo>\\godot-port\\examples\\frontier_camp\\addons\\weva"
+      "host": "weva",
+      "sample": "weva"
     },
-    "backup": "<repo>\\.utmp\\safe-engine71\\installed199-backup",
+    "backup": "installed199-backup",
     "updated_files": [
       "ADA.md",
       "ADA_LICENSE_APACHE.txt",
