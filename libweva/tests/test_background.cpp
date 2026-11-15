@@ -1099,6 +1099,39 @@ void test_gradient_prepared_color_spans() {
     }
 }
 
+// An opaque background replaces its backdrop. Adding a transparent top layer
+// forces general multilayer compositing without changing the expected pixels.
+void test_opaque_gradient_raster_equivalence() {
+    const char* cases[] = {
+        "linear-gradient(165deg, #244963, #101f35)",
+        "linear-gradient(90deg, red, blue)",
+        "linear-gradient(180deg, #123, #abc)",
+        "linear-gradient(27deg, red 20%, green 45%, blue 80%)",
+        "radial-gradient(circle at 30% 60%, #fac, #123)",
+        "radial-gradient(ellipse at center, red, blue)",
+        "linear-gradient(165deg, red 0%, 25%, blue 100%)",
+        "linear-gradient(165deg, red 40%, blue 40%)",
+        "repeating-linear-gradient(27deg, red 0%, blue 25%)",
+    };
+    LayoutContext ctx;
+    BackgroundLayer clear;
+    clear.is_gradient = true;
+    CHECK(parse_gradient("linear-gradient(transparent, transparent)", LinearColor::black(), &clear.gradient));
+    for (const char* css : cases) {
+        BackgroundLayer layer;
+        layer.is_gradient = true;
+        CHECK(parse_gradient(css, LinearColor::black(), &layer.gradient));
+        for (const auto size : {std::array<int, 2>{17, 13}, {39, 51}, {390, 512}}) {
+            std::vector<uint8_t> direct, composited;
+            rasterize_background({layer}, LinearColor::white(), size[0], size[1],
+                                 size[0], size[1], ctx, 16, &direct);
+            rasterize_background({clear, layer}, LinearColor::white(), size[0], size[1],
+                                 size[0], size[1], ctx, 16, &composited);
+            CHECK(direct == composited);
+        }
+    }
+}
+
 // CSS Compositing 1 §9 background-blend-mode and CSS Masking 1 §6 mask-image
 // in the rasterizer: a layer blends with what is under it; a mask layer's
 // coverage multiplies the result; masks add; luminance reads brightness.

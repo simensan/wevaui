@@ -1,0 +1,29 @@
+# Opaque gradient raster cost
+
+A single opaque, normally blended gradient covering the painting area now
+samples directly into RGBA texels. It does not composite against a backdrop
+that it replaces completely. Transparency, masks, image layers, tiled boundaries
+and supersampled hard edges retain the general path. Interpolation also avoids
+dividing by an alpha of exactly one. Neither texture resolution nor CSS behavior
+changes.
+
+The new regression compares direct rasters with the same gradients beneath a
+transparent top layer, which forces general multilayer compositing. All 27
+image comparisons are byte-identical, including diagonal, axial, radial,
+hinted, repeated and hard-stop gradients at three resolutions. Existing blend,
+mask, shared-cache and parallel-raster tests also pass.
+
+Windows MSVC Release, WSL GCC Release and WSL Clang Release pass the core suite
+(600,590 checks on MSVC) and CTest. All three final builds report zero warnings.
+This also removes an unused hit-test string lookup overload and simplifies the
+click diagnostic's redundant enum/integer conditional. No ABI change.
+
+Seven alternating before/after pairs, each in a fresh Windows process, measured
+the Agentic CPU document profiler with Wavebound's upgrade picker/controller
+fixture at 1920x1080. No samples were discarded. Median cold load decreased from
+18.750 to 16.845 ms; first paint from 11.755 to 10.364 ms. This excludes GPU work
+and does not establish a hitch-free game frame. Compilation and tests had
+finished before measurement. Raw inputs, binary hashes and all samples are
+retained at `E:/Wavebound_Agentic/Cache/hitches-gradient-comparison.json`.
+
+The full Unity/Godot host suites and macOS were not exercised for this change.

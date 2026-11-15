@@ -36,6 +36,7 @@ void test_validity_selectors_chrome();
 void test_range_selectors_chrome();
 #include "check.h"
 void test_arena();
+void test_opaque_gradient_raster_equivalence();
 void test_grapheme_conformance();
 void test_abi_text_editing_boundaries();
 void test_abi_maxlength_insertions();
@@ -1024,6 +1025,7 @@ int main() {
     test_hostile_nested_intrinsic_layout();
     test_hostile_depth_fits_small_stack();
     test_html_formatting_reconstruction_matches_chrome();
+    test_opaque_gradient_raster_equivalence();
     test_parallel_raster_is_byte_identical();
     test_queued_rasters_match_inline();
     test_reduced_blur_matches_full();

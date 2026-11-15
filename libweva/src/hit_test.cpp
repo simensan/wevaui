@@ -14,9 +14,6 @@ namespace weva {
 
 namespace {
 
-std::string_view get(const ComputedStyle* s, std::string_view property) {
-    return s ? s->get(property) : std::string_view();
-}
 std::string_view get(const ComputedStyle* s, PropertyName property) {
     return s ? s->get(property) : std::string_view();
 }

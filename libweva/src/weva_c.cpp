@@ -6379,7 +6379,7 @@ void weva_document_set_pointer_modifiers(weva_document_t doc, double x, double y
 
     const uint32_t was_down = previous_buttons & WEVA_BUTTON_PRIMARY;
     static const bool click_log = std::getenv("WEVA_CLICK_LOG") != nullptr;
-    if (click_log && primary != (was_down ? WEVA_BUTTON_PRIMARY : 0u)) {
+    if (click_log && primary != was_down) {
         const auto describe = [](const Element* e) {
             if (!e) return std::string("<none>");
             return std::string(e->tag_name()) + "." + std::string(e->get_attribute("class"));

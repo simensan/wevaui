@@ -326,6 +326,7 @@ Srgb mix(const ColorSpan& span, double t) {
     const float g = span.start.g + span.delta.g * ft;
     const float bb = span.start.b + span.delta.b * ft;
     if (alpha <= 0) return {0, 0, 0, 0};
+    if (alpha == 1) return {r, g, bb, alpha};
     return {r / alpha, g / alpha, bb / alpha, alpha};
 }
 
@@ -1455,6 +1456,28 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
     const int tex_w = plan.tex_w, tex_h = plan.tex_h;
     out_rgba->assign(static_cast<size_t>(tex_w) * tex_h * 4, 0);
 
+    // One opaque, normally blended gradient covering the painting area replaces
+    // the backdrop exactly. Skip tile compositing and the premultiply/average/
+    // unpremultiply round trip. Edges, transparency, masks and images retain the
+    // general sampler below.
+    const Tile* opaque = nullptr;
+    if (samples == 1 && tiles.size() == 1 && !any_mask) {
+        const Tile& t = tiles.front();
+        if (!t.image && t.blend == BlendMode::Normal && !t.wrap_x && !t.wrap_y &&
+            t.ox <= 0 && t.oy <= 0 && t.ox + t.tw >= width && t.oy + t.th >= height &&
+            !t.prepared.colors.empty() &&
+            std::all_of(t.prepared.colors.begin(), t.prepared.colors.end(),
+                        [](const Srgb& color) { return color.a == 1; })) {
+            opaque = &t;
+        }
+    }
+    const auto byte = [](float v) {
+        // Keep the product separate: fusing the +0.5 into an FMA can move a
+        // texel by one compared with the original clamped lround conversion.
+        const float scaled = (v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v) * 255.0f;
+        return static_cast<uint8_t>(scaled + 0.5f);
+    };
+
     // True when the texel's t-range reaches a stop, so the value across it is
     // not one straight ramp.
     const auto steps_here = [&](size_t i, double t, double half_width) {
@@ -1570,6 +1593,16 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
                     px += run - 1;
                     continue;
                 }
+                if (opaque) {
+                    const Srgb s = sample_prepared(opaque->prepared,
+                        (px + 0.5) * sx - opaque->ox, (py + 0.5) * sy - opaque->oy);
+                    uint8_t* o = out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4;
+                    o[0] = byte(s.r);
+                    o[1] = byte(s.g);
+                    o[2] = byte(s.b);
+                    o[3] = 255;
+                    continue;
+                }
                 float ar = 0, ag = 0, ab = 0, aa = 0;
                 int texel_samples = samples;
                 double centre_t = std::numeric_limits<double>::quiet_NaN();
@@ -1649,19 +1682,6 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
                 }
                 uint8_t* o = out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4;
                 if (a > 0) { r /= a; g /= a; b /= a; }
-                // std::lround is a libm CALL, and this runs four times for every
-                // texel of every background: 4% of a viewport-sized one. The value
-                // is clamped to [0, 255] first, and for a non-negative float
-                // lround is floor(v + 0.5), which is what the cast does.
-                const auto byte = [](float v) {
-                    // The product is taken first and kept, so the compiler cannot
-                    // fuse it with the +0.5 into an FMA and round the pair at
-                    // higher precision than lround did -- which moved eighteen of
-                    // hud's texels by one when it could.
-                    // As in mix(), keep this a value rather than a selected reference.
-                    const float scaled = (v < 0.0f ? 0.0f : v > 1.0f ? 1.0f : v) * 255.0f;
-                    return static_cast<uint8_t>(scaled + 0.5f);
-                };
                 o[0] = byte(r);
                 o[1] = byte(g);
                 o[2] = byte(b);
