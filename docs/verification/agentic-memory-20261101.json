@@ -29,7 +29,7 @@
     "profile": "fast",
     "build_context": {
       "environment": {
-        "WEVA_SOURCE_DIR": "C:/Users/simen/Documents/GitHub/unityui"
+        "WEVA_SOURCE_DIR": "<repo>"
       },
       "config_sha256": [
         "1f1588efdf674fbda217407cafc7ad049d8ba84b4ca8dccf4e9787fd360ee019",
@@ -140,7 +140,7 @@
       "snapshots": {
         "warm": {
           "artifact": {
-            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e87ad86627a8-73.json",
+            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e87ad86627a8-73.json",
             "sha256": "4eb740423413380a4f304108e4f1190f5448392d553e2e16b7b5d654110ee419",
             "bytes": 39226
           },
@@ -149,7 +149,7 @@
             "pid": 50464,
             "process_birth": 134380062535340159,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
             "tick": 1981,
             "unix_ms": 1793532690937
           },
@@ -221,7 +221,7 @@
         },
         "active_end": {
           "artifact": {
-            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e8c0c36d1aa0-84.json",
+            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e8c0c36d1aa0-84.json",
             "sha256": "b1a733937808f59dc4f18f5a7ff4a9a8861716810914106d5c1d1c5e540e3f08",
             "bytes": 39248
           },
@@ -230,7 +230,7 @@
             "pid": 50464,
             "process_birth": 134380062535340159,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
             "tick": 19998,
             "unix_ms": 1793532991233
           },
@@ -302,7 +302,7 @@
         },
         "cooldown_end": {
           "artifact": {
-            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e8ced168fe68-98.json",
+            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\memory\\50464-18e3e8ced168fe68-98.json",
             "sha256": "906e561c01a31c89e53a96094be0c0841b42c1df2aa4e553e68b09c9a8c1e3aa",
             "bytes": 39238
           },
@@ -311,7 +311,7 @@
             "pid": 50464,
             "process_birth": 134380062535340159,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
             "tick": 23619,
             "unix_ms": 1793533051597
           },
@@ -384,7 +384,7 @@
       },
       "selected_capture": {
         "kind": "image",
-        "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\captures\\50464-18e3e873c0ffa348-56\\frame.png",
+        "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\idle\\registry\\runs\\932a9ffa9022cedfffe7150f7247f581519c03d5f917e2e12ff6ba8ae7740ab2\\captures\\50464-18e3e873c0ffa348-56\\frame.png",
         "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
       }
     },
@@ -465,7 +465,7 @@
       "snapshots": {
         "warm": {
           "artifact": {
-            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e87ad5b7a20c-73.json",
+            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e87ad5b7a20c-73.json",
             "sha256": "7ab7cccf8e95bef51527d96e5e2520c020bec86d7a462534e9080b1be93bea50",
             "bytes": 39215
           },
@@ -474,7 +474,7 @@
             "pid": 22176,
             "process_birth": 134380062535409941,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
             "tick": 1983,
             "unix_ms": 1793532690892
           },
@@ -546,7 +546,7 @@
         },
         "active_end": {
           "artifact": {
-            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e8c0c314c364-84.json",
+            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e8c0c314c364-84.json",
             "sha256": "562420548463835e3f85c28258e28d859089e4ce365757b38536fdc6b45edebd",
             "bytes": 39238
           },
@@ -555,7 +555,7 @@
             "pid": 22176,
             "process_birth": 134380062535409941,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
             "tick": 20000,
             "unix_ms": 1793532991227
           },
@@ -627,7 +627,7 @@
         },
         "cooldown_end": {
           "artifact": {
-            "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e8ced14e6440-98.json",
+            "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\memory\\22176-18e3e8ced14e6440-98.json",
             "sha256": "d09d4ec25c5780ebeb2c95d7e4a63e238f07daeafe814c2dfc4b9d547238441c",
             "bytes": 39240
           },
@@ -636,7 +636,7 @@
             "pid": 22176,
             "process_birth": 134380062535409941,
             "executable_sha256": "ff9d438aa204c26281faf07bb93f3c16bb26ec0c03510b49e72163e6086c4359",
-            "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\host-memory-20261031\\capped-project",
+            "project": "\\\\?\\<repo>\\.utmp\\host-memory-20261031\\capped-project",
             "tick": 23621,
             "unix_ms": 1793533051595
           },
@@ -709,7 +709,7 @@
       },
       "selected_capture": {
         "kind": "image",
-        "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\captures\\22176-18e3e873bd6c7d8c-56\\frame.png",
+        "path": "\\\\?\\<repo>\\.utmp\\agentic-memory-20261101\\reload\\registry\\runs\\76d3ba852b4534ad0c80ae71e01ee017d031b8729409c2f9a380eac96d68b982\\captures\\22176-18e3e873bd6c7d8c-56\\frame.png",
         "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
       }
     }

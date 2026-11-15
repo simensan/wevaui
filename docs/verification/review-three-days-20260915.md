@@ -117,8 +117,8 @@ export WEVA_GODOT_RELEASE_TEMPLATE=/root/weva/godot-scriptfix-review/bin/godot.l
 export WEVA_BUILD_UNITY=/root/weva/build-unity-review
 export WEVA_CHROME=/root/weva/review-tools/puppeteer/chrome/linux-152.0.7977.82/chrome-linux64/chrome
 export WEVA_CHROME_NO_SANDBOX=1
-export WEVA_CHROME_WINDOWS_PYTHON=/mnt/c/Users/simen/miniconda3/python.exe
-export WEVA_CHROME_WINDOWS=C:/Users/simen/Documents/GitHub/unityui/.utmp/review-20260914/ci-chrome/pinned-browser/chrome/win64-152.0.7977.82/chrome-win64/chrome.exe
+export WEVA_CHROME_WINDOWS_PYTHON=<home>/miniconda3/python.exe
+export WEVA_CHROME_WINDOWS=<repo>/.utmp/review-20260914/ci-chrome/pinned-browser/chrome/win64-152.0.7977.82/chrome-win64/chrome.exe
 export WEVA_CHROME_CHECKS_OUT="$PWD/.utmp/chrome-checks"
 export TMPDIR=/tmp
 WEVA_EXPORT_RENDER=1 LIBGL_ALWAYS_SOFTWARE=1 \

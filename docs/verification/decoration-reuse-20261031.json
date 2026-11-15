@@ -25,22 +25,22 @@
             "other_processes": [
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "pid": 42344
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "pid": 53644
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 53724
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 54444
               }
             ]
@@ -51,22 +51,22 @@
             "other_processes": [
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "pid": 42344
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "pid": 53644
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 53724
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 54444
               }
             ]
@@ -77,17 +77,17 @@
             "other_processes": [
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "pid": 42344
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "pid": 53644
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 54444
               }
             ]
@@ -98,17 +98,17 @@
             "other_processes": [
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "pid": 42344
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "pid": 53644
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 54444
               }
             ]
@@ -119,17 +119,17 @@
             "other_processes": [
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "pid": 42344
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "pid": 53644
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 54444
               }
             ]
@@ -140,32 +140,32 @@
             "other_processes": [
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 7556
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 15664
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 40384
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "pid": 47880
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 48472
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "pid": 48524
               }
             ]
@@ -176,287 +176,287 @@
             "other_processes": [
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 15664
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "pid": 47880
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 48472
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "pid": 48524
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 18984
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 22492
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 41796
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 45788
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 46376
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 47944
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 52424
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 54080
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 55144
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 13832
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 36924
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 52520
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 15932
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 16744
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 39288
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 43056
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 43732
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 46976
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 52904
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 54824
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 20668
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 22020
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 23600
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 25308
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 25960
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 37360
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 38892
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 41928
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 43956
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 45860
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 46004
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 46720
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 50820
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 54360
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 1008
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 22928
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 23020
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 43356
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 51308
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 54980
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 9752
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 20148
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 24960
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 35896
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 43076
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 46696
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 50676
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 51456
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 54536
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 11880
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "pid": 48712
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 49588
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "pid": 54640
               }
             ]
@@ -467,42 +467,42 @@
             "other_processes": [
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 11880
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "pid": 48712
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "pid": 54640
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "pid": 37968
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 43004
               },
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "pid": 54824
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 41980
               },
               {
                 "name": "rustc.exe",
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "pid": 22152
               }
             ]
@@ -513,7 +513,7 @@
             "other_processes": [
               {
                 "name": "cargo.exe",
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "pid": 27280
               }
             ]
@@ -1013,97 +1013,97 @@
             "other_processes": [
               {
                 "pid": 11236,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 21992,
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 2584,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 22328,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 53152,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 6548,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 27180,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 34424,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 45672,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 50892,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 19636,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 24872,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 29668,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 36416,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 38956,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 50668,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 54608,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 55072,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 53700,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               }
             ]
@@ -1114,132 +1114,132 @@
             "other_processes": [
               {
                 "pid": 11236,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 21992,
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 29668,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 36416,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 50668,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 53700,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 26408,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 54632,
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 13700,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 26476,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 48940,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 54728,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 420,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 20580,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 39456,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 46492,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 20512,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 38992,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 40172,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 40756,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 44292,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 45984,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 50580,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 53288,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 30084,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 45688,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               }
             ]
@@ -1250,187 +1250,187 @@
             "other_processes": [
               {
                 "pid": 420,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 11236,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 13700,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 20512,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 20580,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 21992,
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 26408,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 29668,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 30084,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 38992,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 39456,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 40172,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 45688,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 46492,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 48940,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 50668,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 51752,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 53700,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 54632,
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 54728,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 54360,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 18420,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 24228,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 24756,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 53992,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 41824,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 49372,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 50236,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 51004,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 11540,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 37656,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 47100,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 50912,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 53264,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 48540,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 22500,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 36736,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               }
             ]
@@ -1441,87 +1441,87 @@
             "other_processes": [
               {
                 "pid": 11236,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 11540,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 21992,
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 22500,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 24228,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 26408,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 36736,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 37656,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 40172,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 46492,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 48540,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 50236,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 50912,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 51752,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 53700,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 53992,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 54632,
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "name": "cargo.exe"
               }
             ]
@@ -1532,47 +1532,47 @@
             "other_processes": [
               {
                 "pid": 11236,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 21992,
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 24228,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 26408,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 40172,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 46492,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 53700,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 54632,
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 54652,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               }
             ]
@@ -1583,22 +1583,22 @@
             "other_processes": [
               {
                 "pid": 11236,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 21992,
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 53700,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               },
               {
                 "pid": 47808,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\rustc.exe",
                 "name": "rustc.exe"
               }
             ]
@@ -1619,12 +1619,12 @@
             "other_processes": [
               {
                 "pid": 19972,
-                "exe": "C:\\Users\\simen\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
+                "exe": "<home>\\.rustup\\toolchains\\1.99.1-x86_64-pc-windows-msvc\\bin\\cargo.exe",
                 "name": "cargo.exe"
               },
               {
                 "pid": 27604,
-                "exe": "C:\\Users\\simen\\.cargo\\bin\\cargo.exe",
+                "exe": "<home>\\.cargo\\bin\\cargo.exe",
                 "name": "cargo.exe"
               }
             ]

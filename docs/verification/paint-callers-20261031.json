@@ -975,7 +975,7 @@
   },
   "core_revision": "0f8f35b9 (runtime core a0943b78)",
   "scope": "Fixed-font serial-raster diagnostic; attribution only, not latency or host performance",
-  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\optimized-paint-profile",
+  "evidence_root": "<repo>\\.utmp\\render-audit-20261030\\optimized-paint-profile",
   "verified_six_frame_output": true,
   "gcc_clang_builds": "pass, zero warnings",
   "clang_sanitizer_smoke": "pass",

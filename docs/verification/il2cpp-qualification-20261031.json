@@ -5,20 +5,20 @@
         "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
         "-batchmode",
         "-projectPath",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui",
+        "<repo>",
         "-runTests",
         "-testPlatform",
         "StandaloneWindows64",
         "-testFilter",
         "Weva.Tests.Rendering.NativeRenderPassTests",
         "-buildPlayerPath",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player\\player",
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player\\player",
         "-testResults",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player\\results.xml",
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player\\results.xml",
         "-logFile",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player\\build.log",
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player\\build.log",
         "-testSettingsFile",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player\\test-settings.json"
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player\\test-settings.json"
       ],
       "requested_backend": "il2cpp",
       "exit_code": 2,
@@ -45,20 +45,20 @@
         "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
         "-batchmode",
         "-projectPath",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui",
+        "<repo>",
         "-runTests",
         "-testPlatform",
         "StandaloneWindows64",
         "-testFilter",
         "Weva.Tests.Rendering.NativeRenderPassTests",
         "-buildPlayerPath",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\player",
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\player",
         "-testResults",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\results.xml",
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\results.xml",
         "-logFile",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\build.log",
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\build.log",
         "-testSettingsFile",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\test-settings.json"
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player-fixed\\test-settings.json"
       ],
       "requested_backend": "il2cpp",
       "exit_code": 0,
@@ -86,20 +86,20 @@
         "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
         "-batchmode",
         "-projectPath",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui",
+        "<repo>",
         "-runTests",
         "-testPlatform",
         "StandaloneWindows64",
         "-testFilter",
         "Weva.Tests.Rendering.NativeRenderPassTests",
         "-buildPlayerPath",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\player",
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\player",
         "-testResults",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\results.xml",
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\results.xml",
         "-logFile",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\build.log",
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\build.log",
         "-testSettingsFile",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\test-settings.json"
+        "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\test-settings.json"
       ],
       "requested_backend": "il2cpp",
       "release": true,
@@ -108,7 +108,7 @@
       "stopped_players": [
         {
           "pid": 39248,
-          "executable": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\player\\PlayerWithTests\\UnityCrashHandler64.exe"
+          "executable": "<repo>\\.utmp\\render-audit-20261030\\il2cpp-player-release-local\\player\\PlayerWithTests\\UnityCrashHandler64.exe"
         }
       ],
       "passed": true,
@@ -136,20 +136,20 @@
         "C:\\Program Files\\Unity\\Hub\\Editor\\6000.4.1f1\\Editor\\Unity.exe",
         "-batchmode",
         "-projectPath",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui",
+        "<repo>",
         "-runTests",
         "-testPlatform",
         "StandaloneWindows64",
         "-testFilter",
         "Weva.Tests.Rendering.NativeRenderPassTests",
         "-buildPlayerPath",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\interop-mono-player\\player",
+        "<repo>\\.utmp\\render-audit-20261030\\interop-mono-player\\player",
         "-testResults",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\interop-mono-player\\results.xml",
+        "<repo>\\.utmp\\render-audit-20261030\\interop-mono-player\\results.xml",
         "-logFile",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\interop-mono-player\\build.log",
+        "<repo>\\.utmp\\render-audit-20261030\\interop-mono-player\\build.log",
         "-testSettingsFile",
-        "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\interop-mono-player\\test-settings.json"
+        "<repo>\\.utmp\\render-audit-20261030\\interop-mono-player\\test-settings.json"
       ],
       "requested_backend": "mono",
       "release": false,
@@ -158,7 +158,7 @@
       "stopped_players": [
         {
           "pid": 16464,
-          "executable": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\interop-mono-player\\player\\PlayerWithTests\\PlayerWithTests.exe"
+          "executable": "<repo>\\.utmp\\render-audit-20261030\\interop-mono-player\\player\\PlayerWithTests\\PlayerWithTests.exe"
         }
       ],
       "passed": true,

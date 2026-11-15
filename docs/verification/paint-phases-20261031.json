@@ -2,7 +2,7 @@
   "experiment": "Rejected allocation-free family-name comparison; production sources restored",
   "binaries": {
     "before": {
-      "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-paint-ids.exe",
+      "path": "<repo>\\.utmp\\render-audit-20261030\\before-paint-ids.exe",
       "sha256": "2c55ca701675f662b303952eec8822d0b894aeeb6e0640a4f9c8b21605d0ac10"
     },
     "after": {

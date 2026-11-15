@@ -1408,7 +1408,7 @@
     "baseline-3.json.inventory_selection.png": "a3071c6e3fe6c3b542fec19e4374e8937232efad056e26b538b3fc8e808c9b99"
   },
   "scope": "Godot rendered 60 Hz survival UI; controller/update CPU excludes deferred draw translation and GPU execution",
-  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\flex-proof-godot-pairs",
+  "evidence_root": "<repo>\\.utmp\\render-audit-20261030\\flex-proof-godot-pairs",
   "diagnostic_environment": "No WEVA environment variables inherited; GPU timestamps, core stats and draw/stage logging disabled",
   "evidence_sha256": {
     "runs.json": "e45a6cd7c46c18355b3f7ad703e8842e056673b91c58020a59bdfc5999785765",

@@ -2,7 +2,7 @@
   "packed-authored": {
     "binaries": {
       "before": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-authored-before.exe",
+        "path": "<repo>\\.utmp\\render-audit-20261030\\agentic-authored-before.exe",
         "sha256": "c0e5bfff1b732271f7c2d4b6bc3544c49d61e3c8fcfac44b170039101ba85b5e"
       },
       "after": {
@@ -11,10 +11,10 @@
       }
     },
     "arguments": [
-      "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.html",
-      "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.css",
-      "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
-      "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.css"
+      "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.html",
+      "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.css",
+      "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
+      "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.css"
     ],
     "rows": [
       {
@@ -278,7 +278,7 @@
   "packed-default": {
     "binaries": {
       "before": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-authored-before.exe",
+        "path": "<repo>\\.utmp\\render-audit-20261030\\agentic-authored-before.exe",
         "sha256": "c0e5bfff1b732271f7c2d4b6bc3544c49d61e3c8fcfac44b170039101ba85b5e"
       },
       "after": {

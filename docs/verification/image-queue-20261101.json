@@ -192,7 +192,7 @@
     "sdk_key": "4ade5253d1a9c2678ccc1efaf42a313048ac1d4e8c0e4025c28c74bde45e86bb",
     "runtime_sha256": "db2155a361396011bf4f25ad119b7f89bc92d8da76cbacfc9fde7b439bb8e534",
     "coherent": true,
-    "source_override": "WEVA_SOURCE_DIR=C:/Users/simen/Documents/GitHub/unityui",
+    "source_override": "WEVA_SOURCE_DIR=<repo>",
     "core_input_paths": [
       "CMakeLists.txt",
       "libweva/CMakeLists.txt",

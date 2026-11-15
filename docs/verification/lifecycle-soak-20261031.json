@@ -59,12 +59,12 @@
     "capture_artifacts": [
       {
         "kind": "image",
-        "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\lifecycle-soak-30min\\registry\\runs\\21385377a7c97fe7417ecede27d6e8f06911a930a9e61f848542762d039c2efd\\captures\\41356-18e38bd405704390-57\\frame.png",
+        "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\lifecycle-soak-30min\\registry\\runs\\21385377a7c97fe7417ecede27d6e8f06911a930a9e61f848542762d039c2efd\\captures\\41356-18e38bd405704390-57\\frame.png",
         "sha256": "df5d0ec8b0509c51588985f324465baef9302c3dd4bddc98626bbc2cf242c17e"
       },
       {
         "kind": "capture_manifest",
-        "path": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\lifecycle-soak-30min\\registry\\runs\\21385377a7c97fe7417ecede27d6e8f06911a930a9e61f848542762d039c2efd\\captures\\41356-18e38bd405704390-57\\frame.json",
+        "path": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\lifecycle-soak-30min\\registry\\runs\\21385377a7c97fe7417ecede27d6e8f06911a930a9e61f848542762d039c2efd\\captures\\41356-18e38bd405704390-57\\frame.json",
         "sha256": "36e345a76e77c5ce6a48d49cd0bed408e0376ed1080822de21017e627c07d5a7"
       }
     ],
@@ -72,15 +72,15 @@
       "schema_version": 1,
       "id": "21385377a7c97fe7417ecede27d6e8f06911a930a9e61f848542762d039c2efd",
       "name": "current-0",
-      "project": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\agentic-runtime-project-v2",
-      "engine": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248",
-      "executable": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\published-sdk\\db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248\\target\\fast\\dev_runtime.exe",
+      "project": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\agentic-runtime-project-v2",
+      "engine": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\published-sdk\\db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248",
+      "executable": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\published-sdk\\db868f7bb698e366c41911bf6f45e70733c9678e01acdf34b7f41e3730ca5248\\target\\fast\\dev_runtime.exe",
       "executable_sha256": "14eaef088abebae115de2901f9bc5b704ce128e5f2f77a515f6e3a3365fe616b",
       "pid": 41356,
       "process_birth": 134379044048259214,
       "endpoint": "127.0.0.1:60297",
       "started_ms": 1793430809750,
-      "run_dir": "\\\\?\\C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\lifecycle-soak-30min\\registry\\runs\\21385377a7c97fe7417ecede27d6e8f06911a930a9e61f848542762d039c2efd",
+      "run_dir": "\\\\?\\<repo>\\.utmp\\render-audit-20261030\\lifecycle-soak-30min\\registry\\runs\\21385377a7c97fe7417ecede27d6e8f06911a930a9e61f848542762d039c2efd",
       "capabilities": [
         "status",
         "stop",
@@ -152,6 +152,6 @@
   "private_mib_last": 848.8828125,
   "dedicated_gpu_mib_first": 531.49609375,
   "dedicated_gpu_mib_last": 523.63671875,
-  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\lifecycle-soak-30min",
+  "evidence_root": "<repo>\\.utmp\\render-audit-20261030\\lifecycle-soak-30min",
   "scope": "Correctness and process allocation counters during concurrent builds; no speed or leak-free claim"
 }

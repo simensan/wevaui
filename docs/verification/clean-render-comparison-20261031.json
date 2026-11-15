@@ -607,7 +607,7 @@
       }
     }
   },
-  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\clean-chrome-comparison",
+  "evidence_root": "<repo>\\.utmp\\render-audit-20261030\\clean-chrome-comparison",
   "scope": "CPU stage comparison, not GPU execution or presented-frame latency",
   "excluded_flex_recheck": {
     "rows": [

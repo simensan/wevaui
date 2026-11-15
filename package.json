@@ -7,16 +7,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/simensan/unityui.git"
+    "url": "git+https://github.com/simensan/wevaui.git"
   },
   "keywords": [],
   "author": "",
   "license": "MIT",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/simensan/unityui/issues"
+    "url": "https://github.com/simensan/wevaui/issues"
   },
-  "homepage": "https://github.com/simensan/unityui#readme",
+  "homepage": "https://github.com/simensan/wevaui#readme",
   "devDependencies": {
     "puppeteer": "25.13.0"
   },

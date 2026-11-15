@@ -599,6 +599,6 @@
       }
     }
   },
-  "evidence_root": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\optimized-chrome-comparison",
+  "evidence_root": "<repo>\\.utmp\\render-audit-20261030\\optimized-chrome-comparison",
   "scope": "CPU stage comparison, not GPU execution or presented-frame latency"
 }

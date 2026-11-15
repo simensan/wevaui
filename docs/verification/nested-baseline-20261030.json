@@ -8,7 +8,7 @@
     "baseline-paired": {
       "binaries": {
         "before": {
-          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-baseline-cost.exe",
+          "path": "<repo>\\.utmp\\render-audit-20261030\\before-baseline-cost.exe",
           "sha256": "f10220697b2c883af4c7cbe0195ecdd12f50ef4f87e2d9203de1457738dedb2a"
         },
         "after": {
@@ -17,11 +17,11 @@
         }
       },
       "arguments": [
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.html",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.css",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.html",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.css",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
       ],
       "rows": [
         {
@@ -349,7 +349,7 @@
     "baseline-paired-repeat": {
       "binaries": {
         "before": {
-          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-baseline-cost.exe",
+          "path": "<repo>\\.utmp\\render-audit-20261030\\before-baseline-cost.exe",
           "sha256": "f10220697b2c883af4c7cbe0195ecdd12f50ef4f87e2d9203de1457738dedb2a"
         },
         "after": {
@@ -358,11 +358,11 @@
         }
       },
       "arguments": [
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.html",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.css",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.html",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.css",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
       ],
       "rows": [
         {
@@ -690,7 +690,7 @@
     "baseline-combined-paired": {
       "binaries": {
         "before": {
-          "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\.utmp\\render-audit-20261030\\before-flex-defer.exe",
+          "path": "<repo>\\.utmp\\render-audit-20261030\\before-flex-defer.exe",
           "sha256": "064ffedc8b36caf88b6f73c58b274b2bc1f04bfe5d5c27fa2d4159b489858d34"
         },
         "after": {
@@ -699,11 +699,11 @@
         }
       },
       "arguments": [
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.html",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/hud.css",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
-        "C:/Users/simen/Documents/GitHub/unityui/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.html",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/hud.css",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.html",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/inventory.css",
+        "<repo>/.utmp/render-audit-20261030/survival-fixtures/mutations.json"
       ],
       "rows": [
         {

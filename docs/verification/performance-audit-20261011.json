@@ -11,7 +11,7 @@
     "warmups": 120,
     "libraries": {
       "candidate": {
-        "path": "C:\\Users\\simen\\Documents\\GitHub\\unityui\\hosts\\godot\\project\\addons\\weva\\bin\\weva_godot.dll",
+        "path": "<repo>\\hosts\\godot\\project\\addons\\weva\\bin\\weva_godot.dll",
         "sha256": "f0157175cb6643915b65da9b134552e9dd12629ba26942100a84222bebbb125a"
       }
     },
