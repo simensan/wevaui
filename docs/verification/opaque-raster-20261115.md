@@ -95,3 +95,20 @@ parent/child mutations and verifies a grandchild's transition still starts after
 revealing the panel. The existing animation, focus, selector-reach and incremental
 suites also pass. GCC, Clang and MSVC builds have zero compiler warnings and
 pass their complete core suites. No C ABI change.
+
+## Cold selector matching
+
+Compiled rules are indexed by one required ID, class or type selector on their
+rightmost compound. Rules without a required literal stay in a universal bucket.
+Each element gathers those candidate lists, deduplicates repeated class tokens,
+restores source order and uses the existing full selector matcher and cascade
+ordering. Pseudo alternatives, relational selectors, scopes and containers retain
+their normal matching semantics; no inferred literal from an alternative or an
+ancestor is used to exclude a rule.
+
+The regression compares indexed selectors with specificity-preserving `:is()`
+controls that use the universal bucket. It covers IDs/classes/types, escaped
+identifiers, duplicates, attributes, combinators, relational/alternative/negative
+selectors, mutations, newly added sheets, clearing and recompilation alongside
+400 irrelevant rules. The full GCC, Clang and MSVC suites pass with zero compiler
+warnings (601,322 checks on MSVC). No C ABI change.

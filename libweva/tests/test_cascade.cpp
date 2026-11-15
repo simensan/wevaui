@@ -56,6 +56,52 @@ MatchedDeclaration make(const Declaration* d, DeclarationOrigin o, Specificity s
 
 } // namespace
 
+void test_cascade_rule_index_equivalence() {
+    Fixture indexed, reference;
+    const char* html = "<section class=parent><div id=a class='card hot hot' data-kind=one><span></span></div>"
+                       "<button id=b class=card></button><p id=c class=notice></p><div id=d></div></section>";
+    CHECK(indexed.html(html)); CHECK(reference.html(html));
+    const std::vector<std::string> selectors = {
+        "*", "div", "BUTTON", ".card", "#a.hot", ".hot.card", ":not(.hot)",
+        "[data-kind=one]", ":is(.card,.notice)", ".parent > .card", ".hot + button",
+        ":has(> span)", ".notice ~ div", ".card:not(button)", ".h\\6ft", "#\\61"
+    };
+    for (size_t i = 0; i < selectors.size(); ++i) {
+        const std::string body = "{--hit" + std::to_string(i) + ":yes;color:rgb(" +
+                                 std::to_string(i * 11) + ",10,30)}";
+        CHECK(indexed.css(selectors[i] + body));
+        // Wrapping the complete selector preserves its specificity and match,
+        // but has no mandatory outer literal: it exercises the universal bucket.
+        CHECK(reference.css(":is(" + selectors[i] + ")" + body));
+    }
+    std::string unrelated;
+    for (int i = 0; i < 400; ++i) unrelated += ".unused" + std::to_string(i) + "{color:red}";
+    CHECK(indexed.css(unrelated)); CHECK(reference.css(unrelated));
+    const auto compare = [&] {
+        for (const char* id : {"a", "b", "c", "d"}) {
+            CHECK(indexed.value(id, "color") == reference.value(id, "color"));
+            for (size_t i = 0; i < selectors.size(); ++i) {
+                const auto property = "--hit" + std::to_string(i);
+                CHECK(indexed.value(id, property) == reference.value(id, property));
+            }
+        }
+    };
+    compare();
+    for (const char* classes : {"notice", "card hot hot", "", "unused399"}) {
+        indexed.id("a")->set_attribute("class", classes);
+        reference.id("a")->set_attribute("class", classes);
+        compare();
+    }
+    // Added sheets must populate the index and invalidate cached matches.
+    CHECK(indexed.css("#d{color:blue!important}"));
+    CHECK(reference.css(":is(#d){color:blue!important}"));
+    compare();
+    indexed.engine.clear(); reference.engine.clear();
+    CHECK(indexed.css("p{color:green}.notice{color:orange}"));
+    CHECK(reference.css(":is(p){color:green}:is(.notice){color:orange}"));
+    compare();
+}
+
 void test_cascade_order() {
     // Pinned Chrome expectations: check_pseudo_keywords_chrome.cjs.
     for (const char* keyword : {"inherit", "initial", "unset", "revert", "revert-layer"}) {

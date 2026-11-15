@@ -350,6 +350,12 @@ private:
     bool match_attribute_observable(std::string_view name) const;
 
     std::vector<CompiledRule> rules_;
+    // Each rule belongs to one mandatory literal on its rightmost compound,
+    // or the universal bucket. Full matching still resolves every candidate.
+    std::map<std::string, std::vector<size_t>, std::less<>> id_rules_, class_rules_, type_rules_;
+    std::vector<size_t> universal_rules_;
+    mutable std::vector<size_t> candidate_rules_;
+    void index_rule(size_t index);
     int next_source_index_ = 0;
     std::vector<CompiledContainerQuery> container_queries_;
     uint64_t container_generation_ = 1;

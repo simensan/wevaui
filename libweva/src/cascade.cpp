@@ -306,6 +306,11 @@ void CascadeEngine::clear() {
     inline_declaration_bytes_ = 0;
     ++container_generation_;
     rules_.clear();
+    id_rules_.clear();
+    class_rules_.clear();
+    type_rules_.clear();
+    universal_rules_.clear();
+    candidate_rules_.clear();
     next_source_index_ = 0;
     container_queries_.clear();
     compiling_containers_.clear();
@@ -1148,6 +1153,28 @@ bool CascadeEngine::sibling_subject_in_subtree(const Element& element) const {
     return false;
 }
 
+void CascadeEngine::index_rule(size_t index) {
+    const auto& sequence = rules_[index].selector.sequence;
+    if (!sequence.compounds.empty()) {
+        const auto& subject = sequence.compounds.back();
+        // A literal outside :is/:not/:has is required by every matching path.
+        // Do not infer requirements from alternatives or ancestor compounds.
+        for (const auto& part : subject.parts) if (part->tag() == SimpleSelector::Tag::Id) {
+            id_rules_[static_cast<const IdSelector&>(*part).id].push_back(index);
+            return;
+        }
+        for (const auto& part : subject.parts) if (part->tag() == SimpleSelector::Tag::Class) {
+            class_rules_[static_cast<const ClassSelector&>(*part).class_name].push_back(index);
+            return;
+        }
+        for (const auto& part : subject.parts) if (part->tag() == SimpleSelector::Tag::Type) {
+            type_rules_[static_cast<const TypeSelector&>(*part).tag_name].push_back(index);
+            return;
+        }
+    }
+    universal_rules_.push_back(index);
+}
+
 void CascadeEngine::compile_declarations(const Rule& rule,
                                           const std::vector<Declaration>& declarations,
                                           std::vector<CompiledSelector> selectors,
@@ -1197,6 +1224,7 @@ void CascadeEngine::compile_declarations(const Rule& rule,
             pseudo_rules_[pseudo_name].push_back(std::move(cr));
         } else {
             rules_.push_back(std::move(cr));
+            index_rule(rules_.size() - 1);
         }
     }
 }
@@ -1534,7 +1562,21 @@ const std::vector<MatchedDeclaration>& CascadeEngine::collect_matches(
 
     std::vector<MatchedDeclaration>& out = uncached_matches_;
     out.clear();
-    for (const CompiledRule& cr : rules_) {
+    candidate_rules_.assign(universal_rules_.begin(), universal_rules_.end());
+    const auto append = [&](const auto& index, std::string_view key) {
+        const auto found = index.find(key);
+        if (found != index.end())
+            candidate_rules_.insert(candidate_rules_.end(), found->second.begin(), found->second.end());
+    };
+    append(id_rules_, e.id());
+    append(type_rules_, e.tag_name());
+    for (const auto name : e.class_list()) append(class_rules_, name);
+    // Duplicate class tokens must not apply a rule twice. Source order also
+    // preserves the old stable ordering when cascade keys compare equal.
+    std::sort(candidate_rules_.begin(), candidate_rules_.end());
+    candidate_rules_.erase(std::unique(candidate_rules_.begin(), candidate_rules_.end()), candidate_rules_.end());
+    for (const size_t index : candidate_rules_) {
+        const CompiledRule& cr = rules_[index];
         if (!container_matches(cr,e)) continue;
         int scope_distance;
         if (!rule_matches(cr, e, state, false, &scope_distance)) continue;

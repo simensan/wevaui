@@ -96,6 +96,7 @@ void test_selector_match();
 void test_property_registry();
 void test_computed_style();
 void test_cascade_order();
+void test_cascade_rule_index_equivalence();
 void test_cascade_light_dark();
 void test_cascade_scope();
 void test_cascade_nesting();
@@ -588,6 +589,7 @@ int main() {
     test_property_registry();
     test_computed_style();
     test_cascade_order();
+    test_cascade_rule_index_equivalence();
     test_cascade_light_dark();
     test_cascade_scope();
     test_cascade_nesting();
