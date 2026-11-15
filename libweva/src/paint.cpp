@@ -3609,6 +3609,11 @@ void paint_recursive(const BoxTree& tree, BoxId id, const LayoutContext& ctx, do
     if (containing_blocks.absolute) state.absolute_cb = id;
     if (containing_blocks.fixed) state.fixed_cb = id;
     if (decorated && b.style) state.opacity *= resolve_opacity(b.style);
+    // Group opacity cannot be undone by a descendant. Keep layout and hit
+    // testing intact, but do not rasterize gradients, glyphs or shadows whose
+    // final alpha is zero. Capture an empty subtree so a later opacity change
+    // invalidates/repaints it through the normal retained-paint path.
+    if (state.opacity <= 0) return;
     // `mix-blend-mode`: told to the backend once per box, and again when the
     // box's subtree is done, so a sibling painted after it is back to the
     // parent's mode.

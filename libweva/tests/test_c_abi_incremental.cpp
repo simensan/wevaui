@@ -293,6 +293,40 @@ void check_with_sheet(const char* label, const char* html, const char* css, cons
 
 }   // namespace
 
+void test_abi_transparent_subtrees_defer_paint() {
+    const char* html = "<div id=group><button id=child></button><div id=fixed></div></div>";
+    const char* css =
+        "html,body{margin:0;background:transparent}"
+        "#group{opacity:0;width:173px;height:113px;background:linear-gradient(123deg,#314859,#a37c42);"
+        "border-radius:12px;box-shadow:0 4px 9px #777}"
+        "#child{opacity:1;width:80px;height:40px;background:#fa3;border:0;padding:0}"
+        "#fixed{position:fixed;left:210px;top:20px;width:30px;height:30px;background:#63f}";
+    const auto cfg = config();
+    const auto doc = weva_document_create(&cfg);
+    CHECK(weva_document_add_css(doc, css, std::strlen(css)) == WEVA_OK);
+    CHECK(weva_document_load_html(doc, html, std::strlen(html)) == WEVA_OK);
+    CHECK(weva_document_update(doc, 0) == WEVA_OK);
+    CHECK(capture(doc).draws.empty());
+    weva_stats stats{};
+    weva_document_stats(doc, &stats);
+    CHECK(stats.texture_cache_misses == 0);
+    const auto group = weva_document_query(doc, "#group");
+    const auto child = weva_document_query(doc, "#child");
+    CHECK(weva_document_element_at(doc, 10, 10) == child);
+    for (const char* opacity : {"opacity:1", "opacity:0", "opacity:.5", "opacity:0", "opacity:1"}) {
+        CHECK(weva_element_set_attribute(doc, group, "style", opacity) == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        const Frame actual = capture(doc);
+        const Frame fresh = build(html, css, [&](weva_document_t control) {
+            weva_element_set_attribute(control, weva_document_query(control, "#group"), "style", opacity);
+        });
+        CHECK(actual == fresh);
+        if (std::strcmp(opacity, "opacity:0") == 0) CHECK(actual.draws.empty());
+        else CHECK(!actual.draws.empty());
+    }
+    weva_document_destroy(doc);
+}
+
 // How far an attribute change is allowed to reach.
 //
 // A restyle confined to the touched element's subtree is only sound while no

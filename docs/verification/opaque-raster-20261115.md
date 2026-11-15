@@ -27,3 +27,17 @@ finished before measurement. Raw inputs, binary hashes and all samples are
 retained at `E:/Wavebound_Agentic/Cache/hitches-gradient-comparison.json`.
 
 The full Unity/Godot host suites and macOS were not exercised for this change.
+
+## Transparent subtree painting
+
+The painter now stops at an accumulated opacity of zero before generating
+gradients, shadows, glyphs or descendant draws. Layout and hit testing remain
+active. Retained painting records the empty subtree and uses its normal style
+and ancestor-input invalidation when opacity changes.
+
+The ABI regression covers cold transparency without texture-cache misses,
+an opaque child and fixed descendant beneath a transparent parent, pointer hit
+testing, and repeated zero/partial/full opacity changes. Every revealed frame
+matches a freshly built control document. Existing animated-transform and
+incremental-paint cases pass. GCC, Clang and MSVC core builds have zero warnings
+and pass CTest. No ABI change; the host suites remain outside this check.
