@@ -338,6 +338,7 @@ void CascadeEngine::clear() {
     selector_inputs_ = {};
     hover_reach_ = StateReach{};
     active_reach_ = StateReach{};
+    focus_within_reach_ = StateReach{};
     shape_key_folds_sibling_index_ = false;
     index_subject_reach_ = {};
     shape_key_folds_range_ = false;
@@ -408,7 +409,7 @@ uint64_t hash_class_tokens(std::string_view classes) {
 // shape key unsound or incomplete.
 void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
                        bool* has_has, bool* folds_index, StateReach* hover,
-                       StateReach* active, bool inside_has);
+                       StateReach* active, StateReach* focus_within, bool inside_has);
 
 // Which compounds a `:hover` or `:active` sits on, so a pointer move only
 // restyles what a rule could actually match.
@@ -459,7 +460,7 @@ void collect_keys(const CompoundSelector& c, StateReach* reach) {
 
 void classify_compound(const CompoundSelector& c, bool* unsafe_sibling,
                        bool* has_has, bool* folds_index, StateReach* hover,
-                       StateReach* active, bool inside_has) {
+                       StateReach* active, StateReach* focus_within, bool inside_has) {
     for (const auto& part : c.parts) {
         if (part->tag() != SimpleSelector::Tag::PseudoClass) continue;
         const auto& pc = static_cast<const PseudoClassSelector&>(*part);
@@ -503,12 +504,16 @@ void classify_compound(const CompoundSelector& c, bool* unsafe_sibling,
                 if (inside_has) active->everything = true;
                 else collect_keys(c, active);
                 break;
+            case PseudoClassKind::FocusWithin:
+                if (inside_has) focus_within->everything = true;
+                else collect_keys(c, focus_within);
+                break;
             default:
                 break;
         }
         const bool nested_has = inside_has || pc.kind == PseudoClassKind::Has;
         for (const auto& inner : pc.inner_list) {
-            classify_selector(*inner, unsafe_sibling, has_has, folds_index, hover, active,
+            classify_selector(*inner, unsafe_sibling, has_has, folds_index, hover, active, focus_within,
                               nested_has);
         }
         for (const auto& inner : pc.nth_of_filter) {
@@ -516,7 +521,7 @@ void classify_compound(const CompoundSelector& c, bool* unsafe_sibling,
             // not just this element's index/count. Their attributes or text
             // (:empty) can change while this element's shape stays equal.
             *unsafe_sibling = true;
-            classify_selector(*inner, unsafe_sibling, has_has, folds_index, hover, active,
+            classify_selector(*inner, unsafe_sibling, has_has, folds_index, hover, active, focus_within,
                               nested_has);
         }
     }
@@ -524,7 +529,7 @@ void classify_compound(const CompoundSelector& c, bool* unsafe_sibling,
 
 void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
                        bool* has_has, bool* folds_index, StateReach* hover,
-                       StateReach* active, bool inside_has) {
+                       StateReach* active, StateReach* focus_within, bool inside_has) {
     for (Combinator cb : seq.combinators) {
         // `p + p` / `p ~ p`: the match depends on preceding-sibling
         // composition, not just this element's own shape.
@@ -534,7 +539,7 @@ void classify_selector(const CompoundSequence& seq, bool* unsafe_sibling,
     }
     for (size_t i = 0; i < seq.compounds.size(); ++i) {
         bool positional = false;
-        classify_compound(seq.compounds[i], unsafe_sibling, has_has, &positional, hover, active, inside_has);
+        classify_compound(seq.compounds[i], unsafe_sibling, has_has, &positional, hover, active, focus_within, inside_has);
         *folds_index = *folds_index || positional;
         // Only the subject's rank is in a shape key. A positional parent,
         // including one inside the :is() used for nesting, needs its own rank.
@@ -1158,7 +1163,7 @@ void CascadeEngine::compile_declarations(const Rule& rule,
         bool selector_has = false, selector_sibling = false, selector_index = false;
         classify_selector(cs.sequence, &selector_sibling,
                           &selector_has, &selector_index,
-                          &hover_reach_, &active_reach_, false);
+                          &hover_reach_, &active_reach_, &focus_within_reach_, false);
         shape_key_folds_sibling_index_ = shape_key_folds_sibling_index_ || selector_index;
         if (selector_index && !cs.sequence.compounds.empty())
             collect_keys(cs.sequence.compounds.back(), &index_subject_reach_);
@@ -1271,7 +1276,7 @@ void CascadeEngine::compile_rules(const std::vector<RulePtr>& rules, Declaration
                 const auto classify_boundary = [&](const CompiledSelector& selector) {
                     bool has = false, positional = false, sibling = false;
                     classify_selector(selector.sequence, &sibling,
-                                      &has, &positional, &hover_reach_, &active_reach_, false);
+                                      &has, &positional, &hover_reach_, &active_reach_, &focus_within_reach_, false);
                     cache_unsafe_sibling_composition_ = cache_unsafe_sibling_composition_ || sibling;
                     if (sibling) sibling_subject_reach_.everything = true;
                     if (sibling) sibling_context_class_keyed_ = false;

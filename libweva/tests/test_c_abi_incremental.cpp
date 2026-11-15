@@ -293,6 +293,55 @@ void check_with_sheet(const char* label, const char* html, const char* css, cons
 
 }   // namespace
 
+void test_abi_focus_change_scopes_selector_reach() {
+    std::string html = "<section id=group class=group><button id=button></button><div class=status></div></section>"
+                       "<div class=after></div><aside>";
+    for (int i = 0; i < 250; ++i) html += "<div class=row></div>";
+    html += "</aside>";
+    const std::string base =
+        "html,body{margin:0}.group{height:50px}#group.hidden{display:none}"
+        "button{width:40px;height:20px}.status,.after,.row{height:5px;background:#123}"
+        "button:focus{background:#f70}";
+    for (const char* reach : {
+        "", ".group:focus-within .status{background:#f80}",
+        ".group:focus-within + .after{background:#a8f}",
+        "body:focus-within .row{background:#f80}",
+        "body:has(button:focus) .row{background:#4f8}",
+        ".group:not(:focus-within) + .after{background:#8af}"}) {
+        const std::string css = base + reach;
+        const auto cfg = config();
+        const auto doc = weva_document_create(&cfg);
+        CHECK(weva_document_add_css(doc, css.data(), css.size()) == WEVA_OK);
+        CHECK(weva_document_load_html(doc, html.data(), html.size()) == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        weva_stats before{}, after{};
+        weva_document_stats(doc, &before);
+        CHECK(weva_document_set_focus(doc, weva_document_query(doc, "#button")) == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        weva_document_stats(doc, &after);
+        const auto focused = build(html.c_str(), css.c_str(), [](weva_document_t control) {
+            weva_document_set_focus(control, weva_document_query(control, "#button"));
+        });
+        CHECK(capture(doc) == focused);
+        // A local focus rule must not visit the 250 unrelated rows. Root and
+        // relational rules deliberately retain their broader reach.
+        if (std::strlen(reach) == 0)
+            CHECK(after.cascade_elements - before.cascade_elements < 32);
+        before = after;
+        CHECK(weva_element_set_attribute(doc, weva_document_query(doc, "#group"), "class", "group hidden") == WEVA_OK);
+        CHECK(weva_document_update(doc, 0) == WEVA_OK);
+        weva_document_stats(doc, &after);
+        CHECK(weva_document_focus(doc) == WEVA_ELEMENT_NONE);
+        const auto blurred = build(html.c_str(), css.c_str(), [](weva_document_t control) {
+            weva_element_set_attribute(control, weva_document_query(control, "#group"), "class", "group hidden");
+        });
+        CHECK(capture(doc) == blurred);
+        if (std::strlen(reach) == 0)
+            CHECK(after.cascade_elements - before.cascade_elements < 32);
+        weva_document_destroy(doc);
+    }
+}
+
 void test_abi_transparent_subtrees_defer_paint() {
     const char* html = "<div id=group><button id=child></button><div id=fixed></div></div>";
     const char* css =

@@ -232,6 +232,7 @@ public:
     // for a sheet with no `:hover` in it.
     const StateReach& hover_reach() const { return hover_reach_; }
     const StateReach& active_reach() const { return active_reach_; }
+    const StateReach& focus_within_reach() const { return focus_within_reach_; }
     // Whether a state flip on `e` can change what matches it.
     bool state_observable(const StateReach& reach, const Element& e) const;
 
@@ -399,6 +400,7 @@ private:
     SelectorMatchInputs selector_inputs_;
     StateReach hover_reach_;                         // what :hover can match
     StateReach active_reach_;                        // what :active can match
+    StateReach focus_within_reach_;                  // ancestors observing focus changes
     bool shape_key_folds_sibling_index_ = false;     // :nth-child, :first-child, :empty
     StateReach index_subject_reach_;
     bool shape_key_folds_range_ = false;

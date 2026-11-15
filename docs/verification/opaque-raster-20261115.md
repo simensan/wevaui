@@ -41,3 +41,17 @@ testing, and repeated zero/partial/full opacity changes. Every revealed frame
 matches a freshly built control document. Existing animated-transform and
 incremental-paint cases pass. GCC, Clang and MSVC core builds have zero warnings
 and pass CTest. No ABI change; the host suites remain outside this check.
+
+## Focus invalidation scope
+
+Focus changes now mark only ancestors that a `:focus-within` selector can
+observe, while the old and new controls keep their own focus/caret updates.
+Clearing focus after a control becomes hidden uses the same scoped cascade as
+ordinary state changes instead of an unconditional second full-page walk.
+Sibling, relational, nested and root-reaching selectors retain their reach.
+
+The regression compares focused/hidden-control frames with freshly built
+controls for local focus, ancestor, sibling, root, `:has()` and nested `:not()`
+rules. A page with 250 unrelated rows verifies local changes visit fewer than
+32 elements. The full GCC, Clang and MSVC core suites pass with zero build
+warnings. No C ABI change.

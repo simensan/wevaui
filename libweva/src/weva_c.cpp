@@ -5007,92 +5007,97 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
     // they can reach past their own subtree is a property of the SHEETS, and
     // the cascade already knows it: it works the same fact out to decide
     // whether its match cache is sound.
-    const bool scoped = doc->pending <= Invalidation::Paint && !doc->touched.empty() &&
-                        doc->touched.size() < kTouchedLimit &&
-                        (!doc->styles.engine.has_has_selectors() || !doc->has_inputs_dirty) &&
-                        !doc->styles.engine.has_validity_selectors();
-    if (stage_log && !scoped)
-        std::fprintf(stderr, "  unscoped cascade: pending %d touched %zu has %d inputs_dirty %d validity %d only_time %d\n",
-                     static_cast<int>(doc->pending), doc->touched.size(),
-                     doc->styles.engine.has_has_selectors() ? 1 : 0, doc->has_inputs_dirty ? 1 : 0,
-                     doc->styles.engine.has_validity_selectors() ? 1 : 0, only_time ? 1 : 0);
-    if (scoped) {
-        const bool siblings_matter = doc->styles.engine.has_sibling_selectors() && doc->sibling_scope_dirty;
-        // Fold overlapping selector scopes before walking. A parent's style
-        // must be applied before its descendants, and a sibling combinator
-        // also covers every following sibling's descendants.
-        const auto covers = [&](const Element* root, const Element* element) {
-            for (const Node* n = element; n; n = n->parent()) {
-                if (n == root) return true;
-                if (!siblings_matter || !root->parent() || n->parent() != root->parent()) continue;
-                bool after = false;
-                for (const auto& child : root->parent()->children()) {
-                    if (child.get() == root) after = true;
-                    if (child.get() == n) return after && n->is_element() &&
-                        doc->styles.engine.sibling_subject_in_subtree(static_cast<const Element&>(*n));
+    const auto cascade_changed = [&](bool time_only) {
+        const bool scoped = doc->pending <= Invalidation::Paint && !doc->touched.empty() &&
+                            doc->touched.size() < kTouchedLimit &&
+                            (!doc->styles.engine.has_has_selectors() || !doc->has_inputs_dirty) &&
+                            !doc->styles.engine.has_validity_selectors();
+        if (stage_log && !scoped)
+            std::fprintf(stderr, "  unscoped cascade: pending %d touched %zu has %d inputs_dirty %d validity %d time_only %d\n",
+                         static_cast<int>(doc->pending), doc->touched.size(),
+                         doc->styles.engine.has_has_selectors() ? 1 : 0, doc->has_inputs_dirty ? 1 : 0,
+                         doc->styles.engine.has_validity_selectors() ? 1 : 0, time_only ? 1 : 0);
+        if (scoped) {
+            const bool siblings_matter = doc->styles.engine.has_sibling_selectors() && doc->sibling_scope_dirty;
+            // Fold overlapping selector scopes before walking. A parent's style
+            // must be applied before its descendants, and a sibling combinator
+            // also covers every following sibling's descendants.
+            const auto covers = [&](const Element* root, const Element* element) {
+                for (const Node* n = element; n; n = n->parent()) {
+                    if (n == root) return true;
+                    if (!siblings_matter || !root->parent() || n->parent() != root->parent()) continue;
+                    bool after = false;
+                    for (const auto& child : root->parent()->children()) {
+                        if (child.get() == root) after = true;
+                        if (child.get() == n) return after && n->is_element() &&
+                            doc->styles.engine.sibling_subject_in_subtree(static_cast<const Element&>(*n));
+                    }
+                }
+                return false;
+            };
+            std::vector<Element*> roots;
+            for (Element* e : doc->touched) {
+                if (std::any_of(roots.begin(), roots.end(), [&](const Element* root) { return covers(root, e); })) continue;
+                roots.erase(std::remove_if(roots.begin(), roots.end(), [&](const Element* root) { return covers(e, root); }), roots.end());
+                roots.push_back(e);
+            }
+            if (stage_log)
+                std::fprintf(stderr, "  scoped cascade: touched %zu roots %zu siblings_matter %d\n",
+                             doc->touched.size(), roots.size(), siblings_matter ? 1 : 0);
+            for (Element* e : roots) {
+                // The subtree, and from it whatever the sheets can carry forward.
+                const Node* from = e;
+                const Node* parent = e->parent();
+                const ComputedStyle* parent_style = nullptr;
+                if (parent && parent->node_type() == NodeType::Element) {
+                    auto it = doc->styles.by_element.find(static_cast<const Element*>(parent));
+                    if (it != doc->styles.by_element.end()) parent_style = it->second;
+                }
+                if (!parent) {
+                    doc->styles.note_structural();   // detached: fall back
+                    break;
+                }
+                bool started = false;
+                for (const Ref<Node>& c : parent->children()) {
+                    if (c.get() == from) started = true;
+                    if (!started) continue;
+                    if (c->node_type() != NodeType::Element) continue;
+                    if (c.get() != from && !doc->styles.engine.sibling_subject_in_subtree(
+                            static_cast<const Element&>(*c))) continue;
+                    const bool local_inline_style = !doc->has_inputs_dirty && !doc->sibling_inputs_dirty &&
+                                                    !doc->selector_state_dirty &&
+                                                    doc->touched.size() == 1;
+                    const bool local_class = c.get() == from && !doc->selector_state_dirty &&
+                        std::any_of(doc->local_class_inputs.begin(), doc->local_class_inputs.end(),
+                            [&](const auto& input) { return input.first == c.get() && input.second; });
+                    doc->styles.walk(static_cast<const Element&>(*c), parent_style, local_inline_style || local_class);
+                    // Without a sibling combinator in the sheets, nothing after the
+                    // touched element can have changed.
+                    if (!siblings_matter) break;
                 }
             }
-            return false;
-        };
-        std::vector<Element*> roots;
-        for (Element* e : doc->touched) {
-            if (std::any_of(roots.begin(), roots.end(), [&](const Element* root) { return covers(root, e); })) continue;
-            roots.erase(std::remove_if(roots.begin(), roots.end(), [&](const Element* root) { return covers(e, root); }), roots.end());
-            roots.push_back(e);
-        }
-        if (stage_log)
-            std::fprintf(stderr, "  scoped cascade: touched %zu roots %zu siblings_matter %d\n",
-                         doc->touched.size(), roots.size(), siblings_matter ? 1 : 0);
-        for (Element* e : roots) {
-            // The subtree, and from it whatever the sheets can carry forward.
-            const Node* from = e;
-            const Node* parent = e->parent();
-            const ComputedStyle* parent_style = nullptr;
-            if (parent && parent->node_type() == NodeType::Element) {
-                auto it = doc->styles.by_element.find(static_cast<const Element*>(parent));
-                if (it != doc->styles.by_element.end()) parent_style = it->second;
+        } else if (!time_only) {
+            const int visited_before = doc->styles.visited;
+            for (const Ref<Node>& c : doc->doc->children()) {
+                if (c->node_type() == NodeType::Element) {
+                    doc->styles.walk(static_cast<const Element&>(*c), nullptr);
+                }
             }
-            if (!parent) {
-                doc->styles.note_structural();   // detached: fall back
-                break;
-            }
-            bool started = false;
-            for (const Ref<Node>& c : parent->children()) {
-                if (c.get() == from) started = true;
-                if (!started) continue;
-                if (c->node_type() != NodeType::Element) continue;
-                if (c.get() != from && !doc->styles.engine.sibling_subject_in_subtree(
-                        static_cast<const Element&>(*c))) continue;
-                const bool local_inline_style = !doc->has_inputs_dirty && !doc->sibling_inputs_dirty &&
-                                                !doc->selector_state_dirty &&
-                                                doc->touched.size() == 1;
-                const bool local_class = c.get() == from && !doc->selector_state_dirty &&
-                    std::any_of(doc->local_class_inputs.begin(), doc->local_class_inputs.end(),
-                        [&](const auto& input) { return input.first == c.get() && input.second; });
-                doc->styles.walk(static_cast<const Element&>(*c), parent_style, local_inline_style || local_class);
-                // Without a sibling combinator in the sheets, nothing after the
-                // touched element can have changed.
-                if (!siblings_matter) break;
+            // An element that was styled last pass and was not visited this one is
+            // gone from the DOM, which the walk cannot see from the inside.
+            if (doc->styles.visited - visited_before != static_cast<int>(doc->styles.by_element.size())) {
+                doc->styles.note_structural();
             }
         }
-    } else if (!only_time) {
-        for (const Ref<Node>& c : doc->doc->children()) {
-            if (c->node_type() == NodeType::Element) {
-                doc->styles.walk(static_cast<const Element&>(*c), nullptr);
-            }
-        }
-        // An element that was styled last pass and was not visited this one is
-        // gone from the DOM, which the walk cannot see from the inside.
-        if (doc->styles.visited != static_cast<int>(doc->styles.by_element.size())) {
-            doc->styles.note_structural();
-        }
-    }
-    doc->touched.clear();
-    doc->local_class_inputs.clear();
-    doc->has_inputs_dirty = false;
-    doc->sibling_inputs_dirty = false;
-    doc->sibling_scope_dirty = false;
-    doc->selector_state_dirty = false;
+        doc->touched.clear();
+        doc->local_class_inputs.clear();
+        doc->has_inputs_dirty = false;
+        doc->sibling_inputs_dirty = false;
+        doc->sibling_scope_dirty = false;
+        doc->selector_state_dirty = false;
+        return scoped;
+    };
+    const bool scoped = cascade_changed(only_time);
     lap("cascade");
     if (stage_log) {
         const auto& stats = doc->styles.engine.cache_stats();
@@ -5121,11 +5126,9 @@ static weva_status update_document(weva_document_t doc, double dt_seconds,
         // and visible descendants. Do not re-resolve it on clean HUD frames.
         const Element* previous = doc->styles.state.focused;
         weva_document_set_focus(doc, WEVA_ELEMENT_NONE);
-        // Clearing focus flips :focus-within on every ancestor. Restyle that
-        // root scope now so siblings and :has() see the blur this frame. Match
-        // caches retain their versioned inputs; no global cache is invalidated.
-        for (const auto& child : doc->doc->children())
-            if (child->is_element()) doc->styles.walk(static_cast<const Element&>(*child), nullptr);
+        // Use the same selector reach as an ordinary focus change. A hidden
+        // focused control must not force a second full-page style walk.
+        cascade_changed(false);
         doc->styles.advance(0);
         doc->styles.repaint(previous);
         doc->touched.clear();
@@ -8336,18 +8339,20 @@ weva_status weva_document_set_focus(weva_document_t doc, weva_element_t element)
     st.caret_downstream = false;
     // :focus-within is the ancestors; the element itself carries :focus.
     InteractionState::chain_of(target, &st.focus_chain);
-    std::vector<const Element*> changed = old_chain;
-    if (previous) changed.push_back(previous);
-    // Always observable: unlike :hover, focus also moves the caret and the
-    // scroll position, and a text field repaints on it whether or not a rule
-    // ever says `:focus`.
-    note_state_change(doc, changed, st.focus_chain, nullptr);
+    // Ancestors only need cascading if a :focus-within rule can observe them.
+    // The old/new controls below still update caret, scrolling and their own
+    // focus selectors regardless of stylesheet reach.
+    note_state_change(doc, old_chain, st.focus_chain, &doc->styles.engine.focus_within_reach());
     // The focused element's own bits changed even when the chain did not.
     if (previous || target) {
         doc->typeahead.reset();
         doc->typeahead_target = nullptr;
         ++st.version_;
         doc->dom_touched = true;
+        doc->selector_state_dirty = true;
+        doc->has_inputs_dirty = true;
+        doc->sibling_inputs_dirty = true;
+        doc->sibling_scope_dirty = true;
         for (const Element* e : {previous, target}) {
             if (e && doc->touched.size() < kTouchedLimit) doc->touched.push_back(const_cast<Element*>(e));
             if (e && e->tag_name() == "select" && select_is_listbox(*e)) invalidate_list_row(doc, e);
