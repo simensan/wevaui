@@ -6,6 +6,7 @@
 #include "weva/css_value.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <chrono>
 #include <cmath>
@@ -1136,6 +1137,57 @@ Srgb sample_image(const DecodedImage& image, double lx, double ly, double tw, do
 
 namespace {
 
+// Large artwork usually samples the same two-to-five source columns for every
+// row and the same source rows for every column. Resolve those footprints once
+// per axis, rather than repeating division, floor, clipping and filter weights
+// for every texel. Keep the scalar sampler's tap order and arithmetic: this is
+// its box/bilinear filter, not a different reconstruction or a lower resolution.
+struct ImageAxisSample {
+    int count = 0;
+    std::array<int, 5> offsets{};
+    std::array<double, 5> weights{};
+};
+
+std::vector<ImageAxisSample> image_axis_samples(int count, double step, double origin,
+                                               double tile_size, int source_size) {
+    std::vector<ImageAxisSample> result(static_cast<size_t>(count));
+    const double footprint = step / tile_size * source_size;
+    const bool shrink = footprint > 1;
+    for (int i = 0; i < count; ++i) {
+        const double centre = ((i + 0.5) * step - origin) / tile_size * source_size;
+        const double low = shrink ? centre - footprint * .5 : centre - .5;
+        const int begin = static_cast<int>(std::floor(std::max(-1.0, low)));
+        const int end = shrink ? static_cast<int>(std::ceil(std::min<double>(source_size, centre + footprint * .5))) : begin + 2;
+        auto& sample = result[static_cast<size_t>(i)];
+        for (int p = begin; p < end; ++p) {
+            sample.offsets[static_cast<size_t>(sample.count)] = std::clamp(p, 0, source_size - 1);
+            sample.weights[static_cast<size_t>(sample.count)] = shrink
+                ? std::max(0.0, std::min(p + 1.0, centre + footprint * .5) - std::max<double>(p, low))
+                : std::max(0.0, 1.0 - std::abs(p - low));
+            ++sample.count;
+        }
+    }
+    return result;
+}
+
+Srgb sample_image_axes(const DecodedImage& image, const ImageAxisSample& xs,
+                       const ImageAxisSample& ys) {
+    double r = 0, g = 0, b = 0, a = 0, weight = 0;
+    for (int y = 0; y < ys.count; ++y) {
+        const auto* row = image.rgba.data() + static_cast<size_t>(ys.offsets[static_cast<size_t>(y)]) * image.width * 4;
+        for (int x = 0; x < xs.count; ++x) {
+            const double w = xs.weights[static_cast<size_t>(x)] * ys.weights[static_cast<size_t>(y)];
+            const auto* p = row + static_cast<size_t>(xs.offsets[static_cast<size_t>(x)]) * 4;
+            const double alpha = p[3] * w;
+            r += p[0] * alpha; g += p[1] * alpha; b += p[2] * alpha;
+            a += alpha; weight += w;
+        }
+    }
+    if (a <= 0 || weight <= 0) return {};
+    return {static_cast<float>(r / (a * 255)), static_cast<float>(g / (a * 255)),
+            static_cast<float>(b / (a * 255)), static_cast<float>(a / (weight * 255))};
+}
+
 struct Tile {
     PreparedGradient prepared;
     // Set instead of `prepared` for a url layer. Unlike a gradient an
@@ -1513,6 +1565,18 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
     // demo's first update spent 84 ms nine-sampling every texel of a 1024x324
     // texture whose edges cover a few percent of it.
     const double sx = width / tex_w, sy = height / tex_h;
+    const DecodedImage* direct_image = nullptr;
+    std::vector<ImageAxisSample> image_x, image_y;
+    if (samples == 1 && tiles.size() == 1 && !any_mask && base.a == 0) {
+        const Tile& t = tiles.front();
+        if (t.image && t.blend == BlendMode::Normal && !t.wrap_x && !t.wrap_y &&
+            t.ox <= 0 && t.oy <= 0 && t.ox + t.tw >= width && t.oy + t.th >= height &&
+            sx / t.tw * t.image->width <= 4 && sy / t.th * t.image->height <= 4) {
+            direct_image = t.image;
+            image_x = image_axis_samples(tex_w, sx, t.ox, t.tw, t.image->width);
+            image_y = image_axis_samples(tex_h, sy, t.oy, t.th, t.image->height);
+        }
+    }
     // `centre_t`: the gradient's t at the texel centre, as the single-sample
     // path below would compute it, or NaN when the test returned before it.
     const auto texel_crosses_edge = [&](size_t i, int px, int py, double* centre_t) {
@@ -1591,6 +1655,17 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
                                 out_rgba->data() + row + static_cast<size_t>(px - period_x) * 4,
                                 static_cast<size_t>(run) * 4);
                     px += run - 1;
+                    continue;
+                }
+                if (direct_image) {
+                    const Srgb s = sample_image_axes(*direct_image, image_x[static_cast<size_t>(px)],
+                                                     image_y[static_cast<size_t>(py)]);
+                    // Preserve the general compositor's float round trip, even
+                    // though the backdrop is transparent, for identical bytes.
+                    float r = s.r * s.a, g = s.g * s.a, b = s.b * s.a;
+                    if (s.a > 0) { r /= s.a; g /= s.a; b /= s.a; }
+                    uint8_t* o = out_rgba->data() + (static_cast<size_t>(py) * tex_w + px) * 4;
+                    o[0] = byte(r); o[1] = byte(g); o[2] = byte(b); o[3] = byte(s.a);
                     continue;
                 }
                 if (opaque) {

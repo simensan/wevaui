@@ -30,8 +30,8 @@ The full Unity/Godot host suites and macOS were not exercised for this change.
 
 ## Transparent subtree painting
 
-The painter now stops at an accumulated opacity of zero before generating
-gradients, shadows, glyphs or descendant draws. Layout and hit testing remain
+The paint traversal now stops at an accumulated opacity of zero before generating
+gradients, shadows or descendant draws. Up-front glyph preparation, layout and hit testing remain
 active. Retained painting records the empty subtree and uses its normal style
 and ancestor-input invalidation when opacity changes.
 
@@ -55,3 +55,19 @@ controls for local focus, ancestor, sibling, root, `:has()` and nested `:not()`
 rules. A page with 250 unrelated rows verifies local changes visit fewer than
 32 elements. The full GCC, Clang and MSVC core suites pass with zero build
 warnings. No C ABI change.
+
+## Large image sampling
+
+Single normally blended image layers covering a transparent painting area now
+resolve their box/bilinear filter footprints once per axis. Large artwork no
+longer repeats the same coordinate division, clipping and weights for every
+texel. Source taps, premultiplied filtering, summation order and the compositor's
+float round trip are preserved. The bounded five-tap axis tables cover enlargement
+and footprints up to four source pixels; wider minification, masks, blends, tile
+boundaries and layered backgrounds retain the existing general sampler.
+
+The regression compares 108 random-alpha rasters against the scalar multilayer
+path, including fractional cover/contain/stretch, positioning, repeats, unequal
+axis scales and minification on both sides of the optimization boundary. All
+are byte-identical. Full GCC, Clang and MSVC core suites pass with zero compiler
+warnings. No API, sampling-quality or texture-resolution change.

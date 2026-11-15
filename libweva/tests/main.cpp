@@ -259,6 +259,7 @@ void test_image_decode();
 void test_async_images();
 void test_focus_move();
 void test_background_image();
+void test_image_axis_raster_equivalence();
 void test_replaced_image_cache();
 void test_image_background_shared_raster();
 void test_background_size_independence();
@@ -749,6 +750,7 @@ int main() {
     test_async_images();
     test_focus_move();
     test_background_image();
+    test_image_axis_raster_equivalence();
     test_replaced_image_cache();
     test_image_background_shared_raster();
     test_background_size_independence();

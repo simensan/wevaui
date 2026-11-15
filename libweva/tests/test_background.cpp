@@ -533,6 +533,44 @@ void test_image_background_shared_raster() {
     cache.release_all(&retained);
 }
 
+void test_image_axis_raster_equivalence() {
+    LayoutContext ctx;
+    BackgroundLayer clear;
+    clear.is_gradient = true;
+    CHECK(parse_gradient("linear-gradient(transparent, transparent)", LinearColor::black(), &clear.gradient));
+    DecodedImage image;
+    image.width = 127; image.height = 93;
+    image.rgba.resize(static_cast<size_t>(image.width) * image.height * 4);
+    uint32_t noise = 0xa7156c23;
+    for (auto& byte : image.rgba) {
+        noise = noise * 1664525u + 1013904223u;
+        byte = static_cast<uint8_t>(noise >> 24);
+    }
+    // The transparent upper layer forces the scalar, multilayer sampler.
+    // Random alpha includes invisible RGB and partial-alpha edge filtering.
+    // Cover/contain, fractional positioning, unequal scales, clamped edges,
+    // repeats and wider footprints also exercise the generic path's boundary.
+    for (const char* sizing : {"cover", "contain", "100%"}) {
+        for (const char* position : {"0%", "37.25%", "100%"}) {
+            for (const auto& size : {std::pair<int, int>{127, 93}, {255, 189}, {49, 31}, {32, 24}, {15, 9}, {190, 29}}) {
+                for (const bool repeat : {false, true}) {
+                    BackgroundLayer layer;
+                    layer.image = &image; layer.size_x = sizing;
+                    layer.size_y = std::string_view(sizing) == "100%" ? "100%" : "auto";
+                    layer.pos_x = layer.pos_y = position;
+                    layer.repeat_x = layer.repeat_y = repeat;
+                    std::vector<uint8_t> direct, scalar;
+                    rasterize_background({layer}, LinearColor::transparent(), size.first + .25, size.second + .75,
+                                         size.first, size.second, ctx, 16, &direct);
+                    rasterize_background({clear, layer}, LinearColor::transparent(), size.first + .25, size.second + .75,
+                                         size.first, size.second, ctx, 16, &scalar);
+                    CHECK(direct == scalar);
+                }
+            }
+        }
+    }
+}
+
 void test_background_image() {
     weva::ImageStore store = quad_store();
     const weva::DecodedImage* image = store.get("quad.png");
