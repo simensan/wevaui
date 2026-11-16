@@ -1154,7 +1154,13 @@ std::vector<ImageAxisSample> image_axis_samples(int count, double step, double o
     const double footprint = step / tile_size * source_size;
     const bool shrink = footprint > 1;
     for (int i = 0; i < count; ++i) {
-        const double centre = ((i + 0.5) * step - origin) / tile_size * source_size;
+        const double local = (i + 0.5) * step - origin;
+        // A non-repeating contained image can leave margins on either axis.
+        // The general compositor skips samples outside its tile before
+        // filtering; keep exactly that coverage while preparing each axis
+        // once instead of excluding the whole image from this path.
+        if (local < 0 || local >= tile_size) continue;
+        const double centre = local / tile_size * source_size;
         const double low = shrink ? centre - footprint * .5 : centre - .5;
         const int begin = static_cast<int>(std::floor(std::max(-1.0, low)));
         const int end = shrink ? static_cast<int>(std::ceil(std::min<double>(source_size, centre + footprint * .5))) : begin + 2;
@@ -1573,7 +1579,6 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
     if (samples == 1 && tiles.size() == 1 && !any_mask && base.a == 0) {
         const Tile& t = tiles.front();
         if (t.image && t.blend == BlendMode::Normal && !t.wrap_x && !t.wrap_y &&
-            t.ox <= 0 && t.oy <= 0 && t.ox + t.tw >= width && t.oy + t.th >= height &&
             sx / t.tw * t.image->width <= 4 && sy / t.th * t.image->height <= 4) {
             direct_image = t.image;
             image_x = image_axis_samples(tex_w, sx, t.ox, t.tw, t.image->width);

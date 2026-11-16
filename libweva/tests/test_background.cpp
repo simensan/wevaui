@@ -569,6 +569,40 @@ void test_image_axis_raster_equivalence() {
             }
         }
     }
+
+    // Portrait artwork contained in a wide panel leaves substantial margins.
+    // Those empty rows/columns must skip filtering, while pixels beside the
+    // fractional tile boundary retain the scalar compositor's exact coverage
+    // and premultiplied-alpha filter. This is a first-use image raster, not a
+    // cache-reopen or a lower-resolution approximation.
+    image.width = 1024; image.height = 1536;
+    image.rgba.resize(static_cast<size_t>(image.width) * image.height * 4);
+    for (auto& byte : image.rgba) {
+        noise = noise * 1664525u + 1013904223u;
+        byte = static_cast<uint8_t>(noise >> 24);
+    }
+    for (const auto& size : {std::pair<int, int>{936, 830}, {830, 936}}) {
+        for (const char* position : {"0%", "37.25%", "100%"}) {
+            BackgroundLayer layer;
+            layer.image = &image;
+            layer.size_x = "contain";
+            layer.pos_x = layer.pos_y = position;
+            layer.repeat_x = layer.repeat_y = false;
+            std::vector<uint8_t> direct, scalar;
+            rasterize_background({layer}, LinearColor::transparent(), size.first + .25, size.second + .75,
+                                 size.first, size.second, ctx, 16, &direct);
+            rasterize_background({clear, layer}, LinearColor::transparent(), size.first + .25, size.second + .75,
+                                 size.first, size.second, ctx, 16, &scalar);
+            CHECK(direct == scalar);
+            size_t empty = 0, covered = 0;
+            for (size_t i = 0; i < direct.size(); i += 4) {
+                if (direct[i + 3]) ++covered;
+                else if (!direct[i] && !direct[i + 1] && !direct[i + 2]) ++empty;
+            }
+            CHECK(empty > static_cast<size_t>(size.first) * size.second / 10);
+            CHECK(covered > static_cast<size_t>(size.first) * size.second / 4);
+        }
+    }
 }
 
 void test_background_image() {
