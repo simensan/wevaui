@@ -1143,15 +1143,32 @@ namespace {
 // for every texel. Keep the scalar sampler's tap order and arithmetic: this is
 // its box/bilinear filter, not a different reconstruction or a lower resolution.
 struct ImageAxisSample {
+    size_t first = 0;
     int count = 0;
-    std::array<int, 5> offsets{};
-    std::array<double, 5> weights{};
 };
 
-std::vector<ImageAxisSample> image_axis_samples(int count, double step, double origin,
-                                               double tile_size, int source_size) {
-    std::vector<ImageAxisSample> result(static_cast<size_t>(count));
+struct ImageAxisSamples {
+    std::vector<ImageAxisSample> samples;
+    std::vector<int> offsets;
+    std::vector<double> weights;
+};
+
+bool image_axis_samples(int count, double step, double origin,
+                        double tile_size, int source_size, ImageAxisSamples* result) {
+    // Wide downsampling footprints need more than the former five fixed taps.
+    // Pack only the taps used by each axis. Their usual total is proportional
+    // to the source extent, not output pixels times a maximum filter width.
+    // Bound unusual inputs to less than one MiB per axis and let the general
+    // compositor handle them without allocating an unbounded preparation.
+    constexpr size_t max_taps = 65536;
+    if (count <= 0 || count > 4096 || source_size <= 0 || !std::isfinite(step) || step <= 0 ||
+        !std::isfinite(origin) || !std::isfinite(tile_size) || tile_size <= 0) return false;
     const double footprint = step / tile_size * source_size;
+    if (!std::isfinite(footprint)) return false;
+    result->samples.resize(static_cast<size_t>(count));
+    const size_t reserve = std::min(max_taps, static_cast<size_t>(source_size) + 2 * static_cast<size_t>(count));
+    result->offsets.reserve(reserve);
+    result->weights.reserve(reserve);
     const bool shrink = footprint > 1;
     for (int i = 0; i < count; ++i) {
         const double local = (i + 0.5) * step - origin;
@@ -1164,26 +1181,35 @@ std::vector<ImageAxisSample> image_axis_samples(int count, double step, double o
         const double low = shrink ? centre - footprint * .5 : centre - .5;
         const int begin = static_cast<int>(std::floor(std::max(-1.0, low)));
         const int end = shrink ? static_cast<int>(std::ceil(std::min<double>(source_size, centre + footprint * .5))) : begin + 2;
-        auto& sample = result[static_cast<size_t>(i)];
+        if (static_cast<size_t>(end - begin) > max_taps - result->offsets.size()) return false;
+        auto& sample = result->samples[static_cast<size_t>(i)];
+        sample.first = result->offsets.size();
         for (int p = begin; p < end; ++p) {
-            sample.offsets[static_cast<size_t>(sample.count)] = std::clamp(p, 0, source_size - 1);
-            sample.weights[static_cast<size_t>(sample.count)] = shrink
+            result->offsets.push_back(std::clamp(p, 0, source_size - 1));
+            result->weights.push_back(shrink
                 ? std::max(0.0, std::min(p + 1.0, centre + footprint * .5) - std::max<double>(p, low))
-                : std::max(0.0, 1.0 - std::abs(p - low));
+                : std::max(0.0, 1.0 - std::abs(p - low)));
             ++sample.count;
         }
     }
-    return result;
+    return true;
 }
 
-inline Srgb sample_image_axes(const DecodedImage& image, const ImageAxisSample& xs,
-                       const ImageAxisSample& ys) {
+inline Srgb sample_image_axes(const DecodedImage& image, const ImageAxisSamples& x_axis,
+                             const ImageAxisSamples& y_axis, int px, int py) {
+    const auto& xs = x_axis.samples[static_cast<size_t>(px)];
+    const auto& ys = y_axis.samples[static_cast<size_t>(py)];
+    if (!xs.count || !ys.count) return {};
+    const int* x_offsets = x_axis.offsets.data() + xs.first;
+    const int* y_offsets = y_axis.offsets.data() + ys.first;
+    const double* x_weights = x_axis.weights.data() + xs.first;
+    const double* y_weights = y_axis.weights.data() + ys.first;
     double sums[4] = {}, weight = 0;
     for (int y = 0; y < ys.count; ++y) {
-        const auto* row = image.rgba.data() + static_cast<size_t>(ys.offsets[static_cast<size_t>(y)]) * image.width * 4;
+        const auto* row = image.rgba.data() + static_cast<size_t>(y_offsets[y]) * image.width * 4;
         for (int x = 0; x < xs.count; ++x) {
-            const double w = xs.weights[static_cast<size_t>(x)] * ys.weights[static_cast<size_t>(y)];
-            const auto* p = row + static_cast<size_t>(xs.offsets[static_cast<size_t>(x)]) * 4;
+            const double w = x_weights[x] * y_weights[y];
+            const auto* p = row + static_cast<size_t>(x_offsets[x]) * 4;
             const double alpha = p[3] * w;
             // An explicit channel loop lets MSVC vectorize the independent
             // accumulators too; their per-channel summation order is unchanged.
@@ -1575,14 +1601,13 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
     // texture whose edges cover a few percent of it.
     const double sx = width / tex_w, sy = height / tex_h;
     const DecodedImage* direct_image = nullptr;
-    std::vector<ImageAxisSample> image_x, image_y;
+    ImageAxisSamples image_x, image_y;
     if (samples == 1 && tiles.size() == 1 && !any_mask && base.a == 0) {
         const Tile& t = tiles.front();
         if (t.image && t.blend == BlendMode::Normal && !t.wrap_x && !t.wrap_y &&
-            sx / t.tw * t.image->width <= 4 && sy / t.th * t.image->height <= 4) {
+            image_axis_samples(tex_w, sx, t.ox, t.tw, t.image->width, &image_x) &&
+            image_axis_samples(tex_h, sy, t.oy, t.th, t.image->height, &image_y)) {
             direct_image = t.image;
-            image_x = image_axis_samples(tex_w, sx, t.ox, t.tw, t.image->width);
-            image_y = image_axis_samples(tex_h, sy, t.oy, t.th, t.image->height);
         }
     }
     // `centre_t`: the gradient's t at the texel centre, as the single-sample
@@ -1667,8 +1692,7 @@ void rasterize_background(const BackgroundPlan& prepared, std::vector<uint8_t>* 
                     continue;
                 }
                 if (direct_image) {
-                    const Srgb s = sample_image_axes(*direct_image, image_x[static_cast<size_t>(px)],
-                                                     image_y[static_cast<size_t>(py)]);
+                    const Srgb s = sample_image_axes(*direct_image, image_x, image_y, px, py);
                     // Preserve the general compositor's float round trip, even
                     // though the backdrop is transparent, for identical bytes.
                     float r = s.r * s.a, g = s.g * s.a, b = s.b * s.a;

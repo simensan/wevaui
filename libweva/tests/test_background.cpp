@@ -603,6 +603,45 @@ void test_image_axis_raster_equivalence() {
             CHECK(covered > static_cast<size_t>(size.first) * size.second / 4);
         }
     }
+
+    // Small thumbnails of a large image have filter footprints wider than
+    // four source pixels. Preserve exact scalar filtering at fractional
+    // edges, with both transparent margins and cropped cover sizing.
+    image.width = 960; image.height = 540;
+    image.rgba.resize(static_cast<size_t>(image.width) * image.height * 4);
+    for (auto& byte : image.rgba) {
+        noise = noise * 1664525u + 1013904223u;
+        byte = static_cast<uint8_t>(noise >> 24);
+    }
+    for (const char* sizing : {"cover", "contain"}) {
+        for (const auto& size : {std::pair<int, int>{112, 63}, {28, 28}, {1, 1}}) {
+            for (const char* position : {"0%", "37.25%", "100%"}) {
+                BackgroundLayer layer;
+                layer.image = &image; layer.size_x = sizing;
+                layer.pos_x = layer.pos_y = position;
+                layer.repeat_x = layer.repeat_y = false;
+                std::vector<uint8_t> direct, scalar;
+                rasterize_background({layer}, LinearColor::transparent(), size.first + .25, size.second + .75,
+                                     size.first, size.second, ctx, 16, &direct);
+                rasterize_background({clear, layer}, LinearColor::transparent(), size.first + .25, size.second + .75,
+                                     size.first, size.second, ctx, 16, &scalar);
+                CHECK(direct == scalar);
+            }
+        }
+    }
+
+    // An unusually wide source exceeds the bounded axis tap storage. The
+    // scalar fallback must still produce the complete, identically filtered
+    // image, rather than using a truncated preparation.
+    image.width = 70000; image.height = 1;
+    image.rgba.resize(static_cast<size_t>(image.width) * 4);
+    BackgroundLayer wide;
+    wide.image = &image; wide.size_x = wide.size_y = "100%";
+    wide.repeat_x = wide.repeat_y = false;
+    std::vector<uint8_t> bounded, scalar;
+    rasterize_background({wide}, LinearColor::transparent(), 1, 1, 1, 1, ctx, 16, &bounded);
+    rasterize_background({clear, wide}, LinearColor::transparent(), 1, 1, 1, 1, ctx, 16, &scalar);
+    CHECK(bounded == scalar);
 }
 
 void test_background_image() {
