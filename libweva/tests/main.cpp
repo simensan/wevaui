@@ -346,6 +346,7 @@ void test_abi_display_change_preserves_descendant_inputs();
 void test_abi_draw_versions();
 void test_abi_decoration_updates();
 void test_abi_incremental_glyph_preparation();
+void test_abi_batched_glyph_preparation();
 void test_abi_incremental_flex_intrinsics();
 void test_abi_incremental_item_box_edges();
 void test_abi_incremental_grid_animation();
@@ -840,6 +841,7 @@ int main() {
     test_abi_draw_versions();
     test_abi_decoration_updates();
     test_abi_incremental_glyph_preparation();
+    test_abi_batched_glyph_preparation();
     test_abi_incremental_flex_intrinsics();
     test_abi_incremental_item_box_edges();
     test_abi_incremental_grid_animation();

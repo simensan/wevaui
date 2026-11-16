@@ -1852,6 +1852,23 @@ public:
     void set_rounds_leading(bool rounds) { rounds_leading_ = rounds; }
     bool rounds_leading_ = true;
 
+    void set_glyph_preparer(weva_prepare_glyphs_fn prepare) { prepare_glyphs_ = prepare; }
+    bool prepares_glyphs() const override { return prepare_glyphs_ != nullptr; }
+    void prepare_glyphs(const GlyphRasterRequest* requests, size_t count) override {
+        if (!prepare_glyphs_ || preparation_status != WEVA_OK) return;
+        std::array<weva_glyph_request, 256> batch{};
+        for (size_t start = 0; start < count; start += batch.size()) {
+            const size_t size = std::min(batch.size(), count - start);
+            for (size_t i = 0; i < size; ++i) {
+                const auto& request = requests[start + i];
+                batch[i] = {request.face.id, request.glyph, request.px};
+            }
+            preparation_status = prepare_glyphs_(t_.user_data, batch.data(), size);
+            if (preparation_status != WEVA_OK) return;
+        }
+    }
+    weva_status preparation_status = WEVA_OK;
+
     void profile_lap(const char* stage) {
         if (!profile_enabled_) return;
         static constexpr const char* names[] = {"face", "glyph-index", "glyph-metrics", "raster", "variant", "shape"};
@@ -2157,6 +2174,7 @@ private:
     const bool memory_log_enabled_ = std::getenv("WEVA_FONT_CACHE_LOG") != nullptr;
     ProfileBucket profile_[6];
     weva_shape_glyphs_fn positioned_shape_ = nullptr;
+    weva_prepare_glyphs_fn prepare_glyphs_ = nullptr;
     FontInterface* fallback_;
 };
 
@@ -4108,6 +4126,13 @@ weva_status weva_document_set_font_shaper(weva_document_t doc, weva_shape_glyphs
     return WEVA_OK;
 }
 
+weva_status weva_document_set_font_glyph_preparer(weva_document_t doc,
+                                                 weva_prepare_glyphs_fn prepare) {
+    if (!doc || !doc->host_font) return WEVA_ERR_INVALID_ARGUMENT;
+    doc->host_font->set_glyph_preparer(prepare);
+    return WEVA_OK;
+}
+
 weva_status weva_document_register_font_family(weva_document_t doc, const char* family,
                                                uint64_t face) {
     if (!doc || !family || (face && !doc->host_font)) return WEVA_ERR_INVALID_ARGUMENT;
@@ -4744,10 +4769,12 @@ weva_status weva_document_update(weva_document_t doc, double dt_seconds) {
     return weva_document_update_with_input_time(doc,dt_seconds,dt_seconds);
 }
 weva_status weva_document_update_with_input_time(weva_document_t doc, double dt_seconds, double input_seconds) {
+    if (doc && doc->host_font) doc->host_font->preparation_status = WEVA_OK;
     if (doc) { doc->hit_cache_off = true; ++doc->hit_generation; }
     const weva_status status = update_document(doc, dt_seconds, input_seconds, true);
     if (doc) { ++doc->hit_generation; doc->hit_cache_off = false; }
     if (doc && status == WEVA_OK) doc->retired_nodes.clear();
+    if (status == WEVA_OK && doc && doc->host_font) return doc->host_font->preparation_status;
     return status;
 }
 

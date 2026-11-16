@@ -62,21 +62,12 @@ void GlyphAtlas::release_texture(RenderInterface* backend) {
 
 const GlyphSlot* GlyphAtlas::get(FontInterface* font, FaceHandle face, uint32_t glyph,
                                  double px) {
-    if (!font || !face || !std::isfinite(px) || px <= 0 ||
-        px > std::numeric_limits<int>::max() / 64.0) return nullptr;
-    // Fractional pixel sizes have different coverage. Quantise the request
-    // AND key to 1/64px so lookup never reuses another size's raster/metrics.
-    const int quantised = static_cast<int>(std::lround(px * 64));
-    if (quantised <= 0) return nullptr;
-    px = quantised / 64.0;
-    const Key key{face.id, glyph, quantised};
+    Key key{};
+    if (!font || !request_key(face, glyph, &px, &key)) return nullptr;
     auto it = slots_.find(key);
     if (it != slots_.end()) return &it->second;
 
-    const uint64_t hash = face.id * 0x9e3779b97f4a7c15ULL ^
-                          glyph * 0xbf58476d1ce4e5b9ULL ^
-                          static_cast<uint64_t>(quantised) * 0x94d049bb133111ebULL;
-    auto& empty = empty_glyphs_[(hash ^ (hash >> 32)) % empty_glyphs_.size()];
+    auto& empty = empty_glyphs_[empty_index(key)];
     if (empty.face == key.face && empty.glyph == key.glyph &&
         empty.px_quantised == key.px_quantised) return nullptr;
 
@@ -170,6 +161,32 @@ const GlyphSlot* GlyphAtlas::get(FontInterface* font, FaceHandle face, uint32_t 
     shelf_height_ = std::max(shelf_height_, bmp.height + 2 * pad);
     dirty_ = true;
     return &slots_.emplace(key, slot).first->second;
+}
+
+bool GlyphAtlas::request_key(FaceHandle face, uint32_t glyph, double* px, Key* key) {
+    if (!face || !px || !std::isfinite(*px) || *px <= 0 ||
+        *px > std::numeric_limits<int>::max() / 64.0) return false;
+    const int quantised = static_cast<int>(std::lround(*px * 64));
+    if (quantised <= 0) return false;
+    *px = quantised / 64.0;
+    // Lookup, preparation and rasterization share the same 1/64px identity.
+    *key = {face.id, glyph, quantised};
+    return true;
+}
+
+size_t GlyphAtlas::empty_index(const Key& key) const {
+    const uint64_t hash = key.face * 0x9e3779b97f4a7c15ULL ^
+                          key.glyph * 0xbf58476d1ce4e5b9ULL ^
+                          static_cast<uint64_t>(key.px_quantised) * 0x94d049bb133111ebULL;
+    return (hash ^ (hash >> 32)) % empty_glyphs_.size();
+}
+
+bool GlyphAtlas::needs_preparation(FaceHandle face, uint32_t glyph, double* px) const {
+    Key key{};
+    if (!request_key(face, glyph, px, &key)) return false;
+    if (slots_.find(key) != slots_.end()) return false;
+    const auto& empty = empty_glyphs_[empty_index(key)];
+    return empty.face != key.face || empty.glyph != key.glyph || empty.px_quantised != key.px_quantised;
 }
 
 TextureHandle GlyphAtlas::texture(RenderInterface* backend) {

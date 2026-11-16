@@ -1,4 +1,5 @@
 #pragma once
+#include <cstddef>
 #include <cstdint>
 #include <string_view>
 #include <vector>
@@ -57,9 +58,19 @@ struct Bitmap {
     bool is_color = false;
 };
 
+struct GlyphRasterRequest {
+    FaceHandle face;
+    uint32_t glyph = 0;
+    double px = 0;
+};
+
 class FontInterface {
 public:
     virtual ~FontInterface() = default;
+    // Optional cache preparation. Requests come from the actual paint prepass,
+    // not layout guesses; ordinary rasterize/metrics still supply every result.
+    virtual bool prepares_glyphs() const { return false; }
+    virtual void prepare_glyphs(const GlyphRasterRequest*, size_t) {}
     // Real font layout places fractional half-leading below the baseline.
     // Deterministic synthetic backends may retain exact arithmetic.
     virtual bool rounds_line_leading() const { return true; }

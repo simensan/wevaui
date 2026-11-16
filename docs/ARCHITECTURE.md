@@ -361,6 +361,20 @@ blank atlas upload, including after font/renderer setup. Once populated, the
 fixed-size atlas keeps its storage across clears to avoid repeated allocation
 and preserve existing text UV behavior. See the
 [lazy-atlas measurements](verification/lazy-atlas-20261031.md).
+
+ABI minor 46 adds optional `weva_document_set_font_glyph_preparer`. The paint
+glyph prepass gathers at most 256 unique atlas misses, normalized to the same
+1/64px keys used by rasterization, in first-use order. Transformed text,
+logical-size shadow coverage, vertical text and open form popups contribute
+only through their existing preparation paths. Hosts may synchronously warm
+their own cache from that borrowed list; all work must join before returning.
+Ordinary raster/metrics callbacks and atlas insertion remain serial and ordered.
+No hook retains the original immediate path. Replacing the font backend clears
+the hook and atlas identities. A hook may decline all or part of a batch with
+`WEVA_OK`; a genuine backend error is returned by the update after its normal
+callbacks complete valid paint. Core code never calls host font APIs concurrently.
+Unity and Godot retain the serial default; the optional hook changes no font
+table layout or existing callback contract.
 Numeric element handles advance monotonically across subtree changes and full
 loads. A sparse ordered table stores 256 pointer slots per page; pages with no
 live elements are released. Retired IDs therefore need no lifetime-sized

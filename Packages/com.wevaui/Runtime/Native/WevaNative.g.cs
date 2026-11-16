@@ -259,6 +259,14 @@ namespace Weva.Native
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    internal unsafe struct weva_glyph_request
+    {
+        public ulong face;
+        public uint glyph;
+        public double px;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     internal unsafe struct weva_event
     {
         public int kind;
@@ -343,7 +351,7 @@ namespace Weva.Native
         public const string Library = "weva_core";
 #endif
         public const int WEVA_ABI_VERSION_MAJOR = 0;
-        public const int WEVA_ABI_VERSION_MINOR = 45;
+        public const int WEVA_ABI_VERSION_MINOR = 46;
         public const uint WEVA_ELEMENT_NONE = 0xFFFFFFFFu;
         public const uint WEVA_BOX_NONE = 0xFFFFFFFFu;
 
@@ -356,6 +364,9 @@ namespace Weva.Native
         [DllImport(Library, EntryPoint = "weva_document_set_font_shaper", CallingConvention = CallingConvention.Cdecl)]
         private static extern int weva_document_set_font_shaper_native(System.IntPtr doc, void* shape);
         public static int weva_document_set_font_shaper(System.IntPtr doc, delegate* unmanaged[Cdecl]<void*, ulong, byte*, nuint, double, weva_shaped_glyph*, nuint, nuint> shape) => weva_document_set_font_shaper_native(doc, (void*)shape);
+        [DllImport(Library, EntryPoint = "weva_document_set_font_glyph_preparer", CallingConvention = CallingConvention.Cdecl)]
+        private static extern int weva_document_set_font_glyph_preparer_native(System.IntPtr doc, void* prepare);
+        public static int weva_document_set_font_glyph_preparer(System.IntPtr doc, delegate* unmanaged[Cdecl]<void*, weva_glyph_request*, nuint, int> prepare) => weva_document_set_font_glyph_preparer_native(doc, (void*)prepare);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]
         public static extern void weva_document_set_font_leading_rounding(System.IntPtr doc, int rounds);
         [DllImport(Library, CallingConvention = CallingConvention.Cdecl)]

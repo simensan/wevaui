@@ -1133,6 +1133,118 @@ void test_abi_incremental_glyph_preparation() {
     for (const auto doc : docs) weva_document_destroy(doc);
 }
 
+void test_abi_batched_glyph_preparation() {
+    struct Request {
+        uint64_t face; uint32_t glyph; double px;
+        bool operator==(const Request& other) const {
+            return face == other.face && glyph == other.glyph && px == other.px;
+        }
+    };
+    struct State {
+        weva::StubFont font;
+        weva::Bitmap bitmap;
+        std::vector<Request> prepared, rasterized;
+        std::vector<Request> empty_rasterized, previously_empty;
+        std::vector<size_t> batches;
+        weva_status failure = WEVA_OK;
+    } state[2];
+    weva_font_backend fonts[2]{};
+    weva_document_t docs[2]{};
+    const auto prepare = +[](void* user, const weva_glyph_request* requests, size_t count) -> weva_status {
+        auto& s = *static_cast<State*>(user);
+        CHECK(count > 0 && count <= 256);
+        s.batches.push_back(count);
+        for (size_t i = 0; i < count; ++i) {
+            const auto& r = requests[i];
+            CHECK(std::isfinite(r.px) && r.px > 0 && std::round(r.px * 64) == r.px * 64);
+            CHECK(r.px != 83); // display:none never contributes demand.
+            for (size_t j = 0; j < i; ++j)
+                CHECK(r.face != requests[j].face || r.glyph != requests[j].glyph || r.px != requests[j].px);
+            s.prepared.push_back({r.face, r.glyph, r.px});
+        }
+        return s.failure;
+    };
+    std::string html = "<div style='display:none;font-size:83px'>HIDDEN</div><main id=scaled>";
+    for (int i = 0; i < 8; ++i)
+        html += "<div style='font-size:" + std::to_string(12 + i * 2) + "px'>"
+                "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 !?</div>";
+    html += "<input value='Field'><div style='writing-mode:vertical-rl'>Vertical</div>"
+            "<select id=select><option>First</option><option>Second</option></select></main>";
+    const char* css = "body{margin:0}#scaled{transform-origin:0 0}input,select{font-size:19px}";
+    const auto cfg = config(1000, 1000);
+    CHECK(weva_document_set_font_glyph_preparer(nullptr, prepare) == WEVA_ERR_INVALID_ARGUMENT);
+    for (int i = 0; i < 2; ++i) {
+        docs[i] = weva_document_create(&cfg);
+        CHECK(weva_document_set_font_glyph_preparer(docs[i], prepare) == WEVA_ERR_INVALID_ARGUMENT);
+        fonts[i].user_data = &state[i];
+        fonts[i].rasterize = [](void* data, uint64_t face, uint32_t glyph, double px,
+                               weva_glyph_bitmap* out) -> int32_t {
+            auto& s = *static_cast<State*>(data);
+            s.rasterized.push_back({face, glyph, px});
+            s.bitmap = {};
+            if (!s.font.rasterize(weva::FaceHandle{face}, glyph, px, weva::RenderMode::Alpha8, &s.bitmap)) return 0;
+            if (s.bitmap.width == 0 || s.bitmap.height == 0) s.empty_rasterized.push_back({face, glyph, px});
+            *out = {s.bitmap.data.data(), s.bitmap.width, s.bitmap.height, nullptr};
+            return 1;
+        };
+        weva_document_set_font_backend(docs[i], &fonts[i], 1);
+        if (i) CHECK(weva_document_set_font_glyph_preparer(docs[i], prepare) == WEVA_OK);
+        CHECK(weva_document_set_css(docs[i], css, std::strlen(css)) == WEVA_OK);
+        CHECK(weva_document_load_html(docs[i], html.data(), html.size()) == WEVA_OK);
+        CHECK(weva_document_update(docs[i], 0) == WEVA_OK);
+    }
+    CHECK(state[1].batches.size() > 1);
+    for (int step = 0; step < 5; ++step) {
+        const Frame serial = capture(docs[0]), batched = capture(docs[1]);
+        if (serial != batched) std::printf("batched glyph step %d: %s\n", step, serial.diff(batched).c_str());
+        CHECK(serial == batched);
+        // Every preparatory key is used by a real raster request; every new
+        // raster miss was offered, including atlas overflow/repacking. The
+        // bounded negative cache can collide after preparation, so paint may
+        // recheck a key previously confirmed to be empty.
+        for (const auto& r : state[1].prepared)
+            CHECK(std::find(state[1].rasterized.begin(), state[1].rasterized.end(), r) != state[1].rasterized.end());
+        for (const auto& r : state[1].rasterized) {
+            const bool offered = std::find(state[1].prepared.begin(), state[1].prepared.end(), r) != state[1].prepared.end() ||
+                std::find(state[1].previously_empty.begin(), state[1].previously_empty.end(), r) != state[1].previously_empty.end();
+            if (!offered) std::printf("unprepared new raster step=%d face=%llu glyph=%u px=%.8f\n", step,
+                                     static_cast<unsigned long long>(r.face), r.glyph, r.px);
+            CHECK(offered);
+        }
+        for (int i = 0; i < 2; ++i) {
+            state[i].previously_empty.insert(state[i].previously_empty.end(), state[i].empty_rasterized.begin(), state[i].empty_rasterized.end());
+            state[i].empty_rasterized.clear();
+            state[i].prepared.clear(); state[i].rasterized.clear(); state[i].batches.clear();
+            if (step == 0) {
+                const char* style = "transform:scale(.875);text-shadow:1px 1px 2px black";
+                CHECK(weva_element_set_attribute(docs[i], weva_document_query(docs[i], "#scaled"), "style", style) == WEVA_OK);
+            } else if (step == 1) {
+                CHECK(weva_document_set_focus(docs[i], weva_document_query(docs[i], "#select")) == WEVA_OK);
+                weva_document_key(docs[i], WEVA_KEY_SPACE, 0, 1);
+                weva_document_key(docs[i], WEVA_KEY_SPACE, 0, 0);
+            } else if (step == 2) {
+                CHECK(weva_document_load_html(docs[i], html.data(), html.size()) == WEVA_OK);
+            }
+            CHECK(weva_document_update(docs[i], 0) == WEVA_OK);
+        }
+    }
+    // Backend replacement clears the optional hook and invalidates atlas IDs.
+    weva_document_set_font_backend(docs[1], &fonts[1], 1);
+    state[1].prepared.clear();
+    CHECK(weva_document_update(docs[1], 0) == WEVA_OK);
+    CHECK(state[1].prepared.empty());
+    CHECK(weva_document_set_font_glyph_preparer(docs[1], prepare) == WEVA_OK);
+    state[1].failure = WEVA_ERR_INTERNAL;
+    const char* changed = "<p style='font-size:27.375px'>New glyph demand</p>";
+    CHECK(weva_document_load_html(docs[1], changed, std::strlen(changed)) == WEVA_OK);
+    CHECK(weva_document_update(docs[1], 0) == WEVA_ERR_INTERNAL);
+    CHECK(!capture(docs[1]).draws.empty()); // Normal callbacks still publish valid paint.
+    state[1].failure = WEVA_OK;
+    CHECK(weva_document_update(docs[1], 0) == WEVA_OK);
+    CHECK(weva_document_set_font_glyph_preparer(docs[1], nullptr) == WEVA_OK);
+    for (const auto doc : docs) weva_document_destroy(doc);
+}
+
 void test_abi_incremental_flex_intrinsics() {
     const char* weighted_html = "<header>Before</header><main><div id=weighted></div>"
                                 "<div></div></main><footer>After</footer>";

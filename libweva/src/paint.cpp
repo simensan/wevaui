@@ -2661,8 +2661,41 @@ double text_raster_scale(const Transform2D* xf) {
     return scale;
 }
 
+// Keep atlas insertion ordered and on its owner. Only an optional host cache
+// preparer sees batches, and only of the misses this prepass actually requests.
+class GlyphPreparation {
+public:
+    explicit GlyphPreparation(const PaintContext& paint)
+        : font_(paint.font), atlas_(paint.atlas), batched_(font_->prepares_glyphs()) {}
+    void get(FaceHandle face, uint32_t glyph, double px) {
+        if (!batched_) { atlas_->get(font_, face, glyph, px); return; }
+        if (!atlas_->needs_preparation(face, glyph, &px)) return;
+        for (size_t i = 0; i < count_; ++i) {
+            const auto& old = requests_[i];
+            if (old.face.id == face.id && old.glyph == glyph && old.px == px) return;
+        }
+        requests_[count_++] = {face, glyph, px};
+        if (count_ == requests_.size()) flush();
+    }
+    void flush() {
+        if (!count_) return;
+        font_->prepare_glyphs(requests_.data(), count_);
+        for (size_t i = 0; i < count_; ++i) {
+            const auto& request = requests_[i];
+            atlas_->get(font_, request.face, request.glyph, request.px);
+        }
+        count_ = 0;
+    }
+private:
+    FontInterface* font_;
+    GlyphAtlas* atlas_;
+    bool batched_;
+    std::array<GlyphRasterRequest, 256> requests_{};
+    size_t count_ = 0;
+};
+
 void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
-                    const PaintContext& paint, std::vector<ShapedGlyph>& glyphs,
+                    const PaintContext& paint, std::vector<ShapedGlyph>& glyphs, GlyphPreparation& pending,
                     Transform2D transform = {}) {
     static const bool disable_reuse = std::getenv("WEVA_DISABLE_GLYPH_REUSE") != nullptr;
     if (!disable_reuse && paint.reuse && paint.reuse->reuse_glyphs(id)) {
@@ -2684,11 +2717,11 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
         glyphs.clear();
         paint.font->shape(face, b.text, b.font_size, &glyphs);
         for (const ShapedGlyph& g : glyphs) {
-            paint.atlas->get(paint.font, face, g.glyph, b.font_size * (b.vertical_text ? 1 : scale));
+            pending.get(face, g.glyph, b.font_size * (b.vertical_text ? 1 : scale));
             // Blurred shadows composite a separate logical-size coverage mask.
             if (!b.vertical_text && scale != 1 && b.style && b.style->get(WEVA_PROP("text-shadow")) != "none" &&
                 !b.style->get(WEVA_PROP("text-shadow")).empty())
-                paint.atlas->get(paint.font, face, g.glyph, b.font_size);
+                pending.get(face, g.glyph, b.font_size);
         }
     }
     // Control overlays draw text no box carries; their glyphs go into the
@@ -2701,9 +2734,9 @@ void prepare_glyphs(const BoxTree& tree, BoxId id, const LayoutContext& ctx,
         const FaceHandle face = face_for_run(b, ctx, paint);
         glyphs.clear();
         paint.font->shape(face, t.text, fs, &glyphs);
-        for (const ShapedGlyph& g : glyphs) paint.atlas->get(paint.font, face, g.glyph, fs * scale);
+        for (const ShapedGlyph& g : glyphs) pending.get(face, g.glyph, fs * scale);
     }
-    for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, ctx, paint, glyphs, transform);
+    for (BoxId c : tree.children(id)) prepare_glyphs(tree, c, ctx, paint, glyphs, pending, transform);
 }
 
 // The open list's labels, into the same up-front upload. Without this the
@@ -2726,7 +2759,7 @@ PopupTextStyle popup_text_style(const Element& row, const Box& select,
     return {style, face, paint.styles && style ? font_size_px(style, parent, ctx) : select_size};
 }
 void prepare_popup_glyphs(const BoxTree& tree, const LayoutContext& ctx,
-                          const PaintContext& paint, std::vector<ShapedGlyph>& glyphs) {
+                          const PaintContext& paint, std::vector<ShapedGlyph>& glyphs, GlyphPreparation& pending) {
     const Element* select = paint.popup.element;
     if (!select || !paint.font || !paint.atlas) return;
     for (int i = 0; i < tree.size(); ++i) {
@@ -2740,7 +2773,7 @@ void prepare_popup_glyphs(const BoxTree& tree, const LayoutContext& ctx,
             const auto text = popup_text_style(*option, b, fs, ctx, paint);
             const auto label = group ? std::string(option->get_attribute("label")) : option_label(*option);
             paint.font->shape(text.face, label, text.size, &glyphs);
-            for (const ShapedGlyph& g : glyphs) paint.atlas->get(paint.font, text.face, g.glyph, text.size);
+            for (const ShapedGlyph& g : glyphs) pending.get(text.face, g.glyph, text.size);
         }
         return;
     }
@@ -5009,8 +5042,10 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
         // Preparation consumes each shaped run before visiting the next. Keep
         // one pass-local buffer, rather than allocating once per text/control.
         std::vector<ShapedGlyph> glyphs;
-        prepare_glyphs(tree, root, ctx, paint, glyphs);
-        prepare_popup_glyphs(tree, ctx, paint, glyphs);
+        GlyphPreparation pending(paint);
+        prepare_glyphs(tree, root, ctx, paint, glyphs, pending);
+        prepare_popup_glyphs(tree, ctx, paint, glyphs, pending);
+        pending.flush();
         // The atlas keeps every size it was ever asked for. When that leaves
         // no room for a glyph this frame draws, it starts over and the frame
         // is requested again from nothing; the new slot version stops the
@@ -5019,8 +5054,9 @@ void paint_tree(const BoxTree& tree, BoxId root, const LayoutContext& ctx,
         // quad holds the coordinates of a slot that is about to move.
         while (paint.atlas->make_room()) {
             if (paint.reuse) paint.reuse->begin_glyphs(*paint.atlas);
-            prepare_glyphs(tree, root, ctx, paint, glyphs);
-            prepare_popup_glyphs(tree, ctx, paint, glyphs);
+            prepare_glyphs(tree, root, ctx, paint, glyphs, pending);
+            prepare_popup_glyphs(tree, ctx, paint, glyphs, pending);
+            pending.flush();
         }
         atlas_texture = paint.atlas->texture(paint.backend);
         glyphs_ms =

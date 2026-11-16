@@ -43,7 +43,7 @@ extern "C" {
 /* Bumped on any incompatible change. A host that sees a different major value
  * must refuse to load rather than guess. */
 #define WEVA_ABI_VERSION_MAJOR 0
-#define WEVA_ABI_VERSION_MINOR 45
+#define WEVA_ABI_VERSION_MINOR 46
 
 uint32_t weva_abi_version(void);
 
@@ -290,6 +290,27 @@ void weva_document_set_font_backend(weva_document_t doc, const weva_font_backend
  * installed first (otherwise INVALID_ARGUMENT). Existing font tables and
  * their callers keep their original binary layout and behavior. */
 weva_status weva_document_set_font_shaper(weva_document_t doc, weva_shape_glyphs_fn shape);
+
+/* Optional exact-demand cache warming, ABI minor 46. The unchanged font table
+ * still supplies all metrics and pixels. Before packing missing glyphs the
+ * core calls this synchronously on the document owner with at most 256 unique
+ * (face,glyph,px) requests, in first-use order; px is normalized to 1/64 pixel.
+ * The array is borrowed only for the call. Hosts may prepare any subset (or
+ * none), but must preserve the ordinary callbacks' answers and join all work
+ * before returning. No callback or atlas operation runs concurrently in core.
+ * Return WEVA_OK for optional/serial handling; genuine preparation failures
+ * return an error reported by document_update, while ordinary callbacks still
+ * complete a valid paint. A new font backend clears this hook; null unsets it.
+ * Installing a hook changes no font identity or cached glyph. */
+typedef struct weva_glyph_request {
+    uint64_t face;
+    uint32_t glyph;
+    double px;
+} weva_glyph_request;
+typedef weva_status (*weva_prepare_glyphs_fn)(void* user_data,
+                                            const weva_glyph_request* requests, size_t count);
+weva_status weva_document_set_font_glyph_preparer(weva_document_t doc,
+                                                 weva_prepare_glyphs_fn prepare);
 
 /* Whether a host font backend's half-leading is rounded down to whole
  * pixels, as real font layout does (the default, 1). A synthetic face that

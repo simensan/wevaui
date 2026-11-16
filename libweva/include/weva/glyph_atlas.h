@@ -39,6 +39,8 @@ public:
     // first request. Null when the glyph has no bitmap (a space, or a missing
     // glyph) or when the atlas has no room for it, which overflowed() reports.
     const GlyphSlot* get(FontInterface* font, FaceHandle face, uint32_t glyph, double px);
+    // Normalize exactly as get(), and report only a valid uncached request.
+    bool needs_preparation(FaceHandle face, uint32_t glyph, double* px) const;
 
     // A glyph was refused for lack of room since the atlas last started over.
     bool overflowed() const { return overflowed_; }
@@ -94,6 +96,9 @@ private:
             return glyph != o.glyph ? glyph < o.glyph : px_quantised < o.px_quantised;
         }
     };
+
+    static bool request_key(FaceHandle face, uint32_t glyph, double* px, Key* key);
+    size_t empty_index(const Key& key) const;
 
     void start_over(int width, int height);
 
